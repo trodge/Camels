@@ -81,7 +81,7 @@ void Settings::load(const fs::path &p) {
     loadColor("ui.highlight", &uIHighlight, {0, 0, 255}, tree);
     loadColor("ui.routeColor", &routeColor, {24, 24, 24}, tree);
     loadColor("ui.dotColor", &dotColor, {108, 64, 64}, tree);
-    loadColor("ui.waterColor", &waterColor, {0, 16, 72}, tree);
+    loadColor("ui.waterColor", &waterColor, {24, 95, 150}, tree);
     loadColor("ui.playerColor", &playerColor, {255, 255, 255}, tree);
     loadColor("ui.aIColor", &aIColor, {192, 192, 192}, tree);
     scroll = tree.get("ui.scroll", 64);
