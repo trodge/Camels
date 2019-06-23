@@ -51,7 +51,7 @@ class Town : public Focusable {
     std::vector<Good> goods;
     std::vector<Town *> neighbors;
     int businessCounter;
-    bool maxGoods = false;
+    bool maxGoods = false; // town creates maximum goods for testing purposes
     std::vector<std::shared_ptr<Traveler>> travelers;
     std::uniform_int_distribution<int> travelersDis;
     int dpx, dpy;

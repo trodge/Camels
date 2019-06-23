@@ -28,7 +28,7 @@ Game::Game() : scrollX(0), scrollY(0) {
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
     screen = SDL_GetWindowSurface(window);
-    mapImage = SDL_LoadBMP("map-scaled.bmp");
+    mapImage = IMG_Load("map-scaled.png");
     setState(starting);
     /*SDL_CreateRGBSurfaceWithFormat(
     0, 14220, 6640, screen->format->BitsPerPixel, screen->format->format);
@@ -1072,6 +1072,7 @@ void Game::handleEvents() {
                 boxes[focusBox]->handleTextInput(event.text);
             break;
         case SDL_MOUSEBUTTONDOWN:
+            // Print r g b values at clicked coordinates
             mx = event.button.x + mapRect.x;
             my = event.button.y + mapRect.y;
             if (mx >= 0 and mx < mapImage->w and my >= 0 and my < mapImage->h) {

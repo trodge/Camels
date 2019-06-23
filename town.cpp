@@ -148,10 +148,10 @@ void Town::update(int e) {
         for (auto &g : goods)
             g.consume(Settings::getBusinessRunTime());
         std::vector<int> conflicts(goods.size(), 0);
-        if (maxGoods)
+        if (maxGoods) // When maxGoods is true, towns create as many goods as possible for testing purposes.
             for (auto &g : goods) {
                 const std::vector<Material> &gMs = g.getMaterials();
-                std::unordered_map<int, double> mAs;
+                std::unordered_map<int, double> mAs; // Map of material ids to amounts of said material
                 mAs.reserve(gMs.size());
                 for (auto &gM : gMs)
                     if (g.getAmount())
@@ -162,11 +162,15 @@ void Town::update(int e) {
                 g.create(mAs);
             }
         for (auto &b : businesses) {
+            // For each business, start by setting factor to business run time.
             b.setFactor(Settings::getBusinessRunTime() / static_cast<double>(kDaysPerYear * Settings::getDayLength()));
+            // Count conflicts of businesses for available goods.
             b.addConflicts(conflicts, goods);
         }
         for (auto &b : businesses) {
+            // Handle conflicts by reducing factors.
             b.handleConflicts(conflicts);
+            // Run businesses on town's goods.
             b.run(goods);
         }
         businessCounter -= Settings::getBusinessRunTime();

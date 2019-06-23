@@ -348,6 +348,7 @@ std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
 }
 
 void Traveler::attack(std::shared_ptr<Traveler> t) {
+    // Attack the given parameter traveler.
     target = t;
     t->target = shared_from_this();
     fightTime = 0;
@@ -374,6 +375,7 @@ void Traveler::loseTarget() {
 }
 
 void Traveler::updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs) {
+    // Create TextBox objects for fight user interface.
     std::vector<std::string> choiceText = bs[0]->getText();
     switch (choice) {
     case FightChoice::none:
@@ -469,7 +471,7 @@ void Traveler::useAmmo(double t) {
 }
 
 void Traveler::runFight(Traveler &t, int e, std::uniform_real_distribution<> &d) {
-    // Fight the t.
+    // Fight t for e milliseconds.
     fightTime += e;
     // Prevent fight from happening twice.
     t.fightTime -= e;
@@ -619,6 +621,7 @@ void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, doub
 }
 
 void Traveler::adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, double d) {
+    // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
     for (auto rBI = bs.begin() + requestButtonIndex; rBI != bs.end(); ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));

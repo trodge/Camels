@@ -82,7 +82,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::array<int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
     const GameData *gameData;
-    std::vector<Business *> businesses;
+    std::unordered_map<Town *, std::vector<Business>> businesses; // businesses owned by this traveler in given towns
+    std::unordered_map<Town *, std::vector<Good>> storage; // goods stored by this traveler in given towns
     std::unique_ptr<AI> ai;
     bool moving;
     int px, py;
