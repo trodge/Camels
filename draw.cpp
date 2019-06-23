@@ -19,11 +19,19 @@
 
 #include "draw.h"
 
+
+void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect rect, SDL_Color col) {
+    // Draw a rounded rectangle where corners are circles with radius r on s.
+    SDL_FillRect()
+}
+
+
 void draw_circle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) {
+    // Draw a circle on s at position (cx, cy) with radius r and color col, either filled or not filled.
     Uint32 color = SDL_MapRGB(s->format, col.r, col.g, col.b);
     if (fl) {
         if (cx - r >= 0 and cx + r < s->w and cy - r >= 0 and cy + r < s->h) {
-            // circle is in bounds so skip bounds check
+            // circle is in bounds so skip per-pixel bounds check
             for (int x = -r; x <= r; ++x)
                 for (int y = -r; y <= r; ++y)
                     if ((x * x) + (y * y) <= r * r)

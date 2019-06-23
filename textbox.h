@@ -77,6 +77,7 @@ class TextBox : public Focusable {
     const SDL_Rect &getRect() const { return rect; }
     void place(int x, int y, std::vector<SDL_Rect> &drawn);
     virtual void draw(SDL_Surface *s) {
+        // Blit this TextBox's surface onto s.
         SDL_Rect r = rect;
         SDL_BlitSurface(ts, NULL, s, &r);
     }
