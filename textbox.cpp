@@ -19,17 +19,17 @@
 
 #include "textbox.h"
 
-TextBox::TextBox(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int fS)
-    : rect(r), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), fontSize(fS) {
-    fixedSize = (r.w and r.h);
+TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r, int fS)
+    : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS) {
+    fixedSize = (rt.w and rt.h);
     setText(t);
 }
 
-TextBox::TextBox(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, int b, int fS)
-    : TextBox(r, t, fg, bg, i, false, b, fS) {}
+TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, int b, int r, int fS)
+    : TextBox(rt, t, fg, bg, i, false, b, r, fS) {}
 
-TextBox::TextBox(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int fS)
-    : TextBox(r, t, fg, bg, 0, b, fS) {}
+TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS)
+    : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
 
 TextBox::~TextBox() { SDL_FreeSurface(ts); }
 
@@ -59,7 +59,7 @@ void TextBox::setText() {
         lines = rect.h / lineHeight;
         text = std::vector<std::string>(text.begin(), text.begin() + lines);
     }
-    ts = Printer::print(text, rect.w, rect.h, border);
+    ts = Printer::print(text, rect.w, rect.h, border, radius);
     // If rectangle dimensions were not provided, rectagle coordinates are text center.
     if (not fixedSize) {
         rect.w = ts->w;

@@ -25,10 +25,10 @@
 #include <string>
 #include <vector>
 
-#include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
 #include "constants.h"
+#include "draw.h"
 
 class Printer {
     static std::vector<int> sizes;
@@ -50,7 +50,7 @@ class Printer {
     static void setNationId(int n) { nationId = n; }
     static int getFontHeight() { return TTF_FontHeight(fonts[sizeIndex * kFontCount]); }
     static int getFontWidth(const std::string &tx);
-    static SDL_Surface *print(const std::vector<std::string> &tx, int w, int h, int b);
+    static SDL_Surface *print(const std::vector<std::string> &tx, int w, int h, int b, int r);
 };
 
 #endif

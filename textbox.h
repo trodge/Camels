@@ -40,6 +40,7 @@ class TextBox : public Focusable {
     int id;
     bool isNation;
     int border;
+    int radius; // radius of rounded corner circles
     bool invColors = false;
     bool clicked = false;
     int fontSize;
@@ -49,9 +50,9 @@ class TextBox : public Focusable {
     void setBorder(int b);
 
   public:
-    TextBox(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int fS);
-    TextBox(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, int b, int fS);
-    TextBox(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int fS);
+    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r, int fS);
+    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, int b, int r, int fS);
+    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS);
     virtual ~TextBox();
     virtual void setText();
     void setText(const std::vector<std::string> &tx) {

@@ -20,9 +20,19 @@
 #include "draw.h"
 
 
-void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect rect, SDL_Color col) {
+void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.
-    SDL_FillRect()
+    Uint32 color = SDL_MapRGB(s->format, col.r, col.g, col.b);
+    Uint32 trans = SDL_MapRGBA(s->format, 0, 0, 0, 0);
+    // Draw the whole rectangle
+    SDL_FillRect(s, rect, color);
+    SDL_Rect corner;
+    for (int i = 0; i < 4; ++i) {
+        // Loop through corners
+        corner = {rect->x + (rect->w - r) * (i % 2), rect->y + (rect->h - r) * (i / 2), r, r};
+        // Erase corners
+        SDL_FillRect(s, &corner, trans);
+    }
 }
 
 

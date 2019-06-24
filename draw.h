@@ -26,7 +26,7 @@
 
 #include <SDL2/SDL.h>
 
-void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect rect, SDL_Color col);
+void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col);
 void draw_circle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl);
 void draw_circle_symmetry_points(SDL_Surface *s, int cx, int cy, int x, int y, Uint32 color, bool check_bounds);
 void draw_line(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col);

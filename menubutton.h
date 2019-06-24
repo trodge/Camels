@@ -31,11 +31,11 @@ class MenuButton : virtual public TextBox {
     MenuButton(std::function<void()> oC) : onClick(oC) {}
 
   public:
-    MenuButton(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int fS,
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r, int fS,
                std::function<void()> oC);
-    MenuButton(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int fS,
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS,
                std::function<void()> oC)
-        : MenuButton(r, t, fg, bg, 0, false, b, fS, oC) {}
+        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, oC) {}
     virtual ~MenuButton();
     void setKey(const SDL_Keycode &k) { key = k; }
     SDL_Keycode getKey() const { return key; }

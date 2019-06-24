@@ -254,10 +254,10 @@ std::unique_ptr<MenuButton> Material::button(bool aS, int gI, const std::string 
         std::string amountText = std::to_string(amount);
         dropTrail(&amountText, gS ? 3 : 0);
         tx.push_back(std::move(amountText));
-        return std::make_unique<MenuButton>(r, tx, fgr, bgr, gI, false, 1, fS, f);
+        return std::make_unique<MenuButton>(r, tx, fgr, bgr, gI, false, 1, 1, fS, f);
     }
     // Button does not show amount.
-    return std::make_unique<MenuButton>(r, tx, fgr, bgr, gI, false, 1, fS, f);
+    return std::make_unique<MenuButton>(r, tx, fgr, bgr, gI, false, 1, 1, fS, f);
 }
 
 void Material::updateButton(bool gS, double oV, int rC, TextBox *b) const {

@@ -26,7 +26,7 @@
 
 class SelectButton : public ScrollBox, public MenuButton {
   public:
-    SelectButton(SDL_Rect r, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int fS,
+    SelectButton(SDL_Rect rt, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int r, int fS,
                  std::function<void()> oC);
     const std::string &getItem() const {
         if (highlightLine > -1)

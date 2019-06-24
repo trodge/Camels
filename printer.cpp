@@ -50,7 +50,7 @@ int Printer::getFontWidth(const std::string &tx) {
     return w;
 }
 
-SDL_Surface *Printer::print(const std::vector<std::string> &tx, int w, int h, int b) {
+SDL_Surface *Printer::print(const std::vector<std::string> &tx, int w, int h, int b, int r) {
     // Create a new SDL_Surface with the given text printed on it. Nation ID used to determine fonts.
     size_t numLines = tx.size();
     std::vector<int> tWs, tHs;      // Widths and heights for each line of text.
@@ -94,26 +94,29 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, int w, int h, in
         w = mW + 2 * b;
     if (not h)
         h = mH + 2 * b;
-    SDL_Surface *p = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+    SDL_Surface *p = SDL_CreateRGBSurface(0, w, h, 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
     // Draw border.
-    if (b)
-        SDL_FillRect(p, NULL, SDL_MapRGB(p->format, foreground.r, foreground.g, foreground.b));
-    SDL_Rect r = {b, b, w - 2 * b, h - 2 * b};
-    SDL_FillRect(p, &r, SDL_MapRGB(p->format, background.r, background.g, background.b));
+    SDL_Rect rect;
+    if (b) {
+        rect = {0, 0, w, h};
+        draw_rounded_rectangle(p, r, &rect, foreground);
+    }
+    rect = {b, b, w - 2 * b, h - 2 * b};
+    draw_rounded_rectangle(p, r, &rect, background);
     // Center text vertically.
-    r.y = h / 2 - mH / 2;
+    rect.y = h / 2 - mH / 2;
     for (size_t i = 0; i < numLines; ++i) {
         // Blit rendered text lines onto one surface.
-        r.w = tWs[i];
-        r.h = tHs[i];
-        r.x = w / 2 - r.w / 2;
+        rect.w = tWs[i];
+        rect.h = tHs[i];
+        rect.x = w / 2 - rect.w / 2;
         if (i == size_t(highlightLine)) {
-            SDL_Rect hlR = {b, r.y, w - 2 * b, r.h};
+            SDL_Rect hlR = {b, rect.y, w - 2 * b, rect.h};
             SDL_FillRect(p, &hlR, SDL_MapRGB(p->format, highlight.r, highlight.g, highlight.b));
         }
-        SDL_BlitSurface(tSs[i], NULL, p, &r);
+        SDL_BlitSurface(tSs[i], NULL, p, &rect);
         SDL_FreeSurface(tSs[i]);
-        r.y += r.h;
+        rect.y += rect.h;
     }
     return p;
 }

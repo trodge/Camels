@@ -28,7 +28,7 @@ class LoadBar : public TextBox {
     int outsideBorder;
 
   public:
-    LoadBar(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int fS);
+    LoadBar(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS);
     ~LoadBar();
     void progress(double c);
     void draw(SDL_Surface *s);

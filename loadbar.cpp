@@ -18,10 +18,9 @@
  */
  
 #include "loadbar.h"
-
-LoadBar::LoadBar(SDL_Rect r, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int fS)
-    : TextBox({r.x + r.w / 2, r.y + r.h / 2}, t, fg, bg, 0, fS), completeRect({r.x + b, r.y + b, 0, r.h - 2 * b}),
-      insideRect({r.x + b, r.y + b, r.w - 2 * b, r.h - 2 * b}), outsideRect(r), outsideBorder(b) {}
+LoadBar::LoadBar(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS)
+    : TextBox({rt.x + rt.w / 2, rt.y + rt.h / 2}, t, fg, bg, 0, r, fS), completeRect({rt.x + b, rt.y + b, 0, rt.h - 2 * b}),
+      insideRect({rt.x + b, rt.y + b, rt.w - 2 * b, rt.h - 2 * b}), outsideRect(rt), outsideBorder(b) {}
 
 LoadBar::~LoadBar() {}
 

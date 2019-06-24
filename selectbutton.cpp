@@ -19,9 +19,9 @@
 
 #include "selectbutton.h"
 
-SelectButton::SelectButton(SDL_Rect r, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b,
+SelectButton::SelectButton(SDL_Rect rt, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int r,
                            int fS, std::function<void()> oC)
-    : TextBox(r, is, fg, bg, 0, false, b, fS), ScrollBox(is, hl), MenuButton(oC) {
+    : TextBox(rt, is, fg, bg, 0, false, b, r, fS), ScrollBox(is, hl), MenuButton(oC) {
     canFocus = true;
 }
 

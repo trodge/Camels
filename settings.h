@@ -42,11 +42,13 @@ class Settings {
     static SDL_Color aIColor;
     static int scroll;
     static int offsetX, offsetY;
-    static int bigBoxFontSize;
     static int bigBoxBorder;
+    static int bigBoxRadius;
+    static int bigBoxFontSize;
     static int loadBarFontSize;
-    static int smallBoxFontSize;
     static int smallBoxBorder;
+    static int smallBoxRadius;
+    static int smallBoxFontSize;
     static int fightFontSize;
     static int equipFontSize;
     static int townFontSize;
@@ -85,11 +87,13 @@ class Settings {
     static int getScroll() { return scroll; }
     static int getOffsetX() { return offsetX; }
     static int getOffsetY() { return offsetY; }
-    static int getBigBoxFontSize() { return bigBoxFontSize; }
     static int getBigBoxBorder() { return bigBoxBorder; }
+    static int getBigBoxRadius() { return bigBoxRadius; }
+    static int getBigBoxFontSize() { return bigBoxFontSize; }
     static int getLoadBarFontSize() { return loadBarFontSize; }
-    static int getSmallBoxFontSize() { return smallBoxFontSize; }
     static int getSmallBoxBorder() { return smallBoxBorder; }
+    static int getSmallBoxRadius() { return smallBoxRadius; }
+    static int getSmallBoxFontSize() { return smallBoxFontSize; }
     static int getFightFontSize() { return fightFontSize; }
     static int getEquipFontSize() { return equipFontSize; }
     static int getTownFontSize() { return townFontSize; }
