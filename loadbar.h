@@ -21,6 +21,7 @@
 #define LOADBAR_H
 
 #include "textbox.h"
+#include "draw.h"
 
 class LoadBar : public TextBox {
     double complete = 0;

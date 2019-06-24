@@ -18,6 +18,7 @@
  */
  
 #include "loadbar.h"
+
 LoadBar::LoadBar(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS)
     : TextBox({rt.x + rt.w / 2, rt.y + rt.h / 2}, t, fg, bg, 0, r, fS), completeRect({rt.x + b, rt.y + b, 0, rt.h - 2 * b}),
       insideRect({rt.x + b, rt.y + b, rt.w - 2 * b, rt.h - 2 * b}), outsideRect(rt), outsideBorder(b) {}
@@ -33,13 +34,11 @@ void LoadBar::progress(double c) {
 }
 
 void LoadBar::draw(SDL_Surface *s) {
-    Uint32 c = SDL_MapRGB(s->format, foreground.r, foreground.g, foreground.b);
-    Uint32 b = SDL_MapRGB(s->format, background.r, background.g, background.b);
     // draw border
-    SDL_FillRect(s, &outsideRect, c);
+    drawRoundedRectangle (s, radius, &outsideRect, foreground);
     // draw incomplete rectangle
-    SDL_FillRect(s, &insideRect, b);
+    drawRoundedRectangle (s, radius, &insideRect, background);
     // draw complete rectangle
-    SDL_FillRect(s, &completeRect, c);
+    drawRoundedRectangle (s, radius, &completeRect, foreground);
     TextBox::draw(s);
 }

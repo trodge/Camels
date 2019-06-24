@@ -20,7 +20,7 @@
 #include "draw.h"
 
 
-void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col) {
+void drawRoundedRectangle (SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.
     Uint32 color = SDL_MapRGB(s->format, col.r, col.g, col.b);
     // Fill top rectangle
@@ -30,32 +30,32 @@ void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col
     SDL_Rect middle = {rect->x, rect->y + r, rect->w, rect->h - 2 * r};
     SDL_FillRect(s, &middle, color);
     // Fill bottom rectangle
-    SDL_Rect bottom = {rect->x + r, rect->y + rect->h - 1 - r, rect->w - 2 * r, r};
+    SDL_Rect bottom = {rect->x + r, rect->y + rect->h - r, rect->w - 2 * r, r};
     SDL_FillRect(s, &bottom, color);
     // Fill partial circle in top-left corner
     for (int x = -r; x <= 0; ++x)
         for (int y = -r; y <= 0; ++y)
             if ((x * x) + (y * y) <= r * r)
-                draw_pixel(s, rect->x + r + x, rect->y + r + y, color);
+                drawPixel(s, rect->x + r + x, rect->y + r + y, color);
     // Fill partial circle in top-right corner
     for (int x = 0; x <= r; ++x)
         for (int y = -r; y <= 0; ++y)
             if ((x * x) + (y * y) <= r * r)
-                draw_pixel(s, rect->x + rect->w - 1 - r + x, rect->y + r + y, color);
+                drawPixel(s, rect->x + rect->w - 1 - r + x, rect->y + r + y, color);
     // Fill partial circle in bottom-left corner
     for (int x = -r; x <= 0; ++x)
         for (int y = 0; y <= r; ++y)
             if ((x * x) + (y * y) <= r * r)
-                draw_pixel(s, rect->x + r + x, rect->y + rect->h - 1 - r + y, color);
+                drawPixel(s, rect->x + r + x, rect->y + rect->h - 1 - r + y, color);
     // Fill partial circle in bottom-right corner
     for (int x = 0; x <= r; ++x)
         for (int y = 0; y <= r; ++y)
             if ((x * x) + (y * y) <= r * r)
-                draw_pixel(s, rect->x + rect->w - 1 - r + x, rect->y + rect->h - 1 - r + y, color);
+                drawPixel(s, rect->x + rect->w - 1 - r + x, rect->y + rect->h - 1 - r + y, color);
 }
 
 
-void draw_circle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) {
+void drawCircle (SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) {
     // Draw a circle on s at position (cx, cy) with radius r and color col, either filled or not filled.
     Uint32 color = SDL_MapRGB(s->format, col.r, col.g, col.b);
     if (fl) {
@@ -64,19 +64,19 @@ void draw_circle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) 
             for (int x = -r; x <= r; ++x)
                 for (int y = -r; y <= r; ++y)
                     if ((x * x) + (y * y) <= r * r)
-                        draw_pixel(s, cx + x, cy + y, color);
+                        drawPixel(s, cx + x, cy + y, color);
         } else if (cx + r >= 0 and cx - r < s->w and cy + r >= 0 and cy - r < s->h)
             // circle is partially in bounds
             for (int x = -r; x <= r; ++x)
                 for (int y = -r; y <= r; ++y)
                     if ((x * x) + (y * y) <= r * r and cx + x >= 0 and cx + x < s->w and cy + y >= 0 and cy + y < s->h)
-                        draw_pixel(s, cx + x, cy + y, color);
+                        drawPixel(s, cx + x, cy + y, color);
     } else {
         int x = 0;
         int y = r;
         int d = 1 - r;
         if (cx - r >= 0 and cx + r < s->w and cy - r >= 0 and cy + r < s->h) {
-            draw_circle_symmetry_points(s, cx, cy, x, y, color, false);
+            drawCircleSymmetryPoints(s, cx, cy, x, y, color, false);
             while (x < y) {
                 ++x;
                 if (d < 0) {
@@ -85,11 +85,11 @@ void draw_circle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) 
                     --y;
                     d += ((x - y) << 1) + 1;
                 }
-                draw_circle_symmetry_points(s, cx, cy, x, y, color, false);
+                drawCircleSymmetryPoints(s, cx, cy, x, y, color, false);
             }
         } else if (cx + r >= 0 and cx - r < s->w and cy + r >= 0 and cy - r < s->h) {
             // circle is partially on surface, must check bounds
-            draw_circle_symmetry_points(s, cx, cy, x, y, color, true);
+            drawCircleSymmetryPoints(s, cx, cy, x, y, color, true);
             while (x < y) {
                 ++x;
                 if (d < 0) {
@@ -98,51 +98,51 @@ void draw_circle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) 
                     --y;
                     d += ((x - y) << 1) + 1;
                 }
-                draw_circle_symmetry_points(s, cx, cy, x, y, color, true);
+                drawCircleSymmetryPoints(s, cx, cy, x, y, color, true);
             }
         }
     }
 }
 
-void draw_circle_symmetry_points(SDL_Surface *s, int cx, int cy, int x, int y, Uint32 color, bool check_bounds) {
+void drawCircleSymmetryPoints(SDL_Surface *s, int cx, int cy, int x, int y, Uint32 color, bool check_bounds) {
     if (check_bounds) {
         if (cx + x >= 0 and cx + x < s->w and cy + y >= 0 and cy + y < s->h) {
-            draw_pixel(s, (cx + x), (cy + y), color);
+            drawPixel(s, (cx + x), (cy + y), color);
         }
         if (cx + x >= 0 and cx + x < s->w and cy - y >= 0 and cy - y < s->h) {
-            draw_pixel(s, (cx + x), (cy - y), color);
+            drawPixel(s, (cx + x), (cy - y), color);
         }
         if (cx - x >= 0 and cx - x < s->w and cy + y >= 0 and cy + y < s->h) {
-            draw_pixel(s, (cx - x), (cy + y), color);
+            drawPixel(s, (cx - x), (cy + y), color);
         }
         if (cx - x >= 0 and cx - x < s->w and cy - y >= 0 and cy - y < s->h) {
-            draw_pixel(s, (cx - x), (cy - y), color);
+            drawPixel(s, (cx - x), (cy - y), color);
         }
         if (cx + y >= 0 and cx + y < s->w and cy + x >= 0 and cy + x < s->h) {
-            draw_pixel(s, (cx + y), (cy + x), color);
+            drawPixel(s, (cx + y), (cy + x), color);
         }
         if (cx + y >= 0 and cx + y < s->w and cy - x >= 0 and cy - x < s->h) {
-            draw_pixel(s, (cx + y), (cy - x), color);
+            drawPixel(s, (cx + y), (cy - x), color);
         }
         if (cx - y >= 0 and cx - y < s->w and cy + x >= 0 and cy + x < s->h) {
-            draw_pixel(s, (cx - y), (cy + x), color);
+            drawPixel(s, (cx - y), (cy + x), color);
         }
         if (cx - y >= 0 and cx - y < s->w and cy - x >= 0 and cy - x < s->h) {
-            draw_pixel(s, (cx - y), (cy - x), color);
+            drawPixel(s, (cx - y), (cy - x), color);
         }
     } else {
-        draw_pixel(s, (cx + x), (cy + y), color);
-        draw_pixel(s, (cx + x), (cy - y), color);
-        draw_pixel(s, (cx - x), (cy + y), color);
-        draw_pixel(s, (cx - x), (cy - y), color);
-        draw_pixel(s, (cx + y), (cy + x), color);
-        draw_pixel(s, (cx + y), (cy - x), color);
-        draw_pixel(s, (cx - y), (cy + x), color);
-        draw_pixel(s, (cx - y), (cy - x), color);
+        drawPixel(s, (cx + x), (cy + y), color);
+        drawPixel(s, (cx + x), (cy - y), color);
+        drawPixel(s, (cx - x), (cy + y), color);
+        drawPixel(s, (cx - x), (cy - y), color);
+        drawPixel(s, (cx + y), (cy + x), color);
+        drawPixel(s, (cx + y), (cy - x), color);
+        drawPixel(s, (cx - y), (cy + x), color);
+        drawPixel(s, (cx - y), (cy - x), color);
     }
 }
 
-void draw_line(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
+void drawLine (SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
     // Draw a line on surface s from (xi, yi) to (xf, yf) in color col.
     // Check if line is trivially out of bounds
     int w = s->w - 1;
@@ -221,7 +221,7 @@ void draw_line(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
     for (x = xi; x <= xf; x++) {
         if (steep) {
             // if (x > -1 and x < s->h and y > -1 and y < s->w)
-            draw_pixel(s, y, x, color);
+            drawPixel(s, y, x, color);
             // else std::cout << "Drawing off screen: (" << y << ',' << x << ")
             // (" <<
             // yi << ',' << xi << ") -> (" << yf << ',' << xf << //')'  << steep
@@ -229,7 +229,7 @@ void draw_line(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
             // std::endl;
         } else {
             // if (x > -1 and x < s->w and y > -1 and y < s->h)
-            draw_pixel(s, x, y, color);
+            drawPixel(s, x, y, color);
             // else std::cout << "Drawing off screen: (" << x << ',' << y << ")
             // (" <<
             // xi << ',' << yi << ") -> (" << xf << ',' << yf << //')' << steep
@@ -244,7 +244,7 @@ void draw_line(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
     }
 }
 
-Uint32 get_at(const SDL_Surface *s, int x, int y) {
+Uint32 getAt (const SDL_Surface *s, int x, int y) {
     int bpp = s->format->BytesPerPixel;
     Uint8 *p = (Uint8 *)s->pixels + y * s->pitch + x * bpp;
 
@@ -273,7 +273,7 @@ Uint32 get_at(const SDL_Surface *s, int x, int y) {
     }
 }
 
-void draw_pixel(SDL_Surface *s, int x, int y, Uint32 color) {
+void drawPixel(SDL_Surface *s, int x, int y, Uint32 color) {
     int bpp = s->format->BytesPerPixel;
     Uint8 *p = (Uint8 *)s->pixels + y * s->pitch + x * bpp;
 

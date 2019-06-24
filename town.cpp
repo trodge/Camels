@@ -36,7 +36,7 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     population = sqlite3_column_int(q, 7);
     townType = sqlite3_column_int(q, 8);
     SDL_Rect r;
-    box = std::make_unique<TextBox>(r, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1,
+    box = std::make_unique<TextBox>(r, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
                                     Settings::getTownFontSize());
     for (auto &b : bs) {
         double f = nation->getFrequency(b.getId(), b.getMode());
@@ -133,13 +133,13 @@ void Town::drawText(SDL_Surface *s) { box->draw(s); }
 
 void Town::drawDot(SDL_Surface *s) {
     for (auto &n : neighbors) {
-        draw_line(s, dpx, dpy, n->dpx, n->dpy, Settings::getRouteColor());
+        drawLine (s, dpx, dpy, n->dpx, n->dpy, Settings::getRouteColor());
     }
     const SDL_Rect &bR = box->getRect();
     SDL_Rect lr = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
     const SDL_Color &col = nation->getForeground();
     SDL_FillRect(s, &lr, SDL_MapRGB(s->format, col.r, col.g, col.b));
-    draw_circle(s, dpx, dpy, 3, Settings::getDotColor(), true);
+    drawCircle (s, dpx, dpy, 3, Settings::getDotColor(), true);
 }
 
 void Town::update(int e) {
@@ -236,7 +236,7 @@ void Town::findNeighbors(std::vector<Town> &ts, const SDL_Surface *map, int mox,
                 int mx = x + mox;
                 int my = y + moy;
                 if (mx >= 0 and mx < map->w and my >= 0 and my < map->h)
-                    SDL_GetRGB(get_at(map, mx, my), map->format, &r, &g, &b);
+                    SDL_GetRGB( getAt (map, mx, my), map->format, &r, &g, &b);
                 else {
                     r = Settings::getWaterColor().r;
                     g = Settings::getWaterColor().g;

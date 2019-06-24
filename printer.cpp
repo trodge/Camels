@@ -99,10 +99,10 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, int w, int h, in
     SDL_Rect rect;
     if (b) {
         rect = {0, 0, w, h};
-        draw_rounded_rectangle(p, r, &rect, foreground);
+        drawRoundedRectangle (p, r, &rect, foreground);
     }
     rect = {b, b, w - 2 * b, h - 2 * b};
-    draw_rounded_rectangle(p, r, &rect, background);
+    drawRoundedRectangle (p, r, &rect, background);
     // Center text vertically.
     rect.y = h / 2 - mH / 2;
     for (size_t i = 0; i < numLines; ++i) {

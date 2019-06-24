@@ -1076,7 +1076,7 @@ void Game::handleEvents() {
             mx = event.button.x + mapRect.x;
             my = event.button.y + mapRect.y;
             if (mx >= 0 and mx < mapImage->w and my >= 0 and my < mapImage->h) {
-                SDL_GetRGB(get_at(mapImage, mx, my), mapImage->format, &r, &g, &b);
+                SDL_GetRGB( getAt (mapImage, mx, my), mapImage->format, &r, &g, &b);
                 std::cout << '(' << int(r) << ',' << int(g) << ',' << int(b) << ')' << std::endl;
             }
         case SDL_MOUSEBUTTONUP:
