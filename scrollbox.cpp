@@ -19,8 +19,8 @@
 
 #include "scrollbox.h"
 
-ScrollBox::ScrollBox(SDL_Rect r, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int fS)
-    : TextBox(r, is, fg, bg, 0, false, b, fS), highlight(hl), items(is) {
+ScrollBox::ScrollBox(SDL_Rect rt, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int r, int fS)
+    : TextBox(rt, is, fg, bg, 0, false, b, r, fS), highlight(hl), items(is) {
     canFocus = true;
 }
 

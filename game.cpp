@@ -641,7 +641,7 @@ void Game::createLogBox() {
     r = {screenRect.w / 15, screenRect.h * 2 / 15, screenRect.w * 13 / 15, screenRect.h * 11 / 15};
     boxes.push_back(std::make_unique<ScrollBox>(r, player->getLogText(), player->getNation()->getForeground(),
                                                 player->getNation()->getBackground(), player->getNation()->getHighlight(),
-                                                Settings::getBigBoxBorder(), Settings::getFightFontSize()));
+                                                Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getFightFontSize()));
     boxes.back()->setHighlightLine(-1);
 }
 
