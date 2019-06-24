@@ -23,16 +23,35 @@
 void draw_rounded_rectangle(SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.
     Uint32 color = SDL_MapRGB(s->format, col.r, col.g, col.b);
-    Uint32 trans = SDL_MapRGBA(s->format, 0, 0, 0, 0);
-    // Draw the whole rectangle
-    SDL_FillRect(s, rect, color);
-    SDL_Rect corner;
-    for (int i = 0; i < 4; ++i) {
-        // Loop through corners
-        corner = {rect->x + (rect->w - r) * (i % 2), rect->y + (rect->h - r) * (i / 2), r, r};
-        // Erase corners
-        SDL_FillRect(s, &corner, trans);
-    }
+    // Fill top rectangle
+    SDL_Rect top = {rect->x + r, rect->y, rect->w - 2 * r, r};
+    SDL_FillRect(s, &top, color);
+    // Fill middle rectangle
+    SDL_Rect middle = {rect->x, rect->y + r, rect->w, rect->h - 2 * r};
+    SDL_FillRect(s, &middle, color);
+    // Fill bottom rectangle
+    SDL_Rect bottom = {rect->x + r, rect->y + rect->h - 1 - r, rect->w - 2 * r, r};
+    SDL_FillRect(s, &bottom, color);
+    // Fill partial circle in top-left corner
+    for (int x = -r; x <= 0; ++x)
+        for (int y = -r; y <= 0; ++y)
+            if ((x * x) + (y * y) <= r * r)
+                draw_pixel(s, rect->x + r + x, rect->y + r + y, color);
+    // Fill partial circle in top-right corner
+    for (int x = 0; x <= r; ++x)
+        for (int y = -r; y <= 0; ++y)
+            if ((x * x) + (y * y) <= r * r)
+                draw_pixel(s, rect->x + rect->w - 1 - r + x, rect->y + r + y, color);
+    // Fill partial circle in bottom-left corner
+    for (int x = -r; x <= 0; ++x)
+        for (int y = 0; y <= r; ++y)
+            if ((x * x) + (y * y) <= r * r)
+                draw_pixel(s, rect->x + r + x, rect->y + rect->h - 1 - r + y, color);
+    // Fill partial circle in bottom-right corner
+    for (int x = 0; x <= r; ++x)
+        for (int y = 0; y <= r; ++y)
+            if ((x * x) + (y * y) <= r * r)
+                draw_pixel(s, rect->x + rect->w - 1 - r + x, rect->y + rect->h - 1 - r + y, color);
 }
 
 
