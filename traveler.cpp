@@ -166,7 +166,7 @@ void Traveler::draw(SDL_Surface *s) const {
         col = Settings::getAIColor();
     else
         col = Settings::getPlayerColor();
-    draw_circle(s, px, py, 1, col, true);
+    drawCircle(s, px, py, 1, col, true);
 }
 
 void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
