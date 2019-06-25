@@ -662,7 +662,7 @@ void Game::createTradeButtons() {
                                                  Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
                                                  Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_t);
-    rt.x += screenRect.w / 6;
+    rt.x += screenRect.w / 9;
     tx = {"(C)omplete Trade"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                                  Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
@@ -671,13 +671,13 @@ void Game::createTradeButtons() {
                                                      setState(trading);
                                                  }));
     boxes.back()->setKey(SDLK_c);
-    rt.x += screenRect.w / 12;
+    rt.x += screenRect.w / 13;
     tx = {player->tradePortionString()};
     boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                               Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
                                               Settings::getSmallBoxFontSize()));
     boxes.back()->toggleLock();
-    rt.x += screenRect.w / 12;
+    rt.x += screenRect.w / 13;
     tx = {"(S)et Portion"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                               Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
