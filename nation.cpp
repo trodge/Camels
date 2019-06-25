@@ -30,9 +30,12 @@ Nation::Nation(sqlite3_stmt *q, const std::vector<Good> &gs) {
     background.r = sqlite3_column_int(q, 7);
     background.g = sqlite3_column_int(q, 8);
     background.b = sqlite3_column_int(q, 9);
-    highlight.r = 255 - (foreground.r + background.r) / 2;
-    highlight.g = 255 - (foreground.g + background.g) / 2;
-    highlight.b = 255 - (foreground.b + background.b) / 2;
+    dotColor.r = (foreground.r + background.r) / 2;
+    dotColor.g = (foreground.g + background.g) / 2;
+    dotColor.b = (foreground.b + background.b) / 2;
+    highlight.r = 255 - dotColor.r;
+    highlight.g = 255 - dotColor.g;
+    highlight.b = 255 - dotColor.b;
     religion = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 10)));
     goods = gs;
 }

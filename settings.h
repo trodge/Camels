@@ -36,7 +36,6 @@ class Settings {
     static SDL_Color uIBackground;
     static SDL_Color uIHighlight;
     static SDL_Color routeColor;
-    static SDL_Color dotColor;
     static SDL_Color waterColor;
     static SDL_Color playerColor;
     static SDL_Color aIColor;
@@ -80,7 +79,6 @@ class Settings {
     static SDL_Color getUIBackground() { return uIBackground; }
     static SDL_Color getUIHighlight() { return uIHighlight; }
     static SDL_Color getRouteColor() { return routeColor; }
-    static SDL_Color getDotColor() { return dotColor; }
     static SDL_Color getWaterColor() { return waterColor; }
     static SDL_Color getPlayerColor() { return playerColor; }
     static SDL_Color getAIColor() { return aIColor; }

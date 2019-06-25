@@ -656,13 +656,20 @@ void Game::createLogBox() {
 }
 
 void Game::createTradeButtons() {
-    SDL_Rect rt = {screenRect.w / 12, screenRect.h * 14 / 15};
+    SDL_Rect rt = {screenRect.w / 6, screenRect.h * 14 / 15};
     std::vector<std::string> tx = {"Stop (T)rading"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                                  Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
                                                  Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_t);
-    rt.x += screenRect.w / 9;
+    rt.x += screenRect.w / 6;
+    tx = {player->tradePortionString()};
+    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
+                                              Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
+                                              Settings::getSmallBoxFontSize()));
+    boxes.back()->toggleLock();
+    rt.x -= screenRect.w / 6;
+    rt.y += screenRect.h / 31;
     tx = {"(C)omplete Trade"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                                  Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
@@ -671,13 +678,7 @@ void Game::createTradeButtons() {
                                                      setState(trading);
                                                  }));
     boxes.back()->setKey(SDLK_c);
-    rt.x += screenRect.w / 13;
-    tx = {player->tradePortionString()};
-    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
-                                              Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
-                                              Settings::getSmallBoxFontSize()));
-    boxes.back()->toggleLock();
-    rt.x += screenRect.w / 13;
+    rt.x += screenRect.w / 6;
     tx = {"(S)et Portion"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                               Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),

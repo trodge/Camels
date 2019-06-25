@@ -133,9 +133,10 @@ void Town::drawRoutes(SDL_Surface *s) {
 void Town::drawDot(SDL_Surface *s) {
     const SDL_Rect &bR = box->getRect();
     SDL_Rect lr = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
-    const SDL_Color &col = nation->getForeground();
-    SDL_FillRect(s, &lr, SDL_MapRGB(s->format, col.r, col.g, col.b));
-    drawCircle(s, dpx, dpy, 3, Settings::getDotColor(), true);
+    const SDL_Color &fg = nation->getForeground();
+    SDL_FillRect(s, &lr, SDL_MapRGB(s->format, fg.r, fg.g, fg.b));
+    const SDL_Color &dc = nation->getDotColor();
+    drawCircle(s, dpx, dpy, 3, dc, true);
 }
 
 void Town::update(int e) {
