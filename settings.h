@@ -43,15 +43,15 @@ class Settings {
     static int offsetX, offsetY;
     static int bigBoxBorder;
     static int bigBoxRadius;
-    static int bigBoxFontSize;
-    static int loadBarFontSize;
+    static int bigBoxFontDivisor;
+    static int loadBarDivisor;
     static int smallBoxBorder;
     static int smallBoxRadius;
-    static int smallBoxFontSize;
-    static int fightFontSize;
-    static int equipFontSize;
-    static int townFontSize;
-    static int tradeFontSize;
+    static int smallBoxFontDivisor;
+    static int fightFontDivisor;
+    static int equipFontDivisor;
+    static int townFontDivisor;
+    static int tradeFontDivisor;
     static int goodButtonXDivisor, goodButtonYDivisor;
     static double scale;
     static int dayLength;
@@ -87,15 +87,15 @@ class Settings {
     static int getOffsetY() { return offsetY; }
     static int getBigBoxBorder() { return bigBoxBorder; }
     static int getBigBoxRadius() { return bigBoxRadius; }
-    static int getBigBoxFontSize() { return bigBoxFontSize; }
-    static int getLoadBarFontSize() { return loadBarFontSize; }
+    static int getBigBoxFontDivisor() { return bigBoxFontDivisor; }
+    static int getLoadBarDivisor() { return loadBarDivisor; }
     static int getSmallBoxBorder() { return smallBoxBorder; }
     static int getSmallBoxRadius() { return smallBoxRadius; }
-    static int getSmallBoxFontSize() { return smallBoxFontSize; }
-    static int getFightFontSize() { return fightFontSize; }
-    static int getEquipFontSize() { return equipFontSize; }
-    static int getTownFontSize() { return townFontSize; }
-    static int getTradeFontSize() { return tradeFontSize; }
+    static int getSmallBoxFontDivisor() { return smallBoxFontDivisor; }
+    static int getFightFontDivisor() { return fightFontDivisor; }
+    static int getEquipFontDivisor() { return equipFontDivisor; }
+    static int getTownFontDivisor() { return townFontDivisor; }
+    static int getTradeFontDivisor() { return tradeFontDivisor; }
     static int getGoodButtonXDivisor() { return goodButtonXDivisor; }
     static int getGoodButtonYDivisor() { return goodButtonYDivisor; }
     static double getScale() { return scale; }

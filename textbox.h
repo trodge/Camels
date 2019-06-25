@@ -88,7 +88,7 @@ class TextBox : public Focusable {
     virtual const std::string &getItem() const { return text.back(); }
     bool getClicked() const { return clicked; }
     int getId() const { return id; }
-    int getFontSize() const { return fontSize; }
+    int getDivisor() const { return fontSize; }
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;
     bool clickCaptured(const SDL_MouseButtonEvent &b) const;
     virtual void handleKey(const SDL_KeyboardEvent &k);

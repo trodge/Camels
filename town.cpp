@@ -20,7 +20,7 @@
 #include "town.h"
 
 Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Business> &bs,
-           const std::map<std::pair<int, int>, double> &fFs) {
+           const std::map<std::pair<int, int>, double> &fFs, int sH) {
     // Load a town from the given sqlite query.
     canFocus = true;
     // Load town info.
@@ -37,7 +37,7 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     townType = sqlite3_column_int(q, 8);
     SDL_Rect r;
     box = std::make_unique<TextBox>(r, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
-                                    Settings::getTownFontSize());
+                                    sH / Settings::getTownFontDivisor());
     for (auto &b : bs) {
         double f = nation->getFrequency(b.getId(), b.getMode());
         if (f and (coastal or not b.getRequireCoast())) {
@@ -63,7 +63,7 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
         std::uniform_int_distribution<>(Settings::getTravelersMin(), pow(population, Settings::getTravelersExponent()));
 }
 
-Town::Town(const Save::Town *t, const std::vector<Nation> &ns)
+Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int sH)
     : id(t->id()), nation(&ns[t->nation() - 1]), longitude(t->longitude()), latitude(t->latitude()), coastal(t->coastal()),
       population(t->population()), townType(t->townType()), businessCounter(t->businessCounter()) {
     // Load a town from the given flatbuffers save object.
@@ -74,7 +74,7 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns)
     names.push_back(lNames->Get(0)->str());
     names.push_back(lNames->Get(1)->str());
     box = std::make_unique<TextBox>(r, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1,
-                                    Settings::getTownFontSize());
+                                    sH / Settings::getTownFontDivisor());
     auto lBusinesses = t->businesses();
     for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI)
         businesses.push_back(Business(*lBI));

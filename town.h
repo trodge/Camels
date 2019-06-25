@@ -61,8 +61,8 @@ class Town : public Focusable {
 
   public:
     Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Business> &bs,
-         const std::map<std::pair<int, int>, double> &fFs);
-    Town(const Save::Town *t, const std::vector<Nation> &ns);
+         const std::map<std::pair<int, int>, double> &fFs, int sH);
+    Town(const Save::Town *t, const std::vector<Nation> &ns, int sH);
     bool operator==(const Town &other) const;
     int getId() const { return id; }
     std::string getName() const { return box->getText()[0]; }
