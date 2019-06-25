@@ -1187,6 +1187,8 @@ void Game::draw() {
     // Draw UI and game elements.
     SDL_LowerBlit(mapImage, &mapRect, screen, &screenRect);
     for (auto &t : towns)
+        t.drawRoutes(screen);
+    for (auto &t : towns)
         t.drawDot(screen);
     for (auto &t : travelers)
         t->draw(screen);

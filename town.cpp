@@ -124,17 +124,13 @@ void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
     drawn.push_back(r);
 }
 
-void Town::placeText(std::vector<SDL_Rect> &drawn) {
-    // Place text without covering previously drawn elements. Call after placeDot.
-    box->place(dpx, dpy, drawn);
-}
-
-void Town::drawText(SDL_Surface *s) { box->draw(s); }
-
-void Town::drawDot(SDL_Surface *s) {
+void Town::drawRoutes(SDL_Surface *s) { 
     for (auto &n : neighbors) {
         drawLine(s, dpx, dpy, n->dpx, n->dpy, Settings::getRouteColor());
     }
+}
+
+void Town::drawDot(SDL_Surface *s) {
     const SDL_Rect &bR = box->getRect();
     SDL_Rect lr = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
     const SDL_Color &col = nation->getForeground();
