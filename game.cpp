@@ -671,9 +671,8 @@ void Game::createTradeButtons() {
                                                      setState(trading);
                                                  }));
     boxes.back()->setKey(SDLK_c);
-    player->setTradePortion(1);
     rt.x += screenRect.w / 12;
-    tx = {"1.0"};
+    tx = {player->tradePortionString()};
     boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                               Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
                                               Settings::getSmallBoxFontSize()));
@@ -1036,10 +1035,11 @@ void Game::handleEvents() {
                                 break;
                             case SDLK_COMMA:
                                 player->changeTradePortion(-0.1);
-                                boxes[kTradePortionIndex]->setText(
+                                boxes[kTradePortionIndex]->setText({player->tradePortionString()});
                                 break;
                             case SDLK_PERIOD:
                                 player->changeTradePortion(0.1);
+                                boxes[kTradePortionIndex]->setText({player->tradePortionString()});
                                 break;
                             case SDLK_c:
                                 player->makeTrade();

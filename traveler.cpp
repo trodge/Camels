@@ -21,7 +21,7 @@
 
 Traveler::Traveler(const std::string &n, Town *t, const GameData *gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
-      gameData(gD), moving(false) {
+      tradePortion(1), gameData(gD), moving(false) {
     // Copy goods vector from nation.
     const std::vector<Good> &gs = t->getNation()->getGoods();
     goods.reserve(gs.size());
@@ -44,7 +44,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData *gD)
 
 Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData *gD)
     : name(t->name()->str()), toTown(&ts[t->town() - 1]), fromTown(&ts[t->oldTown() - 1]), nation(&ns[t->nation() - 1]),
-      longitude(t->longitude()), latitude(t->latitude()), gameData(gD), moving(t->moving()) {
+      longitude(t->longitude()), latitude(t->latitude()), tradePortion(1), gameData(gD), moving(t->moving()) {
     auto lLog = t->log();
     for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI)
         logText.push_back(lLI->str());
@@ -135,6 +135,15 @@ double Traveler::pathDist(const Town *t) const {
         m = n;
     }
     return dist;
+}
+
+std::string Traveler::tradePortionString() const {
+    // Return a string representing trade portion with trailing zeroes omitted.
+    std::string tPS = std::to_string(tradePortion);
+    size_t lNZI = tPS.find_last_not_of('0');
+    size_t dI = tPS.find('.');
+    tPS.erase(lNZI == dI ? dI + 2 : lNZI + 1, std::string::npos);
+    return tPS;
 }
 
 void Traveler::changeTradePortion(double d) {

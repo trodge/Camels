@@ -77,7 +77,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     size_t requestButtonIndex;        // index of request and offer button for updating trade buttons
     double tradePortion;              // portion of goods offered in next trade
     std::weak_ptr<Traveler> target;   // pointer to enemy if currently fighting
-    double fightTime;
+    double fightTime; // time left to fight this round
     std::array<int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
@@ -119,6 +119,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
         return t and (t->choice == FightChoice::yield or not t->alive());
     }
     double getFightTime() const { return fightTime; }
+    std::string tradePortionString() const;
     void setRequestButtonIndex(size_t i) { requestButtonIndex = i; }
     void setTradePortion(double p) { tradePortion = p; }
     void changeTradePortion(double d);
