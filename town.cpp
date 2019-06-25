@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
@@ -133,13 +133,13 @@ void Town::drawText(SDL_Surface *s) { box->draw(s); }
 
 void Town::drawDot(SDL_Surface *s) {
     for (auto &n : neighbors) {
-        drawLine (s, dpx, dpy, n->dpx, n->dpy, Settings::getRouteColor());
+        drawLine(s, dpx, dpy, n->dpx, n->dpy, Settings::getRouteColor());
     }
     const SDL_Rect &bR = box->getRect();
     SDL_Rect lr = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
     const SDL_Color &col = nation->getForeground();
     SDL_FillRect(s, &lr, SDL_MapRGB(s->format, col.r, col.g, col.b));
-    drawCircle (s, dpx, dpy, 3, Settings::getDotColor(), true);
+    drawCircle(s, dpx, dpy, 3, Settings::getDotColor(), true);
 }
 
 void Town::update(int e) {
@@ -236,7 +236,7 @@ void Town::findNeighbors(std::vector<Town> &ts, const SDL_Surface *map, int mox,
                 int mx = x + mox;
                 int my = y + moy;
                 if (mx >= 0 and mx < map->w and my >= 0 and my < map->h)
-                    SDL_GetRGB( getAt (map, mx, my), map->format, &r, &g, &b);
+                    SDL_GetRGB(getAt(map, mx, my), map->format, &r, &g, &b);
                 else {
                     r = Settings::getWaterColor().r;
                     g = Settings::getWaterColor().g;

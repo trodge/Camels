@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
@@ -35,15 +35,15 @@ class Business {
     int id;
     int mode;
     std::string name;
-    double area; // in uncia
+    double area;    // in uncia
     bool canSwitch; // whether able to switch between modes
     bool requireCoast;
-    bool keepMaterial; // whether outputs get input as material
+    bool keepMaterial;              // whether outputs get input as material
     std::vector<Good> requirements; // goods needed to start
-    std::vector<Good> inputs; // goods needed every production cycle
-    std::vector<Good> outputs; // goods created every production cycle
-    double factor; // factor based on area and available inputs for production
-    double frequencyFactor; // area of business per unit of population
+    std::vector<Good> inputs;       // goods needed every production cycle
+    std::vector<Good> outputs;      // goods created every production cycle
+    double factor;                  // factor based on area and available inputs for production
+    double frequencyFactor;         // area of business per unit of population
 
   public:
     Business(int i, int m, sqlite3 *c);

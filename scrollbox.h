@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
@@ -31,7 +31,8 @@ class ScrollBox : virtual public TextBox {
     ScrollBox(const std::vector<std::string> &is, SDL_Color hl) : highlight(hl), items(is) {}
 
   public:
-    ScrollBox(SDL_Rect rt, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int r, int fS);
+    ScrollBox(SDL_Rect rt, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int r,
+              int fS);
     virtual ~ScrollBox();
     void setText();
     void setText(const std::vector<std::string> &t) {

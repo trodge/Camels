@@ -12,15 +12,14 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
 #include "draw.h"
 
-
-void drawRoundedRectangle (SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col) {
+void drawRoundedRectangle(SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.
     Uint32 color = SDL_MapRGB(s->format, col.r, col.g, col.b);
     // Fill top rectangle
@@ -54,8 +53,7 @@ void drawRoundedRectangle (SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col)
                 drawPixel(s, rect->x + rect->w - 1 - r + x, rect->y + rect->h - 1 - r + y, color);
 }
 
-
-void drawCircle (SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) {
+void drawCircle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl) {
     // Draw a circle on s at position (cx, cy) with radius r and color col, either filled or not filled.
     Uint32 color = SDL_MapRGB(s->format, col.r, col.g, col.b);
     if (fl) {
@@ -142,7 +140,7 @@ void drawCircleSymmetryPoints(SDL_Surface *s, int cx, int cy, int x, int y, Uint
     }
 }
 
-void drawLine (SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
+void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
     // Draw a line on surface s from (xi, yi) to (xf, yf) in color col.
     // Check if line is trivially out of bounds
     int w = s->w - 1;
@@ -244,7 +242,7 @@ void drawLine (SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
     }
 }
 
-Uint32 getAt (const SDL_Surface *s, int x, int y) {
+Uint32 getAt(const SDL_Surface *s, int x, int y) {
     int bpp = s->format->BytesPerPixel;
     Uint8 *p = (Uint8 *)s->pixels + y * s->pitch + x * bpp;
 

@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
@@ -72,18 +72,18 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const Nation *nation;
     std::vector<std::string> logText;
     double longitude, latitude;
-    std::vector<Good> goods; // goods carried by traveler
+    std::vector<Good> goods;          // goods carried by traveler
     std::vector<Good> offer, request; // goods offered and requested in next trade
-    size_t requestButtonIndex; // index of request button for updating trade buttons
-    double tradePortion; // portion of goods offered in next trade
-    std::weak_ptr<Traveler> target; // pointer to enemy if currently fighting
+    size_t requestButtonIndex;        // index of request button for updating trade buttons
+    double tradePortion;              // portion of goods offered in next trade
+    std::weak_ptr<Traveler> target;   // pointer to enemy if currently fighting
     double fightTime;
     std::array<int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
     const GameData *gameData;
     std::unordered_map<Town *, std::vector<Business>> businesses; // businesses owned by this traveler in given towns
-    std::unordered_map<Town *, std::vector<Good>> storage; // goods stored by this traveler in given towns
+    std::unordered_map<Town *, std::vector<Good>> storage;        // goods stored by this traveler in given towns
     std::unique_ptr<AI> ai;
     bool moving;
     int px, py;

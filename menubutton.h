@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
@@ -31,8 +31,8 @@ class MenuButton : virtual public TextBox {
     MenuButton(std::function<void()> oC) : onClick(oC) {}
 
   public:
-    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r, int fS,
-               std::function<void()> oC);
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r,
+               int fS, std::function<void()> oC);
     MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS,
                std::function<void()> oC)
         : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, oC) {}

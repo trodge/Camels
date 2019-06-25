@@ -12,8 +12,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
@@ -358,8 +358,8 @@ void Traveler::attack(std::shared_ptr<Traveler> t) {
     else
         choice = FightChoice::none;
     if (t->ai)
-        t->ai->autoChoose(t->goods, t->stats, [t] { return t->speed(); }, goods, stats, [this] { return speed(); },
-                              choice);
+        t->ai->autoChoose(
+            t->goods, t->stats, [t] { return t->speed(); }, goods, stats, [this] { return speed(); }, choice);
     else
         t->choice = FightChoice::none;
 }
@@ -499,11 +499,11 @@ void Traveler::runFight(Traveler &t, int e, std::uniform_real_distribution<> &d)
             t.useAmmo(ourFirst.time);
         }
         if (ai)
-            ai->autoChoose(goods, stats, [this] { return speed(); }, t.goods, t.stats, [&t] { return t.speed(); },
-                           choice);
+            ai->autoChoose(
+                goods, stats, [this] { return speed(); }, t.goods, t.stats, [&t] { return t.speed(); }, choice);
         if (t.ai)
-            t.ai->autoChoose(t.goods, t.stats, [&t] { return t.speed(); }, goods, stats, [this] { return speed(); },
-                              choice);
+            t.ai->autoChoose(
+                t.goods, t.stats, [&t] { return t.speed(); }, goods, stats, [this] { return speed(); }, choice);
     }
 }
 
@@ -538,9 +538,10 @@ void Traveler::startAI(const Traveler &p) {
 
 void Traveler::runAI(int e) {
     // Run the AI for the elapsed time.
-    ai->run(e, moving, offer, request, goods, equipment, toTown, target, stats, [this] { return netWeight(); },
-            [this] { makeTrade(); }, [this](Good &e) { equip(e); }, [this] { return attackable(); },
-            [this](std::shared_ptr<Traveler> t) { attack(t); }, [this](Town *t) { pickTown(t); });
+    ai->run(
+        e, moving, offer, request, goods, equipment, toTown, target, stats, [this] { return netWeight(); },
+        [this] { makeTrade(); }, [this](Good &e) { equip(e); }, [this] { return attackable(); },
+        [this](std::shared_ptr<Traveler> t) { attack(t); }, [this](Town *t) { pickTown(t); });
 }
 
 void Traveler::update(int e) {
@@ -577,7 +578,8 @@ void Traveler::update(int e) {
     }
     if (auto t = target.lock()) {
         if (fightWon() and ai) {
-            ai->autoLoot(goods, target, [this] { return netWeight(); }, [this](Good &g, Traveler &t) { loot(g, t); });
+            ai->autoLoot(
+                goods, target, [this] { return netWeight(); }, [this](Good &g, Traveler &t) { loot(g, t); });
             loseTarget();
             return;
         }
@@ -643,9 +645,9 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(equipment.size(),
                                                                       [this, &b](size_t i) { return equipment[i].save(b); });
     if (ai)
-        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
-                                    latitude, sGoods, sStats, sParts, sEquipment, ai->save(b), moving);
+        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude, latitude,
+                                    sGoods, sStats, sParts, sEquipment, ai->save(b), moving);
     else
-        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
-                                    latitude, sGoods, sStats, sParts, sEquipment, 0, moving);
+        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude, latitude,
+                                    sGoods, sStats, sParts, sEquipment, 0, moving);
 }

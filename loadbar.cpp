@@ -12,11 +12,11 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Camels.  If not, see <https://www.gnu.org/licenses/>. 
- *  
+ * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
+ *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
- 
+
 #include "loadbar.h"
 
 LoadBar::LoadBar(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS)
@@ -35,10 +35,10 @@ void LoadBar::progress(double c) {
 
 void LoadBar::draw(SDL_Surface *s) {
     // draw border
-    drawRoundedRectangle (s, radius, &outsideRect, foreground);
+    drawRoundedRectangle(s, radius, &outsideRect, foreground);
     // draw incomplete rectangle
-    drawRoundedRectangle (s, radius, &insideRect, background);
+    drawRoundedRectangle(s, radius, &insideRect, background);
     // draw complete rectangle
-    drawRoundedRectangle (s, radius, &completeRect, foreground);
+    drawRoundedRectangle(s, radius, &completeRect, foreground);
     TextBox::draw(s);
 }
