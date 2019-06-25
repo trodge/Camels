@@ -170,14 +170,14 @@ void Traveler::draw(SDL_Surface *s) const {
 }
 
 void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
-    // Update the values shown on offer and request boxes and set offer and request.
+    // Update the values shown on trade portion, offer, and request boxes and set offer and request.
     std::string bN;
     offer.clear();
     request.clear();
     double offerValue = 0;
     auto rBB = bs.begin() + requestButtonIndex; // iterator to first request button
     // Loop through all boxes after cancel button and before first request button.
-    for (auto oBI = bs.begin() + 2; oBI != rBB; ++oBI) {
+    for (auto oBI = bs.begin() + kOfferButtonIndex; oBI != rBB; ++oBI) {
         auto &g = goods[(*oBI)->getId()]; // good corresponding to oBI
         auto &gMs = g.getMaterials();
         bN = (*oBI)->getText()[0];

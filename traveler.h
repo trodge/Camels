@@ -74,7 +74,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double longitude, latitude;
     std::vector<Good> goods;          // goods carried by traveler
     std::vector<Good> offer, request; // goods offered and requested in next trade
-    size_t requestButtonIndex;        // index of request button for updating trade buttons
+    size_t requestButtonIndex;        // index of request and offer button for updating trade buttons
     double tradePortion;              // portion of goods offered in next trade
     std::weak_ptr<Traveler> target;   // pointer to enemy if currently fighting
     double fightTime;
