@@ -206,7 +206,7 @@ void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
         std::swap(yi, yf);
         dx = -dx;
     }
-    int e = -dx;
+    unsigned int e = -dx;
     int dey = 2 * abs(dy);
     int dex = 2 * dx;
     int ystep;

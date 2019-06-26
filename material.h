@@ -39,9 +39,9 @@
 #include "settings.h"
 
 struct CombatStat {
-    int statId, partId, attack, type, speed;
+    unsigned int statId, partId, attack, type, speed;
     // attack types are 1: bash, 2: slash, 3: stab
-    std::array<int, 3> defense;
+    std::array<unsigned int, 3> defense;
 };
 
 class Material {
@@ -87,31 +87,31 @@ class Material {
     double getQuantum(double c) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
     double getBuyScore(double p, double b) const {
-        if (p)
+        if (p != 0.)
             return b / p;
         return 0;
     } // score selling at price p
     double getSellScore(double p, double s) const {
-        if (s)
+        if (s != 0.)
             return p / s;
         return 0;
     } // score buying at price p
     void setAmount(double a) { amount = a; }
     void setCombatStats(const std::vector<CombatStat> &cSs) { combatStats = cSs; }
     void assignConsumption(std::array<double, 3> c);
-    void assignConsumption(int p);
+    void assignConsumption(unsigned long p);
     void take(Material &m);
     void use(double a);
     void put(Material &m);
     void create(double a);
-    double perish(int e, double p);
-    double consume(int e);
-    std::unique_ptr<MenuButton> button(bool aS, int gI, const std::string &gN, bool gS, SDL_Rect r, SDL_Color fgr,
+    double perish(unsigned int e, double p);
+    double consume(unsigned int e);
+    std::unique_ptr<MenuButton> button(bool aS, unsigned int gI, const std::string &gN, bool gS, SDL_Rect r, SDL_Color fgr,
                                        SDL_Color bgr, int fS, std::function<void()> f) const;
     void updateButton(bool gS, double oV, int rC, TextBox *b) const;
     void adjustDemand(double d);
     void fixDemand(double m);
-    void saveDemand(int p, std::string &u) const;
+    void saveDemand(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Material> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 

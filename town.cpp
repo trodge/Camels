@@ -36,12 +36,13 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     population = sqlite3_column_int(q, 7);
     townType = sqlite3_column_int(q, 8);
     SDL_Rect rt = {0, 0, 0, 0};
-    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1, fS);
+    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
+                                    fS);
     for (auto &b : bs) {
         double f = nation->getFrequency(b.getId(), b.getMode());
         if (f != 0 and (coastal or not b.getRequireCoast())) {
             businesses.push_back(Business(b));
-            businesses.back().setArea(population * f);
+            businesses.back().setArea(static_cast<double>(population) * f);
             auto fFI = fFs.find(std::make_pair(townType, b.getId()));
             if (fFI != fFs.end())
                 businesses.back().setFrequencyFactor(fFI->second);
@@ -58,13 +59,14 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     // randomize business run counter
     static std::uniform_int_distribution<> dis(0, Settings::getBusinessRunTime());
     businessCounter = dis(*Settings::getRng());
-    travelersDis =
-        std::uniform_int_distribution<>(Settings::getTravelersMin(), static_cast<int>(pow(population, Settings::getTravelersExponent())));
+    travelersDis = std::uniform_int_distribution<>(Settings::getTravelersMin(),
+                                                   static_cast<int>(pow(population, Settings::getTravelersExponent())));
 }
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS)
-    : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]), longitude(t->longitude()), latitude(t->latitude()), coastal(t->coastal()),
-      population(t->population()), townType(t->townType()), businessCounter(t->businessCounter()) {
+    : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]), longitude(t->longitude()),
+      latitude(t->latitude()), coastal(t->coastal()), population(t->population()), townType(t->townType()),
+      businessCounter(t->businessCounter()) {
     // Load a town from the given flatbuffers save object.
     canFocus = true;
     SDL_Rect rt = {0, 0, 0, 0};
@@ -72,7 +74,8 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS)
     std::vector<std::string> names;
     names.push_back(lNames->Get(0)->str());
     names.push_back(lNames->Get(1)->str());
-    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, fS);
+    box =
+        std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, fS);
     auto lBusinesses = t->businesses();
     for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI)
         businesses.push_back(Business(*lBI));
@@ -122,7 +125,7 @@ void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
     drawn.push_back(r);
 }
 
-void Town::drawRoutes(SDL_Surface *s) { 
+void Town::drawRoutes(SDL_Surface *s) {
     for (auto &n : neighbors) {
         drawLine(s, dpx, dpy, n->dpx, n->dpy, Settings::getRouteColor());
     }
@@ -137,7 +140,7 @@ void Town::drawDot(SDL_Surface *s) {
     drawCircle(s, dpx, dpy, 3, dc, true);
 }
 
-void Town::update(int e) {
+void Town::update(unsigned int e) {
     businessCounter += e;
     if (businessCounter > Settings::getBusinessRunTime()) {
         for (auto &g : goods)
@@ -300,8 +303,8 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
             if (go)
                 break;
         }
-        if ((go) and b.getArea() > -d * population / 5000) {
-            b.setArea(b.getArea() + d * population / 5000);
+        if ((go) and b.getArea() > -d * static_cast<double>(population) / 5000) {
+            b.setArea(b.getArea() + d * static_cast<double>(population) / 5000);
         }
     }
     setMax();
@@ -331,7 +334,7 @@ void Town::adjustDemand(const std::vector<MenuButton *> &rBs, double d) {
     for (auto &rB : rBs)
         if (rB->getClicked()) {
             std::string rBN = rB->getText()[0];
-            goods[rB->getId()].adjustDemand(rBN.substr(0, rBN.find(' ')), d / population / 1000);
+            goods[rB->getId()].adjustDemand(rBN.substr(0, rBN.find(' ')), d / static_cast<double>(population) / 1000);
         }
 }
 
@@ -348,7 +351,7 @@ flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) co
         businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
     auto sGoods =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
-    auto sNeighbors = b.CreateVector<short>(neighbors.size(), [this](size_t i) { return neighbors[i]->getId(); });
-    return Save::CreateTown(b, static_cast<short>(id), sNames, static_cast<short>(nation->getId()), static_cast<float>(longitude), static_cast<float>(latitude), coastal, population, townType, sBusinesses,
+    auto sNeighbors = b.CreateVector<unsigned int>(neighbors.size(), [this](size_t i) { return neighbors[i]->getId(); });
+    return Save::CreateTown(b, id, sNames, nation->getId(), longitude, latitude, coastal, population, townType, sBusinesses,
                             sGoods, sNeighbors, businessCounter);
 }

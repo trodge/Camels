@@ -49,7 +49,7 @@ struct GameData {
     std::vector<std::string> statuses;
     std::vector<CombatOdd> odds;
     std::vector<std::string> townTypeNouns;
-    std::map<int, std::string> populationAdjectives;
+    std::map<unsigned long, std::string> populationAdjectives;
 };
 
 struct CombatHit {
@@ -72,14 +72,14 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const Nation *nation;
     std::vector<std::string> logText;
     double longitude, latitude;
-    std::vector<Good> goods;          // goods carried by traveler
-    std::vector<Good> offer, request; // goods offered and requested in next trade
-    size_t requestButtonIndex;        // index of request and offer button for updating trade buttons
-    double tradePortion;              // portion of goods offered in next trade
-    std::weak_ptr<Traveler> target;   // pointer to enemy if currently fighting
-    double fightTime; // time left to fight this round
-    std::array<int, 5> stats; // strength, endurance, agility, intelligence, charisma
-    std::array<int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
+    std::vector<Good> goods;           // goods carried by traveler
+    std::vector<Good> offer, request;  // goods offered and requested in next trade
+    size_t requestButtonIndex;         // index of request and offer button for updating trade buttons
+    double tradePortion;               // portion of goods offered in next trade
+    std::weak_ptr<Traveler> target;    // pointer to enemy if currently fighting
+    double fightTime;                  // time left to fight this round
+    std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
+    std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
     const GameData *gameData;
     std::unordered_map<Town *, std::vector<Business>> businesses; // businesses owned by this traveler in given towns
@@ -93,7 +93,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double pathDist(const Town *t) const;
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
-    void runFight(Traveler &t, int e, std::uniform_real_distribution<> &d);
+    void runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d);
     void takeHit(const CombatHit &cH, Traveler &t);
 
   public:
@@ -104,10 +104,10 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const Nation *getNation() const { return nation; }
     const std::vector<std::string> &getLogText() const { return logText; }
     const std::vector<Good> &getGoods() const { return goods; }
-    const Good &getGood(int i) const { return goods[i]; }
+    const Good &getGood(unsigned int i) const { return goods[i]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
-    const std::array<int, 5> &getStats() const { return stats; }
-    int speed() const { return stats[1] + stats[2] + stats[3]; }
+    const std::array<unsigned int, 5> &getStats() const { return stats; }
+    unsigned int speed() const { return stats[1] + stats[2] + stats[3]; }
     double getTradePortion() const { return tradePortion; }
     const std::weak_ptr<Traveler> getTarget() const { return target; }
     bool alive() const { return parts[0] < 5 and parts[1] < 5; }
@@ -129,9 +129,9 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void draw(SDL_Surface *s) const;
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     void makeTrade();
-    void unequip(int pI);
+    void unequip(unsigned int pI);
     void equip(Good &g);
-    void equip(int pI);
+    void equip(unsigned int pI);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);
     void loseTarget();
@@ -144,8 +144,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void leave(Good &g, Traveler &t) { t.loot(g, *this); }
     void startAI();
     void startAI(const Traveler &p);
-    void runAI(int e);
-    void update(int e);
+    void runAI(unsigned int e);
+    void update(unsigned int e);
     void adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, double d);
     void adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, double d);
     void resetTown();

@@ -59,28 +59,29 @@ class AI {
     void randomizeCriteria();
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits(const std::vector<Good> &gs);
-    double equipScore(const Good &e, const std::array<int, 5> &sts) const;
-    double equipScore(const std::vector<Good> &eqpmt, const std::array<int, 5> &sts) const;
+    double equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const;
+    double equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
     double lootScore(const std::vector<Good> &gs, const std::vector<Good> &tGs) const;
     void autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector<Good> &gs, const Town *tT,
                    const std::function<double()> &netWgt, const std::function<void()> &mT);
-    void autoEquip(const std::vector<Good> &gs, const std::array<int, 5> &sts, const std::function<void(Good &e)> &eqp);
+    void autoEquip(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
+                   const std::function<void(Good &e)> &eqp);
     void autoAttack(const std::weak_ptr<Traveler> tgt, const std::function<std::vector<std::shared_ptr<Traveler>>()> &atkabl,
-                    const std::vector<Good> &gs, const std::vector<Good> &eqpmt, const std::array<int, 5> &sts,
+                    const std::vector<Good> &gs, const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts,
                     const std::function<void(std::shared_ptr<Traveler>)> &atk);
 
   public:
     AI(const std::vector<Good> &gs, Town *tT);
     AI(const AI &p, const std::vector<Good> &gs, Town *tT);
     AI(const Save::AI *a);
-    void autoChoose(const std::vector<Good> &gs, const std::array<int, 5> &sts, const std::function<int()> &spd,
-                    const std::vector<Good> &tGs, const std::array<int, 5> &tSts, const std::function<int()> &tSpd,
-                    FightChoice &choice);
+    void autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
+                    const std::function<unsigned int()> &spd, const std::vector<Good> &tGs,
+                    const std::array<unsigned int, 5> &tSts, const std::function<unsigned int()> &tSpd, FightChoice &choice);
     void autoLoot(const std::vector<Good> &gs, std::weak_ptr<Traveler> tgt, const std::function<double()> &netWgt,
                   const std::function<void(Good &g, Traveler &t)> &lt);
-    void run(int e, bool m, std::vector<Good> &o, std::vector<Good> &r, const std::vector<Good> &gs,
+    void run(unsigned int e, bool m, std::vector<Good> &o, std::vector<Good> &r, const std::vector<Good> &gs,
              const std::vector<Good> &eqpmt, const Town *tT, const std::weak_ptr<Traveler> tgt,
-             const std::array<int, 5> &sts, const std::function<double()> &netWgt, const std::function<void()> &mT,
+             const std::array<unsigned int, 5> &sts, const std::function<double()> &netWgt, const std::function<void()> &mT,
              const std::function<void(Good &e)> &eqp, const std::function<std::vector<std::shared_ptr<Traveler>>()> &atkabl,
              const std::function<void(std::shared_ptr<Traveler>)> &atk, const std::function<void(Town *)> pT);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b);

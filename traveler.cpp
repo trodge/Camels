@@ -43,7 +43,8 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData *gD)
 }
 
 Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData *gD)
-    : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->town() - 1)]), fromTown(&ts[static_cast<size_t>(t->oldTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
+    : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->toTown() - 1)]),
+      fromTown(&ts[static_cast<size_t>(t->fromTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
       longitude(t->longitude()), latitude(t->latitude()), tradePortion(1), gameData(gD), moving(t->moving()) {
     auto lLog = t->log();
     for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI)
@@ -165,8 +166,8 @@ void Traveler::pickTown(const Town *t) {
 }
 
 void Traveler::place(int ox, int oy, double s) {
-    px = int(s * longitude) + ox;
-    py = oy - int(s * latitude);
+    px = static_cast<int>(s * longitude) + ox;
+    py = oy - static_cast<int>(s * latitude);
 }
 
 void Traveler::draw(SDL_Surface *s) const {
@@ -283,7 +284,7 @@ void Traveler::makeTrade() {
     }
 }
 
-void Traveler::unequip(int pI) {
+void Traveler::unequip(unsigned int pI) {
     // Unequip all equipment using the given part id.
     auto unused = [pI](const Good &e) {
         auto &eSs = e.getMaterial().getCombatStats();
@@ -292,7 +293,7 @@ void Traveler::unequip(int pI) {
     auto uEI = std::partition(equipment.begin(), equipment.end(), unused);
     // Put equipment back in goods.
     for (auto eI = uEI; eI != equipment.end(); ++eI)
-        if (eI->getAmount())
+        if (eI->getAmount() > 0.)
             goods[eI->getId()].put(*eI);
     equipment.erase(uEI, equipment.end());
 }
@@ -300,7 +301,7 @@ void Traveler::unequip(int pI) {
 void Traveler::equip(Good &g) {
     // Equip the given good.
     auto &ss = g.getMaterial().getCombatStats();
-    std::vector<int> pIs; // part ids used by this equipment
+    std::vector<unsigned int> pIs; // part ids used by this equipment
     pIs.reserve(ss.size());
     for (auto &s : ss)
         if (pIs.empty() or pIs.back() != s.partId)
@@ -313,7 +314,7 @@ void Traveler::equip(Good &g) {
     equipment.push_back(g);
 }
 
-void Traveler::equip(int pI) {
+void Traveler::equip(unsigned int pI) {
     for (auto &e : equipment)
         for (auto &s : e.getMaterial().getCombatStats())
             if (s.partId == pI)
@@ -427,7 +428,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
         auto &ss = e.getMaterial().getCombatStats();
         if (ss.front().attack) {
             // e is a weapon
-            int attack = 0, type = ss.front().type, speed = 0;
+            unsigned int attack = 0, type = ss.front().type, speed = 0;
             for (auto &s : ss) {
                 attack += s.attack * stats[s.statId];
                 speed += s.speed * stats[s.statId];
@@ -444,7 +445,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
             if (time < first.time) {
                 first.time = time;
                 // Pick a random part.
-                first.partId = d(*Settings::getRng()) * parts.size();
+                first.partId = static_cast<unsigned int>(d(*Settings::getRng()) * static_cast<double>(parts.size()));
                 // Start status at part's current status.
                 first.status = t.parts[first.partId];
                 r = d(*Settings::getRng());
@@ -468,18 +469,18 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
 
 void Traveler::useAmmo(double t) {
     for (auto &e : equipment) {
-        int sId = e.getShoots();
+        unsigned int sId = e.getShoots();
         if (sId) {
-            int speed = 0;
+            unsigned int speed = 0;
             for (auto &s : e.getMaterial().getCombatStats())
                 speed += s.speed * stats[s.statId];
-            int n = t * speed;
+            unsigned int n = static_cast<unsigned int>(t * speed);
             goods[sId].use(n);
         }
     }
 }
 
-void Traveler::runFight(Traveler &t, int e, std::uniform_real_distribution<> &d) {
+void Traveler::runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d) {
     // Fight t for e milliseconds.
     fightTime += e;
     // Prevent fight from happening twice.
@@ -545,7 +546,7 @@ void Traveler::startAI(const Traveler &p) {
     ai = std::make_unique<AI>(*p.ai, goods, toTown);
 }
 
-void Traveler::runAI(int e) {
+void Traveler::runAI(unsigned int e) {
     // Run the AI for the elapsed time.
     ai->run(
         e, moving, offer, request, goods, equipment, toTown, target, stats, [this] { return netWeight(); },
@@ -553,7 +554,7 @@ void Traveler::runAI(int e) {
         [this](std::shared_ptr<Traveler> t) { attack(t); }, [this](Town *t) { pickTown(t); });
 }
 
-void Traveler::update(int e) {
+void Traveler::update(unsigned int e) {
     // Move traveler toward destination and perform combat with target.
     if (toTown and moving) {
         double t = e / static_cast<double>(Settings::getDayLength());
@@ -563,7 +564,7 @@ void Traveler::update(int e) {
         double ds = dlt * dlt + dlg * dlg;
         if (ds > t * t) {
             // There remains more distance to travel.
-            if (dlg) {
+            if (dlg != 0.) {
                 double m = dlt / dlg;
                 double dxs = t * t / (1 + m * m);
                 double dys = t * t - dxs;
@@ -649,8 +650,8 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto sLog = b.CreateVectorOfStrings(logText);
     auto sGoods =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
-    auto sStats = b.CreateVector(std::vector<short>(stats.begin(), stats.end()));
-    auto sParts = b.CreateVector(std::vector<short>(parts.begin(), parts.end()));
+    auto sStats = b.CreateVector(std::vector<unsigned int>(stats.begin(), stats.end()));
+    auto sParts = b.CreateVector(std::vector<unsigned int>(parts.begin(), parts.end()));
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(equipment.size(),
                                                                       [this, &b](size_t i) { return equipment[i].save(b); });
     if (ai)

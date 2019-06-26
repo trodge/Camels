@@ -37,7 +37,7 @@ class Nation {
     std::string religion;
     std::vector<std::string> travelerNames;
     std::vector<Good> goods;
-    std::map<std::pair<int, int>, double> frequencies;
+    std::map<std::pair<unsigned int, unsigned int>, double> frequencies;
 
   public:
     Nation(sqlite3_stmt *q, const std::vector<Good> &gs);
@@ -49,7 +49,7 @@ class Nation {
     const SDL_Color &getBackground() const { return background; }
     const SDL_Color &getHighlight() const { return highlight; }
     const SDL_Color &getDotColor() const { return dot; }
-    double getFrequency(int b, int m) const;
+    double getFrequency(unsigned int b, unsigned int m) const;
     const std::vector<Good> &getGoods() const { return goods; }
     std::string randomName() const;
     void loadData(sqlite3 *c);

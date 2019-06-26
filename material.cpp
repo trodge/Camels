@@ -34,8 +34,8 @@ Material::Material(unsigned int i, double a) : Material(i, "", a) {}
 Material::Material(unsigned int i) : Material(i, "") {}
 
 Material::Material(const Save::Material *m)
-    : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()), demandSlope(m->demandSlope()),
-      demandIntercept(m->demandIntercept()), minPrice(demandIntercept / 63) {
+    : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()),
+      demandSlope(m->demandSlope()), demandIntercept(m->demandIntercept()), minPrice(demandIntercept / 63) {
     auto lPerishCounters = m->perishCounters();
     for (auto lMI = lPerishCounters->begin(); lMI != lPerishCounters->end(); ++lMI)
         perishCounters.push_back({(*lMI)->time(), (*lMI)->amount()});
@@ -115,12 +115,12 @@ double Material::getQuantity(double p) const {
 double Material::getQuantum(double c) const {
     // Get quantum of this material needed to match given cost.
     double q;
-    if (demandSlope)
+    if (demandSlope != 0.)
         q = amount -
             (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) -
                                     demandSlope * c * 2)) /
                 demandSlope;
-    else if (demandIntercept)
+    else if (demandIntercept != 0.)
         q = c / demandIntercept;
     else
         q = 0;
@@ -136,10 +136,10 @@ void Material::assignConsumption(std::array<double, 3> c) {
     demandIntercept = c[2];
 }
 
-void Material::assignConsumption(int p) {
+void Material::assignConsumption(unsigned long p) {
     // Assign consumption to match given population.
-    demandSlope /= p;
-    consumption *= p;
+    demandSlope /= static_cast<double>(p);
+    consumption *= static_cast<double>(p);
 }
 
 void Material::take(Material &m) {
@@ -172,11 +172,11 @@ void Material::take(Material &m) {
 
 void Material::use(double a) {
     // Use the given amount and discard the perish counters.
-    if (a and amount >= a)
+    if (a > 0. and amount >= a)
         amount -= a;
     else
-        a = 0;
-    while (a > 0 and not perishCounters.empty()) {
+        a = 0.;
+    while (a > 0. and not perishCounters.empty()) {
         // amount is going down
         PerishCounter pC = perishCounters.back();
         perishCounters.pop_back();
@@ -184,7 +184,7 @@ void Material::use(double a) {
             // perish counter is enough to make change and stay around
             pC.amount -= a;
             perishCounters.push_back(pC);
-            a = 0;
+            a = 0.;
         } else {
             // perish counter is used up to make change
             a -= pC.amount;
@@ -205,10 +205,10 @@ void Material::create(double a) {
         perishCounters.push_front({0, a});
 }
 
-double Material::perish(int e, double p) {
+double Material::perish(unsigned int e, double p) {
     // Perish this material for e milliseconds with maximum shelf life p years. Find the first perish counter that will
     // expire.
-    PerishCounter ePC = {int(p * Settings::getDayLength() * kDaysPerYear - e)};
+    PerishCounter ePC = {int(p * Settings::getDayLength() * kDaysPerYear - e), 0};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), ePC);
     // Remove expired amounts from amount and total them.
     double a =
@@ -229,20 +229,20 @@ double Material::perish(int e, double p) {
     return a;
 }
 
-double Material::consume(int e) {
+double Material::consume(unsigned int e) {
     lastAmount = amount;
     double c = consumption * e / kDaysPerYear / Settings::getDayLength();
     if (c > amount)
         c = amount;
-    if (c > 0)
+    if (c > 0.)
         use(c);
-    else if (c)
+    else if (c < 0.)
         create(-c);
     return c;
 }
 
-std::unique_ptr<MenuButton> Material::button(bool aS, int gI, const std::string &gN, bool gS, SDL_Rect r, SDL_Color fgr,
-                                             SDL_Color bgr, int fS, std::function<void()> f) const {
+std::unique_ptr<MenuButton> Material::button(bool aS, unsigned int gI, const std::string &gN, bool gS, SDL_Rect r,
+                                             SDL_Color fgr, SDL_Color bgr, int fS, std::function<void()> f) const {
     // Create a new button to represent this material.
     auto nameText = name;
     if (nameText != gN)
@@ -263,7 +263,7 @@ std::unique_ptr<MenuButton> Material::button(bool aS, int gI, const std::string 
 void Material::updateButton(bool gS, double oV, int rC, TextBox *b) const {
     // Update amount shown on this material's button
     std::string amountText;
-    if (rC and oV) {
+    if (rC and oV > 0.) {
         double quantity = getQuantity(oV / rC * Settings::getTownProfit());
         amountText = std::to_string(std::min(quantity, amount));
     } else
@@ -286,11 +286,11 @@ void Material::fixDemand(double m) {
         demandSlope = (demandIntercept - minPrice) / m;
 }
 
-void Material::saveDemand(int p, std::string &u) const {
+void Material::saveDemand(unsigned long p, std::string &u) const {
     u.append(" AND material_id = ");
     u.append(std::to_string(id));
     u.append(" THEN ");
-    u.append(std::to_string(demandSlope * p));
+    u.append(std::to_string(demandSlope * static_cast<double>(p)));
 }
 
 flatbuffers::Offset<Save::Material> Material::save(flatbuffers::FlatBufferBuilder &b) const {

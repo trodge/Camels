@@ -19,14 +19,14 @@
 
 #include "business.h"
 
-Business::Business(int i, int m, sqlite3 *c) : id(i), mode(m), area(1) {
+Business::Business(unsigned int i, unsigned int m, sqlite3 *c) : id(i), mode(m), area(1) {
     // Load a new business with the given id and mode from the database
     sqlite3_stmt *quer;
     sqlite3_prepare_v2(c,
                        "SELECT name, can_switch, require_coast, keep_material FROM "
                        "businesses WHERE business_id = ?",
                        -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, i);
+    sqlite3_bind_int(quer, 1, static_cast<int>(i));
     sqlite3_step(quer);
     name = std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 0)));
     canSwitch = bool(sqlite3_column_int(quer, 1));
@@ -34,21 +34,21 @@ Business::Business(int i, int m, sqlite3 *c) : id(i), mode(m), area(1) {
     keepMaterial = bool(sqlite3_column_int(quer, 3));
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(c, "SELECT * FROM requirements WHERE business_id = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, i);
+    sqlite3_bind_int(quer, 1, static_cast<int>(i));
     while (sqlite3_step(quer) != SQLITE_DONE)
-        requirements.push_back(Good(sqlite3_column_int(quer, 2), sqlite3_column_double(quer, 3)));
+        requirements.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 2)), sqlite3_column_double(quer, 3)));
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(c, "SELECT * FROM inputs WHERE business_id = ? AND mode = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, i);
-    sqlite3_bind_int(quer, 2, m);
+    sqlite3_bind_int(quer, 1, static_cast<int>(i));
+    sqlite3_bind_int(quer, 2, static_cast<int>(m));
     while (sqlite3_step(quer) != SQLITE_DONE)
-        inputs.push_back(Good(sqlite3_column_int(quer, 2), sqlite3_column_double(quer, 3)));
+        inputs.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 2)), sqlite3_column_double(quer, 3)));
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(c, "SELECT * FROM outputs WHERE business_id = ? AND mode = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, i);
-    sqlite3_bind_int(quer, 2, m);
+    sqlite3_bind_int(quer, 1, static_cast<int>(i));
+    sqlite3_bind_int(quer, 2, static_cast<int>(m));
     while (sqlite3_step(quer) != SQLITE_DONE)
-        outputs.push_back(Good(sqlite3_column_int(quer, 2), sqlite3_column_double(quer, 3)));
+        outputs.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 2)), sqlite3_column_double(quer, 3)));
     sqlite3_finalize(quer);
 }
 
@@ -101,14 +101,14 @@ void Business::setArea(double a) {
 void Business::addConflicts(std::vector<int> &cs, std::vector<Good> &gs) {
     bool space = false;
     for (auto &op : outputs) {
-        int oId = op.getId();
+        unsigned int oId = op.getId();
         if (gs[oId].getAmount() < gs[oId].getMax())
             space = true;
     }
     if (not space)
         factor = 0;
     for (auto &ip : inputs) {
-        int iId = ip.getId();
+        unsigned int iId = ip.getId();
         double mF = gs[iId].getAmount() / ip.getAmount();
         if (ip == outputs.back() and mF < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
@@ -133,14 +133,14 @@ void Business::handleConflicts(std::vector<int> &cs) {
         factor /= gc;
 }
 
-void Business::saveFrequency(int p, std::string &u) const {
-    if (frequencyFactor) {
+void Business::saveFrequency(unsigned long p, std::string &u) const {
+    if (frequencyFactor > 0.) {
         u.append(" WHEN business_id = ");
         u.append(std::to_string(id));
         u.append(" AND mode = ");
         u.append(std::to_string(mode));
         u.append(" THEN ");
-        u.append(std::to_string(area / p / frequencyFactor));
+        u.append(std::to_string(area / static_cast<double>(p) / frequencyFactor));
     }
 }
 
@@ -150,5 +150,5 @@ flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilde
         b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
     auto sOutputs =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
-    return Save::CreateBusiness(b, static_cast<short>(id), static_cast<short>(mode), sName, static_cast<float>(area), static_cast<short>(canSwitch), static_cast<short>(keepMaterial), sInputs, sOutputs, static_cast<short>(frequencyFactor));
+    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, keepMaterial, sInputs, sOutputs, frequencyFactor);
 }

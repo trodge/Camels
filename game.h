@@ -38,7 +38,8 @@ class Game {
     bool stop = false, pause = false, storedPause = true;
     SDL_Surface *mapImage;
     SDL_Rect screenRect, mapRect;
-    int scrollSpeed, scrollX, scrollY, offsetX, offsetY;
+    int scrollSpeed, scrollX, scrollY;
+    int offsetX, offsetY;
     unsigned int lastTime = 0, currentTime;
     double scale;
     std::vector<Nation> nations;

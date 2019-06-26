@@ -32,8 +32,7 @@
 #include "good.h"
 
 class Business {
-    unsigned int id;
-    int mode;
+    unsigned int id, mode;
     std::string name;
     double area;    // in uncia
     bool canSwitch; // whether able to switch between modes
@@ -46,7 +45,7 @@ class Business {
     double frequencyFactor;         // area of business per unit of population
 
   public:
-    Business(int i, int m, sqlite3 *c);
+    Business(unsigned int i, unsigned int m, sqlite3 *c);
     Business(const Save::Business *b);
     bool operator==(const Business &other) const;
     unsigned int getId() const { return id; }
@@ -66,7 +65,7 @@ class Business {
     }
     void addConflicts(std::vector<int> &cs, std::vector<Good> &gs);
     void handleConflicts(std::vector<int> &cs);
-    void saveFrequency(int p, std::string &u) const;
+    void saveFrequency(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 

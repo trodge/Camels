@@ -35,8 +35,8 @@ class Good {
     double carry;
     std::string measure;
     bool split;
-    double max = 0;
-    int shoots = 0;
+    double max = 0.;
+    unsigned int shoots = 0;
     void removeExcess();
 
   public:
@@ -62,7 +62,7 @@ class Good {
     const std::string &getMeasure() const { return measure; }
     bool getSplit() const { return split; }
     double getMax() const { return max; }
-    int getShoots() const { return shoots; }
+    unsigned int getShoots() const { return shoots; }
     double getConsumption() const;
     std::string logEntry() const;
     void setAmount(double a);
@@ -74,16 +74,16 @@ class Good {
             max = m;
     }
     void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
-    void assignConsumption(int p);
+    void assignConsumption(unsigned long p);
     void take(Good &g);
     void use(double a);
     void use() { use(amount); }
     void put(Good &g);
     void create(const std::unordered_map<unsigned int, double> &mAs);
     void create(double a);
-    void consume(int e);
+    void consume(unsigned int e);
     void adjustDemand(std::string rBN, double d);
-    void saveDemand(int p, std::string &u) const;
+    void saveDemand(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 

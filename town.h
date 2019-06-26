@@ -45,8 +45,8 @@ class Town : public Focusable {
     const Nation *nation = nullptr;
     double longitude, latitude;
     bool coastal;
-    int population;
-    int townType;
+    unsigned long population;
+    unsigned int townType;
     std::vector<Business> businesses;
     std::vector<Good> goods;
     std::vector<Town *> neighbors;
@@ -69,8 +69,8 @@ class Town : public Focusable {
     const Nation *getNation() const { return nation; }
     double getLongitude() const { return longitude; }
     double getLatitude() const { return latitude; }
-    int getPopulation() const { return population; }
-    int getTownType() const { return townType; }
+    unsigned long getPopulation() const { return population; }
+    unsigned int getTownType() const { return townType; }
     const std::vector<Good> &getGoods() const { return goods; }
     const Good &getGood(size_t i) { return goods[i]; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
@@ -87,7 +87,7 @@ class Town : public Focusable {
     void drawRoutes(SDL_Surface *s);
     void drawDot(SDL_Surface *s);
     void drawText(SDL_Surface *s) { box->draw(s); }
-    void update(int e);
+    void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
     void generateTravelers(const GameData *gD, std::vector<std::shared_ptr<Traveler>> &ts);

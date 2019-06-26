@@ -35,8 +35,8 @@ Good::Good(unsigned int i, double a) : Good(i, "", a) {}
 Good::Good(unsigned int i) : Good(i, "") {}
 
 Good::Good(const Save::Good *g)
-    : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()), carry(g->carry()),
-      measure(g->measure()->str()), split(not measure.empty()), shoots(g->shoots()) {
+    : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()),
+      carry(g->carry()), measure(g->measure()->str()), split(not measure.empty()), shoots(g->shoots()) {
     auto lMaterials = g->materials();
     for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI)
         materials.push_back(Material(*lMI));
@@ -97,7 +97,7 @@ void Good::assignConsumption(const std::unordered_map<unsigned int, std::array<d
     }
 }
 
-void Good::assignConsumption(int p) {
+void Good::assignConsumption(unsigned long p) {
     for (auto &m : materials)
         m.assignConsumption(p);
 }
@@ -128,14 +128,14 @@ void Good::take(Good &g) {
 
 void Good::use(double a) {
     // Uses up the given amount of this good. Each material is used proportionally.
-    if (a and amount >= a) {
+    if (a > 0. and amount >= a) {
         for (auto &m : materials)
             m.use(a * m.getAmount() / amount);
         amount -= a;
-    } else if (a) {
+    } else if (a > 0.) {
         for (auto &m : materials)
             m.use(m.getAmount());
-        amount = 0;
+        amount = 0.;
     }
 }
 
@@ -177,11 +177,11 @@ void Good::create(double a) {
     removeExcess();
 }
 
-void Good::consume(int e) {
+void Good::consume(unsigned int e) {
     // Remove consumed goods and perished goods over elapsed time.
     for (auto &m : materials) {
         amount -= m.consume(e);
-        if (perish)
+        if (perish != 0.)
             amount -= m.perish(e, perish);
         if (amount < 0)
             amount = 0;
@@ -199,7 +199,7 @@ void Good::adjustDemand(std::string rBN, double d) {
     }
 }
 
-void Good::saveDemand(int p, std::string &u) const {
+void Good::saveDemand(unsigned long p, std::string &u) const {
     for (auto &m : materials) {
         u.append(" WHEN good_id = ");
         u.append(std::to_string(id));
@@ -212,5 +212,5 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
     auto sMaterials = b.CreateVector<flatbuffers::Offset<Save::Material>>(
         materials.size(), [this, &b](size_t i) { return materials[i].save(b); });
     auto sMeasure = b.CreateString(measure);
-    return Save::CreateGood(b, static_cast<short>(id), sName, static_cast<float>(amount), sMaterials, static_cast<float>(perish), static_cast<float>(carry), sMeasure, shoots);
+    return Save::CreateGood(b, id, sName, amount, sMaterials, perish, carry, sMeasure, shoots);
 }

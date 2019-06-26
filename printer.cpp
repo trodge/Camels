@@ -94,7 +94,7 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, int w, int h, in
         w = mW + 2 * b;
     if (not h)
         h = mH + 2 * b;
-    
+
     Uint32 rmask, gmask, bmask, amask;
     /* SDL interprets each pixel as a 32-bit number, so our masks must depend
        on the endianness (byte order) of the machine */
@@ -130,7 +130,7 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, int w, int h, in
             SDL_Rect hlR = {b, rt.y, w - 2 * b, rt.h};
             SDL_FillRect(p, &hlR, SDL_MapRGB(p->format, highlight.r, highlight.g, highlight.b));
         }
-        SDL_BlitSurface(tSs[i], NULL, p, &rt );
+        SDL_BlitSurface(tSs[i], NULL, p, &rt);
         SDL_FreeSurface(tSs[i]);
         rt.y += rt.h;
     }

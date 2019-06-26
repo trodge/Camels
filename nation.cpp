@@ -42,7 +42,7 @@ Nation::Nation(sqlite3_stmt *q, const std::vector<Good> &gs) {
 
 bool Nation::operator==(const Nation &other) const { return id == other.id; }
 
-double Nation::getFrequency(int b, int m) const {
+double Nation::getFrequency(unsigned int b, unsigned int m) const {
     auto it = frequencies.find(std::make_pair(b, m));
     if (it == frequencies.end())
         return 0;

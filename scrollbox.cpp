@@ -28,7 +28,7 @@ ScrollBox::ScrollBox(SDL_Rect rt, const std::vector<std::string> &is, SDL_Color 
 ScrollBox::~ScrollBox() {}
 
 void ScrollBox::setText() {
-    Printer::setHighlightLine(highlightLine - scroll);
+    Printer::setHighlightLine(highlightLine - static_cast<int>(scroll));
     Printer::setHighlight(highlight);
     TextBox::setText();
     Printer::setHighlightLine(-1);
@@ -59,20 +59,22 @@ void ScrollBox::setHighlightLine(int h) {
     if (not lines)
         return;
     while (h < 0)
-        h += items.size();
+        h += static_cast<int>(items.size());
     highlightLine = h;
     if (h) {
-        if (size_t(h) >= scroll + lines) {
-            scroll = h - lines + 1;
+        if (static_cast<size_t>(h) >= scroll + lines) {
+            scroll = static_cast<size_t>(h) - lines + 1;
             if (scroll + lines > items.size())
                 scroll = items.size() - lines;
-        } else if (size_t(h) <= scroll)
-            scroll = h - 1;
+        } else if (static_cast<size_t>(h) <= scroll)
+            scroll = static_cast<size_t>(h) - 1;
     } else
         scroll = 0;
     clicked = false;
     invColors = false;
-    setText(std::vector<std::string>(items.begin() + scroll, items.begin() + scroll + lines));
+    setText(
+        std::vector<std::string>(items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll),
+                                 items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
 }
 
 bool ScrollBox::keyCaptured(const SDL_KeyboardEvent &k) const {
@@ -102,10 +104,10 @@ void ScrollBox::handleKey(const SDL_KeyboardEvent &k) {
 }
 
 void ScrollBox::handleClick(const SDL_MouseButtonEvent &b) {
-    int y = b.y - rect.y - rect.h / 2 + lines * lineHeight / 2;
+    int y = b.y - rect.y - rect.h / 2 + static_cast<int>(lines) * static_cast<int>(lineHeight) / 2;
     int h = -1;
     if (y >= 0)
-        h = y / lineHeight + scroll;
+        h = y / static_cast<int>(lineHeight) + static_cast<int>(scroll);
     if (h != highlightLine and h > -1 and size_t(h) < items.size())
         setHighlightLine(h);
 }
