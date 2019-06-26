@@ -114,12 +114,12 @@ void Settings::load(const fs::path &p) {
     minPriceDivisor = tree.get("goods.minPriceDivisor", 2047);
     travelersExponent = tree.get("travelers.exponent", 0.24);
     travelersMin = tree.get("travelers.min", -13);
-    statMax = tree.get("travelers.statMax", 15);
+    statMax = static_cast<unsigned int>(tree.get("travelers.statMax", 15));
     attackDistSq = tree.get("travelers.attackDistSq", 9000);
     escapeChance = tree.get("travelers.escapeChance", 0.5);
     aIDecisionTime = tree.get("ai.decisionTime", 12000);
     criteriaMax = tree.get("ai.criteriaMax", 9);
-    aITownRange = tree.get("ai.townRange", 9);
+    aITownRange = static_cast<unsigned int>(tree.get("ai.townRange", 9));
     limitFactorMin = tree.get("ai.limitFactorMin", 0.1);
     limitFactorMax = tree.get("ai.limitFactorMax", 0.9);
     aIAttackThreshold = tree.get("ai.attackThreshold", 13500);
