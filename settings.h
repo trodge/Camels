@@ -35,6 +35,7 @@ class Settings {
     static SDL_Color uIForeground;
     static SDL_Color uIBackground;
     static SDL_Color uIHighlight;
+    static SDL_Color loadBarColor;
     static SDL_Color routeColor;
     static SDL_Color waterColor;
     static SDL_Color playerColor;
@@ -66,7 +67,7 @@ class Settings {
     static double escapeChance;
     static int aIDecisionTime;
     static int criteriaMax;
-    static int aITownRange;
+    static unsigned int aITownRange;
     static double limitFactorMin, limitFactorMax;
     static double aIAttackThreshold;
     static std::mt19937 rng;
@@ -78,6 +79,7 @@ class Settings {
     static SDL_Color getUIForeground() { return uIForeground; }
     static SDL_Color getUIBackground() { return uIBackground; }
     static SDL_Color getUIHighlight() { return uIHighlight; }
+    static SDL_Color getLoadBarColor() { return loadBarColor; }
     static SDL_Color getRouteColor() { return routeColor; }
     static SDL_Color getWaterColor() { return waterColor; }
     static SDL_Color getPlayerColor() { return playerColor; }
@@ -113,7 +115,7 @@ class Settings {
     static double getEscapeChance() { return escapeChance; }
     static int getAIDecisionTime() { return aIDecisionTime; }
     static int getCriteriaMax() { return criteriaMax; }
-    static int getAITownRange() { return aITownRange; }
+    static unsigned int getAITownRange() { return aITownRange; }
     static double getLimitFactorMin() { return limitFactorMin; }
     static double getLimitFactorMax() { return limitFactorMax; }
     static double getAIAttackThreshold() { return aIAttackThreshold; }

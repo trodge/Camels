@@ -32,7 +32,7 @@
 #include "good.h"
 
 class Business {
-    int id;
+    unsigned int id;
     int mode;
     std::string name;
     double area;    // in uncia
@@ -49,7 +49,7 @@ class Business {
     Business(int i, int m, sqlite3 *c);
     Business(const Save::Business *b);
     bool operator==(const Business &other) const;
-    int getId() const { return id; }
+    unsigned int getId() const { return id; }
     int getMode() const { return mode; }
     double getArea() const { return area; }
     bool getCanSwitch() const { return canSwitch; }

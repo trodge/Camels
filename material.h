@@ -45,7 +45,7 @@ struct CombatStat {
 };
 
 class Material {
-    int id;
+    unsigned int id;
     std::string name;
     double amount;
     double consumption;
@@ -62,17 +62,17 @@ class Material {
     double lastAmount = 0;
 
   public:
-    Material(int i, const std::string &n, double a, double c, double dS, double dI);
-    Material(int i, const std::string &n, double c, double dS, double dI);
-    Material(int i, const std::string &n, double a);
-    Material(int i, const std::string &n);
-    Material(int i, double a);
-    Material(int i);
+    Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI);
+    Material(unsigned int i, const std::string &n, double c, double dS, double dI);
+    Material(unsigned int i, const std::string &n, double a);
+    Material(unsigned int i, const std::string &n);
+    Material(unsigned int i, double a);
+    Material(unsigned int i);
     Material(const Save::Material *m);
     bool operator==(const Material &other) const { return id == other.id; }
     bool operator!=(const Material &other) const { return id != other.id; }
     bool operator<(const Material &other) const { return id < other.id; }
-    int getId() const { return id; }
+    unsigned int getId() const { return id; }
     std::string getName() const { return name; }
     double getAmount() const { return amount; }
     double getConsumption() const { return consumption; }

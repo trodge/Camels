@@ -43,7 +43,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData *gD)
 }
 
 Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData *gD)
-    : name(t->name()->str()), toTown(&ts[t->town() - 1]), fromTown(&ts[t->oldTown() - 1]), nation(&ns[t->nation() - 1]),
+    : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->town() - 1)]), fromTown(&ts[static_cast<size_t>(t->oldTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
       longitude(t->longitude()), latitude(t->latitude()), tradePortion(1), gameData(gD), moving(t->moving()) {
     auto lLog = t->log();
     for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI)
@@ -53,10 +53,10 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
         goods.push_back(Good(*lGI));
     auto lStats = t->stats();
     for (size_t i = 0; i < stats.size(); ++i)
-        stats[i] = lStats->Get(i);
+        stats[i] = lStats->Get(static_cast<unsigned int>(i));
     auto lParts = t->parts();
     for (size_t i = 0; i < parts.size(); ++i)
-        parts[i] = lParts->Get(i);
+        parts[i] = lParts->Get(static_cast<unsigned int>(i));
     auto lEquipment = t->equipment();
     for (auto lEI = lEquipment->begin(); lEI != lEquipment->end(); ++lEI)
         equipment.push_back(Good(*lEI));
@@ -238,7 +238,7 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
         }
     }
     // divide excess among offered goods
-    excess /= offer.size();
+    excess /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
         double q = tM.getQuantity(excess / Settings::getTownProfit());
@@ -422,7 +422,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
         for (auto &s : e.getMaterial().getCombatStats())
             for (size_t i = 0; i < defense.size(); ++i)
                 defense[i] += s.defense[i] * t.stats[s.statId];
-    CombatHit first = {std::numeric_limits<double>::max()};
+    CombatHit first = {std::numeric_limits<double>::max(), 0, 0, ""};
     for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         if (ss.front().attack) {

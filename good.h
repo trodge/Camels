@@ -27,7 +27,7 @@
 #include "material.h"
 
 class Good {
-    int id;
+    unsigned int id;
     std::string name;
     double amount;
     std::vector<Material> materials;
@@ -40,17 +40,17 @@ class Good {
     void removeExcess();
 
   public:
-    Good(int i, const std::string &n, double a, double p, double c, const std::string &m);
-    Good(int i, const std::string &n, double p, double c, const std::string &m);
-    Good(int i, const std::string &n, double a, const std::string &m);
-    Good(int i, const std::string &n, double a);
-    Good(int i, const std::string &n);
-    Good(int i, double a);
-    Good(int i);
+    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m);
+    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m);
+    Good(unsigned int i, const std::string &n, double a, const std::string &m);
+    Good(unsigned int i, const std::string &n, double a);
+    Good(unsigned int i, const std::string &n);
+    Good(unsigned int i, double a);
+    Good(unsigned int i);
     Good(const Save::Good *g);
     bool operator==(const Good &other) const { return id == other.id; }
     bool operator!=(const Good &other) const { return id != other.id; }
-    int getId() const { return id; }
+    unsigned int getId() const { return id; }
     const std::string getName() const { return name; }
     const std::vector<Material> &getMaterials() const { return materials; }
     const Material &getMaterial(const Material &m) const;
@@ -67,19 +67,19 @@ class Good {
     std::string logEntry() const;
     void setAmount(double a);
     void addMaterial(Material m);
-    void setCombatStats(const std::unordered_map<int, std::vector<CombatStat>> &cSs);
+    void setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs);
     void setMax() { max = std::abs(getConsumption()) * Settings::getConsumptionSpaceFactor(); }
     void setMax(double m) {
         if (m > max)
             max = m;
     }
-    void assignConsumption(const std::unordered_map<int, std::array<double, 3>> &cs);
+    void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
     void assignConsumption(int p);
     void take(Good &g);
     void use(double a);
     void use() { use(amount); }
     void put(Good &g);
-    void create(const std::unordered_map<int, double> &mAs);
+    void create(const std::unordered_map<unsigned int, double> &mAs);
     void create(double a);
     void consume(int e);
     void adjustDemand(std::string rBN, double d);

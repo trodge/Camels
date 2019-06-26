@@ -20,22 +20,22 @@
 #include "nation.h"
 
 Nation::Nation(sqlite3_stmt *q, const std::vector<Good> &gs) {
-    id = sqlite3_column_int(q, 0);
+    id = static_cast<unsigned int>(sqlite3_column_int(q, 0));
     names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))));
     names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))));
     adjective = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 3)));
-    foreground.r = (Uint8)sqlite3_column_int(q, 4);
-    foreground.g = (Uint8)sqlite3_column_int(q, 5);
-    foreground.b = (Uint8)sqlite3_column_int(q, 6);
-    background.r = (Uint8)sqlite3_column_int(q, 7);
-    background.g = (Uint8)sqlite3_column_int(q, 8);
-    background.b = (Uint8)sqlite3_column_int(q, 9);
-    dot.r = (foreground.r + background.r) / 2;
-    dot.g = (foreground.g + background.g) / 2;
-    dot.b = (foreground.b + background.b) / 2;
-    highlight.r = 255 - dot.r;
-    highlight.g = 255 - dot.g;
-    highlight.b = 255 - dot.b;
+    foreground.r = static_cast<Uint8>(sqlite3_column_int(q, 4));
+    foreground.g = static_cast<Uint8>(sqlite3_column_int(q, 5));
+    foreground.b = static_cast<Uint8>(sqlite3_column_int(q, 6));
+    background.r = static_cast<Uint8>(sqlite3_column_int(q, 7));
+    background.g = static_cast<Uint8>(sqlite3_column_int(q, 8));
+    background.b = static_cast<Uint8>(sqlite3_column_int(q, 9));
+    dot.r = static_cast<Uint8>((foreground.r + background.r) / 2);
+    dot.g = static_cast<Uint8>((foreground.g + background.g) / 2);
+    dot.b = static_cast<Uint8>((foreground.b + background.b) / 2);
+    highlight.r = static_cast<Uint8>(255 - dot.r);
+    highlight.g = static_cast<Uint8>(255 - dot.g);
+    highlight.b = static_cast<Uint8>(255 - dot.b);
     religion = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 10)));
     goods = gs;
 }
@@ -51,7 +51,7 @@ double Nation::getFrequency(int b, int m) const {
 }
 
 std::string Nation::randomName() const {
-    std::uniform_int_distribution<> dis(0, travelerNames.size() - 1);
+    std::uniform_int_distribution<unsigned long> dis(0, travelerNames.size() - 1);
     return travelerNames[dis(*Settings::getRng())];
 }
 
@@ -59,7 +59,7 @@ void Nation::loadData(sqlite3 *c) {
     // Load traveler names, business frequencies map, and good consumption data for this nation.
     sqlite3_stmt *quer;
     sqlite3_prepare_v2(c, "SELECT name FROM names WHERE nation_id = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, id);
+    sqlite3_bind_int(quer, 1, static_cast<int>(id));
     while (sqlite3_step(quer) != SQLITE_DONE)
         travelerNames.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 0))));
     sqlite3_finalize(quer);
@@ -67,18 +67,18 @@ void Nation::loadData(sqlite3 *c) {
                        "SELECT business_id, mode, frequency FROM "
                        "frequencies WHERE nation_id = ?",
                        -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, id);
+    sqlite3_bind_int(quer, 1, static_cast<int>(id));
     while (sqlite3_step(quer) != SQLITE_DONE)
         frequencies.emplace(std::make_pair(sqlite3_column_int(quer, 0), sqlite3_column_int(quer, 1)),
                             sqlite3_column_double(quer, 2));
     sqlite3_finalize(quer);
     // Load this nation's consumption information for each material of each good.
     sqlite3_prepare_v2(c, "SELECT * FROM consumption WHERE nation_id = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, id);
-    int oGId = 0;
-    std::unordered_map<int, std::array<double, 3>> consumptions;
+    sqlite3_bind_int(quer, 1, static_cast<int>(id));
+    unsigned int oGId = 0;
+    std::unordered_map<unsigned int, std::array<double, 3>> consumptions;
     while (sqlite3_step(quer) != SQLITE_DONE) {
-        int gId = sqlite3_column_int(quer, 1);
+        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 1));
         if (gId != oGId) {
             // Good id changed, flush consumptions map.
             goods[oGId].assignConsumption(consumptions);

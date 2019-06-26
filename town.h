@@ -40,7 +40,7 @@ struct GameData;
 class Traveler;
 
 class Town : public Focusable {
-    int id;
+    unsigned int id;
     std::unique_ptr<TextBox> box;
     const Nation *nation = nullptr;
     double longitude, latitude;
@@ -64,7 +64,7 @@ class Town : public Focusable {
          const std::map<std::pair<int, int>, double> &fFs, int sH);
     Town(const Save::Town *t, const std::vector<Nation> &ns, int sH);
     bool operator==(const Town &other) const;
-    int getId() const { return id; }
+    unsigned int getId() const { return id; }
     std::string getName() const { return box->getText()[0]; }
     const Nation *getNation() const { return nation; }
     double getLongitude() const { return longitude; }

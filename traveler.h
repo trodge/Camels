@@ -40,7 +40,7 @@
 
 struct CombatOdd {
     double hitOdds;
-    std::array<std::pair<int, double>, 3> statusChances;
+    std::array<std::pair<unsigned int, double>, 3> statusChances;
     // statuses are normal, bruised, wounded, broken, infected, pulverized, amputated, impaled
 };
 
@@ -54,7 +54,7 @@ struct GameData {
 
 struct CombatHit {
     double time;
-    int partId, status;
+    unsigned int partId, status;
     std::string weapon;
 };
 

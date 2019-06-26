@@ -19,23 +19,23 @@
 
 #include "good.h"
 
-Good::Good(int i, const std::string &n, double a, double p, double c, const std::string &m)
+Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
     : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(not m.empty()) {}
 
-Good::Good(int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0, p, c, m) {}
+Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0, p, c, m) {}
 
-Good::Good(int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, 0, 0, m) {}
+Good::Good(unsigned int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, 0, 0, m) {}
 
-Good::Good(int i, const std::string &n, double a) : Good(i, n, a, 0, 0, "") {}
+Good::Good(unsigned int i, const std::string &n, double a) : Good(i, n, a, 0, 0, "") {}
 
-Good::Good(int i, const std::string &n) : Good(i, n, 0) {}
+Good::Good(unsigned int i, const std::string &n) : Good(i, n, 0) {}
 
-Good::Good(int i, double a) : Good(i, "", a) {}
+Good::Good(unsigned int i, double a) : Good(i, "", a) {}
 
-Good::Good(int i) : Good(i, "") {}
+Good::Good(unsigned int i) : Good(i, "") {}
 
 Good::Good(const Save::Good *g)
-    : id(g->id()), name(g->name()->str()), amount(g->amount()), perish(g->perish()), carry(g->carry()),
+    : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()), carry(g->carry()),
       measure(g->measure()->str()), split(not measure.empty()), shoots(g->shoots()) {
     auto lMaterials = g->materials();
     for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI)
@@ -74,12 +74,12 @@ std::string Good::logEntry() const {
 void Good::setAmount(double a) {
     amount = a;
     for (auto &m : materials)
-        m.setAmount(amount / materials.size());
+        m.setAmount(amount / static_cast<double>(materials.size()));
 }
 
 void Good::addMaterial(Material m) { materials.push_back(m); }
 
-void Good::setCombatStats(const std::unordered_map<int, std::vector<CombatStat>> &cSs) {
+void Good::setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs) {
     for (auto &m : materials) {
         auto it = cSs.find(m.getId());
         if (it == cSs.end())
@@ -88,7 +88,7 @@ void Good::setCombatStats(const std::unordered_map<int, std::vector<CombatStat>>
     }
 }
 
-void Good::assignConsumption(const std::unordered_map<int, std::array<double, 3>> &cs) {
+void Good::assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs) {
     for (auto &m : materials) {
         auto it = cs.find(m.getId());
         if (it == cs.end())
@@ -104,7 +104,7 @@ void Good::assignConsumption(int p) {
 
 void Good::removeExcess() {
     // Removes materials in excess of max
-    if (max and amount > max) {
+    if (max > 0 and amount > max) {
         for (auto &m : materials) {
             m.use((amount - max) * m.getAmount() / amount);
         }
@@ -151,7 +151,7 @@ void Good::put(Good &g) {
     amount += g.amount;
 }
 
-void Good::create(const std::unordered_map<int, double> &mAs) {
+void Good::create(const std::unordered_map<unsigned int, double> &mAs) {
     // Newly creates the given amount of each material.
     double a = 0;
     for (auto &m : materials) {
@@ -212,5 +212,5 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
     auto sMaterials = b.CreateVector<flatbuffers::Offset<Save::Material>>(
         materials.size(), [this, &b](size_t i) { return materials[i].save(b); });
     auto sMeasure = b.CreateString(measure);
-    return Save::CreateGood(b, id, sName, amount, sMaterials, perish, carry, sMeasure, shoots);
+    return Save::CreateGood(b, static_cast<short>(id), sName, static_cast<float>(amount), sMaterials, static_cast<float>(perish), static_cast<float>(carry), sMeasure, shoots);
 }

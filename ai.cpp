@@ -36,7 +36,7 @@ AI::AI(const AI &p, const std::vector<Good> &gs, Town *tT) {
 
 AI::AI(const Save::AI *a) : decisionCounter(a->decisionCounter()) {
     auto lDecisionCriteria = a->decisionCriteria();
-    for (size_t i = 0; i < decisionCriteria.size(); ++i)
+    for (unsigned int i = 0; i < decisionCriteria.size(); ++i)
         decisionCriteria[i] = lDecisionCriteria->Get(i);
     auto lMaterialInfo = a->materialInfo();
     for (auto mII = lMaterialInfo->begin(); mII != lMaterialInfo->end(); ++mII)
@@ -303,11 +303,11 @@ void AI::autoLoot(const std::vector<Good> &gs, std::weak_ptr<Traveler> tgt, cons
         std::unique_ptr<Good> bestGood;
         double bestScore = 0;
         auto mII = materialInfo.begin(); // material info iterator
-        for (size_t i = 1; i < gs.size(); ++i) {
+        for (unsigned int i = 1; i < gs.size(); ++i) {
             auto &gMs = gs[i].getMaterials();
             auto &tG = t->getGood(i);
             auto &tGMs = tG.getMaterials();
-            for (size_t j = 0; j < gMs.size(); ++j) {
+            for (unsigned int j = 0; j < gMs.size(); ++j) {
                 auto &tGM = tGMs[j];
                 double score = tGM.getAmount() * mII->value / tG.getCarry();
                 if ((bestScore >= 0 and score > bestScore) or (score < 0 and score < bestScore)) {
@@ -435,5 +435,5 @@ flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) {
             *mI = Save::MaterialInfo(materialInfo[i].limitFactor, materialInfo[i].minPrice, materialInfo[i].maxPrice,
                                      materialInfo[i].value, materialInfo[i].buy, materialInfo[i].sell);
         });
-    return Save::CreateAI(b, decisionCounter, sDecisionCriteria, sMaterialInfo);
+    return Save::CreateAI(b, static_cast<short>(decisionCounter), sDecisionCriteria, sMaterialInfo);
 }

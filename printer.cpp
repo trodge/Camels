@@ -94,29 +94,45 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, int w, int h, in
         w = mW + 2 * b;
     if (not h)
         h = mH + 2 * b;
-    SDL_Surface *p = SDL_CreateRGBSurface(0, w, h, 32, 0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
+    
+    Uint32 rmask, gmask, bmask, amask;
+    /* SDL interprets each pixel as a 32-bit number, so our masks must depend
+       on the endianness (byte order) of the machine */
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    rmask = 0xff000000;
+    gmask = 0x00ff0000;
+    bmask = 0x0000ff00;
+    amask = 0x000000ff;
+#else
+    rmask = 0x000000ff;
+    gmask = 0x0000ff00;
+    bmask = 0x00ff0000;
+    amask = 0xff000000;
+#endif
+
+    SDL_Surface *p = SDL_CreateRGBSurface(0, w, h, 32, rmask, gmask, bmask, amask);
     // Draw border.
-    SDL_Rect rect;
+    SDL_Rect rt;
     if (b) {
-        rect = {0, 0, w, h};
-        drawRoundedRectangle(p, r, &rect, foreground);
+        rt = {0, 0, w, h};
+        drawRoundedRectangle(p, r, &rt, foreground);
     }
-    rect = {b, b, w - 2 * b, h - 2 * b};
-    drawRoundedRectangle(p, r, &rect, background);
+    rt = {b, b, w - 2 * b, h - 2 * b};
+    drawRoundedRectangle(p, r, &rt, background);
     // Center text vertically.
-    rect.y = h / 2 - mH / 2;
+    rt.y = h / 2 - mH / 2;
     for (size_t i = 0; i < numLines; ++i) {
         // Blit rendered text lines onto one surface.
-        rect.w = tWs[i];
-        rect.h = tHs[i];
-        rect.x = w / 2 - rect.w / 2;
+        rt.w = tWs[i];
+        rt.h = tHs[i];
+        rt.x = w / 2 - rt.w / 2;
         if (i == size_t(highlightLine)) {
-            SDL_Rect hlR = {b, rect.y, w - 2 * b, rect.h};
+            SDL_Rect hlR = {b, rt.y, w - 2 * b, rt.h};
             SDL_FillRect(p, &hlR, SDL_MapRGB(p->format, highlight.r, highlight.g, highlight.b));
         }
-        SDL_BlitSurface(tSs[i], NULL, p, &rect);
+        SDL_BlitSurface(tSs[i], NULL, p, &rt );
         SDL_FreeSurface(tSs[i]);
-        rect.y += rect.h;
+        rt.y += rt.h;
     }
     return p;
 }

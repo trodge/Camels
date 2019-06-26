@@ -37,7 +37,7 @@ class TextBox : public Focusable {
     size_t lines;
     SDL_Color foreground;
     SDL_Color background;
-    int id;
+    unsigned int id;
     bool isNation;
     int border;
     int radius; // radius of rounded corner circles
@@ -87,7 +87,7 @@ class TextBox : public Focusable {
     const std::string &getText(size_t i) { return text[i]; }
     virtual const std::string &getItem() const { return text.back(); }
     bool getClicked() const { return clicked; }
-    int getId() const { return id; }
+    unsigned int getId() const { return id; }
     int getDivisor() const { return fontSize; }
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;
     bool clickCaptured(const SDL_MouseButtonEvent &b) const;

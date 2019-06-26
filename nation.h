@@ -30,7 +30,7 @@
 #include "good.h"
 
 class Nation {
-    int id;
+    unsigned int id;
     std::vector<std::string> names;
     std::string adjective;
     SDL_Color foreground, background, highlight, dot;
@@ -42,7 +42,7 @@ class Nation {
   public:
     Nation(sqlite3_stmt *q, const std::vector<Good> &gs);
     bool operator==(const Nation &other) const;
-    int getId() const { return id; }
+    unsigned int getId() const { return id; }
     const std::vector<std::string> getNames() const { return names; }
     const std::string getAdjective() const { return adjective; }
     const SDL_Color &getForeground() const { return foreground; }

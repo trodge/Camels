@@ -67,15 +67,15 @@ bool Business::operator==(const Business &other) const { return (id == other.id 
 
 void Business::run(std::vector<Good> &gs) {
     // Run this business on the given goods.
-    if (factor) {
+    if (factor > 0) {
         auto &lastInput = gs[inputs.back().getId()];
         for (auto &op : outputs) {
             if (keepMaterial and op != lastInput) {
                 // If last input and output are the same, ignore materials.
-                std::unordered_map<int, double> materialAmounts;
+                std::unordered_map<unsigned int, double> materialAmounts;
                 double lIA = lastInput.getAmount();
                 for (auto &m : lastInput.getMaterials()) {
-                    if (lIA)
+                    if (lIA > 0.)
                         materialAmounts.emplace(m.getId(), op.getAmount() * factor * m.getAmount() / lIA);
                 }
                 gs[op.getId()].create(materialAmounts);
@@ -89,7 +89,7 @@ void Business::run(std::vector<Good> &gs) {
 }
 
 void Business::setArea(double a) {
-    if (a and area) {
+    if (a > 0 and area > 0) {
         for (auto &ip : inputs)
             ip.setAmount(ip.getAmount() * a / area);
         for (auto &op : outputs)
@@ -125,7 +125,7 @@ void Business::addConflicts(std::vector<int> &cs, std::vector<Good> &gs) {
 void Business::handleConflicts(std::vector<int> &cs) {
     int gc = 0;
     for (auto &ip : inputs) {
-        int c = cs[ip.getId()];
+        int c = cs[static_cast<size_t>(ip.getId())];
         if (c > gc)
             gc = c;
     }
@@ -150,5 +150,5 @@ flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilde
         b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
     auto sOutputs =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
-    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, keepMaterial, sInputs, sOutputs, frequencyFactor);
+    return Save::CreateBusiness(b, static_cast<short>(id), static_cast<short>(mode), sName, static_cast<float>(area), static_cast<short>(canSwitch), static_cast<short>(keepMaterial), sInputs, sOutputs, static_cast<short>(frequencyFactor));
 }

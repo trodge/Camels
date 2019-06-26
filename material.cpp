@@ -19,22 +19,22 @@
 
 #include "material.h"
 
-Material::Material(int i, const std::string &n, double a, double c, double dS, double dI)
+Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI)
     : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
       minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a) {}
 
-Material::Material(int i, const std::string &n, double c, double dS, double dI) : Material(i, n, 0, c, dS, dI) {}
+Material::Material(unsigned int i, const std::string &n, double c, double dS, double dI) : Material(i, n, 0, c, dS, dI) {}
 
-Material::Material(int i, const std::string &n, double a) : Material(i, n, a, 0, 0, 0) {}
+Material::Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, 0, 0, 0) {}
 
-Material::Material(int i, const std::string &n) : Material(i, n, 0) {}
+Material::Material(unsigned int i, const std::string &n) : Material(i, n, 0) {}
 
-Material::Material(int i, double a) : Material(i, "", a) {}
+Material::Material(unsigned int i, double a) : Material(i, "", a) {}
 
-Material::Material(int i) : Material(i, "") {}
+Material::Material(unsigned int i) : Material(i, "") {}
 
 Material::Material(const Save::Material *m)
-    : id(m->id()), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()), demandSlope(m->demandSlope()),
+    : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()), demandSlope(m->demandSlope()),
       demandIntercept(m->demandIntercept()), minPrice(demandIntercept / 63) {
     auto lPerishCounters = m->perishCounters();
     for (auto lMI = lPerishCounters->begin(); lMI != lPerishCounters->end(); ++lMI)
@@ -77,12 +77,12 @@ double Material::getQuantity(double p, double *e) const {
     /* Get quantity of this material available at given price.
      * Second parameter holds excess quantity after amount is used up. */
     double q;
-    if (demandSlope)
+    if (demandSlope != 0.)
         q = amount -
             (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
                                     demandSlope * p * 2)) /
                 demandSlope;
-    else if (demandIntercept)
+    else if (demandIntercept != 0.)
         q = p / demandIntercept;
     else
         q = 0;
@@ -98,12 +98,12 @@ double Material::getQuantity(double p, double *e) const {
 double Material::getQuantity(double p) const {
     // Get quantity of this material corresponding to price. Ignore material availability.
     double q;
-    if (demandSlope)
+    if (demandSlope != 0.)
         q = amount -
             (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
                                     demandSlope * p * 2)) /
                 demandSlope;
-    else if (demandIntercept)
+    else if (demandIntercept != 0.)
         q = p / demandIntercept;
     else
         q = 0;
