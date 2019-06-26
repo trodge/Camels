@@ -51,7 +51,7 @@ double Settings::townProfit;
 int Settings::minPriceDivisor;
 double Settings::travelersExponent;
 int Settings::travelersMin;
-int Settings::statMax;
+unsigned int Settings::statMax;
 double Settings::attackDistSq;
 double Settings::escapeChance;
 int Settings::aIDecisionTime;

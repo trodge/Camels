@@ -234,7 +234,7 @@ void AI::autoEquip(const std::vector<Good> &gs, const std::array<unsigned int, 5
                         eM.setCombatStats(ss);
                         e.addMaterial(eM);
                         double score = equipScore(e, sts);
-                        int pId = ss.front().partId;
+                        unsigned int pId = ss.front().partId;
                         if (score > bestScore[pId]) {
                             bestScore[pId] = score;
                             eqp(e);

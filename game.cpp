@@ -699,6 +699,7 @@ void Game::createTradeButtons() {
                                                          p = 0.0;
                                                      }
                                                      player->setTradePortion(p);
+                                                     boxes[kTradePortionIndex]->setClicked(false);
                                                  }));
     boxes.back()->setKey(SDLK_s);
     // function to call when boxes are clicked
@@ -790,8 +791,8 @@ void Game::createEquipButtons() {
     left = screenRect.w * 218 / Settings::getGoodButtonXDivisor();
     for (auto &e : player->getEquipment()) {
         auto &ss = e.getMaterial().getCombatStats();
-        int pI = ss.front().partId;
-        rt.x = left + pI * dx;
+        unsigned int pI = ss.front().partId;
+        rt.x = left + static_cast<int>(pI) * dx;
         boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt,
                                                player->getNation()->getForeground(), player->getNation()->getBackground(),
                                                screenRect.h / Settings::getEquipFontDivisor(), [this, pI, ss] {
@@ -831,7 +832,7 @@ void Game::createAttackButton() {
                                                    screenRect.h / Settings::getFightFontDivisor(), [this, able] {
                                                        int i = boxes.back()->getHighlightLine();
                                                        if (i > -1) {
-                                                           player->attack(able[i]);
+                                                           player->attack(able[static_cast<size_t>(i)]);
                                                            setState(fighting);
                                                        } else
                                                            boxes.back()->setClicked(false);

@@ -35,7 +35,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData *gD)
     equip(2);
     equip(3);
     // Randomize stats.
-    static std::uniform_int_distribution<> dis(1, Settings::getStatMax());
+    static std::uniform_int_distribution<unsigned int> dis(1, Settings::getStatMax());
     for (auto &s : stats)
         s = dis(*Settings::getRng());
     // Set parts status to normal.
@@ -66,7 +66,7 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
 void Traveler::addToTown() { fromTown->addTraveler(shared_from_this()); }
 
 double Traveler::netWeight() const {
-    return std::accumulate(goods.begin(), goods.end(), stats[0] * -16,
+    return std::accumulate(goods.begin(), goods.end(), static_cast<double>(stats[0]) * -16.,
                            [](double d, Good g) { return d + g.getCarry() * g.getAmount(); });
 }
 
@@ -531,7 +531,7 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &t) {
 
 void Traveler::loot(Good &g, Traveler &t) {
     // Take the given good from the given traveler.
-    int gId = g.getId();
+    unsigned int gId = g.getId();
     t.goods[gId].take(g);
     goods[gId].put(g);
 }
@@ -557,7 +557,7 @@ void Traveler::runAI(unsigned int e) {
 void Traveler::update(unsigned int e) {
     // Move traveler toward destination and perform combat with target.
     if (toTown and moving) {
-        double t = e / static_cast<double>(Settings::getDayLength());
+        double t = static_cast<double>(e) / static_cast<double>(Settings::getDayLength());
         // Take a step toward town.
         double dlt = toTown->getLatitude() - latitude;
         double dlg = toTown->getLongitude() - longitude;

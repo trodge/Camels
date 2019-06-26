@@ -62,7 +62,7 @@ class Settings {
     static int minPriceDivisor;
     static double travelersExponent;
     static int travelersMin;
-    static int statMax;
+    static unsigned int statMax;
     static double attackDistSq;
     static double escapeChance;
     static int aIDecisionTime;
@@ -110,7 +110,7 @@ class Settings {
     static int getMinPriceDivisor() { return minPriceDivisor; }
     static double getTravelersExponent() { return travelersExponent; }
     static int getTravelersMin() { return travelersMin; }
-    static int getStatMax() { return statMax; }
+    static unsigned int getStatMax() { return statMax; }
     static double getAttackDistSq() { return attackDistSq; }
     static double getEscapeChance() { return escapeChance; }
     static int getAIDecisionTime() { return aIDecisionTime; }

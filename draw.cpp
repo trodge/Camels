@@ -149,7 +149,8 @@ void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
         return;
     if (xi < 0 or xi > w or yi < 0 or yi > h or xf < 0 or xf > w or yf < 0 or yf > h) {
         // Clip line
-        double dx = xf - xi, dy = yf - yi, ti = 0, tf = 1;
+        double dx = static_cast<double>(xf - xi), dy = static_cast<double>(yf - yi);
+        double ti = 0., tf = 1.;
         for (int side = 0; side < 4; ++side) {
             double p, q, r;
             switch (side) {
@@ -174,7 +175,7 @@ void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
             if (p < 0) {
                 if (r > tf)
                     return;
-                else if (r > ti)
+                else if (r >= ti)
                     ti = r;
             } else if (p > 0) {
                 if (r < ti)
@@ -183,10 +184,10 @@ void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
                     tf = r;
             }
         }
-        xf = xi + tf * dx;
-        yf = yi + tf * dy;
-        xi += ti * dx;
-        yi += ti * dy;
+        xf = static_cast<int>(static_cast<double>(xi) + tf * dx);
+        yf = static_cast<int>(static_cast<double>(yi) + tf * dy);
+        xi = static_cast<int>(static_cast<double>(xi) + ti * dx);
+        yi = static_cast<int>(static_cast<double>(yi) + ti * dy);
     }
     // Draw the line.
     int dx = xf - xi;
@@ -206,7 +207,7 @@ void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
         std::swap(yi, yf);
         dx = -dx;
     }
-    unsigned int e = -dx;
+    int e = -dx;
     int dey = 2 * abs(dy);
     int dex = 2 * dx;
     int ystep;
@@ -244,7 +245,7 @@ void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
 
 Uint32 getAt(const SDL_Surface *s, int x, int y) {
     int bpp = s->format->BytesPerPixel;
-    Uint8 *p = (Uint8 *)s->pixels + y * s->pitch + x * bpp;
+    Uint8 *p = static_cast<Uint8 *>(s->pixels) + y * s->pitch + x * bpp;
 
     switch (bpp) {
     case 1:
@@ -252,7 +253,7 @@ Uint32 getAt(const SDL_Surface *s, int x, int y) {
         break;
 
     case 2:
-        return *(Uint16 *)p;
+        return *reinterpret_cast<Uint16 *>(p);
         break;
 
     case 3:
@@ -263,7 +264,7 @@ Uint32 getAt(const SDL_Surface *s, int x, int y) {
         break;
 
     case 4:
-        return *(Uint32 *)p;
+        return *reinterpret_cast<Uint32 *>(p);
         break;
 
     default:
@@ -273,15 +274,15 @@ Uint32 getAt(const SDL_Surface *s, int x, int y) {
 
 void drawPixel(SDL_Surface *s, int x, int y, Uint32 color) {
     int bpp = s->format->BytesPerPixel;
-    Uint8 *p = (Uint8 *)s->pixels + y * s->pitch + x * bpp;
+    Uint8 *p = static_cast<Uint8 *>(s->pixels) + y * s->pitch + x * bpp;
 
     switch (bpp) {
     case 1:
-        *p = color;
+        *p = static_cast<Uint8>(color);
         break;
 
     case 2:
-        *(Uint16 *)p = color;
+        *reinterpret_cast<Uint16 *>(p) = static_cast<Uint16>(color);
         break;
 
     case 3:
@@ -297,7 +298,7 @@ void drawPixel(SDL_Surface *s, int x, int y, Uint32 color) {
         break;
 
     case 4:
-        *(Uint32 *)p = color;
+        *reinterpret_cast<Uint32 *>(p) = static_cast<Uint32>(color);
         break;
 
     default:
