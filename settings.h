@@ -44,7 +44,7 @@ class Settings {
     static int bigBoxBorder;
     static int bigBoxRadius;
     static int bigBoxFontDivisor;
-    static int loadBarDivisor;
+    static int loadBarFontDivisor;
     static int smallBoxBorder;
     static int smallBoxRadius;
     static int smallBoxFontDivisor;
@@ -88,7 +88,7 @@ class Settings {
     static int getBigBoxBorder() { return bigBoxBorder; }
     static int getBigBoxRadius() { return bigBoxRadius; }
     static int getBigBoxFontDivisor() { return bigBoxFontDivisor; }
-    static int getLoadBarDivisor() { return loadBarDivisor; }
+    static int getLoadBarDivisor() { return loadBarFontDivisor; }
     static int getSmallBoxBorder() { return smallBoxBorder; }
     static int getSmallBoxRadius() { return smallBoxRadius; }
     static int getSmallBoxFontDivisor() { return smallBoxFontDivisor; }

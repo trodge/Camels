@@ -33,7 +33,7 @@ class Nation {
     int id;
     std::vector<std::string> names;
     std::string adjective;
-    SDL_Color foreground, background, highlight, dotColor;
+    SDL_Color foreground, background, highlight, dot;
     std::string religion;
     std::vector<std::string> travelerNames;
     std::vector<Good> goods;
@@ -48,7 +48,7 @@ class Nation {
     const SDL_Color &getForeground() const { return foreground; }
     const SDL_Color &getBackground() const { return background; }
     const SDL_Color &getHighlight() const { return highlight; }
-    const SDL_Color &getDotColor() const { return dotColor; }
+    const SDL_Color &getDotColor() const { return dot; }
     double getFrequency(int b, int m) const;
     const std::vector<Good> &getGoods() const { return goods; }
     std::string randomName() const;

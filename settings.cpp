@@ -99,7 +99,7 @@ void Settings::load(const fs::path &p) {
     fightFontDivisor = tree.get("ui.fightFontDivisor", 49);
     equipFontDivisor = tree.get("ui.equipFontDivisor", 60);
     townFontDivisor = tree.get("ui.townFontDivisor", 77);
-    tradeFontDivisor = tree.get("ui.tradeFontDivisor", 16);
+    tradeFontDivisor = tree.get("ui.tradeFontDivisor", 77);
     goodButtonXDivisor = tree.get("ui.goodButtonXDivisor", 434);
     goodButtonYDivisor = tree.get("ui.goodButtonYDivisor", 527);
     scale = tree.get("ui.scale", 112.5);

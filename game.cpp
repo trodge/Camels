@@ -192,7 +192,7 @@ void Game::newGame() {
     sqlite3_prepare_v2(conn, "SELECT * FROM towns", -1, &quer, nullptr);
     towns.reserve(tC);
     while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
-        towns.push_back(Town(quer, nations, businesses, frequencyFactors, screenRect.h));
+        towns.push_back(Town(quer, nations, businesses, frequencyFactors, screenRect.h / Settings::getTownFontDivisor()));
         loadBar.progress(1. / tC);
         loadBar.draw(screen);
         SDL_UpdateWindowSurface(window);
@@ -293,7 +293,7 @@ void Game::load(const fs::path &p) {
                         Settings::getBigBoxRadius(), Settings::getLoadBarDivisor());
         towns.reserve(lTowns->size());
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
-            towns.push_back(Town(*lTI, nations, screenRect.h));
+            towns.push_back(Town(*lTI, nations, screenRect.h / Settings::getTownFontDivisor()));
             loadBar.progress(1. / lTowns->size());
             loadBar.draw(screen);
             SDL_UpdateWindowSurface(window);
@@ -707,6 +707,7 @@ void Game::createTradeButtons() {
     for (auto &g : player->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
+                std::cout << screenRect.h / Settings::getTradeFontDivisor() << std::endl;
                 boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, player->getNation()->getForeground(),
                                          player->getNation()->getBackground(), screenRect.h / Settings::getTradeFontDivisor(), f));
                 rt.x += dx;
@@ -769,7 +770,7 @@ void Game::createEquipButtons() {
         for (auto &e : eP) {
             boxes.push_back(e.getMaterial().button(
                 false, e.getId(), e.getName(), e.getSplit(), r, player->getNation()->getForeground(),
-                player->getNation()->getBackground(), Settings::getEquipDivisor(), [this, e]() mutable {
+                player->getNation()->getBackground(), Settings::getEquipFontDivisor(), [this, e]() mutable {
                     player->equip(e);
                     setState(equipping);
                 }));
@@ -787,7 +788,7 @@ void Game::createEquipButtons() {
         r.x = left + pI * dx;
         boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), r,
                                                player->getNation()->getForeground(), player->getNation()->getBackground(),
-                                               Settings::getEquipDivisor(), [this, pI, ss] {
+                                               screenRect.h / Settings::getEquipFontDivisor(), [this, pI, ss] {
                                                    player->unequip(pI);
                                                    // Equip fists.
                                                    for (auto &s : ss)
