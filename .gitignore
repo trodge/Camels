@@ -13,3 +13,4 @@ save\.fbs
 save/
 vimsrc\.sh
 win-build/
+.vscode
