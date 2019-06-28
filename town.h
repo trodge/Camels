@@ -84,16 +84,16 @@ class Town : public Focusable {
     void toggleMaxGoods() { maxGoods = not maxGoods; }
     void placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s);
     void placeText(std::vector<SDL_Rect> &drawn) { box->place(dpx, dpy, drawn); }
-    void drawRoutes(SDL_Surface *s);
-    void drawDot(SDL_Surface *s);
-    void drawText(SDL_Surface *s) { box->draw(s); }
+    void drawRoutes(SDL_Renderer *s);
+    void drawDot(SDL_Renderer *s);
+    void drawText(SDL_Renderer *s) { box->draw(s); }
     void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
     void generateTravelers(const GameData *gD, std::vector<std::shared_ptr<Traveler>> &ts);
     double dist(const Town *t) const;
     void loadNeighbors(std::vector<Town> &ts, const std::vector<size_t> &nIs);
-    void findNeighbors(std::vector<Town> &ts, const SDL_Surface *map, int mox, int moy);
+    void findNeighbors(std::vector<Town> &ts, const SDL_Surface *mS, int mox, int moy);
     void connectRoutes();
     void saveNeighbors(std::string &i) const;
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d);

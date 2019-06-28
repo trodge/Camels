@@ -72,9 +72,10 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const Nation *nation;
     std::vector<std::string> logText;
     double longitude, latitude;
-    std::vector<Good> goods;           // goods carried by traveler
-    std::vector<Good> offer, request;  // goods offered and requested in next trade
-    std::vector<std::unique_ptr<TextBox>>::difference_type requestButtonIndex;         // index of request and offer button for updating trade buttons
+    std::vector<Good> goods;          // goods carried by traveler
+    std::vector<Good> offer, request; // goods offered and requested in next trade
+    std::vector<std::unique_ptr<TextBox>>::difference_type
+        requestButtonIndex;            // index of request and offer button for updating trade buttons
     double tradePortion;               // portion of goods offered in next trade
     std::weak_ptr<Traveler> target;    // pointer to enemy if currently fighting
     double fightTime;                  // time left to fight this round
@@ -126,7 +127,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void addToTown();
     void pickTown(const Town *t);
     void place(int ox, int oy, double s);
-    void draw(SDL_Surface *s) const;
+    void draw(SDL_Renderer *s) const;
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     void makeTrade();
     void unequip(unsigned int pI);

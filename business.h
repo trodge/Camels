@@ -49,7 +49,7 @@ class Business {
     Business(const Save::Business *b);
     bool operator==(const Business &other) const;
     unsigned int getId() const { return id; }
-    int getMode() const { return mode; }
+    unsigned int getMode() const { return mode; }
     double getArea() const { return area; }
     bool getCanSwitch() const { return canSwitch; }
     bool getRequireCoast() const { return requireCoast; }

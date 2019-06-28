@@ -19,20 +19,26 @@
 
 #include "textbox.h"
 
-TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r,
-                 int fS)
+TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+                 int r, int fS)
     : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS) {
     fixedSize = (rt.w and rt.h);
     setText(t);
 }
 
-TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, int b, int r, int fS)
+TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, int b, int r,
+                 int fS)
     : TextBox(rt, t, fg, bg, i, false, b, r, fS) {}
 
 TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS)
     : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
 
-TextBox::~TextBox() { SDL_FreeSurface(ts); }
+TextBox::~TextBox() {
+    if (tS)
+        SDL_FreeSurface(tS);
+    if (tT)
+        SDL_DestroyTexture(tT);
+}
 
 void TextBox::setText() {
     // Renders the text using the printer. Call any time text changes.
@@ -42,8 +48,8 @@ void TextBox::setText() {
         rect.w = 0;
         rect.h = 0;
     }
-    if (ts)
-        SDL_FreeSurface(ts);
+    if (tS)
+        SDL_FreeSurface(tS);
     if (isNation)
         Printer::setNationId(id);
     else
@@ -57,14 +63,15 @@ void TextBox::setText() {
     lines = text.size();
     if (rect.h and lines > size_t(rect.h / lineHeight)) {
         // Truncate lines of text if they won't fit in box of fixed size.
-        lines = rect.h / lineHeight;
-        text = std::vector<std::string>(text.begin(), text.begin() + lines);
+        lines = static_cast<size_t>(rect.h / lineHeight);
+        text = std::vector<std::string>(text.begin(),
+                                        text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
     }
-    ts = Printer::print(text, rect.w, rect.h, border, radius);
+    tS = Printer::print(text, rect, border, radius);
+    updateTexture = true;
+
     // If rectangle dimensions were not provided, rectagle coordinates are text center.
     if (not fixedSize) {
-        rect.w = ts->w;
-        rect.h = ts->h;
         rect.x -= rect.w / 2;
         rect.y -= rect.h / 2;
     }
@@ -106,6 +113,17 @@ void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
     }
     rect = r;
     drawn.push_back(r);
+}
+
+void TextBox::draw(SDL_Renderer *s) {
+    // Copy this TextBox's texture onto s, updating texture if necessary.
+    if (updateTexture) {
+        if (tT)
+            SDL_DestroyTexture(tT);
+        tT = SDL_CreateTextureFromSurface(s, tS);
+        updateTexture = false;
+    }
+    SDL_RenderCopy(s, tT, nullptr, &rect);
 }
 
 bool TextBox::keyCaptured(const SDL_KeyboardEvent &k) const {

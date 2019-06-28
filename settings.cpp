@@ -45,7 +45,7 @@ int Settings::tradeFontDivisor;
 int Settings::goodButtonXDivisor, Settings::goodButtonYDivisor;
 double Settings::scale;
 int Settings::dayLength;
-int Settings::businessRunTime;
+unsigned int Settings::businessRunTime;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
 double Settings::townProfit;
 int Settings::minPriceDivisor;
@@ -72,6 +72,7 @@ void loadColor(const std::string &n, SDL_Color *c, const SDL_Color &d, const pt:
     c->r = t.get(n + "_r", d.r);
     c->g = t.get(n + "_g", d.g);
     c->b = t.get(n + "_b", d.b);
+    c->a = t.get(n + "_a", d.a);
 }
 
 void Settings::load(const fs::path &p) {

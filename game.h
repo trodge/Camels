@@ -34,9 +34,10 @@
 
 class Game {
     SDL_Window *window;
-    SDL_Surface *screen;
+    SDL_Renderer *screen;
     bool stop = false, pause = false, storedPause = true;
-    SDL_Surface *mapImage;
+    SDL_Texture *mapTexture;
+    SDL_Surface *mapSurface;
     SDL_Rect screenRect, mapRect;
     int scrollSpeed, scrollX, scrollY;
     int offsetX, offsetY;

@@ -115,6 +115,6 @@ class Material {
     flatbuffers::Offset<Save::Material> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
-void dropTrail(std::string *t, int dK);
+void dropTrail(std::string *t, unsigned int dK);
 
 #endif // MATERIAL_H

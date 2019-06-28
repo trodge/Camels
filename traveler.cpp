@@ -170,7 +170,7 @@ void Traveler::place(int ox, int oy, double s) {
     py = oy - static_cast<int>(s * latitude);
 }
 
-void Traveler::draw(SDL_Surface *s) const {
+void Traveler::draw(SDL_Renderer *s) const {
     SDL_Color col;
     if (ai)
         col = Settings::getAIColor();

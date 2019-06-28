@@ -45,14 +45,17 @@ class TextBox : public Focusable {
     bool clicked = false;
     int fontSize;
     int lineHeight = -1;
-    SDL_Surface *ts = nullptr;
+    SDL_Surface *tS = nullptr;  // text surface
+    SDL_Texture *tT = nullptr;  // text texture
+    bool updateTexture = false; // whether the texture needs updating
     TextBox() {}
     void setBorder(int b);
 
   public:
-    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r,
+    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+            int r, int fS);
+    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, int b, int r,
             int fS);
-    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, int b, int r, int fS);
     TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS);
     virtual ~TextBox();
     virtual void setText();
@@ -78,11 +81,7 @@ class TextBox : public Focusable {
     virtual SDL_Keycode getKey() const { return SDLK_UNKNOWN; }
     const SDL_Rect &getRect() const { return rect; }
     void place(int x, int y, std::vector<SDL_Rect> &drawn);
-    virtual void draw(SDL_Surface *s) {
-        // Blit this TextBox's surface onto s.
-        SDL_Rect r = rect;
-        SDL_BlitSurface(ts, NULL, s, &r);
-    }
+    virtual void draw(SDL_Renderer *s);
     const std::vector<std::string> &getText() const { return text; }
     const std::string &getText(size_t i) { return text[i]; }
     virtual const std::string &getItem() const { return text.back(); }

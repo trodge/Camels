@@ -24,17 +24,17 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     // Load a town from the given sqlite query.
     canFocus = true;
     // Load town info.
-    id = sqlite3_column_int(q, 0);
+    id = static_cast<unsigned int>(sqlite3_column_int(q, 0));
     std::vector<std::string> names;
     names.reserve(2);
     names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))));
     names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))));
-    nation = &ns[sqlite3_column_int(q, 3) - 1];
+    nation = &ns[static_cast<size_t>(sqlite3_column_int(q, 3) - 1)];
     longitude = sqlite3_column_double(q, 5);
     latitude = sqlite3_column_double(q, 4);
     coastal = bool(sqlite3_column_int(q, 6));
-    population = sqlite3_column_int(q, 7);
-    townType = sqlite3_column_int(q, 8);
+    population = static_cast<unsigned long>(sqlite3_column_int(q, 7));
+    townType = static_cast<unsigned int>(sqlite3_column_int(q, 8));
     SDL_Rect rt = {0, 0, 0, 0};
     box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
                                     fS);
@@ -57,8 +57,8 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     // Start with enough inputs for one run cycle.
     resetGoods();
     // randomize business run counter
-    static std::uniform_int_distribution<> dis(0, Settings::getBusinessRunTime());
-    businessCounter = dis(*Settings::getRng());
+    static std::uniform_int_distribution<unsigned int> dis(0, Settings::getBusinessRunTime());
+    businessCounter = static_cast<int>(dis(*Settings::getRng()));
     travelersDis = std::uniform_int_distribution<>(Settings::getTravelersMin(),
                                                    static_cast<int>(pow(population, Settings::getTravelersExponent())));
 }
@@ -125,24 +125,30 @@ void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
     drawn.push_back(r);
 }
 
-void Town::drawRoutes(SDL_Surface *s) {
+void Town::drawRoutes(SDL_Renderer *s) {
+    std::vector<SDL_Point> ps(neighbors.size() * 2u);
     for (auto &n : neighbors) {
-        drawLine(s, dpx, dpy, n->dpx, n->dpy, Settings::getRouteColor());
+        ps.push_back({dpx, dpy});
+        ps.push_back({n->dpx, n->dpy});
     }
+    const SDL_Color &col = Settings::getRouteColor();
+    SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
+    SDL_RenderDrawLines(s, ps.data(), static_cast<int>(ps.size()));
 }
 
-void Town::drawDot(SDL_Surface *s) {
+void Town::drawDot(SDL_Renderer *s) {
     const SDL_Rect &bR = box->getRect();
-    SDL_Rect lr = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
+    SDL_Rect lR = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
     const SDL_Color &fg = nation->getForeground();
-    SDL_FillRect(s, &lr, SDL_MapRGB(s->format, fg.r, fg.g, fg.b));
-    const SDL_Color &dc = nation->getDotColor();
-    drawCircle(s, dpx, dpy, 3, dc, true);
+    SDL_SetRenderDrawColor(s, fg.r, fg.g, fg.b, fg.a);
+    SDL_RenderFillRect(s, &lR);
+    const SDL_Color &dC = nation->getDotColor();
+    drawCircle(s, dpx, dpy, 3, dC, true);
 }
 
 void Town::update(unsigned int e) {
     businessCounter += e;
-    if (businessCounter > Settings::getBusinessRunTime()) {
+    if (businessCounter > static_cast<int>(Settings::getBusinessRunTime())) {
         for (auto &g : goods)
             g.consume(Settings::getBusinessRunTime());
         std::vector<int> conflicts(goods.size(), 0);
@@ -184,7 +190,7 @@ void Town::generateTravelers(const GameData *gD, std::vector<std::shared_ptr<Tra
     int n = travelersDis(*Settings::getRng());
     if (n < 0)
         n = 0;
-    ts.reserve(ts.size() + n);
+    ts.reserve(ts.size() + static_cast<size_t>(n));
     for (int i = 0; i < n; ++i)
         ts.push_back(std::make_shared<Traveler>(nation->randomName(), this, gD));
 }
@@ -199,8 +205,8 @@ void Town::loadNeighbors(std::vector<Town> &ts, const std::vector<size_t> &nIs) 
             neighbors.push_back(&ts[nI - 1]);
 }
 
-void Town::findNeighbors(std::vector<Town> &ts, const SDL_Surface *map, int mox, int moy) {
-    // Find nearest towns that can be traveled to directly from this one.
+void Town::findNeighbors(std::vector<Town> &ts, const SDL_Surface *mS, int mox, int moy) {
+    // Find nearest towns that can be traveled to directly from this one on map surface.
     neighbors.clear();
     size_t max = 5;
     neighbors.reserve(max);
@@ -233,8 +239,8 @@ void Town::findNeighbors(std::vector<Town> &ts, const SDL_Surface *map, int mox,
                 Uint8 r, g, b;
                 int mx = static_cast<int>(x) + mox;
                 int my = static_cast<int>(y) + moy;
-                if (mx >= 0 and mx < map->w and my >= 0 and my < map->h)
-                    SDL_GetRGB(getAt(map, mx, my), map->format, &r, &g, &b);
+                if (mx >= 0 and mx < mS->w and my >= 0 and my < mS->h)
+                    SDL_GetRGB(getAt(mS, mx, my), mS->format, &r, &g, &b);
                 else {
                     r = Settings::getWaterColor().r;
                     g = Settings::getWaterColor().g;
@@ -253,7 +259,8 @@ void Town::findNeighbors(std::vector<Town> &ts, const SDL_Surface *map, int mox,
     // take only the closest neighbors
     if (max > neighbors.size())
         max = neighbors.size();
-    neighbors = std::vector<Town *>(neighbors.begin(), neighbors.begin() + max);
+    neighbors =
+        std::vector<Town *>(neighbors.begin(), neighbors.begin() + static_cast<std::vector<Town *>::difference_type>(max));
 }
 
 void Town::connectRoutes() {

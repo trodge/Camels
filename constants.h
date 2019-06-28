@@ -21,13 +21,14 @@
 #define CONSTANTS_H
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 const double kShowPlayerPadding = 0.2; // Portion of screen to pad around player when map zooms to player
 const size_t kMaxTowns = 500;          // Maximum number of towns allowed to be loaded
 const int kDaysPerYear = 365;
-const size_t kFontCount = 5;         // Number of fonts used to display text
-const size_t kTradePortionIndex = 1; // Index of text box representing trade portion
-const size_t kOfferButtonIndex = 4;  // The index of first offer button when trading
-const size_t kFightChoiceIndex = 3;  // Index of box representing choice when fighting
+const std::vector<TTF_Font *>::difference_type kFontCount = 5; // Number of fonts used to display text
+const size_t kTradePortionIndex = 1;                           // Index of text box representing trade portion
+const size_t kOfferButtonIndex = 4;                            // The index of first offer button when trading
+const size_t kFightChoiceIndex = 3;                            // Index of box representing choice when fighting
 
 #endif

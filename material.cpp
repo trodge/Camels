@@ -309,7 +309,7 @@ flatbuffers::Offset<Save::Material> Material::save(flatbuffers::FlatBufferBuilde
                                 sCombatStats);
 }
 
-void dropTrail(std::string *t, int dK) {
+void dropTrail(std::string *t, unsigned int dK) {
     // Trim decimal places beyond dK from string t.
     size_t dP; // position to drop
     dP = t->find('.') + dK;

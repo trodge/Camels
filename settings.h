@@ -56,7 +56,7 @@ class Settings {
     static int goodButtonXDivisor, goodButtonYDivisor;
     static double scale;
     static int dayLength;
-    static int businessRunTime;
+    static unsigned int businessRunTime;
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static double townProfit;
     static int minPriceDivisor;
@@ -102,7 +102,7 @@ class Settings {
     static int getGoodButtonYDivisor() { return goodButtonYDivisor; }
     static double getScale() { return scale; }
     static int getDayLength() { return dayLength; }
-    static int getBusinessRunTime() { return businessRunTime; }
+    static unsigned int getBusinessRunTime() { return businessRunTime; }
     static double getConsumptionSpaceFactor() { return consumptionSpaceFactor; }
     static double getInputSpaceFactor() { return inputSpaceFactor; }
     static double getOutputSpaceFactor() { return outputSpaceFactor; }

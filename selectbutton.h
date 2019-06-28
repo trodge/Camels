@@ -30,7 +30,7 @@ class SelectButton : public ScrollBox, public MenuButton {
                  int fS, std::function<void()> oC);
     const std::string &getItem() const {
         if (highlightLine > -1)
-            return items[highlightLine];
+            return items[static_cast<size_t>(highlightLine)];
         return items.back();
     }
     bool keyCaptured(const SDL_KeyboardEvent &k) const;

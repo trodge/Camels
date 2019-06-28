@@ -27,8 +27,9 @@ Game::Game() : scrollX(0), scrollY(0) {
     SDL_Surface *icon = SDL_LoadBMP("icon.bmp");
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
-    screen = SDL_GetWindowSurface(window);
-    mapImage = IMG_Load("map-scaled.png");
+    screen = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    mapSurface = IMG_Load("map-scaled.png");
+    mapTexture = SDL_CreateTextureFromSurface(screen, mapSurface);
     setState(starting);
     /*SDL_CreateRGBSurfaceWithFormat(
     0, 14220, 6640, screen->format->BitsPerPixel, screen->format->format);
@@ -45,9 +46,13 @@ Game::Game() : scrollX(0), scrollY(0) {
 }
 
 Game::~Game() {
-    if (mapImage)
-        SDL_FreeSurface(mapImage);
-    mapImage = nullptr;
+    if (mapSurface)
+        SDL_FreeSurface(mapSurface);
+    mapSurface = nullptr;
+    if (mapTexture)
+        SDL_DestroyTexture(mapTexture);
+    mapTexture = nullptr;
+    SDL_DestroyRenderer(screen);
     SDL_DestroyWindow(window);
 }
 
@@ -65,7 +70,9 @@ void Game::changeOffsets(int dx, int dy) {
     // Move view around world map.
     int mx = mapRect.x + dx;
     int my = mapRect.y + dy;
-    if (mx > 0 and mx < mapImage->w - mapRect.w and my > 0 and my < mapImage->h - mapRect.h) {
+    int mw = mapSurface->w;
+    int mh = mapSurface->h;
+    if (mx > 0 and mx < mw - mapRect.w and my > 0 and my < mh - mapRect.h) {
         mapRect.x = mx;
         mapRect.y = my;
         offsetX -= dx;
@@ -88,7 +95,7 @@ void Game::loadNations(sqlite3 *c) {
     sqlite3_stmt *quer;
     sqlite3_prepare_v2(c, "SELECT * FROM goods", -1, &quer, nullptr);
     while (sqlite3_step(quer) != SQLITE_DONE)
-        goods.push_back(Good(sqlite3_column_int(quer, 0),
+        goods.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 0)),
                              std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 1))),
                              sqlite3_column_double(quer, 2), sqlite3_column_double(quer, 3),
                              std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 4)))));
@@ -168,7 +175,7 @@ void Game::newGame() {
     // Load businesses.
     sqlite3_stmt *quer;
     sqlite3_prepare_v2(conn, "SELECT modes FROM businesses", -1, &quer, nullptr);
-    std::vector<int> businessModes;
+    std::vector<unsigned int> businessModes;
     while (sqlite3_step(quer) != SQLITE_DONE)
         businessModes.push_back(sqlite3_column_int(quer, 0));
     sqlite3_finalize(quer);
@@ -177,7 +184,7 @@ void Game::newGame() {
     unsigned int bId = 0;
     for (auto &bM : businessModes) {
         ++bId;
-        for (int m = 1; m <= bM; ++m)
+        for (unsigned int m = 1; m <= bM; ++m)
             businesses.push_back(Business(bId, m, conn));
     }
     std::map<std::pair<int, int>, double> frequencyFactors;
@@ -728,7 +735,7 @@ void Game::createTradeButtons() {
     right = screenRect.w - screenRect.w / Settings::getGoodButtonXDivisor();
     rt.x = left;
     rt.y = top;
-    player->setRequestButtonIndex(boxes.size());
+    player->setRequestButtonIndex(static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(boxes.size()));
     for (auto &g : player->getTown()->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
@@ -983,7 +990,7 @@ void Game::handleEvents() {
         else
             d = 1;
         Uint8 r, g, b;
-        int mx, my;
+        int mx, my, mw, mh;
         switch (event.type) {
         case SDL_KEYDOWN:
             if (not boxes.empty()) {
@@ -1130,8 +1137,10 @@ void Game::handleEvents() {
             // Print r g b values at clicked coordinates
             mx = event.button.x + mapRect.x;
             my = event.button.y + mapRect.y;
-            if (mx >= 0 and mx < mapImage->w and my >= 0 and my < mapImage->h) {
-                SDL_GetRGB(getAt(mapImage, mx, my), mapImage->format, &r, &g, &b);
+            mw = mapSurface->w;
+            mh = mapSurface->h;
+            if (mx >= 0 and mx < mw and my >= 0 and my < mh) {
+                SDL_GetRGB(getAt(mapSurface, mx, my), mapSurface->format, &r, &g, &b);
                 std::cout << '(' << int(r) << ',' << int(g) << ',' << int(b) << ')' << std::endl;
             }
             __attribute__((fallthrough));
@@ -1195,7 +1204,7 @@ void Game::update() {
 
 void Game::draw() {
     // Draw UI and game elements.
-    SDL_LowerBlit(mapImage, &mapRect, screen, &screenRect);
+    SDL_RenderCopy(screen, mapTexture, &mapRect, nullptr);
     for (auto &t : towns)
         t.drawRoutes(screen);
     for (auto &t : towns)
@@ -1206,7 +1215,7 @@ void Game::draw() {
         t.drawText(screen);
     for (auto &b : boxes)
         b->draw(screen);
-    SDL_UpdateWindowSurface(window);
+    SDL_RenderPresent(screen);
 }
 
 void Game::saveRoutes() {
@@ -1215,7 +1224,7 @@ void Game::saveRoutes() {
                     {"Finding routes..."}, {0, 255, 0, 255}, Settings::getUIForeground(), Settings::getBigBoxRadius(),
                     Settings::getBigBoxBorder(), Settings::getLoadBarDivisor());
     for (auto &t : towns) {
-        t.findNeighbors(towns, mapImage, mapRect.x, mapRect.y);
+        t.findNeighbors(towns, mapSurface, mapRect.x, mapRect.y);
         loadBar.progress(1. / static_cast<double>(towns.size()));
         loadBar.draw(screen);
         SDL_UpdateWindowSurface(window);

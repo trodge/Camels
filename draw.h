@@ -23,14 +23,14 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <vector>
 
 #include <SDL2/SDL.h>
 
-void drawRoundedRectangle(SDL_Surface *s, int r, SDL_Rect *rect, SDL_Color col);
-void drawCircle(SDL_Surface *s, int cx, int cy, int r, SDL_Color col, bool fl);
-void drawCircleSymmetryPoints(SDL_Surface *s, int cx, int cy, int x, int y, Uint32 color, bool check_bounds);
-void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col);
+void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
+void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl);
+void addCircleSymmetryPoints(std::vector<SDL_Point> ps, int cx, int cy, int x, int y);
 Uint32 getAt(const SDL_Surface *s, int x, int y);
-void drawPixel(SDL_Surface *s, int x, int y, Uint32 color);
+void setAt(SDL_Surface *s, int x, int y, Uint32 color);
 
 #endif

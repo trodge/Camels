@@ -25,15 +25,13 @@
 #include <string>
 #include <vector>
 
-#include <SDL2/SDL_ttf.h>
-
 #include "constants.h"
 #include "draw.h"
 
 class Printer {
     static std::vector<int> sizes;
-    static size_t sizeIndex;
-    static int nationId;
+    static std::vector<int>::difference_type sizeIndex;
+    static unsigned int nationId;
     static SDL_Color foreground, background, highlight;
     static int highlightLine;
     static std::vector<TTF_Font *> fonts;
@@ -47,10 +45,10 @@ class Printer {
     }
     static void setHighlight(const SDL_Color &hl) { highlight = hl; };
     static void setHighlightLine(int h) { highlightLine = h; }
-    static void setNationId(int n) { nationId = n; }
-    static int getFontHeight() { return TTF_FontHeight(fonts[sizeIndex * kFontCount]); }
+    static void setNationId(unsigned int n) { nationId = n; }
+    static int getFontHeight() { return TTF_FontHeight(fonts[static_cast<size_t>(sizeIndex * kFontCount)]); }
     static int getFontWidth(const std::string &tx);
-    static SDL_Surface *print(const std::vector<std::string> &tx, int w, int h, int b, int r);
+    static SDL_Surface *print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r);
 };
 
 #endif
