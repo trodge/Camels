@@ -184,10 +184,10 @@ void drawLine(SDL_Surface *s, int xi, int yi, int xf, int yf, SDL_Color col) {
                     tf = r;
             }
         }
-        xf = static_cast<int>(static_cast<double>(xi) + tf * dx);
-        yf = static_cast<int>(static_cast<double>(yi) + tf * dy);
-        xi = static_cast<int>(static_cast<double>(xi) + ti * dx);
-        yi = static_cast<int>(static_cast<double>(yi) + ti * dy);
+        xf = static_cast<int>(xi + tf * dx);
+        yf = static_cast<int>(yi + tf * dy);
+        xi = static_cast<int>(xi + ti * dx);
+        yi = static_cast<int>(yi + ti * dy);
     }
     // Draw the line.
     int dx = xf - xi;
@@ -258,9 +258,9 @@ Uint32 getAt(const SDL_Surface *s, int x, int y) {
 
     case 3:
         if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return p[0] << 16 | p[1] << 8 | p[2];
+            return static_cast<Uint32>(p[0] << 16u | p[1] << 8u | p[2]);
         else
-            return p[0] | p[1] << 8 | p[2] << 16;
+            return static_cast<Uint32>(p[0] | p[1] << 8u | p[2] << 16u);
         break;
 
     case 4:

@@ -1,0 +1,15 @@
+\.clang-format
+\.kdev4/
+CMakeCache\.txt
+Camels\.kdev4
+build/
+cmake_install\.cmake
+colorpicker\.py
+map\.bmp
+map\.png
+obj/
+rearrange_data\.py
+save\.fbs
+save/
+vimsrc\.sh
+win-build/
