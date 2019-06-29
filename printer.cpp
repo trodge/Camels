@@ -113,8 +113,8 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
     SDL_Surface *p = SDL_CreateRGBSurface(0, rt.w, rt.h, 32, rmask, gmask, bmask, amask);
     SDL_Renderer *s = SDL_CreateSoftwareRenderer(p);
     // Draw border.
-    SDL_Rect dR = rt;
-    if (b) {
+    SDL_Rect dR = {0, 0, rt.w, rt.h};
+    if (true) {
         drawRoundedRectangle(s, r, &dR, foreground);
     }
     dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
@@ -132,9 +132,9 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
             SDL_SetRenderDrawColor(s, highlight.r, highlight.g, highlight.b, highlight.a);
             SDL_RenderFillRect(s, &hlR);
         }
-        SDL_BlitSurface(tSs[i], NULL, p, &rt);
+        SDL_BlitSurface(tSs[i], nullptr, p, &dR);
         SDL_FreeSurface(tSs[i]);
-        rt.y += rt.h;
+        dR.y += dR.h;
     }
     SDL_DestroyRenderer(s);
     return p;

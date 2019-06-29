@@ -177,7 +177,7 @@ void Game::newGame() {
     sqlite3_prepare_v2(conn, "SELECT modes FROM businesses", -1, &quer, nullptr);
     std::vector<unsigned int> businessModes;
     while (sqlite3_step(quer) != SQLITE_DONE)
-        businessModes.push_back(sqlite3_column_int(quer, 0));
+        businessModes.push_back(static_cast<unsigned int>(sqlite3_column_int(quer, 0)));
     sqlite3_finalize(quer);
     businesses.clear();
     businesses.reserve(static_cast<size_t>(std::accumulate(businessModes.begin(), businessModes.end(), 0)));
@@ -204,7 +204,7 @@ void Game::newGame() {
         towns.push_back(Town(quer, nations, businesses, frequencyFactors, screenRect.h / Settings::getTownFontDivisor()));
         loadBar.progress(1. / static_cast<double>(tC));
         loadBar.draw(screen);
-        SDL_UpdateWindowSurface(window);
+        SDL_RenderPresent(screen);
     }
     sqlite3_finalize(quer);
     changeOffsets(0, 0);
@@ -222,7 +222,7 @@ void Game::newGame() {
         t.update(Settings::getBusinessRunTime());
         loadBar.progress(1. / static_cast<double>(tC));
         loadBar.draw(screen);
-        SDL_UpdateWindowSurface(window);
+        SDL_RenderPresent(screen);
     }
     loadBar.progress(-1);
     loadBar.setText(0, "Generating Travelers...");
@@ -231,7 +231,7 @@ void Game::newGame() {
         loadBar.setText(0, "Generating Travelers..." + std::to_string(travelers.size()));
         loadBar.progress(1. / static_cast<double>(tC));
         loadBar.draw(screen);
-        SDL_UpdateWindowSurface(window);
+        SDL_RenderPresent(screen);
     }
     loadBar.progress(-1);
     tC = travelers.size();
@@ -241,7 +241,7 @@ void Game::newGame() {
         t->addToTown();
         loadBar.progress(1. / static_cast<double>(tC));
         loadBar.draw(screen);
-        SDL_UpdateWindowSurface(window);
+        SDL_RenderPresent(screen);
     }
     SDL_Rect rt = {screenRect.w / 2, screenRect.h / 7, 0, 0};
     // Create textbox for entering name.
@@ -307,7 +307,7 @@ void Game::load(const fs::path &p) {
             towns.push_back(Town(*lTI, nations, screenRect.h / Settings::getTownFontDivisor()));
             loadBar.progress(1. / lTowns->size());
             loadBar.draw(screen);
-            SDL_UpdateWindowSurface(window);
+            SDL_RenderPresent(screen);
         }
         loadBar.progress(-1);
         loadBar.setText(0, "Finalizing towns...");
@@ -316,7 +316,7 @@ void Game::load(const fs::path &p) {
             towns[i].loadNeighbors(towns, neighborIds);
             loadBar.progress(1. / static_cast<double>(towns.size()));
             loadBar.draw(screen);
-            SDL_UpdateWindowSurface(window);
+            SDL_RenderPresent(screen);
         }
         auto lTravelers = game->travelers();
         for (auto lTI = lTravelers->begin(); lTI != lTravelers->end(); ++lTI)
@@ -1227,7 +1227,7 @@ void Game::saveRoutes() {
         t.findNeighbors(towns, mapSurface, mapRect.x, mapRect.y);
         loadBar.progress(1. / static_cast<double>(towns.size()));
         loadBar.draw(screen);
-        SDL_UpdateWindowSurface(window);
+        SDL_RenderPresent(screen);
     }
     for (auto &t : towns)
         t.connectRoutes();

@@ -126,14 +126,11 @@ void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
 }
 
 void Town::drawRoutes(SDL_Renderer *s) {
-    std::vector<SDL_Point> ps(neighbors.size() * 2u);
-    for (auto &n : neighbors) {
-        ps.push_back({dpx, dpy});
-        ps.push_back({n->dpx, n->dpy});
-    }
     const SDL_Color &col = Settings::getRouteColor();
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
-    SDL_RenderDrawLines(s, ps.data(), static_cast<int>(ps.size()));
+    for (auto &n : neighbors) {
+        SDL_RenderDrawLine(s, dpx, dpy, n->dpx, n->dpy);
+    }
 }
 
 void Town::drawDot(SDL_Renderer *s) {
