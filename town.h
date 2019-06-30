@@ -93,7 +93,7 @@ class Town : public Focusable {
     void generateTravelers(const GameData *gD, std::vector<std::shared_ptr<Traveler>> &ts);
     double dist(const Town *t) const;
     void loadNeighbors(std::vector<Town> &ts, const std::vector<size_t> &nIs);
-    void findNeighbors(std::vector<Town> &ts, const SDL_Surface *mS, int mox, int moy);
+    void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);
     void connectRoutes();
     void saveNeighbors(std::string &i) const;
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d);

@@ -94,38 +94,37 @@ void addCircleSymmetryPoints(std::vector<SDL_Point> ps, int cx, int cy, int x, i
     ps.push_back({(cx - y), (cy - x)});
 }
 
-Uint32 getAt(const SDL_Surface *s, int x, int y) {
+Uint32 getAt(SDL_Surface *s, int x, int y) {
     // Get color of pixel in surface s at (x, y)
+    SDL_LockSurface(s);
     int bpp = s->format->BytesPerPixel;
     Uint8 *p = static_cast<Uint8 *>(s->pixels) + y * s->pitch + x * bpp;
+    SDL_UnlockSurface(s);
 
     switch (bpp) {
     case 1:
         return *p;
         break;
-
     case 2:
         return *reinterpret_cast<Uint16 *>(p);
         break;
-
     case 3:
         if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
             return static_cast<Uint32>(p[0] << 16u | p[1] << 8u | p[2]);
         else
             return static_cast<Uint32>(p[0] | p[1] << 8u | p[2] << 16u);
         break;
-
     case 4:
         return *reinterpret_cast<Uint32 *>(p);
         break;
-
     default:
-        return 0;
+        return 0u;
     }
 }
 
 void setAt(SDL_Surface *s, int x, int y, Uint32 color) {
     // Set pixel in surface s at (x, y) to color
+    SDL_LockSurface(s);
     int bpp = s->format->BytesPerPixel;
     Uint8 *p = static_cast<Uint8 *>(s->pixels) + y * s->pitch + x * bpp;
 
@@ -157,4 +156,5 @@ void setAt(SDL_Surface *s, int x, int y, Uint32 color) {
     default:
         break;
     }
+    SDL_UnlockSurface(s);
 }

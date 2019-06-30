@@ -30,7 +30,7 @@
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
 void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl);
 void addCircleSymmetryPoints(std::vector<SDL_Point> ps, int cx, int cy, int x, int y);
-Uint32 getAt(const SDL_Surface *s, int x, int y);
+Uint32 getAt(SDL_Surface *s, int x, int y);
 void setAt(SDL_Surface *s, int x, int y, Uint32 color);
 
 #endif

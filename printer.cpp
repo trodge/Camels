@@ -50,7 +50,7 @@ int Printer::getFontWidth(const std::string &tx) {
     return w;
 }
 
-SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
+SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img) {
     // Create a new SDL_Surface with the given text printed on it. Nation ID used to determine fonts.
     size_t numLines = tx.size();
     std::vector<int> tWs, tHs;      // Widths and heights for each line of text.
@@ -119,6 +119,14 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
     }
     dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
     drawRoundedRectangle(s, r, &dR, background);
+    if (img) {
+        // Center image vertically and place on left side of text
+        dR.w = img->w;
+        dR.h = img->h;
+        dR.x = rt.h / 2 - dR.h / 2;
+        dR.y = dR.x;
+        SDL_BlitSurface(img, nullptr, p, &dR);
+    }
     // Center text vertically.
     dR.y = rt.h / 2 - mH / 2;
     for (size_t i = 0; i < numLines; ++i) {

@@ -202,7 +202,7 @@ void Town::loadNeighbors(std::vector<Town> &ts, const std::vector<size_t> &nIs) 
             neighbors.push_back(&ts[nI - 1]);
 }
 
-void Town::findNeighbors(std::vector<Town> &ts, const SDL_Surface *mS, int mox, int moy) {
+void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy) {
     // Find nearest towns that can be traveled to directly from this one on map surface.
     neighbors.clear();
     size_t max = 5;
