@@ -48,10 +48,13 @@ class TextBox : public Focusable {
     SDL_Surface *tS = nullptr;  // text surface
     SDL_Texture *tT = nullptr;  // text texture
     bool updateTexture = false; // whether the texture needs updating
+    const SDL_Surface *img;
     TextBox() {}
     void setBorder(int b);
 
   public:
+    TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+            int r, int fS, const SDL_Surface *img);
     TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
             int r, int fS);
     TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, int b, int r,

@@ -20,11 +20,15 @@
 #include "textbox.h"
 
 TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
-                 int r, int fS)
-    : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS) {
+                 int r, int fS, const SDL_Surface *img)
+    : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS), img(img) {
     fixedSize = (rt.w and rt.h);
     setText(t);
 }
+
+TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+                 int r, int fS)
+    : TextBox(rt, t, fg, bg, i, false, b, r, fS, nullptr) {}
 
 TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, int b, int r,
                  int fS)

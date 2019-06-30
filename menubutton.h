@@ -31,11 +31,17 @@ class MenuButton : virtual public TextBox {
     MenuButton(std::function<void()> oC) : onClick(oC) {}
 
   public:
-    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b, int r,
-               int fS, std::function<void()> oC);
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b, int r,
+               int fS, const SDL_Surface *img, std::function<void()> oC);
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b, int r,
+               int fS, std::function<void()> oC)
+        : MenuButton(rt, t, fg, bg, i, iN, b, r, fS, nullptr, oC) {}
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS,
+               const SDL_Surface *img, std::function<void()> oC)
+        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, img, oC) {}
     MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS,
                std::function<void()> oC)
-        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, oC) {}
+        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, nullptr, oC) {}
     virtual ~MenuButton();
     void setKey(const SDL_Keycode &k) { key = k; }
     SDL_Keycode getKey() const { return key; }

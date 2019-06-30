@@ -36,20 +36,13 @@
 
 #include "ai.h"
 #include "scrollbox.h"
-#include "town.h"
+#include "game.h"
+
 
 struct CombatOdd {
     double hitOdds;
     std::array<std::pair<unsigned int, double>, 3> statusChances;
     // statuses are normal, bruised, wounded, broken, infected, pulverized, amputated, impaled
-};
-
-struct GameData {
-    std::vector<std::string> parts;
-    std::vector<std::string> statuses;
-    std::vector<CombatOdd> odds;
-    std::vector<std::string> townTypeNouns;
-    std::map<unsigned long, std::string> populationAdjectives;
 };
 
 struct CombatHit {
@@ -58,6 +51,8 @@ struct CombatHit {
     std::string weapon;
 };
 
+struct GameData;
+
 enum class FightChoice { none = -1, fight, run, yield };
 
 class AI;
@@ -65,6 +60,7 @@ class AI;
 class Town;
 
 class Business;
+
 
 class Traveler : public std::enable_shared_from_this<Traveler> {
     std::string name;

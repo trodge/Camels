@@ -28,7 +28,8 @@ Game::Game() : scrollX(0), scrollY(0) {
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
     screen = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    mapSurface = IMG_Load("map-scaled.png");
+    fs::path mapPath("images/map-scaled.png");
+    mapSurface = IMG_Load(mapPath.string().c_str());
     mapTexture = SDL_CreateTextureFromSurface(screen, mapSurface);
     setState(starting);
     /*SDL_CreateRGBSurfaceWithFormat(

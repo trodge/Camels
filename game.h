@@ -32,6 +32,16 @@
 #include "selectbutton.h"
 #include "town.h"
 
+struct CombatOdd;
+
+struct GameData {
+    std::vector<std::string> parts;
+    std::vector<std::string> statuses;
+    std::vector<CombatOdd> odds;
+    std::vector<std::string> townTypeNouns;
+    std::map<unsigned long, std::string> populationAdjectives;
+};
+
 class Game {
     SDL_Window *window;
     SDL_Renderer *screen;

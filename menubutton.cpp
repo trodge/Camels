@@ -19,9 +19,9 @@
 
 #include "menubutton.h"
 
-MenuButton::MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int i, bool iN, int b,
-                       int r, int fS, std::function<void()> oC)
-    : TextBox(rt, t, fg, bg, i, iN, b, r, fS), onClick(oC) {
+MenuButton::MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+                       int r, int fS, const SDL_Surface *img, std::function<void()> oC)
+    : TextBox(rt, t, fg, bg, i, iN, b, r, fS, img), onClick(oC) {
     canFocus = true;
 }
 
