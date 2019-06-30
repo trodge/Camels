@@ -22,13 +22,13 @@
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.
     // Fill top, middle, bottom rectangles
-    std::vector<SDL_Rect> rects(3);
-    rects = {{rect->x + r, rect->y, rect->w - 2 * r, r},
-             {rect->x, rect->y + r, rect->w, rect->h - 2 * r},
-             {rect->x + r, rect->y + rect->h - r, rect->w - 2 * r, r}};
+    std::array<SDL_Rect, 3> rects = {{{rect->x + r, rect->y, rect->w - 2 * r, r},
+                                      {rect->x, rect->y + r, rect->w, rect->h - 2 * r},
+                                      {rect->x + r, rect->y + rect->h - r, rect->w - 2 * r, r}}};
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
     SDL_RenderFillRects(s, rects.data(), 3);
-    std::vector<SDL_Point> ps(static_cast<size_t>(M_PI * r * r + 1.)); // points to draw partial circles
+    std::vector<SDL_Point> ps; // points to draw partial circles
+    ps.reserve(static_cast<size_t>(M_PI * r * r + 1.));
     // Fill partial circle in top-left corner.
     for (int x = -r; x <= 0; ++x)
         for (int y = -r; y <= 0; ++y)
@@ -54,14 +54,16 @@ void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col)
 
 void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl) {
     // Draw a circle on s at position (cx, cy) with radius r and color col, either filled or not filled.
-    std::vector<SDL_Point> ps(fl ? static_cast<size_t>(M_PI * r * r + 1.) : static_cast<size_t>(M_PI * r * 2. + 1.));
+    std::vector<SDL_Point> ps;
     if (fl) {
         // filled circle
+        ps.reserve(static_cast<size_t>(M_PI * r * r + 1.));
         for (int x = -r; x <= r; ++x)
             for (int y = -r; y <= r; ++y)
                 if ((x * x) + (y * y) <= r * r)
                     ps.push_back({cx + x, cy + y});
     } else {
+        ps.reserve(static_cast<size_t>(M_PI * r * 2. + 1.));
         int x = 0;
         int y = r;
         int d = 1 - r;

@@ -201,7 +201,11 @@ void Game::newGame() {
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(conn, "SELECT * FROM towns", -1, &quer, nullptr);
     towns.reserve(tC);
+    SDL_Surface *freezeSurface = SDL_CreateRGBSurface(0, screenRect.w, screenRect.h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+    SDL_RenderReadPixels(screen, nullptr, SDL_PIXELFORMAT_ARGB8888, freezeSurface->pixels, freezeSurface->pitch);
+    SDL_Texture *freezeTexture = SDL_CreateTextureFromSurface(screen, freezeSurface);
     while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
+        SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
         towns.push_back(Town(quer, nations, businesses, frequencyFactors, screenRect.h / Settings::getTownFontDivisor()));
         loadBar.progress(1. / static_cast<double>(tC));
         loadBar.draw(screen);
@@ -219,6 +223,7 @@ void Game::newGame() {
     sqlite3_finalize(quer);
     sqlite3_close(conn);
     for (auto &t : towns) {
+        SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
         t.loadNeighbors(towns, routes[t.getId() - 1]);
         t.update(Settings::getBusinessRunTime());
         loadBar.progress(1. / static_cast<double>(tC));
@@ -228,6 +233,7 @@ void Game::newGame() {
     loadBar.progress(-1);
     loadBar.setText(0, "Generating Travelers...");
     for (auto &t : towns) {
+        SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
         t.generateTravelers(&gameData, travelers);
         loadBar.setText(0, "Generating Travelers..." + std::to_string(travelers.size()));
         loadBar.progress(1. / static_cast<double>(tC));
@@ -238,6 +244,7 @@ void Game::newGame() {
     tC = travelers.size();
     loadBar.setText(0, "Starting AI...");
     for (auto &t : travelers) {
+        SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
         t->startAI();
         t->addToTown();
         loadBar.progress(1. / static_cast<double>(tC));

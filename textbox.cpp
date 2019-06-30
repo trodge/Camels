@@ -28,7 +28,7 @@ TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, S
 
 TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
                  int r, int fS)
-    : TextBox(rt, t, fg, bg, i, false, b, r, fS, nullptr) {}
+    : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr) {}
 
 TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, int b, int r,
                  int fS)
