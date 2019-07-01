@@ -95,20 +95,6 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
     if (not rt.h)
         rt.h = mH + 2 * b;
 
-    Uint32 rmask, gmask, bmask, amask;
-    /* SDL interprets each pixel as a 32-bit number, so our masks must depend
-       on the endianness (byte order) of the machine */
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    rmask = 0xff000000;
-    gmask = 0x00ff0000;
-    bmask = 0x0000ff00;
-    amask = 0x000000ff;
-#else
-    rmask = 0x000000ff;
-    gmask = 0x0000ff00;
-    bmask = 0x00ff0000;
-    amask = 0xff000000;
-#endif
 
     SDL_Surface *p = SDL_CreateRGBSurface(0, rt.w, rt.h, 32, rmask, gmask, bmask, amask);
     SDL_Renderer *s = SDL_CreateSoftwareRenderer(p);
@@ -125,7 +111,7 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
         dR.h = rt.h - 2 * b;
         dR.x = 2 * b;
         dR.y = rt.h / 2 - dR.h / 2;
-        SDL_BlitScaled(img, nullptr, p, &dR);
+        SDL_BlitSurface(img, nullptr, p, &dR);
     }
     // Center text vertically.
     dR.y = rt.h / 2 - mH / 2;

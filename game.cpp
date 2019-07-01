@@ -113,15 +113,21 @@ void Game::loadNations(sqlite3 *c) {
     }
     sqlite3_finalize(quer);
     // Load good images.
+    int tradeHeight = screenRect.h * 29 / Settings::getGoodButtonYDivisor() - 2 * Settings::getTradeBorder();
+    SDL_Rect rt = {0, 0, tradeHeight, tradeHeight};
     gameData.goodImages.resize(goods.size());
     for (size_t i = 0; i < goods.size(); ++i) {
         auto &g = goods[i];
         for (auto &m : g.getMaterials()) {
             fs::path imagePath("images/" + m.getName() + "-" + g.getName() + ".png");
-            SDL_Surface *image = nullptr;
-            if (fs::exists(imagePath))
+            SDL_Surface *image, *scaledImage = nullptr;
+            if (fs::exists(imagePath)) {
                 image = IMG_Load(imagePath.string().c_str());
-            gameData.goodImages[i].emplace_hint(gameData.goodImages[i].end(), m.getId(), image);
+                scaledImage = SDL_CreateRGBSurface(0u, rt.w, rt.h, 32, rmask, gmask, bmask, amask);
+                SDL_BlitScaled(image, nullptr, scaledImage, &rt);
+                SDL_FreeSurface(image);
+            }
+            gameData.goodImages[i].emplace_hint(gameData.goodImages[i].end(), m.getId(), scaledImage);
         }
     }
     // Load combat stats.
@@ -217,8 +223,8 @@ void Game::newGame() {
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(conn, "SELECT * FROM towns", -1, &quer, nullptr);
     towns.reserve(tC);
-    SDL_Surface *freezeSurface = SDL_CreateRGBSurface(0, screenRect.w, screenRect.h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-    SDL_RenderReadPixels(screen, nullptr, SDL_PIXELFORMAT_ARGB8888, freezeSurface->pixels, freezeSurface->pitch);
+    SDL_Surface *freezeSurface = SDL_CreateRGBSurface(0u, screenRect.w, screenRect.h, 32, rmask, gmask, bmask, amask);
+    SDL_RenderReadPixels(screen, nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
     SDL_Texture *freezeTexture = SDL_CreateTextureFromSurface(screen, freezeSurface);
     while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
         SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);

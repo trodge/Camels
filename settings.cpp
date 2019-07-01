@@ -108,7 +108,7 @@ void Settings::load(const fs::path &p) {
     equipRadius = tree.get("ui.equipRadius", 7);
     equipFontSize = tree.get("ui.equipFontSize", 18);
     townFontSize = tree.get("ui.townFontSize", 14);
-    tradeBorder = tree.get("ui.tradeBorder", 3);
+    tradeBorder = tree.get("ui.tradeBorder", 2);
     tradeRadius = tree.get("ui.tradeRadius", 5);
     tradeFontSize = tree.get("ui.tradeFontSize", 12);
     goodButtonXDivisor = tree.get("ui.goodButtonXDivisor", 434);
