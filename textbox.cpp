@@ -38,10 +38,10 @@ TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, S
     : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
 
 TextBox::~TextBox() {
-    if (tS)
-        SDL_FreeSurface(tS);
-    if (tT)
-        SDL_DestroyTexture(tT);
+    if ( surface )
+        SDL_FreeSurface( surface );
+    if ( texture )
+        SDL_DestroyTexture( texture );
 }
 
 void TextBox::setText() {
@@ -52,8 +52,8 @@ void TextBox::setText() {
         rect.w = 0;
         rect.h = 0;
     }
-    if (tS)
-        SDL_FreeSurface(tS);
+    if ( surface )
+        SDL_FreeSurface( surface );
     if (isNation)
         Printer::setNationId(id);
     else
@@ -71,7 +71,7 @@ void TextBox::setText() {
         text = std::vector<std::string>(text.begin(),
                                         text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
     }
-    tS = Printer::print(text, rect, border, radius);
+    surface = Printer::print(text, rect, border, radius, image);
     updateTexture = true;
 
     // If rectangle dimensions were not provided, rectagle coordinates are text center.
@@ -122,12 +122,12 @@ void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
 void TextBox::draw(SDL_Renderer *s) {
     // Copy this TextBox's texture onto s, updating texture if necessary.
     if (updateTexture) {
-        if (tT)
-            SDL_DestroyTexture(tT);
-        tT = SDL_CreateTextureFromSurface(s, tS);
+        if ( texture )
+            SDL_DestroyTexture( texture );
+        texture = SDL_CreateTextureFromSurface(s, surface );
         updateTexture = false;
     }
-    SDL_RenderCopy(s, tT, nullptr, &rect);
+    SDL_RenderCopy(s, texture, nullptr, &rect);
 }
 
 bool TextBox::keyCaptured(const SDL_KeyboardEvent &k) const {

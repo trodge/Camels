@@ -31,6 +31,8 @@
 
 #include "good.h"
 
+class Good;
+
 class Business {
     unsigned int id, mode;
     std::string name;

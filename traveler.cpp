@@ -19,7 +19,7 @@
 
 #include "traveler.h"
 
-Traveler::Traveler(const std::string &n, Town *t, const GameData *gD)
+Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
       tradePortion(1), gameData(gD), moving(false) {
     // Copy goods vector from nation.
@@ -42,7 +42,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData *gD)
     parts.fill(0);
 }
 
-Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData *gD)
+Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD)
     : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->toTown() - 1)]),
       fromTown(&ts[static_cast<size_t>(t->fromTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
       longitude(t->longitude()), latitude(t->latitude()), tradePortion(1), gameData(gD), moving(t->moving()) {
@@ -405,14 +405,14 @@ void Traveler::updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs) {
     std::vector<std::string> statusText(7);
     statusText[0] = name + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData->parts[i - 1] + ": " + gameData->statuses[parts[i - 1]];
+        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[parts[i - 1]];
     bs[1]->setText(statusText);
     auto t = target.lock();
     if (not t)
         return;
     statusText[0] = t->name + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData->parts[i - 1] + ": " + gameData->statuses[t->parts[i - 1]];
+        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[t->parts[i - 1]];
     bs[2]->setText(statusText);
 }
 
@@ -433,7 +433,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
                 attack += s.attack * stats[s.statId];
                 speed += s.speed * stats[s.statId];
             }
-            auto cO = gameData->odds[type - 1];
+            auto cO = gameData.odds[type - 1];
             // Calculate number of swings before hit happens.
             double r = d(*Settings::getRng());
             double p = attack / cO.hitOdds / defense[type - 1];
@@ -523,7 +523,7 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &t) {
     if (cH.status > 2) { // Part is too wounded to hold equipment.
         unequip(cH.partId);
         std::string logEntry = t.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
-                               gameData->parts[cH.partId] + " has been " + gameData->statuses[cH.status] + ".";
+                               gameData.parts[cH.partId] + " has been " + gameData.statuses[cH.status] + ".";
         logText.push_back(logEntry);
         t.logText.push_back(logEntry);
     }
@@ -534,6 +534,11 @@ void Traveler::loot(Good &g, Traveler &t) {
     unsigned int gId = g.getId();
     t.goods[gId].take(g);
     goods[gId].put(g);
+}
+
+void Traveler::loot(Traveler &t) {
+    for (auto g : t.goods)
+        loot(g, t);
 }
 
 void Traveler::startAI() {
@@ -581,9 +586,9 @@ void Traveler::update(unsigned int e) {
             fromTown = toTown;
             moving = false;
             logText.push_back(name + " has arrived in the " +
-                              gameData->populationAdjectives.lower_bound(toTown->getPopulation())->second + " " +
+                              gameData.populationAdjectives.lower_bound(toTown->getPopulation())->second + " " +
                               toTown->getNation()->getAdjective() + " " +
-                              gameData->townTypeNouns[toTown->getTownType() - 1] + " of " + toTown->getName() + ".");
+                              gameData.townTypeNouns[toTown->getTownType() - 1] + " of " + toTown->getName() + ".");
         }
     }
     if (auto t = target.lock()) {

@@ -182,7 +182,7 @@ void Town::take(Good &g) { goods[g.getId()].take(g); }
 
 void Town::put(Good &g) { goods[g.getId()].put(g); }
 
-void Town::generateTravelers(const GameData *gD, std::vector<std::shared_ptr<Traveler>> &ts) {
+void Town::generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Traveler>> &ts) {
     // Create a random number of travelers from this town, weighted down
     int n = travelersDis(*Settings::getRng());
     if (n < 0)

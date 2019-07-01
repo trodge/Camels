@@ -44,6 +44,21 @@ struct CombatStat {
     std::array<unsigned int, 3> defense;
 };
 
+struct CombatOdd {
+    double hitOdds;
+    std::array<std::pair<unsigned int, double>, 3> statusChances;
+    // statuses are normal, bruised, wounded, broken, infected, pulverized, amputated, impaled
+};
+
+struct GameData {
+    std::vector<std::map<unsigned int, SDL_Surface *>> goodImages;
+    std::vector<std::string> parts;
+    std::vector<std::string> statuses;
+    std::vector<CombatOdd> odds;
+    std::vector<std::string> townTypeNouns;
+    std::map<unsigned long, std::string> populationAdjectives;
+};
+
 class Material {
     unsigned int id;
     std::string name;
@@ -106,8 +121,8 @@ class Material {
     void create(double a);
     double perish(unsigned int e, double p);
     double consume(unsigned int e);
-    std::unique_ptr<MenuButton> button(bool aS, unsigned int gI, const std::string &gN, bool gS, SDL_Rect r, SDL_Color fgr,
-                                       SDL_Color bgr, int fS, std::function<void()> f) const;
+    std::unique_ptr<MenuButton> button(bool aS, unsigned int gI, const std::string &gN, bool gS, SDL_Rect rt, SDL_Color fgr,
+                                       SDL_Color bgr, int b, int r, int fS, const GameData &gD, std::function<void()> f) const;
     void updateButton(bool gS, double oV, int rC, TextBox *b) const;
     void adjustDemand(double d);
     void fixDemand(double m);

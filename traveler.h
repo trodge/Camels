@@ -36,14 +36,11 @@
 
 #include "ai.h"
 #include "scrollbox.h"
-#include "game.h"
+#include "good.h"
+#include "nation.h"
+#include "town.h"
 
-
-struct CombatOdd {
-    double hitOdds;
-    std::array<std::pair<unsigned int, double>, 3> statusChances;
-    // statuses are normal, bruised, wounded, broken, infected, pulverized, amputated, impaled
-};
+struct GameData;
 
 struct CombatHit {
     double time;
@@ -51,16 +48,9 @@ struct CombatHit {
     std::string weapon;
 };
 
-struct GameData;
-
 enum class FightChoice { none = -1, fight, run, yield };
 
 class AI;
-
-class Town;
-
-class Business;
-
 
 class Traveler : public std::enable_shared_from_this<Traveler> {
     std::string name;
@@ -78,7 +68,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
-    const GameData *gameData;
+    const GameData &gameData;
     std::unordered_map<Town *, std::vector<Business>> businesses; // businesses owned by this traveler in given towns
     std::unordered_map<Town *, std::vector<Good>> storage;        // goods stored by this traveler in given towns
     std::unique_ptr<AI> ai;
@@ -94,8 +84,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void takeHit(const CombatHit &cH, Traveler &t);
 
   public:
-    Traveler(const std::string &n, Town *t, const GameData *gD);
-    Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData *gD);
+    Traveler(const std::string &n, Town *t, const GameData &gD);
+    Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD);
     std::string getName() const { return name; }
     const Town *getTown() const { return toTown; }
     const Nation *getNation() const { return nation; }
@@ -134,10 +124,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void loseTarget();
     void updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs);
     void loot(Good &g, Traveler &t);
-    void loot(Traveler &t) {
-        for (auto g : t.goods)
-            loot(g, t);
-    }
+    void loot(Traveler &t);
     void leave(Good &g, Traveler &t) { t.loot(g, *this); }
     void startAI();
     void startAI(const Traveler &p);

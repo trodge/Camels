@@ -29,6 +29,8 @@
 
 #include "good.h"
 
+class Good;
+
 class Nation {
     unsigned int id;
     std::vector<std::string> names;

@@ -37,6 +37,7 @@
 
 struct GameData;
 
+class Nation;
 class Traveler;
 
 class Town : public Focusable {
@@ -90,7 +91,7 @@ class Town : public Focusable {
     void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
-    void generateTravelers(const GameData *gD, std::vector<std::shared_ptr<Traveler>> &ts);
+    void generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Traveler>> &ts);
     double dist(const Town *t) const;
     void loadNeighbors(std::vector<Town> &ts, const std::vector<size_t> &nIs);
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);

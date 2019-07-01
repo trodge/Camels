@@ -44,15 +44,19 @@ class Settings {
     static int offsetX, offsetY;
     static int bigBoxBorder;
     static int bigBoxRadius;
-    static int bigBoxFontDivisor;
-    static int loadBarFontDivisor;
+    static int bigBoxFontSize;
+    static int loadBarFontSize;
     static int smallBoxBorder;
     static int smallBoxRadius;
-    static int smallBoxFontDivisor;
-    static int fightFontDivisor;
-    static int equipFontDivisor;
-    static int townFontDivisor;
-    static int tradeFontDivisor;
+    static int smallBoxFontSize;
+    static int fightFontSize;
+    static int equipBorder;
+    static int equipRadius;
+    static int equipFontSize;
+    static int townFontSize;
+    static int tradeBorder;
+    static int tradeRadius;
+    static int tradeFontSize;
     static int goodButtonXDivisor, goodButtonYDivisor;
     static double scale;
     static int dayLength;
@@ -89,15 +93,19 @@ class Settings {
     static int getOffsetY() { return offsetY; }
     static int getBigBoxBorder() { return bigBoxBorder; }
     static int getBigBoxRadius() { return bigBoxRadius; }
-    static int getBigBoxFontDivisor() { return bigBoxFontDivisor; }
-    static int getLoadBarDivisor() { return loadBarFontDivisor; }
+    static int getBigBoxFontSize() { return bigBoxFontSize; }
+    static int getLoadBarDivisor() { return loadBarFontSize; }
     static int getSmallBoxBorder() { return smallBoxBorder; }
     static int getSmallBoxRadius() { return smallBoxRadius; }
-    static int getSmallBoxFontDivisor() { return smallBoxFontDivisor; }
-    static int getFightFontDivisor() { return fightFontDivisor; }
-    static int getEquipFontDivisor() { return equipFontDivisor; }
-    static int getTownFontDivisor() { return townFontDivisor; }
-    static int getTradeFontDivisor() { return tradeFontDivisor; }
+    static int getSmallBoxFontSize() { return smallBoxFontSize; }
+    static int getFightFontSize() { return fightFontSize; }
+    static int getEquipBorder() { return equipBorder; }
+    static int getEquipRadius() { return equipRadius; }
+    static int getEquipFontSize() { return equipFontSize; }
+    static int getTownFontSize() { return townFontSize; }
+    static int getTradeBorder() { return tradeBorder; }
+    static int getTradeRadius() { return tradeRadius; }
+    static int getTradeFontSize() { return tradeFontSize; }
     static int getGoodButtonXDivisor() { return goodButtonXDivisor; }
     static int getGoodButtonYDivisor() { return goodButtonYDivisor; }
     static double getScale() { return scale; }

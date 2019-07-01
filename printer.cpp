@@ -121,11 +121,11 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
     drawRoundedRectangle(s, r, &dR, background);
     if (img) {
         // Center image vertically and place on left side of text
-        dR.w = img->w;
-        dR.h = img->h;
-        dR.x = rt.h / 2 - dR.h / 2;
-        dR.y = dR.x;
-        SDL_BlitSurface(img, nullptr, p, &dR);
+        dR.w = rt.h - 2 * b;
+        dR.h = rt.h - 2 * b;
+        dR.x = 2 * b;
+        dR.y = rt.h / 2 - dR.h / 2;
+        SDL_BlitScaled(img, nullptr, p, &dR);
     }
     // Center text vertically.
     dR.y = rt.h / 2 - mH / 2;
@@ -133,8 +133,12 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
         // Blit rendered text lines onto one surface.
         dR.w = tWs[i];
         dR.h = tHs[i];
-        // Center text horizontally
-        dR.x = rt.w / 2 - dR.w / 2;
+        if (img)
+            // Justify text right
+            dR.x = rt.w - dR.w - 2 * b;
+        else
+            // Center text horizontally
+            dR.x = rt.w / 2 - dR.w / 2;
         if (i == size_t(highlightLine)) {
             SDL_Rect hlR = {b, dR.y, rt.w - 2 * b, dR.h};
             SDL_SetRenderDrawColor(s, highlight.r, highlight.g, highlight.b, highlight.a);
