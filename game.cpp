@@ -74,8 +74,8 @@ Game::~Game() {
 
 void Game::loadDisplayVariables() {
     // Load screen height and width and starting offsets and scale from settings.
+    screenRect = Settings::getScreenRect();
     mapRect = Settings::getMapRect();
-    screenRect = {0, 0, mapRect.w, mapRect.h};
     scrollSpeed = Settings::getScroll();
     offsetX = Settings::getOffsetX();
     offsetY = Settings::getOffsetY();
@@ -509,6 +509,9 @@ void Game::setState(UIState s) {
     case equipping:
         createEquipButtons();
         break;
+    case storing:
+        createStorageButtons();
+        break;
     case managing:
         createManageButtons();
         break;
@@ -711,21 +714,8 @@ void Game::createLogBox() {
 }
 
 void Game::createTradeButtons() {
-    SDL_Rect rt = {screenRect.w / 6, screenRect.h * 14 / 15, 0, 0};
-    std::vector<std::string> tx = {"Stop (T)rading"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::getUIForeground(), Settings::getUIBackground(), Settings::getSmallBoxBorder(),
-        Settings::getSmallBoxRadius(), Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
-    boxes.back()->setKey(SDLK_t);
-    rt.x += screenRect.w / 6;
-    tx = {player->tradePortionString()};
-    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
-                                              Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
-                                              Settings::getSmallBoxFontSize()));
-    boxes.back()->toggleLock();
-    rt.x -= screenRect.w / 6;
-    rt.y += screenRect.h / 31;
-    tx = {"(C)omplete Trade"};
+    SDL_Rect rt = {screenRect.w / 6, screenRect.h * 251 / 285, 0, 0};
+    std::vector<std::string> tx = {"(C)omplete Trade"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                                  Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
                                                  Settings::getSmallBoxFontSize(), [this] {
@@ -733,6 +723,19 @@ void Game::createTradeButtons() {
                                                      setState(trading);
                                                  }));
     boxes.back()->setKey(SDLK_c);
+        rt.x += screenRect.w / 6;
+    tx = {player->tradePortionString()};
+    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
+                                              Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
+                                              Settings::getSmallBoxFontSize()));
+    boxes.back()->toggleLock();
+    rt.x -= screenRect.w / 6;
+    rt.y += screenRect.h / 19;
+    tx = {"Stop (T)rading"};
+    boxes.push_back(std::make_unique<MenuButton>(
+        rt, tx, Settings::getUIForeground(), Settings::getUIBackground(), Settings::getSmallBoxBorder(),
+        Settings::getSmallBoxRadius(), Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
+    boxes.back()->setKey(SDLK_t);
     rt.x += screenRect.w / 6;
     tx = {"(S)et Portion"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
@@ -747,50 +750,11 @@ void Game::createTradeButtons() {
                                                          boxes[kTradePortionIndex]->setText({"0.0"});
                                                          p = 0.0;
                                                      }
-                                                     player->setTradePortion(p);
-                                                     boxes[kTradePortionIndex]->setClicked(false);
+                                                     player->setPortion (p);
+                                                     boxes[kTradePortionIndex + 2u]->setClicked(false);
                                                  }));
     boxes.back()->setKey(SDLK_s);
-    // function to call when boxes are clicked
-    auto f = [this] { player->updateTradeButtons(boxes); };
-    // Create the offer and request buttons for the player.
-    int left = screenRect.w / Settings::getGoodButtonXDivisor(), right = screenRect.w / 2;
-    int top = screenRect.h / Settings::getGoodButtonXDivisor();
-    int dx = screenRect.w * 31 / Settings::getGoodButtonXDivisor(),
-        dy = screenRect.h * 31 / Settings::getGoodButtonYDivisor();
-    rt = {left, top, screenRect.w * 29 / Settings::getGoodButtonXDivisor(),
-          screenRect.h * 29 / Settings::getGoodButtonYDivisor()};
-    for (auto &g : player->getGoods()) {
-        for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
-                                         player->getNation()->getForeground(), player->getNation()->getBackground(),
-                                         Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), gameData, f));
-                rt.x += dx;
-                if (rt.x + rt.w >= right) {
-                    rt.x = left;
-                    rt.y += dy;
-                }
-            }
-    }
-    left = screenRect.w / 2 + screenRect.w / Settings::getGoodButtonXDivisor();
-    right = screenRect.w - screenRect.w / Settings::getGoodButtonXDivisor();
-    rt.x = left;
-    rt.y = top;
-    player->setRequestButtonIndex(static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(boxes.size()));
-    for (auto &g : player->getTown()->getGoods()) {
-        for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
-                boxes.push_back(m.button(
-                    true, g.getId(), g.getName(), g.getSplit(), rt, player->getTown()->getNation()->getForeground(),
-                    player->getTown()->getNation()->getBackground(), Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), gameData, f));
-                rt.x += dx;
-                if (rt.x + rt.w >= right) {
-                    rt.x = left;
-                    rt.y += dy;
-                }
-            }
-    }
+    player->createTradeButtons(boxes);
     focus(0, Focusable::box);
 }
 
@@ -855,8 +819,12 @@ void Game::createEquipButtons() {
     }
 }
 
+void Game::createStorageButtons() {
+    // Create buttons for storing goods.
+}
+
 void Game::createManageButtons() {
-    // Create buttons for managing businesses
+    // Create buttons for managing businesses.
     //     SDL_Rect rt = {screenRect.w / 15, screenRect.h / 15, screenRect.w * 2 / 5, screenRect.h * 4 / 5};
 }
 
@@ -967,7 +935,7 @@ void Game::createLootButtons() {
                                          Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), gameData, [this, &g, &m, &t = *target] {
                                              Good l(g.getId(), m.getAmount());
                                              l.addMaterial(Material(m.getId(), m.getAmount()));
-                                             player->leave(l, t);
+                                             t.loot(l, *player);
                                              setState(looting);
                                          }));
                 rt.x += dx;
@@ -1093,11 +1061,11 @@ void Game::handleEvents() {
                                     focusNext(Focusable::box);
                                 break;
                             case SDLK_COMMA:
-                                player->changeTradePortion(-0.1);
+                                player->changePortion(-0.1);
                                 boxes[kTradePortionIndex]->setText({player->tradePortionString()});
                                 break;
                             case SDLK_PERIOD:
-                                player->changeTradePortion(0.1);
+                                player->changePortion(0.1);
                                 boxes[kTradePortionIndex]->setText({player->tradePortionString()});
                                 break;
                             case SDLK_c:

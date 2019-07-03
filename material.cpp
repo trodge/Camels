@@ -250,7 +250,7 @@ std::unique_ptr<MenuButton> Material::button(bool aS, unsigned int gI, const std
     std::vector<std::string> tx;
     tx.push_back(std::move(nameText));
     // Find image in game data.
-    SDL_Surface *img = gD.goodImages[gI].lower_bound(id)->second;
+    SDL_Surface *img = gD.goodImages[gI].find(id)->second;
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(amount);

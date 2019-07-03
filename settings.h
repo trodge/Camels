@@ -31,6 +31,7 @@ namespace pt = boost::property_tree;
 #include <SDL2/SDL.h>
 
 class Settings {
+    static SDL_Rect screenRect;
     static SDL_Rect mapRect;
     static SDL_Color uIForeground;
     static SDL_Color uIBackground;
@@ -79,6 +80,7 @@ class Settings {
   public:
     static void load(const fs::path &p);
     static void save(const fs::path &p);
+    static SDL_Rect getScreenRect() { return screenRect; }
     static SDL_Rect getMapRect() { return mapRect; }
     static SDL_Color getUIForeground() { return uIForeground; }
     static SDL_Color getUIBackground() { return uIBackground; }

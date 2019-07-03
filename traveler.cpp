@@ -21,7 +21,7 @@
 
 Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
-      tradePortion(1), gameData(gD), moving(false) {
+      portion (1), gameData(gD), moving(false) {
     // Copy goods vector from nation.
     const std::vector<Good> &gs = t->getNation()->getGoods();
     goods.reserve(gs.size());
@@ -45,7 +45,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
 Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD)
     : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->toTown() - 1)]),
       fromTown(&ts[static_cast<size_t>(t->fromTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
-      longitude(t->longitude()), latitude(t->latitude()), tradePortion(1), gameData(gD), moving(t->moving()) {
+      longitude(t->longitude()), latitude(t->latitude()), portion (1), gameData(gD), moving(t->moving()) {
     auto lLog = t->log();
     for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI)
         logText.push_back(lLI->str());
@@ -140,19 +140,19 @@ double Traveler::pathDist(const Town *t) const {
 
 std::string Traveler::tradePortionString() const {
     // Return a string representing trade portion with trailing zeroes omitted.
-    std::string tPS = std::to_string(tradePortion);
+    std::string tPS = std::to_string( portion );
     size_t lNZI = tPS.find_last_not_of('0');
     size_t dI = tPS.find('.');
     tPS.erase(lNZI == dI ? dI + 2 : lNZI + 1, std::string::npos);
     return tPS;
 }
 
-void Traveler::changeTradePortion(double d) {
-    tradePortion += d;
-    if (tradePortion < 0)
-        tradePortion = 0;
-    else if (tradePortion > 1)
-        tradePortion = 1;
+void Traveler::changePortion (double d) {
+    portion += d;
+    if ( portion < 0)
+        portion = 0;
+    else if ( portion > 1)
+        portion = 1;
 }
 
 void Traveler::pickTown(const Town *t) {
@@ -179,13 +179,59 @@ void Traveler::draw(SDL_Renderer *s) const {
     drawCircle(s, px, py, 1, col, true);
 }
 
+void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
+    // Create buttons for trading goods.
+    const SDL_Rect &sR = Settings::getScreenRect();
+    // function to call when buttons are clicked
+    auto f = [this, &bs] { updateTradeButtons(bs); };
+    // Create the offer and request buttons for the player.
+    int left = sR.w / Settings::getGoodButtonXDivisor(), right = sR.w / 2;
+    int top = sR.h / Settings::getGoodButtonXDivisor();
+    int dx = sR.w * 31 / Settings::getGoodButtonXDivisor(),
+        dy = sR.h * 31 / Settings::getGoodButtonYDivisor();
+    SDL_Rect rt = {left, top, sR.w * 29 / Settings::getGoodButtonXDivisor(),
+          sR.h * 29 / Settings::getGoodButtonYDivisor()};
+    for (auto &g : getGoods()) {
+        for (auto &m : g.getMaterials())
+            if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
+                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
+                                         getNation()->getForeground(), getNation()->getBackground(),
+                                         Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), gameData, f));
+                rt.x += dx;
+                if (rt.x + rt.w >= right) {
+                    rt.x = left;
+                    rt.y += dy;
+                }
+            }
+    }
+    left = sR.w / 2 + sR.w / Settings::getGoodButtonXDivisor();
+    right = sR.w - sR.w / Settings::getGoodButtonXDivisor();
+    rt.x = left;
+    rt.y = top;
+    requestButtonIndex = bs.size();
+    for (auto &g : getTown()->getGoods()) {
+        for (auto &m : g.getMaterials())
+            if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
+                bs.push_back(m.button(
+                    true, g.getId(), g.getName(), g.getSplit(), rt, getTown()->getNation()->getForeground(),
+                    getTown()->getNation()->getBackground(), Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), gameData, f));
+                rt.x += dx;
+                if (rt.x + rt.w >= right) {
+                    rt.x = left;
+                    rt.y += dy;
+                }
+            }
+    }
+}
+
 void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     // Update the values shown on trade portion, offer, and request boxes and set offer and request.
     std::string bN;
     offer.clear();
     request.clear();
     double offerValue = 0;
-    auto rBB = bs.begin() + requestButtonIndex; // iterator to first request button
+    auto rBB = bs.begin();
+    std::advance(rBB, requestButtonIndex); // iterator to first request button
     // Loop through all boxes after cancel button and before first request button.
     for (auto oBI = bs.begin() + kOfferButtonIndex; oBI != rBB; ++oBI) {
         auto &g = goods[(*oBI)->getId()]; // good corresponding to oBI
@@ -199,7 +245,7 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
             // mI is iterator to the material on oBI
             mI->updateButton(g.getSplit(), 0, 0, oBI->get());
             if ((*oBI)->getClicked()) {
-                double amount = mI->getAmount() * tradePortion;
+                double amount = mI->getAmount() * portion;
                 if (not g.getSplit())
                     amount = floor(amount);
                 offer.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
@@ -334,6 +380,51 @@ void Traveler::equip(unsigned int pI) {
         f.addMaterial(fM);
         equipment.push_back(f);
     }
+}
+
+void Traveler::deposit(Good &g) {
+    // Put the given good in storage in the current town.
+    auto sI = storage.find(toTown);
+    if (sI == storage.end()) return;
+    unsigned int gId = g.getId();
+    goods[gId].take(g);
+    sI->second[gId].put(g);
+}
+
+void Traveler::withdraw(Good &g) {
+    // Take the given good from storage in the current town.
+    auto sI = storage.find(toTown);
+    if (sI == storage.end()) return;
+    unsigned int gId = g.getId();
+    sI->second[gId].take(g);
+    goods[gId].put(g);
+}
+
+std::unordered_map<Town *, std::vector<Good>>::iterator Traveler::createStorage(Town *t) {
+    // Put a vector of goods for current town in storage map and return iterator to it.
+    std::vector<Good> sGs;
+    sGs.reserve(goods.size());
+    for (auto &g : goods) {
+        sGs.push_back(Good(g.getId(), g.getName()));
+        for (auto &m : g.getMaterials())
+            sGs.back().addMaterial(Material(m.getId(), m.getName()));
+    }
+    return storage.emplace(t, sGs).first;
+}
+
+void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
+    auto sI = storage.find(toTown);
+    if (sI == storage.end()) sI = createStorage(toTown);
+    SDL_Rect rt;
+    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
+    int b = Settings::getTradeBorder(), r = Settings::getTradeRadius(), fS = Settings::getTradeFontSize();
+    for (auto &g : goods)
+        for (auto &m : g.getMaterials()) {
+            Good dG(g.getId(), g.getAmount() * portion);
+            bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData, [this, &dG] {
+                deposit(dG);
+            }));
+        }
 }
 
 std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
@@ -632,7 +723,8 @@ void Traveler::update(unsigned int e) {
 
 void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, double d) {
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bs.begin() + requestButtonIndex; rBI != bs.end(); ++rBI)
+    auto rBI = bs.begin();
+    for (std::advance(rBI, requestButtonIndex); rBI != bs.end(); ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustAreas(requestButtons, d);
 }
@@ -640,7 +732,8 @@ void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, doub
 void Traveler::adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, double d) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bs.begin() + requestButtonIndex; rBI != bs.end(); ++rBI)
+    auto rBI = bs.begin();
+    for (std::advance(rBI, requestButtonIndex); rBI != bs.end(); ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustDemand(requestButtons, d);
 }

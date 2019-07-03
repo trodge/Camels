@@ -59,6 +59,7 @@ class Game {
         logging,
         trading,
         equipping,
+        storing,
         managing,
         attacking,
         fighting,
@@ -87,6 +88,7 @@ class Game {
     void createLogBox();
     void createTradeButtons();
     void createEquipButtons();
+    void createStorageButtons();
     void createManageButtons();
     void createAttackButton();
     void createFightBoxes();

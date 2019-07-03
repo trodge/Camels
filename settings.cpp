@@ -19,6 +19,7 @@
 
 #include "settings.h"
 
+SDL_Rect Settings::screenRect;
 SDL_Rect Settings::mapRect;
 SDL_Color Settings::uIForeground;
 SDL_Color Settings::uIBackground;
@@ -84,7 +85,8 @@ void Settings::load(const fs::path &p) {
     pt::read_ini(p.string(), tree);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    loadRect("ui.mapRect", &mapRect, {3330, 2250, current.w * 14 / 15, current.h * 14 / 15}, tree);
+    loadRect("ui.screenRect", &screenRect, {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
+    loadRect("ui.mapRect", &mapRect, {3330, 2250, screenRect.w, screenRect.h}, tree);
     loadColor("ui.foreground", &uIForeground, {0, 0, 0, 255}, tree);
     loadColor("ui.background", &uIBackground, {109, 109, 109, 255}, tree);
     loadColor("ui.highlight", &uIHighlight, {0, 127, 251, 255}, tree);

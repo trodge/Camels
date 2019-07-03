@@ -60,9 +60,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double longitude, latitude;
     std::vector<Good> goods;          // goods carried by traveler
     std::vector<Good> offer, request; // goods offered and requested in next trade
-    std::vector<std::unique_ptr<TextBox>>::difference_type
-        requestButtonIndex;            // index of request and offer button for updating trade buttons
-    double tradePortion;               // portion of goods offered in next trade
+    size_t requestButtonIndex;            // index of request and offer button for updating trade buttons
+    double portion;               // portion of goods offered in next trade
     std::weak_ptr<Traveler> target;    // pointer to enemy if currently fighting
     double fightTime;                  // time left to fight this round
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
@@ -78,6 +77,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
+    std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
     void runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d);
@@ -95,7 +95,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const std::vector<Good> &getEquipment() const { return equipment; }
     const std::array<unsigned int, 5> &getStats() const { return stats; }
     unsigned int speed() const { return stats[1] + stats[2] + stats[3]; }
-    double getTradePortion() const { return tradePortion; }
+    double getPortion() const { return portion; }
     const std::weak_ptr<Traveler> getTarget() const { return target; }
     bool alive() const { return parts[0] < 5 and parts[1] < 5; }
     int getPX() const { return px; }
@@ -107,25 +107,29 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     }
     double getFightTime() const { return fightTime; }
     std::string tradePortionString() const;
-    void setRequestButtonIndex(std::vector<std::unique_ptr<TextBox>>::difference_type i) { requestButtonIndex = i; }
-    void setTradePortion(double p) { tradePortion = p; }
-    void changeTradePortion(double d);
+    void setPortion (double p) { 
+        portion = p; }
+    void changePortion (double d);
     void addToTown();
     void pickTown(const Town *t);
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
+    void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     void makeTrade();
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
+    void deposit(Good &g);
+    void withdraw(Good &g);
+    void createStorageView(std::vector<std::unique_ptr<TextBox>> &bs, const Town *t);
+    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);
     void loseTarget();
     void updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs);
     void loot(Good &g, Traveler &t);
     void loot(Traveler &t);
-    void leave(Good &g, Traveler &t) { t.loot(g, *this); }
     void startAI();
     void startAI(const Traveler &p);
     void runAI(unsigned int e);
