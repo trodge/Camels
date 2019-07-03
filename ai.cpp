@@ -23,14 +23,14 @@ AI::AI(const std::vector<Good> &gs, Town *tT) {
     // Initialize variables for running a new AI based on starting goods and current town.
     randomizeLimitFactors(gs);
     randomizeCriteria();
-    setNearby(tT, tT, Settings::getAITownRange());
+    setNearby(tT, tT, Settings::aITownRange);
     setLimits(gs);
 }
 
 AI::AI(const AI &p, const std::vector<Good> &gs, Town *tT) {
     // Starts an AI which imitates parameter's AI.
     materialInfo = p.materialInfo;
-    setNearby(tT, tT, Settings::getAITownRange());
+    setNearby(tT, tT, Settings::aITownRange);
     setLimits(gs);
 }
 
@@ -51,12 +51,12 @@ void AI::randomizeLimitFactors(const std::vector<Good> &gs) {
     for (auto gI = gs.begin() + 1; gI != gs.end(); ++gI)
         mC += gI->getMaterials().size();
     materialInfo = std::vector<MaterialInfo>(mC);
-    static std::uniform_real_distribution<> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
+    static std::uniform_real_distribution<> dis(Settings::limitFactorMin, Settings::limitFactorMax);
     auto mII = materialInfo.begin();
     for (size_t i = 1; i < gs.size(); ++i) {
         mC = gs[i].getMaterials().size();
         for (size_t j = 0; j < mC; ++j) {
-            mII->limitFactor = dis(*Settings::getRng());
+            mII->limitFactor = dis(Settings::rng);
             ++mII;
         }
     }
@@ -64,12 +64,12 @@ void AI::randomizeLimitFactors(const std::vector<Good> &gs) {
 
 void AI::randomizeCriteria() {
     // Randomize AI decision criteria.
-    static std::uniform_real_distribution<> rDis(1, Settings::getCriteriaMax());
+    static std::uniform_real_distribution<> rDis(1, Settings::criteriaMax);
     for (auto &c : decisionCriteria)
-        c = rDis(*Settings::getRng());
+        c = rDis(Settings::rng);
     // Randomize decision counter.
-    static std::uniform_int_distribution<> iDis(0, Settings::getAIDecisionTime());
-    decisionCounter = iDis(*Settings::getRng());
+    static std::uniform_int_distribution<> iDis(0, Settings::aIDecisionTime);
+    decisionCounter = iDis(Settings::rng);
 }
 
 double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const {
@@ -180,7 +180,7 @@ void AI::autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector
                     bestScore = score;
                     // Remove amout town takes as profit, store excess.
                     excess = 0;
-                    amount = mI->getQuantity(offerValue * Settings::getTownProfit(), &excess);
+                    amount = mI->getQuantity(offerValue * Settings::townProfit, &excess);
                     if (amount) {
                         if (overWeight) {
                             // Try to buy minimum that will bring net weight back below 0
@@ -207,7 +207,7 @@ void AI::autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector
     if (excess) {
         // Convert excess value to quantity of offered good.
         auto &tM = tGs[o.back().getId()].getMaterial(o.back().getMaterial());
-        double q = tM.getQuantity(excess / Settings::getTownProfit());
+        double q = tM.getQuantity(excess / Settings::townProfit);
         if (not gs[o.back().getId()].getSplit())
             // Good can't split, floor excess quantity
             q = floor(q);
@@ -254,10 +254,10 @@ void AI::autoAttack(const std::weak_ptr<Traveler> tgt, const std::function<std::
         // Remove travelers who do not meet threshold for attacking.
         able.erase(std::remove_if(able.begin(), able.end(),
                                   [this, ourEquipScore, &gs](const std::shared_ptr<Traveler> a) {
-                                      return decisionCriteria[4] < Settings::getCriteriaMax() / 3 or
+                                      return decisionCriteria[4] < Settings::criteriaMax / 3 or
                                              lootScore(gs, a->getGoods()) * ourEquipScore * decisionCriteria[4] /
                                                      equipScore(a->getEquipment(), a->getStats()) <
-                                                 Settings::getAIAttackThreshold();
+                                                 Settings::aIAttackThreshold;
                                   }),
                    able.end());
         if (not able.empty()) {
@@ -299,7 +299,7 @@ void AI::autoLoot(const std::vector<Good> &gs, std::weak_ptr<Traveler> tgt, cons
     double lootGoal = lootScore(gs, t->getGoods());
     if (t->alive())
         // Looting from an alive target dependent on greed.
-        lootGoal *= decisionCriteria[7] / Settings::getCriteriaMax();
+        lootGoal *= decisionCriteria[7] / Settings::criteriaMax;
     double looted = 0; // value that has already been looted
     while (looted < lootGoal) {
         // Keep looting until amount looted matches goal.
@@ -380,8 +380,8 @@ void AI::setLimits(const std::vector<Good> &gs) {
                 mII->minPrice = *mMP.first;
                 mII->maxPrice = *mMP.second;
                 mII->value = *mMP.first + mII->limitFactor * (*mMP.second - *mMP.first);
-                mII->buy = mII->value * Settings::getTownProfit();
-                mII->sell = mII->value / Settings::getTownProfit();
+                mII->buy = mII->value * Settings::townProfit;
+                mII->sell = mII->value / Settings::townProfit;
             }
             for (auto &n : nearby) {
                 // Loop through nearby towns again now that material info has been gathered
@@ -411,7 +411,7 @@ void AI::run(unsigned int e, bool m, std::vector<Good> &o, std::vector<Good> &r,
     // Run the AI for the elapsed time. Includes trading, equipping, and attacking.
     if (not m) {
         decisionCounter += e;
-        if (decisionCounter > Settings::getAIDecisionTime()) {
+        if (decisionCounter > Settings::aIDecisionTime) {
             autoTrade(o, r, gs, tT, netWgt, mT);
             autoEquip(gs, sts, eqp);
             autoAttack(tgt, atkabl, gs, eqpmt, sts, atk);
@@ -424,10 +424,10 @@ void AI::run(unsigned int e, bool m, std::vector<Good> &o, std::vector<Good> &r,
             auto bestTownScore = std::max_element(townScores.begin(), townScores.end());
             if (bestTownScore != townScores.end()) {
                 pT(nearby[static_cast<size_t>(bestTownScore - townScores.begin())].town);
-                setNearby(tT, tT, Settings::getAITownRange());
+                setNearby(tT, tT, Settings::aITownRange);
                 setLimits(gs);
             }
-            decisionCounter -= Settings::getAIDecisionTime();
+            decisionCounter -= Settings::aIDecisionTime;
         }
     }
 }

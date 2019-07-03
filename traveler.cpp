@@ -35,9 +35,9 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     equip(2);
     equip(3);
     // Randomize stats.
-    static std::uniform_int_distribution<unsigned int> dis(1, Settings::getStatMax());
+    static std::uniform_int_distribution<unsigned int> dis(1, Settings::statMax);
     for (auto &s : stats)
-        s = dis(*Settings::getRng());
+        s = dis(Settings::rng);
     // Set parts status to normal.
     parts.fill(0);
 }
@@ -173,30 +173,30 @@ void Traveler::place(int ox, int oy, double s) {
 void Traveler::draw(SDL_Renderer *s) const {
     SDL_Color col;
     if (ai)
-        col = Settings::getAIColor();
+        col = Settings::aIColor;
     else
-        col = Settings::getPlayerColor();
+        col = Settings::playerColor;
     drawCircle(s, px, py, 1, col, true);
 }
 
 void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     // Create buttons for trading goods.
-    const SDL_Rect &sR = Settings::getScreenRect();
+    const SDL_Rect &sR = Settings::screenRect;
     // function to call when buttons are clicked
     auto f = [this, &bs] { updateTradeButtons(bs); };
     // Create the offer and request buttons for the player.
-    int left = sR.w / Settings::getGoodButtonXDivisor(), right = sR.w / 2;
-    int top = sR.h / Settings::getGoodButtonXDivisor();
-    int dx = sR.w * 31 / Settings::getGoodButtonXDivisor(),
-        dy = sR.h * 31 / Settings::getGoodButtonYDivisor();
-    SDL_Rect rt = {left, top, sR.w * 29 / Settings::getGoodButtonXDivisor(),
-          sR.h * 29 / Settings::getGoodButtonYDivisor()};
+    int left = sR.w / Settings::goodButtonXDivisor, right = sR.w / 2;
+    int top = sR.h / Settings::goodButtonXDivisor;
+    int dx = sR.w * 31 / Settings::goodButtonXDivisor,
+        dy = sR.h * 31 / Settings::goodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * 29 / Settings::goodButtonXDivisor,
+          sR.h * 29 / Settings::goodButtonYDivisor};
     for (auto &g : getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
                                          getNation()->getForeground(), getNation()->getBackground(),
-                                         Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), gameData, f));
+                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -204,8 +204,8 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
                 }
             }
     }
-    left = sR.w / 2 + sR.w / Settings::getGoodButtonXDivisor();
-    right = sR.w - sR.w / Settings::getGoodButtonXDivisor();
+    left = sR.w / 2 + sR.w / Settings::goodButtonXDivisor;
+    right = sR.w - sR.w / Settings::goodButtonXDivisor;
     rt.x = left;
     rt.y = top;
     requestButtonIndex = bs.size();
@@ -214,7 +214,7 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
             if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
                 bs.push_back(m.button(
                     true, g.getId(), g.getName(), g.getSplit(), rt, getTown()->getNation()->getForeground(),
-                    getTown()->getNation()->getBackground(), Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), gameData, f));
+                    getTown()->getNation()->getBackground(), Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -272,7 +272,7 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
             mI->updateButton(g.getSplit(), offerValue, requestCount ? requestCount : 1, rBI->get());
             if ((*rBI)->getClicked()) {
                 double mE = 0; // excess quantity of this material
-                double amount = mI->getQuantity(offerValue / requestCount * Settings::getTownProfit(), &mE);
+                double amount = mI->getQuantity(offerValue / requestCount * Settings::townProfit, &mE);
                 if (not g.getSplit()) {
                     // Remove extra portion of goods that don't split.
                     mE += modf(amount, &amount);
@@ -288,7 +288,7 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     excess /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
-        double q = tM.getQuantity(excess / Settings::getTownProfit());
+        double q = tM.getQuantity(excess / Settings::townProfit);
         if (not goods[of.getId()].getSplit())
             q = floor(q);
         of.use(q);
@@ -417,7 +417,7 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     if (sI == storage.end()) sI = createStorage(toTown);
     SDL_Rect rt;
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
-    int b = Settings::getTradeBorder(), r = Settings::getTradeRadius(), fS = Settings::getTradeFontSize();
+    int b = Settings::tradeBorder, r = Settings::tradeRadius, fS = Settings::tradeFontSize;
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             Good dG(g.getId(), g.getAmount() * portion);
@@ -440,7 +440,7 @@ std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
         able.erase(std::remove_if(able.begin(), able.end(),
                                   [this](std::shared_ptr<Traveler> t) {
                                       return t->toTown == t->fromTown or
-                                             distSq(t->px, t->py) > Settings::getAttackDistSq() or t->target.lock() or
+                                             distSq(t->px, t->py) > Settings::attackDistSq or t->target.lock() or
                                              not t->alive() or t == shared_from_this();
                                   }),
                    able.end());
@@ -526,7 +526,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
             }
             auto cO = gameData.odds[type - 1];
             // Calculate number of swings before hit happens.
-            double r = d(*Settings::getRng());
+            double r = d(Settings::rng);
             double p = attack / cO.hitOdds / defense[type - 1];
             double time;
             if (p < 1)
@@ -536,10 +536,10 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
             if (time < first.time) {
                 first.time = time;
                 // Pick a random part.
-                first.partId = static_cast<unsigned int>(d(*Settings::getRng()) * static_cast<double>(parts.size()));
+                first.partId = static_cast<unsigned int>(d(Settings::rng) * static_cast<double>(parts.size()));
                 // Start status at part's current status.
                 first.status = t.parts[first.partId];
-                r = d(*Settings::getRng());
+                r = d(Settings::rng);
                 auto sCI = cO.statusChances.begin();
                 while (r > 0 and sCI != cO.statusChances.end()) {
                     // Find status such that part becomes more damaged.
@@ -653,7 +653,7 @@ void Traveler::runAI(unsigned int e) {
 void Traveler::update(unsigned int e) {
     // Move traveler toward destination and perform combat with target.
     if (toTown and moving) {
-        double t = static_cast<double>(e) / static_cast<double>(Settings::getDayLength());
+        double t = static_cast<double>(e) / static_cast<double>(Settings::dayLength);
         // Take a step toward town.
         double dlt = toTown->getLatitude() - latitude;
         double dlg = toTown->getLongitude() - longitude;
@@ -698,8 +698,8 @@ void Traveler::update(unsigned int e) {
                 break;
             case FightChoice::run:
                 // Check if target escapes.
-                escapeChance = Settings::getEscapeChance() * t->speed() / speed();
-                if (dis(*Settings::getRng()) > escapeChance) {
+                escapeChance = Settings::escapeChance * t->speed() / speed();
+                if (dis(Settings::rng) > escapeChance) {
                     // Target is caught, fight.
                     t->choice = FightChoice::fight;
                     runFight(*t, e, dis);

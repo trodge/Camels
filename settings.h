@@ -30,7 +30,7 @@ namespace pt = boost::property_tree;
 
 #include <SDL2/SDL.h>
 
-class Settings {
+struct Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapRect;
     static SDL_Color uIForeground;
