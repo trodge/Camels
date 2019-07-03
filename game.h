@@ -41,7 +41,7 @@ class Game {
     SDL_Texture *mapTexture;
     SDL_Surface *mapSurface;
     SDL_Rect screenRect, mapRect;
-    int scrollSpeed, scrollX, scrollY;
+    int scrollSpeed, scrollX = 0, scrollY = 0;
     int offsetX, offsetY;
     unsigned int lastTime = 0, currentTime;
     double scale;

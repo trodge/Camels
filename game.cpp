@@ -19,18 +19,29 @@
 
 #include "game.h"
 
-Game::Game() : scrollX(0), scrollY(0) {
+Game::Game() {
     Settings::load("settings.ini");
     loadDisplayVariables();
     window = SDL_CreateWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
                               SDL_WINDOW_BORDERLESS);
-    SDL_Surface *icon = SDL_LoadBMP("icon.bmp");
+    if (!window)
+        std::cout << "Window creation failed, SDL Error:" << SDL_GetError() << std::endl;
+    fs::path iconPath("images/icon.png");
+    SDL_Surface *icon = IMG_Load(iconPath.string().c_str());
+    if (!icon)
+        std::cout << "Failed to load icon, IMG Error:" << IMG_GetError() << std::endl;
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
     screen = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    if (!screen)
+        std::cout << "Failed to create renderer, SDL Error:" << SDL_GetError() << std::endl;
     fs::path mapPath("images/map-scaled.png");
     mapSurface = IMG_Load(mapPath.string().c_str());
+    if (!mapSurface)
+        std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
     mapTexture = SDL_CreateTextureFromSurface(screen, mapSurface);
+    if (!mapTexture)
+        std::cout << "Failed to create map texture, SDL Error:" << SDL_GetError() << std::endl;
     setState(starting);
     /*SDL_CreateRGBSurfaceWithFormat(
     0, 14220, 6640, screen->format->BitsPerPixel, screen->format->format);

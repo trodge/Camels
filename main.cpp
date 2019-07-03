@@ -25,8 +25,14 @@
 #include "traveler.h"
 
 int main(int, char **) {
-    SDL_Init(SDL_INIT_EVERYTHING);
-    TTF_Init();
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+        std::cout << "SDL initialization failed, SDL Error: " << SDL_GetError() << std::endl;
+    if (TTF_Init() < 0)
+        std::cout << "TTF initialization failed, TTF Error: " << TTF_GetError() << std::endl;
+    if (IMG_Init(IMG_INIT_PNG) < 0)
+        std::cout << "TTF initialization failed, IMG Error: " << SDL_GetError() << std::endl;
     Game game;
+    SDL_Quit();
+    TTF_Quit();
     return 0;
 }
