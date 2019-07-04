@@ -158,6 +158,18 @@ void Game::renderMapTexture() {
     SDL_SetRenderTarget(screen, nullptr);
 }
 
+void Game::place() {
+    // Place towns and travelers based on offsets and scale
+    std::vector<SDL_Rect> newDrawn;
+    newDrawn.reserve(towns.size());
+    for (auto &t : towns)
+        t.placeDot(newDrawn, offsetX, offsetY, scale);
+    for (auto &t : towns)
+        t.placeText(newDrawn);
+    for (auto &t : travelers)
+        t->place(offsetX, offsetY, scale);
+}
+
 void Game::changeOffsets(int dx, int dy) {
     // Move view around world map.
     SDL_Rect m = {mapRect.x + dx, mapRect.y + dy, mapSurface->w, mapSurface->h};
@@ -167,14 +179,7 @@ void Game::changeOffsets(int dx, int dy) {
         offsetX -= dx;
         offsetY -= dy;
         renderMapTexture();
-        std::vector<SDL_Rect> newDrawn;
-        newDrawn.reserve(towns.size());
-        for (auto &t : towns)
-            t.placeDot(newDrawn, offsetX, offsetY, scale);
-        for (auto &t : towns)
-            t.placeText(newDrawn);
-        for (auto &t : travelers)
-            t->place(offsetX, offsetY, scale);
+        place();
     }
 }
 
@@ -319,7 +324,7 @@ void Game::newGame() {
         SDL_RenderPresent(screen);
     }
     sqlite3_finalize(quer);
-    changeOffsets(0, 0);
+    place();
     loadBar.progress(-1);
     loadBar.setText(0, "Finalizing towns...");
     std::vector<std::vector<size_t>> routes(towns.size());
@@ -384,7 +389,7 @@ void Game::newGame() {
                 player = travelers.front().get();
                 player->addToTown();
                 showPlayer = true;
-                changeOffsets(0, 0);
+                place();
                 setState(traveling);
             }));
     }
@@ -440,7 +445,7 @@ void Game::load(const fs::path &p) {
         for (auto tI = travelers.begin() + 1; tI != travelers.end(); ++tI)
             (*tI)->startAI();
         showPlayer = true;
-        changeOffsets(0, 0);
+        place();
         setState(traveling);
     }
 }
@@ -1110,12 +1115,32 @@ void Game::handleEvents() {
                                 scrollY = static_cast<int>(static_cast<double>(scrollSpeed) * d);
                                 showPlayer = false;
                                 break;
+                          /*case SDLK_u:
+                                --offsetY;
+                                place();
+                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
+                                break;
+                            case SDLK_j:
+                                ++offsetY;
+                                place();
+                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
+                                break;
+                            case SDLK_h:
+                                --offsetX;
+                                place();
+                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
+                                break;
+                            case SDLK_k:
+                                ++offsetX;
+                                place();
+                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
+                                break;
                             case SDLK_s:
                                 focusPrev(Focusable::neighbor);
                                 break;
                             case SDLK_d:
                                 focusNext(Focusable::neighbor);
-                                break;
+                                break;*/
                             }
                             break;
                         case trading:

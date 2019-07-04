@@ -76,6 +76,7 @@ class Game {
     bool showPlayer = false;
     void loadDisplayVariables();
     void renderMapTexture();
+    void place();
     void changeOffsets(int dx, int dy);
     void loadNations(sqlite3 *c);
     void newGame();

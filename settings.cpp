@@ -97,7 +97,7 @@ void Settings::load(const fs::path &p) {
     loadColor("ui.aIColor", &aIColor, {191, 191, 191, 255}, tree);
     scroll = tree.get("ui.scroll", 64);
     offsetX = tree.get("ui.offsetX", -3197);
-    offsetY = tree.get("ui.offsetY", 4725);
+    offsetY = tree.get("ui.offsetY", 4731);
     bigBoxBorder = tree.get("ui.bigBoxBorder", 4);
     bigBoxRadius = tree.get("ui.bigBoxRadius", 13);
     bigBoxFontSize = tree.get("ui.bigBoxFontSize", 48);
