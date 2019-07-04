@@ -1,8 +1,12 @@
-\.clang-format
 \.kdev4/
+\.vscode/
+build/
+images/unused/
+save/
+win-build/
+\.clang-format
 CMakeCache\.txt
 Camels\.kdev4
-build/
 cmake_install\.cmake
 colorpicker\.py
 map\.bmp
@@ -10,9 +14,6 @@ map\.png
 obj/
 rearrange_data\.py
 save\.fbs
-save/
-vimsrc\.sh
-win-build/
-.vscode
 SDL2.dll
-images/unused/
+settings.ini
+vimsrc\.sh
