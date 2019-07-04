@@ -35,9 +35,9 @@
 #include <SDL2/SDL.h>
 
 #include "ai.h"
-#include "scrollbox.h"
 #include "good.h"
 #include "nation.h"
+#include "scrollbox.h"
 #include "town.h"
 
 struct GameData;
@@ -58,10 +58,10 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const Nation *nation;
     std::vector<std::string> logText;
     double longitude, latitude;
-    std::vector<Good> goods;          // goods carried by traveler
-    std::vector<Good> offer, request; // goods offered and requested in next trade
-    size_t requestButtonIndex;            // index of request and offer button for updating trade buttons
-    double portion;               // portion of goods offered in next trade
+    std::vector<Good> goods;           // goods carried by traveler
+    std::vector<Good> offer, request;  // goods offered and requested in next trade
+    size_t requestButtonIndex;         // index of request and offer button for updating trade buttons
+    double portion;                    // portion of goods offered in next trade
     std::weak_ptr<Traveler> target;    // pointer to enemy if currently fighting
     double fightTime;                  // time left to fight this round
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
@@ -107,9 +107,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     }
     double getFightTime() const { return fightTime; }
     std::string tradePortionString() const;
-    void setPortion (double p) { 
-        portion = p; }
-    void changePortion (double d);
+    void setPortion(double p) { portion = p; }
+    void changePortion(double d);
     void addToTown();
     void pickTown(const Town *t);
     void place(int ox, int oy, double s);
@@ -120,6 +119,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
+    void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     void deposit(Good &g);
     void withdraw(Good &g);
     void createStorageView(std::vector<std::unique_ptr<TextBox>> &bs, const Town *t);

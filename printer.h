@@ -49,7 +49,9 @@ class Printer {
     static int getFontHeight() { return TTF_FontHeight(fonts[static_cast<size_t>(sizeIndex * kFontCount)]); }
     static int getFontWidth(const std::string &tx);
     static SDL_Surface *print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img);
-    static SDL_Surface *print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) { return print(tx, rt, b, r, nullptr); }
+    static SDL_Surface *print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
+        return print(tx, rt, b, r, nullptr);
+    }
 };
 
 #endif

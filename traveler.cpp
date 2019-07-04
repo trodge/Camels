@@ -21,7 +21,7 @@
 
 Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
-      portion (1), gameData(gD), moving(false) {
+      portion(1), gameData(gD), moving(false) {
     // Copy goods vector from nation.
     const std::vector<Good> &gs = t->getNation()->getGoods();
     goods.reserve(gs.size());
@@ -45,7 +45,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
 Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD)
     : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->toTown() - 1)]),
       fromTown(&ts[static_cast<size_t>(t->fromTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
-      longitude(t->longitude()), latitude(t->latitude()), portion (1), gameData(gD), moving(t->moving()) {
+      longitude(t->longitude()), latitude(t->latitude()), portion(1), gameData(gD), moving(t->moving()) {
     auto lLog = t->log();
     for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI)
         logText.push_back(lLI->str());
@@ -140,18 +140,18 @@ double Traveler::pathDist(const Town *t) const {
 
 std::string Traveler::tradePortionString() const {
     // Return a string representing trade portion with trailing zeroes omitted.
-    std::string tPS = std::to_string( portion );
+    std::string tPS = std::to_string(portion);
     size_t lNZI = tPS.find_last_not_of('0');
     size_t dI = tPS.find('.');
     tPS.erase(lNZI == dI ? dI + 2 : lNZI + 1, std::string::npos);
     return tPS;
 }
 
-void Traveler::changePortion (double d) {
+void Traveler::changePortion(double d) {
     portion += d;
-    if ( portion < 0)
+    if (portion < 0)
         portion = 0;
-    else if ( portion > 1)
+    else if (portion > 1)
         portion = 1;
 }
 
@@ -181,22 +181,19 @@ void Traveler::draw(SDL_Renderer *s) const {
 
 void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     // Create buttons for trading goods.
-    const SDL_Rect &sR = Settings::screenRect;
     // function to call when buttons are clicked
     auto f = [this, &bs] { updateTradeButtons(bs); };
     // Create the offer and request buttons for the player.
-    int left = sR.w / Settings::goodButtonXDivisor, right = sR.w / 2;
-    int top = sR.h / Settings::goodButtonXDivisor;
-    int dx = sR.w * 31 / Settings::goodButtonXDivisor,
-        dy = sR.h * 31 / Settings::goodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * 29 / Settings::goodButtonXDivisor,
-          sR.h * 29 / Settings::goodButtonYDivisor};
-    for (auto &g : getGoods()) {
+    int left = Settings::screenRect.w / Settings::goodButtonXDivisor, right = Settings::screenRect.w / 2;
+    int top = Settings::screenRect.h / Settings::goodButtonXDivisor;
+    int dx = Settings::screenRect.w * 31 / Settings::goodButtonXDivisor, dy = Settings::screenRect.h * 31 / Settings::goodButtonYDivisor;
+    SDL_Rect rt = {left, top, Settings::screenRect.w * 29 / Settings::goodButtonXDivisor, Settings::screenRect.h * 29 / Settings::goodButtonYDivisor};
+    for (auto &g : goods) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
-                                         getNation()->getForeground(), getNation()->getBackground(),
-                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, f));
+                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, getNation()->getForeground(),
+                                      getNation()->getBackground(), Settings::tradeBorder, Settings::tradeRadius,
+                                      Settings::tradeFontSize, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -204,17 +201,17 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
                 }
             }
     }
-    left = sR.w / 2 + sR.w / Settings::goodButtonXDivisor;
-    right = sR.w - sR.w / Settings::goodButtonXDivisor;
+    left = Settings::screenRect.w / 2 + Settings::screenRect.w / Settings::goodButtonXDivisor;
+    right = Settings::screenRect.w - Settings::screenRect.w / Settings::goodButtonXDivisor;
     rt.x = left;
     rt.y = top;
     requestButtonIndex = bs.size();
-    for (auto &g : getTown()->getGoods()) {
+    for (auto &g : toTown->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
-                bs.push_back(m.button(
-                    true, g.getId(), g.getName(), g.getSplit(), rt, getTown()->getNation()->getForeground(),
-                    getTown()->getNation()->getBackground(), Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, f));
+                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
+                                      getTown()->getNation()->getForeground(), getTown()->getNation()->getBackground(),
+                                      Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -382,10 +379,74 @@ void Traveler::equip(unsigned int pI) {
     }
 }
 
+void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
+    // Create buttons for equipping and unequipping equipment
+    // Create array of vectors corresponding to each part that can hold equipment.
+    size_t eBP = bs.size(); // position of first equip button
+    std::array<std::vector<Good>, 6> equippable;
+    for (auto &g : goods)
+        for (auto &m : g.getMaterials()) {
+            auto &ss = m.getCombatStats();
+            if (not ss.empty() and m.getAmount() >= 1) {
+                size_t i = ss.front().partId;
+                Good e(g.getId(), g.getName(), 1);
+                Material eM(m.getId(), m.getName(), 1);
+                eM.setCombatStats(ss);
+                e.addMaterial(eM);
+                equippable[i].push_back(e);
+            }
+        }
+    // Create buttons for equipping equippables
+    int left = Settings::screenRect.w / Settings::goodButtonXDivisor, top = Settings::screenRect.h / Settings::goodButtonYDivisor;
+    int dx = Settings::screenRect.w * 36 / Settings::goodButtonXDivisor, dy = Settings::screenRect.h * 31 / Settings::goodButtonYDivisor;
+    SDL_Rect rt = {left, top, Settings::screenRect.w * 35 / Settings::goodButtonXDivisor, Settings::screenRect.h * 29 / Settings::goodButtonYDivisor};
+    for (auto &eP : equippable) {
+        for (auto &e : eP) {
+            bs.push_back(
+                e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, getNation()->getForeground(),
+                                       getNation()->getBackground(), Settings::equipBorder, Settings::equipRadius,
+                                       Settings::equipFontSize, gameData, [this, e, &bs, eBP]() mutable {
+                                           equip(e);
+                                           // Refresh buttons.
+                                           auto eB = bs.begin();
+                                           std::advance(eB, eBP);
+                                           bs.erase(eB, bs.end());
+                                           createEquipButtons(bs);
+                                       }));
+            rt.y += dy;
+        }
+        rt.y = top;
+        rt.x += dx;
+    }
+    // Create buttons for unequipping equipment
+    rt.y = top;
+    left = Settings::screenRect.w * 218 / Settings::goodButtonXDivisor;
+    for (auto &e : getEquipment()) {
+        auto &ss = e.getMaterial().getCombatStats();
+        unsigned int pI = ss.front().partId;
+        rt.x = left + static_cast<int>(pI) * dx;
+        bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt,
+                                               getNation()->getForeground(), getNation()->getBackground(),
+                                               Settings::equipBorder, Settings::equipRadius, Settings::equipFontSize,
+                                               gameData, [this, pI, ss, &bs, eBP] {
+                                                   unequip(pI);
+                                                   // Equip fists.
+                                                   for (auto &s : ss)
+                                                       equip(s.partId);
+                                                   // Refresh buttons.
+                                                   auto eB = bs.begin();
+                                                   std::advance(eB, eBP);
+                                                   bs.erase(eB, bs.end());
+                                                   createEquipButtons(bs);
+                                               }));
+    }    
+}
+
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
     auto sI = storage.find(toTown);
-    if (sI == storage.end()) return;
+    if (sI == storage.end())
+        return;
     unsigned int gId = g.getId();
     goods[gId].take(g);
     sI->second[gId].put(g);
@@ -394,7 +455,8 @@ void Traveler::deposit(Good &g) {
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
     auto sI = storage.find(toTown);
-    if (sI == storage.end()) return;
+    if (sI == storage.end())
+        return;
     unsigned int gId = g.getId();
     sI->second[gId].take(g);
     goods[gId].put(g);
@@ -414,16 +476,16 @@ std::unordered_map<Town *, std::vector<Good>>::iterator Traveler::createStorage(
 
 void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     auto sI = storage.find(toTown);
-    if (sI == storage.end()) sI = createStorage(toTown);
+    if (sI == storage.end())
+        sI = createStorage(toTown);
     SDL_Rect rt;
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
     int b = Settings::tradeBorder, r = Settings::tradeRadius, fS = Settings::tradeFontSize;
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             Good dG(g.getId(), g.getAmount() * portion);
-            bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData, [this, &dG] {
-                deposit(dG);
-            }));
+            bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData,
+                                  [this, &dG] { deposit(dG); }));
         }
 }
 
@@ -439,9 +501,8 @@ std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
         // Eliminate travelers which are too far away or have reached town or are already fighting or are this traveler.
         able.erase(std::remove_if(able.begin(), able.end(),
                                   [this](std::shared_ptr<Traveler> t) {
-                                      return t->toTown == t->fromTown or
-                                             distSq(t->px, t->py) > Settings::attackDistSq or t->target.lock() or
-                                             not t->alive() or t == shared_from_this();
+                                      return t->toTown == t->fromTown or distSq(t->px, t->py) > Settings::attackDistSq or
+                                             t->target.lock() or not t->alive() or t == shared_from_this();
                                   }),
                    able.end());
     }
@@ -678,8 +739,8 @@ void Traveler::update(unsigned int e) {
             moving = false;
             logText.push_back(name + " has arrived in the " +
                               gameData.populationAdjectives.lower_bound(toTown->getPopulation())->second + " " +
-                              toTown->getNation()->getAdjective() + " " +
-                              gameData.townTypeNouns[toTown->getTownType() - 1] + " of " + toTown->getName() + ".");
+                              toTown->getNation()->getAdjective() + " " + gameData.townTypeNouns[toTown->getTownType() - 1] +
+                              " of " + toTown->getName() + ".");
         }
     }
     if (auto t = target.lock()) {

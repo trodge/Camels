@@ -19,11 +19,13 @@
 
 #include "game.h"
 
-SDL_Texture *textureFromSurfaceSection (SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
+SDL_Texture *textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
     int bpp = sf->format->BytesPerPixel;
     Uint8 *p = static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * bpp;
     SDL_Surface *c = SDL_CreateRGBSurfaceWithFormatFrom(p, rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24);
-    if (!c) std::cout << "Surface is null at " << rt.x << "," << rt.y << " " << rt.w << "x" << rt.h << " bpp:" << bpp << " SDL Error: " << SDL_GetError() << std::endl;
+    if (!c)
+        std::cout << "Surface is null at " << rt.x << "," << rt.y << " " << rt.w << "x" << rt.h << " bpp:" << bpp
+                  << " SDL Error: " << SDL_GetError() << std::endl;
     SDL_Texture *t = SDL_CreateTextureFromSurface(rdr, c);
     if (!t)
         std::cout << "Failed to create clipped texture, SDL Error:" << SDL_GetError() << std::endl;
@@ -50,8 +52,8 @@ Game::Game() {
     if (SDL_GetRendererInfo(screen, &screenInfo) < 0)
         std::cout << "Failed to get renderer info, SDL Error:" << SDL_GetError() << std::endl;
     // For debugging, pretend renderer can't handle textures over 64x64
-//     screenInfo.max_texture_height = 64;
-//     screenInfo.max_texture_width = 64;
+    //     screenInfo.max_texture_height = 64;
+    //     screenInfo.max_texture_width = 64;
     fs::path mapPath("images/map-scaled.png");
     mapSurface = IMG_Load(mapPath.string().c_str());
     if (!mapSurface)
@@ -64,11 +66,11 @@ Game::Game() {
         // Loop from top to bottom.
         for (rt.x = 0; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
             // Loop from left to right.
-            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+            mapTextures.push_back(textureFromSurfaceSection(screen, mapSurface, rt));
         if (rt.x < mapSurface->w) {
             // Fill right side rectangles of map.
             rt.w = mapSurface->w - rt.x;
-            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+            mapTextures.push_back(textureFromSurfaceSection(screen, mapSurface, rt));
             rt.w = screenInfo.max_texture_width;
         }
     }
@@ -76,11 +78,11 @@ Game::Game() {
         // Fill in bottom side rectangles of map.
         rt.h = mapSurface->h - rt.y;
         for (; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
-            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+            mapTextures.push_back(textureFromSurfaceSection(screen, mapSurface, rt));
         if (rt.x < mapSurface->w) {
             // Fill bottom right corner of map.
             rt.w = mapSurface->w - rt.x;
-            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+            mapTextures.push_back(textureFromSurfaceSection(screen, mapSurface, rt));
         }
     }
     mapTexture = SDL_CreateTexture(screen, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h);
@@ -130,12 +132,11 @@ void Game::loadDisplayVariables() {
     scale = Settings::scale;
 }
 
-void Game::renderMapTexture() {    
+void Game::renderMapTexture() {
     // Construct map texture for drawing from matrix of map textures.
-    int left = mapRect.x / screenInfo.max_texture_width,
-         top = mapRect.y / screenInfo.max_texture_height,
-      right = (mapRect.x + mapRect.w) / screenInfo.max_texture_width,
-     bottom = (mapRect.y + mapRect.h) / screenInfo.max_texture_height;
+    int left = mapRect.x / screenInfo.max_texture_width, top = mapRect.y / screenInfo.max_texture_height,
+        right = (mapRect.x + mapRect.w) / screenInfo.max_texture_width,
+        bottom = (mapRect.y + mapRect.h) / screenInfo.max_texture_height;
     SDL_Rect sR = {0, 0, 0, 0}, dR = {0, 0, 0, 0};
     if (SDL_SetRenderTarget(screen, mapTexture) < 0)
         std::cout << "Failed to set render target, SDL Error: " << SDL_GetError() << std::endl;
@@ -146,8 +147,10 @@ void Game::renderMapTexture() {
         for (int r = top; r <= bottom; ++r) {
             sR = {std::max(mapRect.x - c * screenInfo.max_texture_width, 0),
                   std::max(mapRect.y - r * screenInfo.max_texture_height, 0),
-                  std::min(std::min((c + 1) * screenInfo.max_texture_width - mapRect.x, screenInfo.max_texture_width), mapRect.w),
-                  std::min(std::min((r + 1) * screenInfo.max_texture_height - mapRect.y, screenInfo.max_texture_height), mapRect.h)};
+                  std::min(std::min((c + 1) * screenInfo.max_texture_width - mapRect.x, screenInfo.max_texture_width),
+                           mapRect.w),
+                  std::min(std::min((r + 1) * screenInfo.max_texture_height - mapRect.y, screenInfo.max_texture_height),
+                           mapRect.h)};
             dR.y += dR.h;
             dR.w = sR.w;
             dR.h = sR.h;
@@ -170,7 +173,7 @@ void Game::place() {
         t->place(offsetX, offsetY, scale);
 }
 
-void Game::changeOffsets(int dx, int dy) {
+void Game::moveView(int dx, int dy) {
     // Move view around world map.
     SDL_Rect m = {mapRect.x + dx, mapRect.y + dy, mapSurface->w, mapSurface->h};
     if (m.x > 0 and m.x < m.w - mapRect.w and m.y > 0 and m.y < m.h - mapRect.h) {
@@ -283,8 +286,8 @@ void Game::newGame() {
     loadNations(conn);
     // Load towns from sqlite database.
     LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                    {"Loading towns..."}, Settings::loadBarColor, Settings::uIForeground,
-                    Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::loadBarFontSize);
+                    {"Loading towns..."}, Settings::loadBarColor, Settings::uIForeground, Settings::bigBoxBorder,
+                    Settings::bigBoxRadius, Settings::loadBarFontSize);
     // Load businesses.
     sqlite3_stmt *quer;
     sqlite3_prepare_v2(conn, "SELECT modes FROM businesses", -1, &quer, nullptr);
@@ -366,32 +369,31 @@ void Game::newGame() {
     SDL_Rect rt = {screenRect.w / 2, screenRect.h / 7, 0, 0};
     // Create textbox for entering name.
     std::vector<std::string> tx = {"Name", ""};
-    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground,
-                                              Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                              Settings::bigBoxFontSize));
+    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::bigBoxBorder,
+                                              Settings::bigBoxRadius, Settings::bigBoxFontSize));
     boxes.back()->toggleLock();
     for (auto &n : nations) {
         // Create a button for each nation to start in that nation.
         rt = {screenRect.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6,
               screenRect.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7, 0, 0};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, n.getNames(), n.getForeground(), n.getBackground(), n.getId(), true, 3, Settings::bigBoxRadius,
-            Settings::bigBoxFontSize, [this, n] {
-                focusBox = -1;
-                unsigned int nId = n.getId(); // nation id
-                std::string name = boxes.front()->getText(1);
-                if (name.empty())
-                    name = n.randomName();
-                // Add player at end of travelers.
-                travelers.push_back(std::make_shared<Traveler>(name, &towns[nId - 1], gameData));
-                // Swap player to front.
-                std::swap(travelers.front(), travelers.back());
-                player = travelers.front().get();
-                player->addToTown();
-                showPlayer = true;
-                place();
-                setState(traveling);
-            }));
+        boxes.push_back(std::make_unique<MenuButton>(rt, n.getNames(), n.getForeground(), n.getBackground(), n.getId(), true,
+                                                     3, Settings::bigBoxRadius, Settings::bigBoxFontSize, [this, n] {
+                                                         focusBox = -1;
+                                                         unsigned int nId = n.getId(); // nation id
+                                                         std::string name = boxes.front()->getText(1);
+                                                         if (name.empty())
+                                                             name = n.randomName();
+                                                         // Add player at end of travelers.
+                                                         travelers.push_back(
+                                                             std::make_shared<Traveler>(name, &towns[nId - 1], gameData));
+                                                         // Swap player to front.
+                                                         std::swap(travelers.front(), travelers.back());
+                                                         player = travelers.front().get();
+                                                         player->addToTown();
+                                                         showPlayer = true;
+                                                         place();
+                                                         setState(traveling);
+                                                     }));
     }
 }
 
@@ -420,8 +422,8 @@ void Game::load(const fs::path &p) {
         auto game = Save::GetGame(buffer);
         auto lTowns = game->towns();
         LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                        {"Loading towns..."}, Settings::loadBarColor, Settings::uIForeground,
-                        Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::loadBarFontSize);
+                        {"Loading towns..."}, Settings::loadBarColor, Settings::uIForeground, Settings::bigBoxBorder,
+                        Settings::bigBoxRadius, Settings::loadBarFontSize);
         towns.reserve(lTowns->size());
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
             towns.push_back(Town(*lTI, nations, Settings::townFontSize));
@@ -666,20 +668,19 @@ void Game::updateUI() {
 void Game::createStartButtons() {
     SDL_Rect rt = {screenRect.w / 2, screenRect.h / 15, 0, 0};
     std::vector<std::string> tx = {"Camels and Silk"};
-    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground,
-                                              Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                              Settings::bigBoxFontSize));
+    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::bigBoxBorder,
+                                              Settings::bigBoxRadius, Settings::bigBoxFontSize));
     rt = {screenRect.w / 7, screenRect.h / 3, 0, 0};
     tx = {"(N)ew Game"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
-                                                 Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                                 Settings::bigBoxFontSize, [this] { newGame(); }));
+                                                 Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
+                                                 [this] { newGame(); }));
     boxes.back()->setKey(SDLK_n);
     rt = {screenRect.w / 7, screenRect.h * 2 / 3, 0, 0};
     tx = {"(L)oad Game"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
-                                                 Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                                 Settings::bigBoxFontSize, [this] {
+                                                 Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
+                                                 [this] {
                                                      boxes.back()->setClicked(false);
                                                      toggleState(loading);
                                                  }));
@@ -690,9 +691,9 @@ void Game::createQuitButtons() {
     // Bring up quit menu.
     SDL_Rect r = {screenRect.w / 2, screenRect.h / 4, 0, 0};
     std::vector<std::string> tx = {"Continue"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        r, tx, Settings::uIForeground, Settings::uIBackground, Settings::bigBoxBorder,
-        Settings::bigBoxRadius, Settings::bigBoxFontSize, [this] { toggleState(quitting); }));
+    boxes.push_back(std::make_unique<MenuButton>(r, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
+                                                 [this] { toggleState(quitting); }));
     r = {screenRect.w / 2, screenRect.h * 3 / 4, 0, 0};
     std::function<void()> f;
     if (not travelers.empty()) {
@@ -706,17 +707,17 @@ void Game::createQuitButtons() {
         f = [this] { stop = true; };
     }
     boxes.push_back(std::make_unique<MenuButton>(r, tx, Settings::uIForeground, Settings::uIBackground,
-                                                 Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                                 Settings::bigBoxFontSize, f));
+                                                 Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
+                                                 f));
     focus(1, Focusable::box);
 }
 
 void Game::createLoadButtons() {
     SDL_Rect rt = {screenRect.w / 7, screenRect.h / 7, 0, 0};
     std::vector<std::string> tx = {"(B)ack"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::bigBoxBorder,
-        Settings::bigBoxRadius, Settings::bigBoxFontSize, [this] { toggleState(loading); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
+                                                 [this] { toggleState(loading); }));
     boxes.back()->setKey(SDLK_b);
     fs::path path = "save";
     std::vector<std::string> saves;
@@ -724,23 +725,22 @@ void Game::createLoadButtons() {
         saves.push_back(f.path().stem().string());
     rt = {screenRect.w / 2, screenRect.h / 15, 0, 0};
     tx = {"Load"};
-    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground,
-                                              Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                              Settings::bigBoxFontSize));
+    boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::bigBoxBorder,
+                                              Settings::bigBoxRadius, Settings::bigBoxFontSize));
     rt = {screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7};
-    boxes.push_back(std::make_unique<SelectButton>(
-        rt, saves, Settings::uIForeground, Settings::uIBackground, Settings::uIHighlight,
-        Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
-        [this, path] { load((path / boxes.back()->getItem()).replace_extension("sav")); }));
+    boxes.push_back(
+        std::make_unique<SelectButton>(rt, saves, Settings::uIForeground, Settings::uIBackground, Settings::uIHighlight,
+                                       Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
+                                       [this, path] { load((path / boxes.back()->getItem()).replace_extension("sav")); }));
     focus(2, Focusable::box);
 }
 
 void Game::createTravelButtons() {
     SDL_Rect rt = {screenRect.w / 6, screenRect.h * 14 / 15, 0, 0};
     std::vector<std::string> tx = {"(T)rade"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(trading); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(trading); }));
     boxes.back()->setKey(SDLK_t);
     rt.x += screenRect.w / 6;
     tx = {"(G)o"};
@@ -755,21 +755,21 @@ void Game::createTravelButtons() {
     boxes.back()->setKey(SDLK_g);
     rt.x += screenRect.w / 6;
     tx = {"(E)quip"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(equipping); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(equipping); }));
     boxes.back()->setKey(SDLK_e);
     rt.x += screenRect.w / 6;
     tx = {"(F)ight"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(attacking); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(attacking); }));
     boxes.back()->setKey(SDLK_f);
     rt.x += screenRect.w / 6;
     tx = {"View (L)og"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(logging); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(logging); }));
     boxes.back()->setKey(SDLK_l);
     pause = false;
     focus(0, Focusable::box);
@@ -779,16 +779,15 @@ void Game::createLogBox() {
     // Create text boxes for viewing log.
     SDL_Rect r = {screenRect.w * 5 / 6, screenRect.h * 14 / 15, 0, 0};
     std::vector<std::string> tx = {"Close (L)og"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        r, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(traveling); }));
+    boxes.push_back(std::make_unique<MenuButton>(r, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_l);
     // Create log box.
     r = {screenRect.w / 15, screenRect.h * 2 / 15, screenRect.w * 13 / 15, screenRect.h * 11 / 15};
     boxes.push_back(std::make_unique<ScrollBox>(r, player->getLogText(), player->getNation()->getForeground(),
                                                 player->getNation()->getBackground(), player->getNation()->getHighlight(),
-                                                Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                                Settings::fightFontSize));
+                                                Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::fightFontSize));
     boxes.back()->setHighlightLine(-1);
 }
 
@@ -802,7 +801,7 @@ void Game::createTradeButtons() {
                                                      setState(trading);
                                                  }));
     boxes.back()->setKey(SDLK_c);
-        rt.x += screenRect.w / 6;
+    rt.x += screenRect.w / 6;
     tx = {player->tradePortionString()};
     boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground,
                                               Settings::smallBoxBorder, Settings::smallBoxRadius,
@@ -811,9 +810,9 @@ void Game::createTradeButtons() {
     rt.x -= screenRect.w / 6;
     rt.y += screenRect.h / 19;
     tx = {"Stop (T)rading"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(traveling); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_t);
     rt.x += screenRect.w / 6;
     tx = {"(S)et Portion"};
@@ -829,7 +828,7 @@ void Game::createTradeButtons() {
                                                          boxes[kTradePortionIndex]->setText({"0.0"});
                                                          p = 0.0;
                                                      }
-                                                     player->setPortion (p);
+                                                     player->setPortion(p);
                                                      boxes[kTradePortionIndex + 2u]->setClicked(false);
                                                  }));
     boxes.back()->setKey(SDLK_s);
@@ -841,61 +840,12 @@ void Game::createEquipButtons() {
     // Create buttons for equipping and unequipping items.
     SDL_Rect rt = {screenRect.w / 2, screenRect.h * 14 / 15, 0, 0};
     std::vector<std::string> tx = {"Stop (E)quipping"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(traveling); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_e);
-    // Create array of vectors corresponding to each part that can hold equipment.
-    std::array<std::vector<Good>, 6> equippable;
-    for (auto &g : player->getGoods())
-        for (auto &m : g.getMaterials()) {
-            auto &ss = m.getCombatStats();
-            if (not ss.empty() and m.getAmount() >= 1) {
-                size_t i = ss.front().partId;
-                Good e(g.getId(), g.getName(), 1);
-                Material eM(m.getId(), m.getName(), 1);
-                eM.setCombatStats(ss);
-                e.addMaterial(eM);
-                equippable[i].push_back(e);
-            }
-        }
-    // Create buttons for equipping equippables
-    int left = screenRect.w / Settings::goodButtonXDivisor, top = screenRect.h / Settings::goodButtonYDivisor;
-    int dx = screenRect.w * 36 / Settings::goodButtonXDivisor,
-        dy = screenRect.h * 31 / Settings::goodButtonYDivisor;
-    rt = {left, top, screenRect.w * 35 / Settings::goodButtonXDivisor,
-          screenRect.h * 29 / Settings::goodButtonYDivisor};
-    for (auto &eP : equippable) {
-        for (auto &e : eP) {
-            boxes.push_back(e.getMaterial().button(
-                false, e.getId(), e.getName(), e.getSplit(), rt, player->getNation()->getForeground(),
-                player->getNation()->getBackground(), Settings::equipBorder, Settings::equipRadius, Settings::equipFontSize, gameData, [this, e]() mutable {
-                    player->equip(e);
-                    // Set state again to refresh buttons.
-                    setState(equipping);
-                }));
-            rt.y += dy;
-        }
-        rt.y = top;
-        rt.x += dx;
-    }
-    // Create buttons for unequipping equipment
-    rt.y = top;
-    left = screenRect.w * 218 / Settings::goodButtonXDivisor;
-    for (auto &e : player->getEquipment()) {
-        auto &ss = e.getMaterial().getCombatStats();
-        unsigned int pI = ss.front().partId;
-        rt.x = left + static_cast<int>(pI) * dx;
-        boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt,
-                                               player->getNation()->getForeground(), player->getNation()->getBackground(),
-                                               Settings::equipBorder, Settings::equipRadius, Settings::equipFontSize, gameData, [this, pI, ss] {
-                                                   player->unequip(pI);
-                                                   // Equip fists.
-                                                   for (auto &s : ss)
-                                                       player->equip(s.partId);
-                                                   setState(equipping);
-                                               }));
-    }
+    player->createEquipButtons(boxes);
+    focus(0, Focusable::box);
 }
 
 void Game::createStorageButtons() {
@@ -911,9 +861,9 @@ void Game::createAttackButton() {
     // Create button for selecting traveler to fight.
     SDL_Rect r = {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0};
     std::vector<std::string> tx = {"Cancel (F)ight"};
-    boxes.push_back(std::make_unique<MenuButton>(
-        r, tx, Settings::uIForeground, Settings::uIBackground, Settings::smallBoxBorder,
-        Settings::smallBoxRadius, Settings::smallBoxFontSize, [this] { setState(traveling); }));
+    boxes.push_back(std::make_unique<MenuButton>(r, tx, Settings::uIForeground, Settings::uIBackground,
+                                                 Settings::smallBoxBorder, Settings::smallBoxRadius,
+                                                 Settings::smallBoxFontSize, [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_f);
     // Create vector of names of attackable travelers.
     auto able = player->attackable();
@@ -925,8 +875,8 @@ void Game::createAttackButton() {
     r = {screenRect.w / 4, screenRect.h / 4, screenRect.w / 2, screenRect.h / 2};
     boxes.push_back(std::make_unique<SelectButton>(r, names, player->getNation()->getForeground(),
                                                    player->getNation()->getBackground(), player->getNation()->getHighlight(),
-                                                   Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                                   Settings::fightFontSize, [this, able] {
+                                                   Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::fightFontSize,
+                                                   [this, able] {
                                                        int i = boxes.back()->getHighlightLine();
                                                        if (i > -1) {
                                                            player->attack(able[static_cast<size_t>(i)]);
@@ -964,8 +914,8 @@ void Game::createFightBoxes() {
     tx = {"Fight", "Run", "Yield"};
     boxes.push_back(std::make_unique<SelectButton>(r, tx, player->getNation()->getForeground(),
                                                    player->getNation()->getBackground(), player->getNation()->getHighlight(),
-                                                   Settings::bigBoxBorder, Settings::bigBoxRadius,
-                                                   Settings::fightFontSize, [this] {
+                                                   Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::fightFontSize,
+                                                   [this] {
                                                        int choice = boxes[kFightChoiceIndex]->getHighlightLine();
                                                        if (choice > -1) {
                                                            player->choice = FightChoice(choice);
@@ -1002,16 +952,15 @@ void Game::createLootButtons() {
     boxes.back()->setKey(SDLK_l);
     int left = screenRect.w / Settings::goodButtonXDivisor, right = screenRect.w / 2;
     int top = screenRect.h / Settings::goodButtonYDivisor;
-    int dx = screenRect.w * 31 / Settings::goodButtonXDivisor,
-        dy = screenRect.h * 31 / Settings::goodButtonYDivisor;
-    rt = {left, top, screenRect.w * 29 / Settings::goodButtonXDivisor,
-          screenRect.h * 29 / Settings::goodButtonYDivisor};
+    int dx = screenRect.w * 31 / Settings::goodButtonXDivisor, dy = screenRect.h * 31 / Settings::goodButtonYDivisor;
+    rt = {left, top, screenRect.w * 29 / Settings::goodButtonXDivisor, screenRect.h * 29 / Settings::goodButtonYDivisor};
     for (auto &g : player->getGoods())
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
                                          player->getNation()->getForeground(), player->getNation()->getBackground(),
-                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, [this, &g, &m, &t = *target] {
+                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData,
+                                         [this, &g, &m, &t = *target] {
                                              Good l(g.getId(), m.getAmount());
                                              l.addMaterial(Material(m.getId(), m.getAmount()));
                                              t.loot(l, *player);
@@ -1033,7 +982,8 @@ void Game::createLootButtons() {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
                                          player->getNation()->getForeground(), player->getNation()->getBackground(),
-                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, [this, &g, &m, &t = *target] {
+                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData,
+                                         [this, &g, &m, &t = *target] {
                                              Good l(g.getId(), m.getAmount());
                                              l.addMaterial(Material(m.getId(), m.getAmount()));
                                              player->loot(l, t);
@@ -1115,32 +1065,26 @@ void Game::handleEvents() {
                                 scrollY = static_cast<int>(static_cast<double>(scrollSpeed) * d);
                                 showPlayer = false;
                                 break;
-                          /*case SDLK_u:
-                                --offsetY;
-                                place();
-                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
-                                break;
-                            case SDLK_j:
-                                ++offsetY;
-                                place();
-                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
-                                break;
-                            case SDLK_h:
-                                --offsetX;
-                                place();
-                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
-                                break;
-                            case SDLK_k:
-                                ++offsetX;
-                                place();
-                                std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY + mapRect.y - 2250 << std::endl;
-                                break;
-                            case SDLK_s:
-                                focusPrev(Focusable::neighbor);
-                                break;
-                            case SDLK_d:
-                                focusNext(Focusable::neighbor);
-                                break;*/
+                                /*case SDLK_u:
+                                      --offsetY;
+                                      place();
+                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
+                                  mapRect.y - 2250 << std::endl; break; case SDLK_j:
+                                      ++offsetY;
+                                      place();
+                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
+                                  mapRect.y - 2250 << std::endl; break; case SDLK_h:
+                                      --offsetX;
+                                      place();
+                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
+                                  mapRect.y - 2250 << std::endl; break; case SDLK_k:
+                                      ++offsetX;
+                                      place();
+                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
+                                  mapRect.y - 2250 << std::endl; break; case SDLK_s: focusPrev(Focusable::neighbor); break;
+                                  case SDLK_d:
+                                      focusNext(Focusable::neighbor);
+                                      break;*/
                             }
                             break;
                         case trading:
@@ -1298,7 +1242,7 @@ void Game::update() {
             scrollY = scrollSpeed;
     }
     if (scrollX or scrollY)
-        changeOffsets(scrollX, scrollY);
+        moveView(scrollX, scrollY);
     if (not(pause or travelers.empty())) {
         for (auto &t : towns)
             t.update(elapsed);

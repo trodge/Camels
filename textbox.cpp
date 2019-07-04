@@ -21,7 +21,8 @@
 
 TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
                  int r, int fS, SDL_Surface *img)
-    : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS), image(img) {
+    : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS),
+      image(img) {
     fixedSize = (rt.w and rt.h);
     setText(t);
 }
@@ -38,10 +39,10 @@ TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, S
     : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
 
 TextBox::~TextBox() {
-    if ( surface )
-        SDL_FreeSurface( surface );
-    if ( texture )
-        SDL_DestroyTexture( texture );
+    if (surface)
+        SDL_FreeSurface(surface);
+    if (texture)
+        SDL_DestroyTexture(texture);
 }
 
 void TextBox::setText() {
@@ -52,8 +53,8 @@ void TextBox::setText() {
         rect.w = 0;
         rect.h = 0;
     }
-    if ( surface )
-        SDL_FreeSurface( surface );
+    if (surface)
+        SDL_FreeSurface(surface);
     if (isNation)
         Printer::setNationId(id);
     else
@@ -122,9 +123,9 @@ void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
 void TextBox::draw(SDL_Renderer *s) {
     // Copy this TextBox's texture onto s, updating texture if necessary.
     if (updateTexture) {
-        if ( texture )
-            SDL_DestroyTexture( texture );
-        texture = SDL_CreateTextureFromSurface(s, surface );
+        if (texture)
+            SDL_DestroyTexture(texture);
+        texture = SDL_CreateTextureFromSurface(s, surface);
         updateTexture = false;
     }
     SDL_RenderCopy(s, texture, nullptr, &rect);

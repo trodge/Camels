@@ -95,7 +95,6 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
     if (not rt.h)
         rt.h = mH + 2 * b;
 
-
     SDL_Surface *p = SDL_CreateRGBSurface(0, rt.w, rt.h, 32, rmask, gmask, bmask, amask);
     SDL_Renderer *s = SDL_CreateSoftwareRenderer(p);
     // Draw border.

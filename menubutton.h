@@ -31,10 +31,10 @@ class MenuButton : virtual public TextBox {
     MenuButton(std::function<void()> oC) : onClick(oC) {}
 
   public:
-    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b, int r,
-               int fS, SDL_Surface *img, std::function<void()> oC);
-    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b, int r,
-               int fS, std::function<void()> oC)
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+               int r, int fS, SDL_Surface *img, std::function<void()> oC);
+    MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+               int r, int fS, std::function<void()> oC)
         : MenuButton(rt, t, fg, bg, i, iN, b, r, fS, nullptr, oC) {}
     MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS,
                SDL_Surface *img, std::function<void()> oC)

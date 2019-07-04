@@ -28,9 +28,9 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
-#include <unordered_map>
 
 #include "save_generated.h"
 
@@ -123,7 +123,8 @@ class Material {
     double perish(unsigned int e, double p);
     double consume(unsigned int e);
     std::unique_ptr<MenuButton> button(bool aS, unsigned int gI, const std::string &gN, bool gS, SDL_Rect rt, SDL_Color fgr,
-                                       SDL_Color bgr, int b, int r, int fS, const GameData &gD, std::function<void()> f) const;
+                                       SDL_Color bgr, int b, int r, int fS, const GameData &gD,
+                                       std::function<void()> f) const;
     void updateButton(bool gS, double oV, int rC, TextBox *b) const;
     void adjustDemand(double d);
     void fixDemand(double m);
