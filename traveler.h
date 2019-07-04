@@ -77,6 +77,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
+    void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t eBI);
     std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);

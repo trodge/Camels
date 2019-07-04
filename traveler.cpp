@@ -379,10 +379,16 @@ void Traveler::equip(unsigned int pI) {
     }
 }
 
+void Traveler::refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t eBI) {
+    auto bI = bs.begin();
+    std::advance(bI, eBI);
+    bs.erase(bI, bs.end());
+    createEquipButtons(bs);
+}
+
 void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     // Create buttons for equipping and unequipping equipment
-    // Create array of vectors corresponding to each part that can hold equipment.
-    size_t eBP = bs.size(); // position of first equip button
+    // Create array of vectors of equippable goods corresponding to each part that can hold equipment.
     std::array<std::vector<Good>, 6> equippable;
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
@@ -400,18 +406,16 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     int left = Settings::screenRect.w / Settings::goodButtonXDivisor, top = Settings::screenRect.h / Settings::goodButtonYDivisor;
     int dx = Settings::screenRect.w * 36 / Settings::goodButtonXDivisor, dy = Settings::screenRect.h * 31 / Settings::goodButtonYDivisor;
     SDL_Rect rt = {left, top, Settings::screenRect.w * 35 / Settings::goodButtonXDivisor, Settings::screenRect.h * 29 / Settings::goodButtonYDivisor};
+    size_t equipButtonIndex = bs.size(); // position of first equip button
     for (auto &eP : equippable) {
         for (auto &e : eP) {
             bs.push_back(
                 e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, getNation()->getForeground(),
                                        getNation()->getBackground(), Settings::equipBorder, Settings::equipRadius,
-                                       Settings::equipFontSize, gameData, [this, e, &bs, eBP]() mutable {
+                                       Settings::equipFontSize, gameData, [this, e, &bs, equipButtonIndex]() mutable {
                                            equip(e);
                                            // Refresh buttons.
-                                           auto eB = bs.begin();
-                                           std::advance(eB, eBP);
-                                           bs.erase(eB, bs.end());
-                                           createEquipButtons(bs);
+                                           refreshEquipButtons(bs, equipButtonIndex);
                                        }));
             rt.y += dy;
         }
@@ -428,16 +432,13 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
         bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt,
                                                getNation()->getForeground(), getNation()->getBackground(),
                                                Settings::equipBorder, Settings::equipRadius, Settings::equipFontSize,
-                                               gameData, [this, pI, ss, &bs, eBP] {
+                                               gameData, [this, pI, ss, &bs, equipButtonIndex]() mutable {
                                                    unequip(pI);
                                                    // Equip fists.
                                                    for (auto &s : ss)
                                                        equip(s.partId);
                                                    // Refresh buttons.
-                                                   auto eB = bs.begin();
-                                                   std::advance(eB, eBP);
-                                                   bs.erase(eB, bs.end());
-                                                   createEquipButtons(bs);
+                                                   refreshEquipButtons(bs, equipButtonIndex);
                                                }));
     }    
 }

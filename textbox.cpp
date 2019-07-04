@@ -120,6 +120,11 @@ void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
     drawn.push_back(r);
 }
 
+void TextBox::move(int dx, int dy) {
+    rect.x += dx;
+    rect.y += dy;
+}
+
 void TextBox::draw(SDL_Renderer *s) {
     // Copy this TextBox's texture onto s, updating texture if necessary.
     if (updateTexture) {

@@ -84,6 +84,7 @@ class TextBox : public Focusable {
     virtual SDL_Keycode getKey() const { return SDLK_UNKNOWN; }
     const SDL_Rect &getRect() const { return rect; }
     void place(int x, int y, std::vector<SDL_Rect> &drawn);
+    void move(int dx, int dy);
     virtual void draw(SDL_Renderer *s);
     const std::vector<std::string> &getText() const { return text; }
     const std::string &getText(size_t i) { return text[i]; }
