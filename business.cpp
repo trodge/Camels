@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "business.h"
+#include "business.hpp"
 
 Business::Business(unsigned int i, unsigned int m, sqlite3 *c) : id(i), mode(m), area(1) {
     // Load a new business with the given id and mode from the database

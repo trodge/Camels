@@ -25,7 +25,7 @@
 
 #include "save_generated.h"
 
-#include "traveler.h"
+#include "traveler.hpp"
 
 enum class FightChoice;
 

@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "settings.h"
+#include "settings.hpp"
 
 SDL_Rect Settings::screenRect;
 SDL_Rect Settings::mapRect;

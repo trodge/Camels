@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "draw.h"
+#include "draw.hpp"
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.

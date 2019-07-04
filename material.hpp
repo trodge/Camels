@@ -34,10 +34,10 @@
 
 #include "save_generated.h"
 
-#include "constants.h"
-#include "menubutton.h"
-#include "printer.h"
-#include "settings.h"
+#include "constants.hpp"
+#include "menubutton.hpp"
+#include "printer.hpp"
+#include "settings.hpp"
 
 struct CombatStat {
     unsigned int statId, partId, attack, type, speed;

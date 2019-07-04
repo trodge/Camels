@@ -22,7 +22,7 @@
 
 #include <functional>
 
-#include "textbox.h"
+#include "textbox.hpp"
 
 class MenuButton : virtual public TextBox {
   protected:

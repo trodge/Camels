@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "town.h"
+#include "town.hpp"
 
 Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Business> &bs,
            const std::map<std::pair<int, int>, double> &fFs, int fS) {

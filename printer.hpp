@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "constants.h"
-#include "draw.h"
+#include "constants.hpp"
+#include "draw.hpp"
 
 class Printer {
     static std::vector<int> sizes;

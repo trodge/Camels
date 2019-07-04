@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "menubutton.h"
+#include "menubutton.hpp"
 
 MenuButton::MenuButton(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN,
                        int b, int r, int fS, SDL_Surface *img, std::function<void()> oC)

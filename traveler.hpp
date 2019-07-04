@@ -34,11 +34,11 @@
 
 #include <SDL2/SDL.h>
 
-#include "ai.h"
-#include "good.h"
-#include "nation.h"
-#include "scrollbox.h"
-#include "town.h"
+#include "ai.hpp"
+#include "good.hpp"
+#include "nation.hpp"
+#include "scrollbox.hpp"
+#include "town.hpp"
 
 struct GameData;
 

@@ -22,9 +22,8 @@
 
 #include <unordered_map>
 
-#include "save_generated.h"
 
-#include "material.h"
+#include "material.hpp"
 
 class Good {
     unsigned int id;

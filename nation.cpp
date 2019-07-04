@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "nation.h"
+#include "nation.hpp"
 
 Nation::Nation(sqlite3_stmt *q, const std::vector<Good> &gs) {
     id = static_cast<unsigned int>(sqlite3_column_int(q, 0));

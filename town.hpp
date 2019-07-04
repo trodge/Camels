@@ -27,13 +27,11 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#include "save_generated.h"
-
-#include "business.h"
-#include "draw.h"
-#include "loadbar.h"
-#include "nation.h"
-#include "traveler.h"
+#include "business.hpp"
+#include "draw.hpp"
+#include "loadbar.hpp"
+#include "nation.hpp"
+#include "traveler.hpp"
 
 struct GameData;
 

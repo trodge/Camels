@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "material.h"
+#include "material.hpp"
 
 Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI)
     : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),

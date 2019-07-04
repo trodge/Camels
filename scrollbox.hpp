@@ -20,7 +20,7 @@
 #ifndef SCROLLBOX_H
 #define SCROLLBOX_H
 
-#include "textbox.h"
+#include "textbox.hpp"
 
 class ScrollBox : virtual public TextBox {
   protected:

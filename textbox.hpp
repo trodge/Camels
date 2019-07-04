@@ -27,7 +27,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#include "focusable.h"
+#include "focusable.hpp"
 
 class TextBox : public Focusable {
   protected:

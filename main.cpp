@@ -17,12 +17,12 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "business.h"
-#include "game.h"
-#include "good.h"
-#include "material.h"
-#include "town.h"
-#include "traveler.h"
+#include "business.hpp"
+#include "game.hpp"
+#include "good.hpp"
+#include "material.hpp"
+#include "town.hpp"
+#include "traveler.hpp"
 
 int main(int, char **) {
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)

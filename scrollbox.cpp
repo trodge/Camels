@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "scrollbox.h"
+#include "scrollbox.hpp"
 
 ScrollBox::ScrollBox(SDL_Rect rt, const std::vector<std::string> &is, SDL_Color fg, SDL_Color bg, SDL_Color hl, int b, int r,
                      int fS)

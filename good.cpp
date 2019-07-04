@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "good.h"
+#include "good.hpp"
 
 Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
     : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(not m.empty()) {}

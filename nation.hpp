@@ -27,7 +27,7 @@
 #include <SDL2/SDL.h>
 #include <sqlite3.h>
 
-#include "good.h"
+#include "good.hpp"
 
 class Good;
 

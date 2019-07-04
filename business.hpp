@@ -27,9 +27,7 @@
 
 #include <sqlite3.h>
 
-#include "save_generated.h"
-
-#include "good.h"
+#include "good.hpp"
 
 class Good;
 

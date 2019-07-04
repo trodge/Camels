@@ -27,10 +27,8 @@
 #include <string>
 #include <vector>
 
-#include "save_generated.h"
-
-#include "selectbutton.h"
-#include "town.h"
+#include "selectbutton.hpp"
+#include "town.hpp"
 
 class Nation;
 

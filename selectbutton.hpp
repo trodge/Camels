@@ -20,9 +20,9 @@
 #ifndef SELECTBUTTON_H
 #define SELECTBUTTON_H
 
-#include "focusable.h"
-#include "menubutton.h"
-#include "scrollbox.h"
+#include "focusable.hpp"
+#include "menubutton.hpp"
+#include "scrollbox.hpp"
 
 class SelectButton : public ScrollBox, public MenuButton {
   public:

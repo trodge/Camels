@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "printer.h"
+#include "printer.hpp"
 
 std::vector<int> Printer::sizes;
 std::vector<int>::difference_type Printer::sizeIndex;

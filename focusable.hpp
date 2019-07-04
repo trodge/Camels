@@ -20,7 +20,7 @@
 #ifndef FOCUSABLE_H
 #define FOCUSABLE_H
 
-#include "printer.h"
+#include "printer.hpp"
 
 class Focusable {
   protected:

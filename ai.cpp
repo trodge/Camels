@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "ai.h"
+#include "ai.hpp"
 
 AI::AI(const std::vector<Good> &gs, Town *tT) {
     // Initialize variables for running a new AI based on starting goods and current town.

@@ -20,8 +20,8 @@
 #ifndef LOADBAR_H
 #define LOADBAR_H
 
-#include "draw.h"
-#include "textbox.h"
+#include "draw.hpp"
+#include "textbox.hpp"
 
 class LoadBar : public TextBox {
     double complete = 0;

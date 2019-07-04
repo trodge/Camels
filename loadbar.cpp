@@ -17,7 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "loadbar.h"
+#include "loadbar.hpp"
 
 LoadBar::LoadBar(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS)
     : TextBox({rt.x + rt.w / 2, rt.y + rt.h / 2, 0, 0}, t, fg, bg, 0, r, fS),
