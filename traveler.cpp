@@ -181,21 +181,21 @@ void Traveler::draw(SDL_Renderer *s) const {
 
 void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     // Create buttons for trading goods.
+    const SDL_Rect &sR = Settings::screenRect;
+    int gBXD = Settings::goodButtonXDivisor, gBYD = Settings::goodButtonYDivisor;
     // function to call when buttons are clicked
     auto f = [this, &bs] { updateTradeButtons(bs); };
     // Create the offer and request buttons for the player.
-    int left = Settings::screenRect.w / Settings::goodButtonXDivisor, right = Settings::screenRect.w / 2;
-    int top = Settings::screenRect.h / Settings::goodButtonXDivisor;
-    int dx = Settings::screenRect.w * 31 / Settings::goodButtonXDivisor,
-        dy = Settings::screenRect.h * 31 / Settings::goodButtonYDivisor;
-    SDL_Rect rt = {left, top, Settings::screenRect.w * 29 / Settings::goodButtonXDivisor,
-                   Settings::screenRect.h * 29 / Settings::goodButtonYDivisor};
+    int left = sR.w / gBXD, right = sR.w / 2;
+    int top = sR.h / gBXD;
+    int dx = sR.w * 31 / gBXD, dy = sR.h * 31 / gBYD;
+    SDL_Rect rt = {left, top, sR.w * 29 / gBXD, sR.h * 29 / gBYD};
+    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
+    int b = Settings::tradeBorder, r = Settings::tradeRadius, fS = Settings::tradeFontSize;
     for (auto &g : goods) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, getNation()->getForeground(),
-                                      getNation()->getBackground(), Settings::tradeBorder, Settings::tradeRadius,
-                                      Settings::tradeFontSize, gameData, f));
+                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -203,17 +203,16 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
                 }
             }
     }
-    left = Settings::screenRect.w / 2 + Settings::screenRect.w / Settings::goodButtonXDivisor;
-    right = Settings::screenRect.w - Settings::screenRect.w / Settings::goodButtonXDivisor;
+    left = sR.w / 2 + sR.w / gBXD;
+    right = sR.w - sR.w / gBXD;
     rt.x = left;
     rt.y = top;
     requestButtonIndex = bs.size();
+    const SDL_Color &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     for (auto &g : toTown->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
-                                      getTown()->getNation()->getForeground(), getTown()->getNation()->getBackground(),
-                                      Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData, f));
+                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, b, r, fS, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -283,7 +282,7 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
             }
         }
     }
-    // divide excess among offered goods
+    // Divide excess among offered goods.
     excess /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
@@ -404,19 +403,18 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
                 equippable[i].push_back(e);
             }
         }
+    const SDL_Rect &sR = Settings::screenRect;
+    int gBXD = Settings::goodButtonXDivisor, gBYD = Settings::goodButtonYDivisor;
     // Create buttons for equipping equippables
-    int left = Settings::screenRect.w / Settings::goodButtonXDivisor,
-        top = Settings::screenRect.h / Settings::goodButtonYDivisor;
-    int dx = Settings::screenRect.w * 36 / Settings::goodButtonXDivisor,
-        dy = Settings::screenRect.h * 31 / Settings::goodButtonYDivisor;
-    SDL_Rect rt = {left, top, Settings::screenRect.w * 35 / Settings::goodButtonXDivisor,
-                   Settings::screenRect.h * 29 / Settings::goodButtonYDivisor};
+    int left = sR.w / gBXD, top = sR.h / gBYD;
+    int dx = sR.w * 36 / gBXD, dy = sR.h * 31 / gBYD;
+    SDL_Rect rt = {left, top, sR.w * 35 / gBXD, sR.h * 29 / gBYD};
+    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
+    int b = Settings::equipBorder, r = Settings::equipRadius, fS = Settings::equipFontSize;
     size_t equipButtonIndex = bs.size(); // position of first equip button
     for (auto &eP : equippable) {
         for (auto &e : eP) {
-            bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt,
-                                                getNation()->getForeground(), getNation()->getBackground(),
-                                                Settings::equipBorder, Settings::equipRadius, Settings::equipFontSize,
+            bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS,
                                                 gameData, [this, e, &bs, equipButtonIndex]() mutable {
                                                     equip(e);
                                                     // Refresh buttons.
@@ -429,15 +427,13 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
     }
     // Create buttons for unequipping equipment
     rt.y = top;
-    left = Settings::screenRect.w * 218 / Settings::goodButtonXDivisor;
-    for (auto &e : getEquipment()) {
+    left = sR.w * 218 / gBXD;
+    for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
         rt.x = left + static_cast<int>(pI) * dx;
-        bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, getNation()->getForeground(),
-                                            getNation()->getBackground(), Settings::equipBorder, Settings::equipRadius,
-                                            Settings::equipFontSize, gameData,
-                                            [this, pI, ss, &bs, equipButtonIndex]() mutable {
+        bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS, gameData,
+                                            [this, pI, ss, &bs, equipButtonIndex] {
                                                 unequip(pI);
                                                 // Equip fists.
                                                 for (auto &s : ss)

@@ -22,7 +22,6 @@
 
 #include <unordered_map>
 
-
 #include "material.hpp"
 
 class Good {
