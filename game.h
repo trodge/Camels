@@ -38,8 +38,11 @@ class Game {
     SDL_Window *window;
     SDL_Renderer *screen;
     bool stop = false, pause = false, storedPause = true;
-    SDL_Texture *mapTexture;
-    SDL_Surface *mapSurface;
+    SDL_Surface *mapSurface; // surface of entire map loaded from image
+    SDL_RendererInfo screenInfo;
+    std::vector<SDL_Texture *> mapTextures; // textures for map broken down to maximum size for graphics card
+    int mapTextureRowCount, mapTextureColumnCount; // number of columns in map textures matrix
+    SDL_Texture *mapTexture; // texture for drawing map on screen at current position
     SDL_Rect screenRect, mapRect;
     int scrollSpeed, scrollX = 0, scrollY = 0;
     int offsetX, offsetY;
@@ -72,6 +75,7 @@ class Game {
     Traveler *player = nullptr;
     bool showPlayer = false;
     void loadDisplayVariables();
+    void renderMapTexture();
     void changeOffsets(int dx, int dy);
     void loadNations(sqlite3 *c);
     void newGame();

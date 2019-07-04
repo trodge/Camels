@@ -19,6 +19,18 @@
 
 #include "game.h"
 
+SDL_Texture *textureFromSurfaceSection (SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
+    int bpp = sf->format->BytesPerPixel;
+    Uint8 *p = static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * bpp;
+    SDL_Surface *c = SDL_CreateRGBSurfaceWithFormatFrom(p, rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24);
+    if (!c) std::cout << "Surface is null at " << rt.x << "," << rt.y << " " << rt.w << "x" << rt.h << " bpp:" << bpp << " SDL Error: " << SDL_GetError() << std::endl;
+    SDL_Texture *t = SDL_CreateTextureFromSurface(rdr, c);
+    if (!t)
+        std::cout << "Failed to create clipped texture, SDL Error:" << SDL_GetError() << std::endl;
+    SDL_FreeSurface(c);
+    return t;
+}
+
 Game::Game() {
     Settings::load("settings.ini");
     loadDisplayVariables();
@@ -35,13 +47,44 @@ Game::Game() {
     screen = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!screen)
         std::cout << "Failed to create renderer, SDL Error:" << SDL_GetError() << std::endl;
+    if (SDL_GetRendererInfo(screen, &screenInfo) < 0)
+        std::cout << "Failed to get renderer info, SDL Error:" << SDL_GetError() << std::endl;
+    // For debugging, pretend renderer can't handle textures over 64x64
+//     screenInfo.max_texture_height = 64;
+//     screenInfo.max_texture_width = 64;
     fs::path mapPath("images/map-scaled.png");
     mapSurface = IMG_Load(mapPath.string().c_str());
     if (!mapSurface)
         std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
-    mapTexture = SDL_CreateTextureFromSurface(screen, mapSurface);
-    if (!mapTexture)
-        std::cout << "Failed to create map texture, SDL Error:" << SDL_GetError() << std::endl;
+    SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
+    mapTextureColumnCount = mapSurface->w / rt.w + (mapSurface->w % rt.w != 0);
+    mapTextureRowCount = mapSurface->h / rt.h + (mapSurface->h % rt.h != 0);
+    mapTextures.reserve(static_cast<size_t>(mapTextureColumnCount * mapTextureRowCount));
+    for (; rt.y + rt.h <= mapSurface->h; rt.y += rt.h) {
+        // Loop from top to bottom.
+        for (rt.x = 0; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
+            // Loop from left to right.
+            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+        if (rt.x < mapSurface->w) {
+            // Fill right side rectangles of map.
+            rt.w = mapSurface->w - rt.x;
+            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+            rt.w = screenInfo.max_texture_width;
+        }
+    }
+    if (rt.y < mapSurface->h) {
+        // Fill in bottom side rectangles of map.
+        rt.h = mapSurface->h - rt.y;
+        for (; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
+            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+        if (rt.x < mapSurface->w) {
+            // Fill bottom right corner of map.
+            rt.w = mapSurface->w - rt.x;
+            mapTextures.push_back(textureFromSurfaceSection (screen, mapSurface, rt));
+        }
+    }
+    mapTexture = SDL_CreateTexture(screen, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h);
+    renderMapTexture();
     setState(starting);
     /*SDL_CreateRGBSurfaceWithFormat(
     0, 14220, 6640, screen->format->BitsPerPixel, screen->format->format);
@@ -61,6 +104,11 @@ Game::~Game() {
     if (mapSurface)
         SDL_FreeSurface(mapSurface);
     mapSurface = nullptr;
+    for (auto &mT : mapTextures) {
+        if (mT)
+            SDL_DestroyTexture(mT);
+        mT = nullptr;
+    }
     if (mapTexture)
         SDL_DestroyTexture(mapTexture);
     mapTexture = nullptr;
@@ -82,17 +130,43 @@ void Game::loadDisplayVariables() {
     scale = Settings::scale;
 }
 
+void Game::renderMapTexture() {    
+    // Construct map texture for drawing from matrix of map textures.
+    int left = mapRect.x / screenInfo.max_texture_width,
+         top = mapRect.y / screenInfo.max_texture_height,
+      right = (mapRect.x + mapRect.w) / screenInfo.max_texture_width,
+     bottom = (mapRect.y + mapRect.h) / screenInfo.max_texture_height;
+    SDL_Rect sR = {0, 0, 0, 0}, dR = {0, 0, 0, 0};
+    if (SDL_SetRenderTarget(screen, mapTexture) < 0)
+        std::cout << "Failed to set render target, SDL Error: " << SDL_GetError() << std::endl;
+    SDL_RenderClear(screen);
+    for (int c = left; c <= right; ++c) {
+        dR.y = 0;
+        dR.h = 0;
+        for (int r = top; r <= bottom; ++r) {
+            sR = {std::max(mapRect.x - c * screenInfo.max_texture_width, 0),
+                  std::max(mapRect.y - r * screenInfo.max_texture_height, 0),
+                  std::min(std::min((c + 1) * screenInfo.max_texture_width - mapRect.x, screenInfo.max_texture_width), mapRect.w),
+                  std::min(std::min((r + 1) * screenInfo.max_texture_height - mapRect.y, screenInfo.max_texture_height), mapRect.h)};
+            dR.y += dR.h;
+            dR.w = sR.w;
+            dR.h = sR.h;
+            SDL_RenderCopy(screen, mapTextures[static_cast<size_t>(r * mapTextureColumnCount + c)], &sR, &dR);
+        }
+        dR.x += dR.w;
+    }
+    SDL_SetRenderTarget(screen, nullptr);
+}
+
 void Game::changeOffsets(int dx, int dy) {
     // Move view around world map.
-    int mx = mapRect.x + dx;
-    int my = mapRect.y + dy;
-    int mw = mapSurface->w;
-    int mh = mapSurface->h;
-    if (mx > 0 and mx < mw - mapRect.w and my > 0 and my < mh - mapRect.h) {
-        mapRect.x = mx;
-        mapRect.y = my;
+    SDL_Rect m = {mapRect.x + dx, mapRect.y + dy, mapSurface->w, mapSurface->h};
+    if (m.x > 0 and m.x < m.w - mapRect.w and m.y > 0 and m.y < m.h - mapRect.h) {
+        mapRect.x = m.x;
+        mapRect.y = m.y;
         offsetX -= dx;
         offsetY -= dy;
+        renderMapTexture();
         std::vector<SDL_Rect> newDrawn;
         newDrawn.reserve(towns.size());
         for (auto &t : towns)
@@ -1215,7 +1289,7 @@ void Game::update() {
 
 void Game::draw() {
     // Draw UI and game elements.
-    SDL_RenderCopy(screen, mapTexture, &mapRect, nullptr);
+    SDL_RenderCopy(screen, mapTexture, nullptr, nullptr);
     for (auto &t : towns)
         t.drawRoutes(screen);
     for (auto &t : towns)
