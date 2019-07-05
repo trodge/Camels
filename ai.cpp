@@ -180,7 +180,7 @@ void AI::autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector
                     bestScore = score;
                     // Remove amout town takes as profit, store excess.
                     excess = 0;
-                    amount = mI->getQuantity(offerValue * Settings::townProfit, &excess);
+                    amount = mI->getQuantity(offerValue * Settings::townProfit, excess);
                     if (amount) {
                         if (overWeight) {
                             // Try to buy minimum that will bring net weight back below 0

@@ -25,6 +25,7 @@
 #include "textbox.hpp"
 
 class MenuButton : virtual public TextBox {
+    void activate(Uint8 state);
   protected:
     SDL_Keycode key = SDLK_UNKNOWN;
     std::function<void()> onClick;

@@ -138,7 +138,7 @@ double Traveler::pathDist(const Town *t) const {
     return dist;
 }
 
-std::string Traveler::tradePortionString() const {
+std::string Traveler::portionString() const {
     // Return a string representing trade portion with trailing zeroes omitted.
     std::string tPS = std::to_string(portion);
     size_t lNZI = tPS.find_last_not_of('0');
@@ -147,13 +147,56 @@ std::string Traveler::tradePortionString() const {
     return tPS;
 }
 
-void Traveler::changePortion(double d) {
-    portion += d;
+double Traveler::offerGood(const Good &g, const Material &m) {
+    // Add the given good and material to offer. Return amount added based on portion.
+    double amount = m.getAmount() * portion;
+    if (not g.getSplit())
+        amount = floor(amount);
+    Good oG(g.getId(), g.getName(), amount, g.getMeasure());
+    oG.addMaterial(Material(m.getId(), m.getName(), amount));
+    offer.push_back(oG);
+    return amount;
+}
+
+double Traveler::requestGood(const Good &g, const Material &m, double oV, int rC) {
+    // Add the given good and material to request. Return excess amount of good.
+    double excess = 0;
+    // Calculate amount based on offer value divided by request count.
+    double amount = m.getQuantity(oV / rC * Settings::townProfit, excess);
+    if (not g.getSplit())
+        // Remove extra portion of goods that don't split.
+        excess += modf(amount, &amount);
+    Good rG(g.getId(), g.getName(), amount, g.getMeasure());
+    rG.addMaterial(Material(m.getId(), m.getName(), amount));
+    request.push_back(rG);
+    return excess;
+}
+
+void Traveler::divideExcess(double e) {
+    // Divide excess among offered goods.
+    e /= static_cast<double>(offer.size());
+    for (auto &of : offer) {
+        auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
+        double q = tM.getQuantity(e / Settings::townProfit);
+        if (not goods[of.getId()].getSplit())
+            q = floor(q);
+        of.use(q);
+    }
+}
+
+void Traveler::setPortion(double d) {
+    portion = d;
     if (portion < 0)
         portion = 0;
     else if (portion > 1)
         portion = 1;
 }
+
+void Traveler::changePortion(double d) {
+    setPortion(portion + d);
+}
+
+
 
 void Traveler::pickTown(const Town *t) {
     if (netWeight() > 0 /* or moving*/)
@@ -179,119 +222,6 @@ void Traveler::draw(SDL_Renderer *s) const {
     drawCircle(s, px, py, 1, col, true);
 }
 
-void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
-    // Create buttons for trading goods.
-    const SDL_Rect &sR = Settings::screenRect;
-    int gBXD = Settings::goodButtonXDivisor, gBYD = Settings::goodButtonYDivisor;
-    // function to call when buttons are clicked
-    auto f = [this, &bs] { updateTradeButtons(bs); };
-    // Create the offer and request buttons for the player.
-    int left = sR.w / gBXD, right = sR.w / 2;
-    int top = sR.h / gBXD;
-    int dx = sR.w * 31 / gBXD, dy = sR.h * 31 / gBYD;
-    SDL_Rect rt = {left, top, sR.w * 29 / gBXD, sR.h * 29 / gBYD};
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
-    int b = Settings::tradeBorder, r = Settings::tradeRadius, fS = Settings::tradeFontSize;
-    for (auto &g : goods) {
-        for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData, f));
-                rt.x += dx;
-                if (rt.x + rt.w >= right) {
-                    rt.x = left;
-                    rt.y += dy;
-                }
-            }
-    }
-    left = sR.w / 2 + sR.w / gBXD;
-    right = sR.w - sR.w / gBXD;
-    rt.x = left;
-    rt.y = top;
-    requestButtonIndex = bs.size();
-    const SDL_Color &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    for (auto &g : toTown->getGoods()) {
-        for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, b, r, fS, gameData, f));
-                rt.x += dx;
-                if (rt.x + rt.w >= right) {
-                    rt.x = left;
-                    rt.y += dy;
-                }
-            }
-    }
-}
-
-void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
-    // Update the values shown on trade portion, offer, and request boxes and set offer and request.
-    std::string bN;
-    offer.clear();
-    request.clear();
-    double offerValue = 0;
-    auto rBB = bs.begin();
-    std::advance(rBB, requestButtonIndex); // iterator to first request button
-    // Loop through all boxes after cancel button and before first request button.
-    for (auto oBI = bs.begin() + kOfferButtonIndex; oBI != rBB; ++oBI) {
-        auto &g = goods[(*oBI)->getId()]; // good corresponding to oBI
-        auto &gMs = g.getMaterials();
-        bN = (*oBI)->getText()[0];
-        auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
-            const std::string &mN = m.getName();
-            return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
-        });
-        if (mI != gMs.end()) {
-            // mI is iterator to the material on oBI
-            mI->updateButton(g.getSplit(), 0, 0, oBI->get());
-            if ((*oBI)->getClicked()) {
-                double amount = mI->getAmount() * portion;
-                if (not g.getSplit())
-                    amount = floor(amount);
-                offer.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
-                offer.back().addMaterial(Material(mI->getId(), mI->getName(), amount));
-                auto &tM = toTown->getGood(g.getId()).getMaterial(*mI);
-                offerValue += tM.getPrice(amount);
-            }
-        }
-    }
-    int requestCount =
-        std::accumulate(rBB, bs.end(), 0, [](int c, const std::unique_ptr<TextBox> &rB) { return c + rB->getClicked(); });
-    double excess = 0; // excess value of offer over value needed for request
-    // Loop through request buttons.
-    for (auto rBI = rBB; rBI != bs.end(); ++rBI) {
-        auto &g = toTown->getGood((*rBI)->getId()); // good in town corresponding to rBI
-        auto &gMs = g.getMaterials();
-        bN = (*rBI)->getText()[0];
-        auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](Material m) {
-            const std::string &mN = m.getName();
-            return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
-        });
-        if (mI != gMs.end()) {
-            // mI is iterator to the material on rBI
-            mI->updateButton(g.getSplit(), offerValue, requestCount ? requestCount : 1, rBI->get());
-            if ((*rBI)->getClicked()) {
-                double mE = 0; // excess quantity of this material
-                double amount = mI->getQuantity(offerValue / requestCount * Settings::townProfit, &mE);
-                if (not g.getSplit()) {
-                    // Remove extra portion of goods that don't split.
-                    mE += modf(amount, &amount);
-                }
-                // Convert material excess to value and add to overall excess.
-                excess += mI->getPrice(mE);
-                request.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
-                request.back().addMaterial(Material(mI->getId(), mI->getName(), amount));
-            }
-        }
-    }
-    // Divide excess among offered goods.
-    excess /= static_cast<double>(offer.size());
-    for (auto &of : offer) {
-        auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
-        double q = tM.getQuantity(excess / Settings::townProfit);
-        if (not goods[of.getId()].getSplit())
-            q = floor(q);
-        of.use(q);
-    }
-}
 
 void Traveler::makeTrade() {
     if (not(offer.empty() or request.empty())) {
@@ -380,90 +310,6 @@ void Traveler::equip(unsigned int pI) {
     }
 }
 
-void Traveler::refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t eBI) {
-    auto bI = bs.begin();
-    std::advance(bI, eBI);
-    bs.erase(bI, bs.end());
-    createEquipButtons(bs);
-}
-
-void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
-    // Create buttons for equipping and unequipping equipment
-    // Create array of vectors of equippable goods corresponding to each part that can hold equipment.
-    std::array<std::vector<Good>, 6> equippable;
-    for (auto &g : goods)
-        for (auto &m : g.getMaterials()) {
-            auto &ss = m.getCombatStats();
-            if (not ss.empty() and m.getAmount() >= 1) {
-                size_t i = ss.front().partId;
-                Good e(g.getId(), g.getName(), 1);
-                Material eM(m.getId(), m.getName(), 1);
-                eM.setCombatStats(ss);
-                e.addMaterial(eM);
-                equippable[i].push_back(e);
-            }
-        }
-    const SDL_Rect &sR = Settings::screenRect;
-    int gBXD = Settings::goodButtonXDivisor, gBYD = Settings::goodButtonYDivisor;
-    // Create buttons for equipping equippables
-    int left = sR.w / gBXD, top = sR.h / gBYD;
-    int dx = sR.w * 36 / gBXD, dy = sR.h * 31 / gBYD;
-    SDL_Rect rt = {left, top, sR.w * 35 / gBXD, sR.h * 29 / gBYD};
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
-    int b = Settings::equipBorder, r = Settings::equipRadius, fS = Settings::equipFontSize;
-    size_t equipButtonIndex = bs.size(); // position of first equip button
-    for (auto &eP : equippable) {
-        for (auto &e : eP) {
-            bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS,
-                                                gameData, [this, e, &bs, equipButtonIndex]() mutable {
-                                                    equip(e);
-                                                    // Refresh buttons.
-                                                    refreshEquipButtons(bs, equipButtonIndex);
-                                                }));
-            rt.y += dy;
-        }
-        rt.y = top;
-        rt.x += dx;
-    }
-    // Create buttons for unequipping equipment
-    rt.y = top;
-    left = sR.w * 218 / gBXD;
-    for (auto &e : equipment) {
-        auto &ss = e.getMaterial().getCombatStats();
-        unsigned int pI = ss.front().partId;
-        rt.x = left + static_cast<int>(pI) * dx;
-        bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS, gameData,
-                                            [this, pI, ss, &bs, equipButtonIndex] {
-                                                unequip(pI);
-                                                // Equip fists.
-                                                for (auto &s : ss)
-                                                    equip(s.partId);
-                                                // Refresh buttons.
-                                                refreshEquipButtons(bs, equipButtonIndex);
-                                            }));
-    }
-}
-
-void Traveler::deposit(Good &g) {
-    // Put the given good in storage in the current town.
-    auto sI = storage.find(toTown);
-    if (sI == storage.end())
-        return;
-    unsigned int gId = g.getId();
-    goods[gId].take(g);
-    sI->second[gId].put(g);
-}
-
-void Traveler::withdraw(Good &g) {
-    // Take the given good from storage in the current town.
-    auto sI = storage.find(toTown);
-    if (sI == storage.end())
-        return;
-    unsigned int gId = g.getId();
-    sI->second[gId].take(g);
-    goods[gId].put(g);
-}
-
 std::unordered_map<Town *, std::vector<Good>>::iterator Traveler::createStorage(Town *t) {
     // Put a vector of goods for current town in storage map and return iterator to it.
     std::vector<Good> sGs;
@@ -476,19 +322,24 @@ std::unordered_map<Town *, std::vector<Good>>::iterator Traveler::createStorage(
     return storage.emplace(t, sGs).first;
 }
 
-void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs) {
+void Traveler::deposit(Good &g) {
+    // Put the given good in storage in the current town.
     auto sI = storage.find(toTown);
     if (sI == storage.end())
         sI = createStorage(toTown);
-    SDL_Rect rt;
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
-    int b = Settings::tradeBorder, r = Settings::tradeRadius, fS = Settings::tradeFontSize;
-    for (auto &g : goods)
-        for (auto &m : g.getMaterials()) {
-            Good dG(g.getId(), g.getAmount() * portion);
-            bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData,
-                                  [this, &dG] { deposit(dG); }));
-        }
+    unsigned int gId = g.getId();
+    goods[gId].take(g);
+    sI->second[gId].put(g);
+}
+
+void Traveler::withdraw(Good &g) {
+    // Take the given good from storage in the current town.
+    auto sI = storage.find(toTown);
+    if (sI == storage.end())
+        sI = createStorage(toTown);
+    unsigned int gId = g.getId();
+    sI->second[gId].take(g);
+    goods[gId].put(g);
 }
 
 std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
@@ -536,38 +387,6 @@ void Traveler::loseTarget() {
         ;
     }
     target.reset();
-}
-
-void Traveler::updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs) {
-    // Create TextBox objects for fight user interface.
-    std::vector<std::string> choiceText = bs[0]->getText();
-    switch (choice) {
-    case FightChoice::none:
-        break;
-    case FightChoice::fight:
-        if (choiceText[0] == "Running...")
-            choiceText[0] = "Running... Caught!";
-        break;
-    case FightChoice::run:
-        choiceText[0] = "Running...";
-        break;
-    case FightChoice::yield:
-        choiceText[0] = "Yielding...";
-        break;
-    }
-    bs[0]->setText(choiceText);
-    std::vector<std::string> statusText(7);
-    statusText[0] = name + "'s Status";
-    for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[parts[i - 1]];
-    bs[1]->setText(statusText);
-    auto t = target.lock();
-    if (not t)
-        return;
-    statusText[0] = t->name + "'s Status";
-    for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[t->parts[i - 1]];
-    bs[2]->setText(statusText);
 }
 
 CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
@@ -784,19 +603,17 @@ void Traveler::update(unsigned int e) {
     }
 }
 
-void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, double d) {
+void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d) {
     std::vector<MenuButton *> requestButtons;
-    auto rBI = bs.begin();
-    for (std::advance(rBI, requestButtonIndex); rBI != bs.end(); ++rBI)
+    for (auto rBI = bs.begin() + i; rBI != bs.end(); ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustAreas(requestButtons, d);
 }
 
-void Traveler::adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, double d) {
+void Traveler::adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
-    auto rBI = bs.begin();
-    for (std::advance(rBI, requestButtonIndex); rBI != bs.end(); ++rBI)
+    for (auto rBI = bs.begin() + i; rBI != bs.end(); ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustDemand(requestButtons, d);
 }

@@ -73,7 +73,7 @@ double Material::getCost(double q) const {
     return c;
 }
 
-double Material::getQuantity(double p, double *e) const {
+double Material::getQuantity(double p, double &e) const {
     /* Get quantity of this material available at given price.
      * Second parameter holds excess quantity after amount is used up. */
     double q;
@@ -91,7 +91,7 @@ double Material::getQuantity(double p, double *e) const {
     if (amount > q)
         return q;
     // there's not enough good to sell in the town
-    *e = q - amount;
+    e = q - amount;
     return amount;
 }
 

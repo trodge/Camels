@@ -38,28 +38,30 @@ bool MenuButton::keyCaptured(const SDL_KeyboardEvent &k) const {
     }
 }
 
+void MenuButton::activate(Uint8 state) {
+    if (state == SDL_PRESSED)
+        setInvColors(not clicked);
+    else if (invColors != clicked) {
+        clicked = invColors;
+        onClick();
+    }
+}
+
 void MenuButton::handleKey(const SDL_KeyboardEvent &k) {
     switch (k.keysym.sym) {
     case SDLK_SPACE:
     case SDLK_RETURN:
     case SDLK_KP_ENTER:
-        if (k.state == SDL_PRESSED)
-            setInvColors(not clicked);
-        else if (invColors != clicked) {
-            clicked = invColors;
-            onClick();
-        }
+        activate(k.state);
         return;
     default:
-        setInvColors(clicked);
+        if (k.keysym.sym == key)
+            activate(k.state);
+        else
+            setInvColors(clicked);
     }
 }
 
 void MenuButton::handleClick(const SDL_MouseButtonEvent &b) {
-    if (b.state == SDL_PRESSED) {
-        setInvColors(not clicked);
-    } else if (invColors != clicked) {
-        clicked = invColors;
-        onClick();
-    }
+    activate(b.state);
 }

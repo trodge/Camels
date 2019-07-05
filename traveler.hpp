@@ -60,13 +60,13 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double longitude, latitude;
     std::vector<Good> goods;           // goods carried by traveler
     std::vector<Good> offer, request;  // goods offered and requested in next trade
-    size_t requestButtonIndex;         // index of request and offer button for updating trade buttons
     double portion;                    // portion of goods offered in next trade
-    std::weak_ptr<Traveler> target;    // pointer to enemy if currently fighting
-    double fightTime;                  // time left to fight this round
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
+    std::weak_ptr<Traveler> target;    // pointer to enemy if currently fighting
+    double fightTime;                  // time left to fight this round
+    FightChoice choice;
     const GameData &gameData;
     std::unordered_map<Town *, std::vector<Business>> businesses; // businesses owned by this traveler in given towns
     std::unordered_map<Town *, std::vector<Good>> storage;        // goods stored by this traveler in given towns
@@ -77,8 +77,6 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
-    void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t eBI);
-    std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
     void runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d);
@@ -93,50 +91,50 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const std::vector<std::string> &getLogText() const { return logText; }
     const std::vector<Good> &getGoods() const { return goods; }
     const Good &getGood(unsigned int i) const { return goods[i]; }
-    const std::vector<Good> &getEquipment() const { return equipment; }
+    double getPortion() const { return portion; }
+    std::string portionString() const;
     const std::array<unsigned int, 5> &getStats() const { return stats; }
     unsigned int speed() const { return stats[1] + stats[2] + stats[3]; }
-    double getPortion() const { return portion; }
+    unsigned int getPart(unsigned int i) const { return parts[i]; }
+    const std::vector<Good> &getEquipment() const { return equipment; }
     const std::weak_ptr<Traveler> getTarget() const { return target; }
     bool alive() const { return parts[0] < 5 and parts[1] < 5; }
     int getPX() const { return px; }
     int getPY() const { return py; }
-    FightChoice choice;
     bool fightWon() const {
         auto t = target.lock();
         return t and (t->choice == FightChoice::yield or not t->alive());
     }
     double getFightTime() const { return fightTime; }
-    std::string tradePortionString() const;
-    void setPortion(double p) { portion = p; }
+    FightChoice getChoice() const { return choice; }
+    double offerGood(const Good &g, const Material &m);
+    double requestGood(const Good &g, const Material &m, double oV, int rC);
+    void divideExcess(double e);
+    void setPortion(double p);
     void changePortion(double d);
     void addToTown();
     void pickTown(const Town *t);
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
-    void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs);
-    void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     void makeTrade();
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
-    void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs);
+    std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     void deposit(Good &g);
     void withdraw(Good &g);
-    void createStorageView(std::vector<std::unique_ptr<TextBox>> &bs, const Town *t);
-    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);
+    void choose(FightChoice c) { choice = c; }
     void loseTarget();
-    void updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs);
     void loot(Good &g, Traveler &t);
     void loot(Traveler &t);
     void startAI();
     void startAI(const Traveler &p);
     void runAI(unsigned int e);
     void update(unsigned int e);
-    void adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, double d);
-    void adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, double d);
+    void adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d);
+    void adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d);
     void resetTown();
     void toggleMaxGoods();
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b);

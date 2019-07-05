@@ -71,7 +71,7 @@ class Town : public Focusable {
     unsigned long getPopulation() const { return population; }
     unsigned int getTownType() const { return townType; }
     const std::vector<Good> &getGoods() const { return goods; }
-    const Good &getGood(size_t i) { return goods[i]; }
+    const Good &getGood(size_t i) const { return goods[i]; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<std::shared_ptr<Traveler>> &getTravelers() const { return travelers; }
     void addTraveler(std::shared_ptr<Traveler> t) { travelers.push_back(t); }

@@ -98,7 +98,7 @@ class Material {
     double getPrice(double q) const;
     double getPrice() const;
     double getCost(double q) const;
-    double getQuantity(double p, double *e) const;
+    double getQuantity(double p, double &e) const;
     double getQuantity(double p) const;
     double getQuantum(double c) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }

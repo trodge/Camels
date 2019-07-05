@@ -55,7 +55,7 @@ double Nation::getFrequency(unsigned int b, unsigned int m) const {
 }
 
 std::string Nation::randomName() const {
-    std::uniform_int_distribution<unsigned long> dis(0, travelerNames.size() - 1);
+    std::uniform_int_distribution<size_t> dis(0, travelerNames.size() - 1);
     return travelerNames[dis(Settings::rng)];
 }
 

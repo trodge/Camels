@@ -13,7 +13,6 @@ map\.bmp
 map\.png
 obj/
 rearrange_data\.py
-save\.fbs
 SDL2.dll
 settings.ini
 vimsrc\.sh

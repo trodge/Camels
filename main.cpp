@@ -32,7 +32,9 @@ int main(int, char **) {
     if (IMG_Init(IMG_INIT_PNG) < 0)
         std::cout << "TTF initialization failed, IMG Error: " << SDL_GetError() << std::endl;
     Game game;
+    std::cout << "Quitting SDL" << std::endl;
     SDL_Quit();
+    std::cout << "Quitting TTF" << std::endl;
     TTF_Quit();
     return 0;
 }
