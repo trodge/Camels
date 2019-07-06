@@ -14,5 +14,4 @@ map\.png
 obj/
 rearrange_data\.py
 SDL2.dll
-settings.ini
 vimsrc\.sh
