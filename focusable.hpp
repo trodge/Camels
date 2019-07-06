@@ -32,6 +32,7 @@ class Focusable {
     void toggleLock() { canFocus = not canFocus; }
     virtual void focus() = 0;
     virtual void unFocus() = 0;
+    virtual bool clickCaptured(const SDL_MouseButtonEvent &b) const = 0;
     virtual unsigned int getId() const = 0;
 };
 

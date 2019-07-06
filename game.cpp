@@ -33,15 +33,11 @@ SDL_Texture *textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const
     return t;
 }
 
-Game::Game() : player(stop, pause, storedPause, towns, nations, scrollX, scrollY, showPlayer, gameData) {
-    player.setFunctions([this] { newGame(); },
-                        [this](const fs::path &p) { loadGame(p); },
-                        [this] { saveGame(); },
-                        [this] { saveData(); },
-                        [this] { saveRoutes(); },
-                        [this] { place(); } );
+Game::Game() {
+    player = std::make_unique<Player>(this);
     Settings::load("settings.ini");
     loadDisplayVariables();
+    player->start();
     window = SDL_CreateWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
                               SDL_WINDOW_BORDERLESS);
     if (!window)
@@ -98,7 +94,7 @@ Game::Game() : player(stop, pause, storedPause, towns, nations, scrollX, scrollY
     SDL_BlitScaled(mapOriginal, NULL, mapImage, NULL);*/
     SDL_ShowWindow(window);
     SDL_RaiseWindow(window);
-    while (not stop) {
+    while (not player->getStop()) {
         handleEvents();
         update();
         draw();
@@ -137,7 +133,6 @@ void Game::loadDisplayVariables() {
     // Load screen height and width and starting offsets and scale from settings.
     screenRect = Settings::screenRect;
     mapRect = Settings::mapRect;
-    scrollSpeed = Settings::scroll;
     offsetX = Settings::offsetX;
     offsetY = Settings::offsetY;
     scale = Settings::scale;
@@ -180,8 +175,9 @@ void Game::place() {
         t.placeDot(newDrawn, offsetX, offsetY, scale);
     for (auto &t : towns)
         t.placeText(newDrawn);
-    for (auto &t : travelers)
+    for (auto &t : aITravelers)
         t->place(offsetX, offsetY, scale);
+    player->place(offsetX, offsetY, scale);
 }
 
 void Game::moveView(int dx, int dy) {
@@ -359,16 +355,16 @@ void Game::newGame() {
     loadBar.setText(0, "Generating Travelers...");
     for (auto &t : towns) {
         SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
-        t.generateTravelers(gameData, travelers);
-        loadBar.setText(0, "Generating Travelers..." + std::to_string(travelers.size()));
+        t.generateTravelers(gameData, aITravelers);
+        loadBar.setText(0, "Generating Travelers..." + std::to_string(aITravelers.size()));
         loadBar.progress(1. / tC);
         loadBar.draw(screen);
         SDL_RenderPresent(screen);
     }
     loadBar.progress(-1);
-    tC = static_cast<double>(travelers.size());
+    tC = static_cast<double>(aITravelers.size());
     loadBar.setText(0, "Starting AI...");
-    for (auto &t : travelers) {
+    for (auto &t : aITravelers) {
         SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
         t->startAI();
         t->addToTown();
@@ -388,9 +384,8 @@ void Game::loadGame(const fs::path &p) {
         nations.clear();
         loadNations(conn);
         sqlite3_close(conn);
-        travelers.clear();
+        aITravelers.clear();
         towns.clear();
-        pause = false;
         file.seekg(0, file.end);
         std::streamsize length = file.tellg();
         file.seekg(0, file.beg);
@@ -417,34 +412,47 @@ void Game::loadGame(const fs::path &p) {
             loadBar.draw(screen);
             SDL_RenderPresent(screen);
         }
-        auto lTravelers = game->travelers();
+        auto lTravelers = game->aITravelers();
         auto lTI = lTravelers->begin();
-        player.loadTraveler(*lTI);
+        player->loadTraveler(*lTI, towns);
         for (++lTI; lTI != lTravelers->end(); ++lTI)
-            travelers.push_back(std::make_shared<Traveler>(*lTI, towns, nations, gameData));
-        for (auto &t : travelers)
+            aITravelers.push_back(std::make_shared<Traveler>(*lTI, towns, nations, gameData));
+        for (auto &t : aITravelers)
             t->startAI();
-        showPlayer = true;
         place();
     }
 }
-
 
 void Game::handleEvents() {
     // Handle events since last poll.
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        SDL_Keymod mod = SDL_GetModState();
         Uint8 r, g, b;
         int mx, my, mw, mh;
         switch (event.type) {
         case SDL_KEYDOWN:
-            __attribute__((fallthrough));
-        case SDL_KEYUP:
-            player.handleKey(event.key, mod);
-            break;
-        case SDL_TEXTINPUT:
-            player.handleTextInput(event.text);
+            switch (event.key.keysym.sym) {
+            case SDLK_u:
+                --offsetY;
+                place();
+                std::cout << "Y offset decreased" << std::endl;
+                break;
+            case SDLK_j:
+                ++offsetY;
+                place();
+                std::cout << "Y offset increased" << std::endl;
+                break;
+            case SDLK_h:
+                --offsetX;
+                place();
+                std::cout << "X offset decreased" << std::endl;
+                break;
+            case SDLK_k:
+                ++offsetX;
+                place();
+                std::cout << "X offset increased" << std::endl;
+                break;
+            }
             break;
         case SDL_MOUSEBUTTONDOWN:
             // Print r g b values at clicked coordinates
@@ -456,14 +464,9 @@ void Game::handleEvents() {
                 SDL_GetRGB(getAt(mapSurface, mx, my), mapSurface->format, &r, &g, &b);
                 std::cout << '(' << int(r) << ',' << int(g) << ',' << int(b) << ')' << std::endl;
             }
-            __attribute__((fallthrough));
-        case SDL_MOUSEBUTTONUP:
-            player.handleClick(event.button);
-            break;
-        case SDL_QUIT:
-            stop = true;
             break;
         }
+        player->handleEvent(event);
     }
 }
 
@@ -471,31 +474,17 @@ void Game::update() {
     currentTime = SDL_GetTicks();
     unsigned int elapsed = currentTime - lastTime;
     lastTime = currentTime;
-    if (showPlayer) {
-        scrollX = 0;
-        scrollY = 0;
-        if (player.getPX() < int(mapRect.w * kShowPlayerPadding))
-            scrollX = -scrollSpeed;
-        if (player.getPY() < int(mapRect.h * kShowPlayerPadding))
-            scrollY = -scrollSpeed;
-        if (player.getPX() > int(mapRect.w * (1 - kShowPlayerPadding)))
-            scrollX = scrollSpeed;
-        if (player.getPY() > int(mapRect.h * (1 - kShowPlayerPadding)))
-            scrollY = scrollSpeed;
-    }
-    if (scrollX or scrollY)
-        moveView(scrollX, scrollY);
-    if (not(pause)) {
+    if (not(player->getPause())) {
         for (auto &t : towns)
             t.update(elapsed);
-        for (auto tI = travelers.begin() + 1; tI != travelers.end(); ++tI)
-            (*tI)->runAI(elapsed);
-        for (auto &t : travelers)
+        for (auto &t : aITravelers)
+            t->runAI(elapsed);
+        for (auto &t : aITravelers)
             t->update(elapsed);
-        for (auto &t : travelers)
+        for (auto &t : aITravelers)
             t->place(offsetX, offsetY, scale);
     }
-    player.updateUI();
+    player->update(elapsed);
 }
 
 void Game::draw() {
@@ -505,11 +494,11 @@ void Game::draw() {
         t.drawRoutes(screen);
     for (auto &t : towns)
         t.drawDot(screen);
-    for (auto &t : travelers)
+    for (auto &t : aITravelers)
         t->draw(screen);
     for (auto &t : towns)
         t.drawText(screen);
-    player.draw(screen);
+    player->draw(screen);
     SDL_RenderPresent(screen);
 }
 
@@ -536,9 +525,6 @@ void Game::saveRoutes() {
     sqlite3_stmt *comm;
     sqlite3_prepare_v2(conn, inserts.c_str(), -1, &comm, nullptr);
     sqlite3_step(comm);
-    if (not travelers.empty())
-        for (auto tI = travelers.begin() + 1; tI != travelers.end(); ++tI)
-            (*tI)->startAI();
     sqlite3_finalize(comm);
     sqlite3_close(conn);
 }
@@ -549,14 +535,14 @@ void Game::saveData() {
     if (sqlite3_open("1025ad.db", &conn) != SQLITE_OK)
         std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
     std::string updates = "UPDATE frequencies SET frequency = CASE";
-    travelers.front()->getTown()->saveFrequencies(updates);
+    player->getTown()->saveFrequencies(updates);
     sqlite3_stmt *comm;
     sqlite3_prepare_v2(conn, updates.c_str(), -1, &comm, nullptr);
     if (sqlite3_step(comm) != SQLITE_DONE)
         std::cout << "Error updating frequencies: " << sqlite3_errmsg(conn) << std::endl << updates << std::endl;
     sqlite3_finalize(comm);
     updates = "UPDATE consumption SET demand_slope = CASE";
-    travelers.front()->getTown()->saveDemand(updates);
+    player->getTown()->saveDemand(updates);
     sqlite3_prepare_v2(conn, updates.c_str(), -1, &comm, nullptr);
     if (sqlite3_step(comm) != SQLITE_DONE)
         std::cout << "Error updating demand slopes: " << sqlite3_errmsg(conn) << std::endl << updates << std::endl;
@@ -567,17 +553,40 @@ void Game::saveData() {
 
 void Game::saveGame() {
     // Save the game.
+    if (not player->hasTraveler())
+        std::cout << "Tried to save game with no player traveler" << std::endl;
     flatbuffers::FlatBufferBuilder builder(1024);
     auto sTowns = builder.CreateVector<flatbuffers::Offset<Save::Town>>(
         towns.size(), [this, &builder](size_t i) { return towns[i].save(builder); });
-    auto sTravelers = builder.CreateVector<flatbuffers::Offset<Save::Traveler>>(
-        travelers.size(), [this, &builder](size_t i) { return travelers[i]->save(builder); });
-    auto game = Save::CreateGame(builder, sTowns, sTravelers);
+    auto sAITravelers = builder.CreateVector<flatbuffers::Offset<Save::Traveler>>(
+        aITravelers.size(), [this, &builder](size_t i) { return aITravelers[i]->save(builder); });
+    auto game = Save::CreateGame(builder, sTowns, player->save(builder), sAITravelers);
     builder.Finish(game);
     fs::path path("save");
-    path /= travelers.front()->getName();
+    path /= aITravelers.front()->getName();
     path.replace_extension("sav");
     std::ofstream file(path.string(), std::ofstream::binary);
     if (file.is_open())
         file.write((const char *)builder.GetBufferPointer(), builder.GetSize());
+}
+
+void Game::fillFocusableTowns(std::vector<Focusable *> &fcbls) {
+    // Fill the focusables vector with towns.
+    for (auto &t : towns)
+        fcbls.push_back(&t);    
+}
+
+std::shared_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) {
+    if (n.empty())
+        n = nations[nId].randomName();
+    // Create traveler object for player
+    auto traveler =
+        std::make_shared<Traveler>(n, &towns[nId - 1], gameData);
+    traveler->addToTown();
+    traveler->place(offsetX, offsetY, scale);
+    return traveler;
+}
+
+void Game::pickTown(std::shared_ptr<Traveler> t, size_t tId) {
+    t->pickTown(&towns[tId]);
 }

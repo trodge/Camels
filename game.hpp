@@ -27,12 +27,12 @@
 #include <string>
 #include <vector>
 
-#include "player.hpp"
-#include "traveler.hpp"
-#include "selectbutton.hpp"
-#include "nation.hpp"
-#include "town.hpp"
 #include "business.hpp"
+#include "nation.hpp"
+#include "player.hpp"
+#include "selectbutton.hpp"
+#include "town.hpp"
+#include "traveler.hpp"
 
 class Player;
 class Nation;
@@ -40,15 +40,12 @@ class Nation;
 class Game {
     SDL_Window *window;
     SDL_Renderer *screen;
-    bool stop = false, pause = false, storedPause = true;
     SDL_Surface *mapSurface; // surface of entire map loaded from image
     SDL_RendererInfo screenInfo;
     std::vector<SDL_Texture *> mapTextures;        // textures for map broken down to maximum size for graphics card
     int mapTextureRowCount, mapTextureColumnCount; // number of columns in map textures matrix
     SDL_Texture *mapTexture;                       // texture for drawing map on screen at current position
     SDL_Rect screenRect, mapRect;
-    int scrollSpeed, scrollX = 0, scrollY = 0;
-    bool showPlayer = false;
     int offsetX, offsetY;
     unsigned int lastTime = 0, currentTime;
     double scale;
@@ -56,11 +53,10 @@ class Game {
     std::vector<Town> towns;
     std::vector<Business> businesses;
     GameData gameData;
-    std::vector<std::shared_ptr<Traveler>> travelers;
-    Player player;
+    std::vector<std::shared_ptr<Traveler>> aITravelers;
+    std::unique_ptr<Player> player;
     void loadDisplayVariables();
     void renderMapTexture();
-    void moveView(int dx, int dy);
     void loadNations(sqlite3 *c);
     void handleEvents();
     void update();
@@ -71,10 +67,19 @@ class Game {
     ~Game();
     void newGame();
     void place();
+    void moveView(int dx, int dy);
     void saveGame();
     void loadGame(const fs::path &p);
     void saveData();
     void saveRoutes();
+    const SDL_Rect &getMapRect() const { return mapRect; }
+    const std::vector<Nation> &getNations() { return nations; }
+    const std::vector<Town> &getTowns() { return towns; }
+    const GameData &getData() const { return gameData; }
+    void unFocusTown(size_t i) { towns[i].unFocus(); }
+    void fillFocusableTowns(std::vector<Focusable *> &fcbls);
+    std::shared_ptr<Traveler> createPlayerTraveler(size_t nId, std::string n);
+    void pickTown(std::shared_ptr<Traveler> t, size_t tId);
 };
 
 #endif

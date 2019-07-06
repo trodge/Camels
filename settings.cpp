@@ -98,6 +98,7 @@ void Settings::load(const fs::path &p) {
     scroll = tree.get("ui.scroll", 64);
     offsetX = tree.get("ui.offsetX", -3197);
     offsetY = tree.get("ui.offsetY", 4731);
+    scale = tree.get("ui.scale", 112.5);
     bigBoxBorder = tree.get("ui.bigBoxBorder", 4);
     bigBoxRadius = tree.get("ui.bigBoxRadius", 13);
     bigBoxFontSize = tree.get("ui.bigBoxFontSize", 48);
@@ -115,7 +116,6 @@ void Settings::load(const fs::path &p) {
     tradeFontSize = tree.get("ui.tradeFontSize", 12);
     goodButtonXDivisor = tree.get("ui.goodButtonXDivisor", 434);
     goodButtonYDivisor = tree.get("ui.goodButtonYDivisor", 527);
-    scale = tree.get("ui.scale", 112.5);
     dayLength = tree.get("time.dayLength", 5000);
     businessRunTime = static_cast<unsigned int>(tree.get("time.businessRunTime", 1500));
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
@@ -162,6 +162,7 @@ void Settings::save(const fs::path &p) {
     tree.put("ui.scroll", scroll);
     tree.put("ui.offsetX", offsetX);
     tree.put("ui.offsetY", offsetY);
+    tree.put("ui.scale", scale);
     tree.put("ui.bigBoxFontSize", bigBoxFontSize);
     tree.put("ui.bigBoxBorder", bigBoxBorder);
     tree.put("ui.loadBarFontSize", loadBarFontSize);

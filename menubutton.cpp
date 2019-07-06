@@ -62,6 +62,4 @@ void MenuButton::handleKey(const SDL_KeyboardEvent &k) {
     }
 }
 
-void MenuButton::handleClick(const SDL_MouseButtonEvent &b) {
-    activate(b.state);
-}
+void MenuButton::handleClick(const SDL_MouseButtonEvent &b) { activate(b.state); }

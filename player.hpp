@@ -19,38 +19,28 @@
 
 #ifndef PLAYER_H
 #define PLAYER_H
-#include <vector>
-#include <memory>
 #include <functional>
+#include <memory>
+#include <vector>
 
-#include "traveler.hpp"
+#include "game.hpp"
 #include "selectbutton.hpp"
+#include "traveler.hpp"
 
+class Game;
 
 class Player {
     std::shared_ptr<Traveler> traveler;
     std::vector<std::unique_ptr<TextBox>> boxes, storedBoxes;
     int focusBox = -1; // index of box currently focused, -1 if no focus
-    // references to game object members
-    bool &stop;
-    bool &pause;
-    bool &storedPause;
-    std::vector<Town> &towns;
-    const std::vector<Nation> &nations;
-    int &scrollX, &scrollY;
-    bool &showPlayer;
-    const GameData &gameData;
-    std::function<void()> newGame;
-    std::function<void(const fs::path &)> loadGame;
-    std::function<void()> saveGame;
-    std::function<void()> saveData;
-    std::function<void()> saveRoutes;
-    std::function<void()> place;
-    int focusTown = -1; // index of town currently focused, -1 if no focus
+    Game *game;
+    bool stop = false, show = false, pause = false, storedPause = true;
+    int scrollX = 0, scrollY = 0;
+    int focusTown = -1;                          // index of town currently focused, -1 if no focus
     size_t offerButtonIndex, requestButtonIndex; // index of first offer and request button for updating trade buttons
-    size_t portionBoxIndex;            // index of box for setting portion
-    size_t setPortionButtonIndex; // index of button for setting portion
-    size_t equipButtonIndex; // index of first equip button
+    size_t portionBoxIndex;                      // index of box for setting portion
+    size_t setPortionButtonIndex;                // index of button for setting portion
+    size_t equipButtonIndex;                     // index of first equip button
     enum UIState {
         starting,
         beginning,
@@ -93,16 +83,30 @@ class Player {
     void createDyingBoxes();
     void setState(UIState s);
     void toggleState(UIState s);
- public:
-    Player(bool &s, bool &p, bool &sP, std::vector<Town> &ts, std::vector<Nation> &ns, int &sX, int &sY, bool &shP, GameData &gD);
-    void setFunctions(std::function<void()> nG, std::function<void(const fs::path &)> lG, std::function<void()> sG, std::function<void()> sD, std::function<void()> sR, std::function<void()> p);
-    void loadTraveler(const Save::Traveler *t);
-    int getPX() { return traveler->getPX(); }
-    int getPY() { return traveler->getPY(); }
-    void handleKey(const SDL_KeyboardEvent &k, SDL_Keymod mod);
+    void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);
-    void updateUI();
+
+  public:
+    Player(Game *g);
+    bool getStop() const { return stop; }
+    bool getPause() const { return pause; }
+    bool getShow() const { return show; }
+    int getScrollX() const { return scrollX; }
+    int getScrollY() const { return scrollY; }
+    int getPX() const { return traveler->getPX(); }
+    int getPY() const { return traveler->getPY(); }
+    const Town *getTown() const { return traveler->getTown(); }
+    bool hasTraveler() const { return traveler.get(); }
+    void start() { setState(starting); }
+    void loadTraveler(const Save::Traveler *t, std::vector<Town> &ts);
+    flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) { return traveler->save(b); }
+    void place(int ox, int oy, double s) {
+        if (traveler.get())
+            traveler->place(ox, oy, s);
+    }
+    void handleEvent(const SDL_Event &e);
+    void update(unsigned int e);
     void draw(SDL_Renderer *s);
 };
 

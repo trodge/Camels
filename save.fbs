@@ -1,0 +1,106 @@
+namespace Save;
+
+struct PerishCounter {
+    time:int;
+    amount:double;
+}
+
+struct CombatStat {
+    statId:uint;
+    partId:uint;
+    attack:uint;
+    type:uint;
+    speed:uint;
+    bashDefense:uint;
+    cutDefense:uint;
+    stabDefense:uint;
+}
+
+struct MaterialInfo {
+    limitFactor:double;
+    minPrice:double;
+    maxPrice:double;
+    value:double;
+    buy:double;
+    sell:double;
+}
+
+table Material {
+    id:uint;
+    name:string;
+    amount:double;
+    consumption:double;
+    demandSlope:double;
+    demandIntercept:double;
+    perishCounters:[PerishCounter];
+    combatStats:[CombatStat];
+    limitFactor:double;
+}
+
+table Good {
+    id:uint;
+    name:string;
+    amount:double;
+    materials:[Material];
+    perish:double;
+    carry:double;
+    measure:string;
+    shoots:uint;
+}
+
+table AI {
+    decisionCounter:int;
+    decisionCriteria:[double];
+    materialInfo:[MaterialInfo];
+}
+
+table Traveler {
+    name:string;
+    toTown:uint;
+    fromTown:uint;
+    nation:uint;
+    log:[string];
+    longitude:double;
+    latitude:double;
+    goods:[Good];
+    stats:[uint];
+    parts:[uint];
+    equipment:[Good];
+    ai:AI;
+    moving:bool;
+}
+
+table Business {
+    id:uint;
+    mode:uint;
+    name:string;
+    area:double;
+    canSwitch:bool;
+    keepMaterial:bool;
+    inputs:[Good];
+    outputs:[Good];
+    frequencyFactor:double;
+}
+
+table Town {
+    id:uint;
+    names:[string];
+    nation:uint;
+    longitude:double;
+    latitude:double;
+    coastal:bool;
+    population:ulong;
+    townType:uint;
+    businesses:[Business];
+    goods:[Good];
+    neighbors:[uint];
+    businessCounter:int;
+}
+
+table Game {
+    towns:[Town];
+    playerTraveler:Traveler;
+    aITravelers:[Traveler];
+}
+
+root_type Game;  

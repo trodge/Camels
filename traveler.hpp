@@ -64,8 +64,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
-    std::weak_ptr<Traveler> target;    // pointer to enemy if currently fighting
-    double fightTime;                  // time left to fight this round
+    std::weak_ptr<Traveler> target; // pointer to enemy if currently fighting
+    double fightTime;               // time left to fight this round
     FightChoice choice;
     const GameData &gameData;
     std::unordered_map<Town *, std::vector<Business>> businesses; // businesses owned by this traveler in given towns
@@ -95,7 +95,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::string portionString() const;
     const std::array<unsigned int, 5> &getStats() const { return stats; }
     unsigned int speed() const { return stats[1] + stats[2] + stats[3]; }
-    unsigned int getPart(unsigned int i) const { return parts[i]; }
+    unsigned int getPart(size_t i) const { return parts[i]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     const std::weak_ptr<Traveler> getTarget() const { return target; }
     bool alive() const { return parts[0] < 5 and parts[1] < 5; }

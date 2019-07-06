@@ -19,25 +19,11 @@
 
 #include "player.hpp"
 
-Player::Player(bool &s, bool &p, bool &sP, std::vector<Town> &ts, std::vector<Nation> &ns,
-               int &sX, int &sY, bool &shP, GameData &gD) :
- stop(s), pause(p), storedPause(sP), towns(ts), nations(ns), scrollX(sX), scrollY(sY),
- showPlayer(shP), gameData(gD) { }
+Player::Player(Game *g) : game(g) {}
 
-void Player::setFunctions(std::function<void()> nG, std::function<void(const fs::path &)> lG,
-                          std::function<void()> sG, std::function<void()> sD, 
-                          std::function<void()> sR, std::function<void()> p) {
-    newGame = nG;
-    loadGame = lG;
-    saveGame = sG;
-    saveData = sD;
-    saveRoutes = sR;
-    place = p;
-}
-
-void Player::loadTraveler(const Save::Traveler *t) {
+void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
-    traveler = std::make_shared<Traveler>(t, towns, nations, gameData);
+    traveler = std::make_shared<Traveler>(t, ts, game->getNations(), game->getData());
 }
 
 void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls) {
@@ -57,17 +43,15 @@ void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focu
             neighbors.begin());
         s = static_cast<int>(neighbors.size());
         if (i == s) {
-            if (focusTown > -1 and static_cast<size_t>(focusTown) < towns.size())
-                towns[static_cast<size_t>(focusTown)].unFocus();
+            if (focusTown > -1 and static_cast<size_t>(focusTown) < game->getTowns().size())
+                game->unFocusTown(static_cast<size_t>(focusTown));
             i = -1;
         }
         fcbls = std::vector<Focusable *>(neighbors.begin(), neighbors.end());
         break;
     case Focusable::town:
         i = focusTown;
-        fcbls.clear();
-        for (auto &t : towns)
-            fcbls.push_back(&t);
+        game->fillFocusableTowns(fcbls);
         s = static_cast<int>(fcbls.size());
         break;
     }
@@ -161,6 +145,9 @@ void Player::setState(UIState s) {
     case starting:
         createStartButtons();
         break;
+    case beginning:
+        createBeginButtons();
+        break;
     case quitting:
         createQuitButtons();
         break;
@@ -221,9 +208,211 @@ void Player::toggleState(UIState s) {
         setState(s);
 }
 
-void Player::updateUI() {
-    // Update current UI to reflect current Player state.
-    auto target = traveler->getTarget().lock();
+
+void Player::handleKey(const SDL_KeyboardEvent &k) {
+    SDL_Keymod mod = SDL_GetModState();
+    double d;
+    if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT) and (mod & KMOD_ALT))
+        d = 10000;
+    else if ((mod & KMOD_CTRL) and (mod & KMOD_ALT))
+        d = 0.001;
+    else if ((mod & KMOD_SHIFT) and (mod & KMOD_ALT))
+        d = 0.01;
+    else if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT))
+        d = 1000;
+    else if (mod & KMOD_ALT)
+        d = 0.1;
+    else if (mod & KMOD_SHIFT)
+        d = 10;
+    else if (mod & KMOD_CTRL)
+        d = 100;
+    else
+        d = 1;
+    if (k.state == SDL_PRESSED) {
+        if (not boxes.empty()) {
+            auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
+                                         [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
+            if (keyedBox != boxes.end()) {
+                // A box's key was pressed.
+                focus(static_cast<int>(std::distance(boxes.begin(), keyedBox)), Focusable::box);
+                (*keyedBox)->handleKey(k);
+            }
+        }
+        if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k))) {
+            if (state != quitting) {
+                if (traveler) {
+                    double dSS = static_cast<double>(Settings::scroll);
+                    switch (state) {
+                    case traveling:
+                        switch (k.keysym.sym) {
+                        case SDLK_LEFT:
+                            scrollX = static_cast<int>(-dSS * d);
+                            show = false;
+                            break;
+                        case SDLK_RIGHT:
+                            scrollX = static_cast<int>(dSS * d);
+                            show = false;
+                            break;
+                        case SDLK_UP:
+                            scrollY = static_cast<int>(-dSS * d);
+                            show = false;
+                            break;
+                        case SDLK_DOWN:
+                            scrollY = static_cast<int>(dSS * d);
+                            show = false;
+                            break;
+                        case SDLK_s:
+                            focusPrev(Focusable::neighbor);
+                            break;
+                        case SDLK_d:
+                            focusNext(Focusable::neighbor);
+                            break;
+                        }
+                        break;
+                    case trading:
+                        switch (k.keysym.sym) {
+                        case SDLK_LEFT:
+                            focusPrev(Focusable::box);
+                            break;
+                        case SDLK_RIGHT:
+                            focusNext(Focusable::box);
+                            break;
+                        case SDLK_UP:
+                            for (int i = 0; i < 7; ++i)
+                                focusPrev(Focusable::box);
+                            break;
+                        case SDLK_DOWN:
+                            for (int i = 0; i < 7; ++i)
+                                focusNext(Focusable::box);
+                            break;
+                        case SDLK_COMMA:
+                            traveler->changePortion(-0.1);
+                            updatePortionBox();
+                            break;
+                        case SDLK_PERIOD:
+                            traveler->changePortion(0.1);
+                            updatePortionBox();
+                            break;
+                        case SDLK_KP_MINUS:
+                            traveler->adjustAreas(boxes, requestButtonIndex, -d);
+                            break;
+                        case SDLK_KP_PLUS:
+                            traveler->adjustAreas(boxes, requestButtonIndex, d);
+                            break;
+                        case SDLK_m:
+                            game->saveData();
+                            break;
+                        case SDLK_o:
+                            traveler->adjustDemand(boxes, requestButtonIndex, -d);
+                            break;
+                        case SDLK_p:
+                            traveler->adjustDemand(boxes, requestButtonIndex, d);
+                            break;
+                        case SDLK_r:
+                            traveler->resetTown();
+                            break;
+                        case SDLK_x:
+                            traveler->toggleMaxGoods();
+                            break;
+                        }
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+            switch (k.keysym.sym) {
+            case SDLK_ESCAPE:
+                toggleState(quitting);
+                break;
+            case SDLK_TAB:
+                if (SDL_GetModState() & KMOD_SHIFT)
+                    focusPrev(Focusable::box);
+                else
+                    focusNext(Focusable::box);
+                break;
+            case SDLK_n:
+                game->saveRoutes();
+                break;
+            }
+        } else
+            boxes[static_cast<size_t>(focusBox)]->handleKey(k);
+    } else {
+        if (not boxes.empty()) {
+            auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
+                                         [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
+            if (keyedBox != boxes.end())
+                // A box's key was released.
+                (*keyedBox)->handleKey(k);
+        }
+        if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
+            switch (k.keysym.sym) {
+            case SDLK_LEFT:
+            case SDLK_RIGHT:
+                scrollX = 0;
+                break;
+            case SDLK_UP:
+            case SDLK_DOWN:
+                scrollY = 0;
+                break;
+            }
+        else
+            boxes[static_cast<size_t>(focusBox)]->handleKey(k);
+    }
+}
+
+void Player::handleTextInput(const SDL_TextInputEvent &t) {
+    if (focusBox > -1)
+        boxes[static_cast<size_t>(focusBox)]->handleTextInput(t);
+}
+
+void Player::handleClick(const SDL_MouseButtonEvent &b) {
+    if (state == traveling) {
+        std::vector<Focusable *> fcbls;
+        game->fillFocusableTowns(fcbls);
+        auto clickedTown = std::find_if(fcbls.begin(), fcbls.end(), [&b](const Focusable *t) { return t->clickCaptured(b); });
+        if (clickedTown != fcbls.end())
+            focus(static_cast<int>(std::distance(fcbls.begin(), clickedTown)), Focusable::town);
+    }
+    if (not boxes.empty()) {
+        auto clickedBox = std::find_if(boxes.begin(), boxes.end(), [&b](const std::unique_ptr<TextBox> &t) {
+            return t->getCanFocus() and t->clickCaptured(b);
+        });
+        if (clickedBox != boxes.end()) {
+            int cI = static_cast<int>(std::distance(boxes.begin(), clickedBox));
+            if (cI != focusBox)
+                focus(cI, Focusable::box);
+            (*clickedBox)->handleClick(b);
+        } else
+            focus(-1, Focusable::box);
+    }
+}
+
+void Player::handleEvent(const SDL_Event &e) {
+    switch(e.type) {
+    case SDL_KEYDOWN:
+        __attribute__((fallthrough));
+    case SDL_KEYUP:
+        handleKey(e.key);
+        break;
+    case SDL_TEXTINPUT:
+        handleTextInput(e.text);
+        break;
+    case SDL_MOUSEBUTTONDOWN:
+        __attribute__((fallthrough));
+    case SDL_MOUSEBUTTONUP:
+        handleClick(e.button);
+        break;
+    case SDL_QUIT:
+        stop = true;
+        break;
+    }
+}
+
+void Player::update(unsigned int e) {
+    // Update the UI to reflect current state.
+    auto t = traveler.get();
+    bool target = t and t->getTarget().lock();
     switch (state) {
     case traveling:
         if (target) {
@@ -250,6 +439,24 @@ void Player::updateUI() {
     default:
         break;
     }
+    if (show) {
+        scrollX = 0;
+        scrollY = 0;
+        const SDL_Rect &mR = game->getMapRect();
+        int sS = Settings::scroll;
+        if (traveler->getPX() < int(mR.w * kShowPlayerPadding))
+            scrollX = -sS;
+        if (traveler->getPY() < int(mR.h * kShowPlayerPadding))
+            scrollY = -sS;
+        if (traveler->getPX() > int(mR.w * (1 - kShowPlayerPadding)))
+            scrollX = sS;
+        if (traveler->getPY() > int(mR.h * (1 - kShowPlayerPadding)))
+            scrollY = sS;
+    }
+    if (scrollX or scrollY)
+        game->moveView(scrollX, scrollY);
+    if (traveler.get() and not pause)
+        traveler->update(e);
 }
 
 void Player::createStartButtons() {
@@ -262,8 +469,10 @@ void Player::createStartButtons() {
     tx = {"(N)ew Game"};
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::uIForeground, Settings::uIBackground,
                                                  Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
-                                                 [this] { newGame(); 
-                                                 setState(beginning);}));
+                                                 [this] {
+                                                     game->newGame();
+                                                     setState(beginning);
+                                                 }));
     boxes.back()->setKey(SDLK_n);
     rt = {sR.w / 7, sR.h * 2 / 3, 0, 0};
     tx = {"(L)oad Game"};
@@ -284,10 +493,10 @@ void Player::createBeginButtons() {
     boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::bigBoxBorder,
                                               Settings::bigBoxRadius, Settings::bigBoxFontSize));
     boxes.back()->toggleLock();
-    for (auto &n : nations) {
+    for (auto &n : game->getNations()) {
         // Create a button for each nation to start in that nation.
-        rt = {sR.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6,
-              sR.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7, 0, 0};
+        rt = {sR.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6, sR.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7,
+              0, 0};
         boxes.push_back(std::make_unique<MenuButton>(rt, n.getNames(), n.getForeground(), n.getBackground(), n.getId(), true,
                                                      3, Settings::bigBoxRadius, Settings::bigBoxFontSize, [this, n] {
                                                          focusBox = -1;
@@ -296,10 +505,8 @@ void Player::createBeginButtons() {
                                                          if (name.empty())
                                                              name = n.randomName();
                                                          // Create traveler object for player
-                                                         traveler = std::make_shared<Traveler>(name, &towns[nId - 1], gameData);
-                                                         traveler->addToTown();
-                                                         showPlayer = true;
-                                                         place();
+                                                         traveler = game->createPlayerTraveler(nId, name);
+                                                         show = true;
                                                          setState(traveling);
                                                      }));
     }
@@ -318,7 +525,7 @@ void Player::createQuitButtons() {
     if (traveler) {
         tx = {"Save and Quit"};
         f = [this] {
-            saveGame();
+            game->saveGame();
             stop = true;
         };
     } else {
@@ -348,10 +555,10 @@ void Player::createLoadButtons() {
     boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::uIForeground, Settings::uIBackground, Settings::bigBoxBorder,
                                               Settings::bigBoxRadius, Settings::bigBoxFontSize));
     rt = {sR.w / 5, sR.h / 7, sR.w * 3 / 5, sR.h * 5 / 7};
-    boxes.push_back(
-        std::make_unique<SelectButton>(rt, saves, Settings::uIForeground, Settings::uIBackground, Settings::uIHighlight,
-                                       Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::bigBoxFontSize,
-                                       [this, path] { loadGame((path / boxes.back()->getItem()).replace_extension("sav")); }));
+    boxes.push_back(std::make_unique<SelectButton>(
+        rt, saves, Settings::uIForeground, Settings::uIBackground, Settings::uIHighlight, Settings::bigBoxBorder,
+        Settings::bigBoxRadius, Settings::bigBoxFontSize,
+        [this, path] { game->loadGame((path / boxes.back()->getItem()).replace_extension("sav")); }));
     focus(2, Focusable::box);
 }
 
@@ -369,8 +576,8 @@ void Player::createTravelButtons() {
                                                  Settings::smallBoxBorder, Settings::smallBoxRadius,
                                                  Settings::smallBoxFontSize, [this] {
                                                      if (focusTown > -1)
-                                                         traveler->pickTown(&towns[static_cast<size_t>(focusTown)]);
-                                                     showPlayer = true;
+                                                         game->pickTown(traveler, static_cast<size_t>(focusTown));
+                                                     show = true;
                                                      boxes[1]->setClicked(false);
                                                  }));
     boxes.back()->setKey(SDLK_g);
@@ -407,9 +614,9 @@ void Player::createLogBox() {
     boxes.back()->setKey(SDLK_l);
     // Create log box.
     rt = {sR.w / 15, sR.h * 2 / 15, sR.w * 13 / 15, sR.h * 11 / 15};
-    boxes.push_back(std::make_unique<ScrollBox>(rt, traveler->getLogText(), traveler->getNation()->getForeground(),
-                                                traveler->getNation()->getBackground(), traveler->getNation()->getHighlight(),
-                                                Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::fightFontSize));
+    boxes.push_back(std::make_unique<ScrollBox>(
+        rt, traveler->getLogText(), traveler->getNation()->getForeground(), traveler->getNation()->getBackground(),
+        traveler->getNation()->getHighlight(), Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::fightFontSize));
     boxes.back()->setHighlightLine(-1);
 }
 
@@ -420,39 +627,31 @@ void Player::createTradeButtons() {
     std::vector<std::string> tx = {"Stop (T)rading"};
     const SDL_Color &uIFgr = traveler->getNation()->getForeground(), &uIBgr = traveler->getNation()->getBackground();
     int b = Settings::smallBoxBorder, r = Settings::smallBoxRadius, fS = Settings::smallBoxFontSize;
-    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr,
-                                                 b, r,
-                                                 fS, [this] { setState(traveling); }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, b, r, fS, [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_t);
     focus(0, Focusable::box);
     rt.y -= boxes.back()->getRect().h * 3 / 2;
     tx = {"(C)omplete Trade"};
-    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr,
-                                                 b, r,
-                                                 fS, [this] {
-                                                     traveler->makeTrade();
-                                                     setState(trading);
-                                                 }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, b, r, fS, [this] {
+        traveler->makeTrade();
+        setState(trading);
+    }));
     boxes.back()->setKey(SDLK_c);
     rt.x += sR.w / 6;
     tx = {traveler->portionString()};
     portionBoxIndex = boxes.size();
-    boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr,
-                                              b, r,
-                                              fS));
+    boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, b, r, fS));
     boxes.back()->toggleLock();
     rt.y += boxes.back()->getRect().h * 3 / 2;
     tx = {"(S)et Portion"};
     setPortionButtonIndex = boxes.size();
-    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr,
-                                                 b, r,
-                                                 fS, [this] {
-                                                     double p;
-                                                     std::stringstream(boxes[portionBoxIndex]->getText().back()) >> p;
-                                                     traveler->setPortion(p);
-                                                     updatePortionBox();
-                                                     boxes[setPortionButtonIndex]->setClicked(false);
-                                                 }));
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, b, r, fS, [this] {
+        double p;
+        std::stringstream(boxes[portionBoxIndex]->getText().back()) >> p;
+        traveler->setPortion(p);
+        updatePortionBox();
+        boxes[setPortionButtonIndex]->setClicked(false);
+    }));
     boxes.back()->setKey(SDLK_s);
     // Create buttons for trading goods.
     int gBXD = Settings::goodButtonXDivisor, gBYD = Settings::goodButtonYDivisor;
@@ -471,7 +670,7 @@ void Player::createTradeButtons() {
     for (auto &g : traveler->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData, f));
+                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, game->getData(), f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -489,7 +688,7 @@ void Player::createTradeButtons() {
     for (auto &g : traveler->getTown()->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
-                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, b, r, fS, gameData, f));
+                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, b, r, fS, game->getData(), f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -503,9 +702,11 @@ void Player::updateTradeButtons() {
     // Update the values shown on trade portion, offer, and request boxes and set offer and request.
     std::string bN;
     double offerValue = 0;
-    auto rBB = boxes.begin() + requestButtonIndex; // iterator to first request button
+    auto rBB = boxes.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(
+                                   requestButtonIndex); // iterator to first request button
     // Loop through all boxes after cancel button and before first request button.
-    for (auto oBI = boxes.begin() + offerButtonIndex; oBI != rBB; ++oBI) {
+    for (auto oBI = boxes.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(offerButtonIndex);
+         oBI != rBB; ++oBI) {
         auto &g = traveler->getGood((*oBI)->getId()); // good corresponding to oBI
         auto &gMs = g.getMaterials();
         bN = (*oBI)->getText()[0]; // first name on button
@@ -548,9 +749,7 @@ void Player::updateTradeButtons() {
     traveler->divideExcess(excess);
 }
 
-void Player::updatePortionBox() {
-    boxes[portionBoxIndex]->setText(0, traveler->portionString());
-}
+void Player::updatePortionBox() { boxes[portionBoxIndex]->setText(0, traveler->portionString()); }
 
 void Player::createEquipButtons() {
     // Create buttons for equipping and unequipping items.
@@ -581,18 +780,17 @@ void Player::createEquipButtons() {
     int left = sR.w / gBXD, top = sR.h / gBYD;
     int dx = sR.w * 36 / gBXD, dy = sR.h * 31 / gBYD;
     rt = {left, top, sR.w * 35 / gBXD, sR.h * 29 / gBYD};
-    const SDL_Color &fgr = traveler->getNation()->getForeground(),
-                    &bgr = traveler->getNation()->getBackground();
+    const SDL_Color &fgr = traveler->getNation()->getForeground(), &bgr = traveler->getNation()->getBackground();
     int b = Settings::equipBorder, r = Settings::equipRadius, fS = Settings::equipFontSize;
     equipButtonIndex = boxes.size();
     for (auto &eP : equippable) {
         for (auto &e : eP) {
             boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS,
-                                            gameData, [this, e]() mutable {
-                                                    traveler->equip(e);
-                                                    // Refresh buttons.
-                                                    setState(equipping);
-                                                }));
+                                                   game->getData(), [this, e]() mutable {
+                                                       traveler->equip(e);
+                                                       // Refresh buttons.
+                                                       setState(equipping);
+                                                   }));
             rt.y += dy;
         }
         rt.y = top;
@@ -605,30 +803,29 @@ void Player::createEquipButtons() {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
         rt.x = left + static_cast<int>(pI) * dx;
-        boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS, gameData,
-                                            [this, pI, ss] {
-                                                traveler->unequip(pI);
-                                                // Equip fists.
-                                                for (auto &s : ss)
-                                                    traveler->equip(s.partId);
-                                                // Refresh buttons.
-                                                setState(equipping);
-                                            }));
+        boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS, game->getData(),
+                                               [this, pI, ss] {
+                                                   traveler->unequip(pI);
+                                                   // Equip fists.
+                                                   for (auto &s : ss)
+                                                       traveler->equip(s.partId);
+                                                   // Refresh buttons.
+                                                   setState(equipping);
+                                               }));
     }
 }
 
 void Player::createStorageButtons() {
     // Create buttons for storing goods.
     const SDL_Rect &sR = Settings::screenRect;
-    SDL_Rect rt;
-    const SDL_Color &fgr = traveler->getNation()->getForeground(),
-                    &bgr = traveler->getNation()->getBackground();
+    SDL_Rect rt = sR;
+    const SDL_Color &fgr = traveler->getNation()->getForeground(), &bgr = traveler->getNation()->getBackground();
     int b = Settings::tradeBorder, r = Settings::tradeRadius, fS = Settings::tradeFontSize;
     for (auto &g : traveler->getGoods())
         for (auto &m : g.getMaterials()) {
             Good dG(g.getId(), g.getAmount() * traveler->getPortion());
-            boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, gameData,
-                                  [this, &dG] { traveler->deposit(dG); }));
+            boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, game->getData(),
+                                     [this, &dG] { traveler->deposit(dG); }));
         }
 }
 
@@ -655,9 +852,9 @@ void Player::createAttackButton() {
     // Create attack button.
     rt = {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2};
     boxes.push_back(std::make_unique<SelectButton>(rt, names, traveler->getNation()->getForeground(),
-                                                   traveler->getNation()->getBackground(), traveler->getNation()->getHighlight(),
-                                                   Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::fightFontSize,
-                                                   [this, able] {
+                                                   traveler->getNation()->getBackground(),
+                                                   traveler->getNation()->getHighlight(), Settings::bigBoxBorder,
+                                                   Settings::bigBoxRadius, Settings::fightFontSize, [this, able] {
                                                        int i = boxes.back()->getHighlightLine();
                                                        if (i > -1) {
                                                            traveler->attack(able[static_cast<size_t>(i)]);
@@ -695,9 +892,9 @@ void Player::createFightBoxes() {
     rt = {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3};
     tx = {"Fight", "Run", "Yield"};
     boxes.push_back(std::make_unique<SelectButton>(rt, tx, traveler->getNation()->getForeground(),
-                                                   traveler->getNation()->getBackground(), traveler->getNation()->getHighlight(),
-                                                   Settings::bigBoxBorder, Settings::bigBoxRadius, Settings::fightFontSize,
-                                                   [this] {
+                                                   traveler->getNation()->getBackground(),
+                                                   traveler->getNation()->getHighlight(), Settings::bigBoxBorder,
+                                                   Settings::bigBoxRadius, Settings::fightFontSize, [this] {
                                                        int choice = boxes[kFightChoiceIndex]->getHighlightLine();
                                                        if (choice > -1) {
                                                            traveler->choose(static_cast<FightChoice>(choice));
@@ -706,8 +903,6 @@ void Player::createFightBoxes() {
                                                    }));
     focus(kFightChoiceIndex, Focusable::box);
 }
-
-
 
 void Player::updateFightBoxes() {
     // Create TextBox objects for fight user interface.
@@ -730,17 +925,16 @@ void Player::updateFightBoxes() {
     std::vector<std::string> statusText(7);
     statusText[0] = traveler->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[traveler->getPart(i - 1)];
+        statusText[i] = game->getData().parts[i - 1] + ": " + game->getData().statuses[traveler->getPart(i - 1)];
     boxes[1]->setText(statusText);
     auto t = traveler->getTarget().lock();
     if (not t)
         return;
     statusText[0] = t->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[t->getPart(i - 1)];
+        statusText[i] = game->getData().parts[i - 1] + ": " + game->getData().statuses[t->getPart(i - 1)];
     boxes[2]->setText(statusText);
 }
-
 
 void Player::createLootButtons() {
     const SDL_Rect &sR = Settings::screenRect;
@@ -777,7 +971,7 @@ void Player::createLootButtons() {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
                                          traveler->getNation()->getForeground(), traveler->getNation()->getBackground(),
-                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData,
+                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, game->getData(),
                                          [this, &g, &m, &t = *target] {
                                              Good l(g.getId(), m.getAmount());
                                              l.addMaterial(Material(m.getId(), m.getAmount()));
@@ -800,7 +994,7 @@ void Player::createLootButtons() {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
                                          traveler->getNation()->getForeground(), traveler->getNation()->getBackground(),
-                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, gameData,
+                                         Settings::tradeBorder, Settings::tradeRadius, Settings::tradeFontSize, game->getData(),
                                          [this, &g, &m, &t = *target] {
                                              Good l(g.getId(), m.getAmount());
                                              l.addMaterial(Material(m.getId(), m.getAmount()));
@@ -826,202 +1020,10 @@ void Player::createDyingBoxes() {
                                               Settings::bigBoxRadius, Settings::fightFontSize));
 }
 
-void Player::handleKey(const SDL_KeyboardEvent &k, SDL_Keymod mod) {
-    double d;
-        if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT) and (mod & KMOD_ALT))
-            d = 10000;
-        else if ((mod & KMOD_CTRL) and (mod & KMOD_ALT))
-            d = 0.001;
-        else if ((mod & KMOD_SHIFT) and (mod & KMOD_ALT))
-            d = 0.01;
-        else if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT))
-            d = 1000;
-        else if (mod & KMOD_ALT)
-            d = 0.1;
-        else if (mod & KMOD_SHIFT)
-            d = 10;
-        else if (mod & KMOD_CTRL)
-            d = 100;
-        else
-            d = 1;
-        if (k.state == SDL_PRESSED) {
-            if (not boxes.empty()) {
-                auto keyedBox = std::find_if(boxes.begin(), boxes.end(), [&k](const std::unique_ptr<TextBox> &t) {
-                    return k.keysym.sym == t->getKey();
-                });
-                if (keyedBox != boxes.end()) {
-                    // A box's key was pressed.
-                    focus(static_cast<int>(std::distance(boxes.begin(), keyedBox)), Focusable::box);
-                    (*keyedBox)->handleKey(k);
-                }
-            }
-            if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k))) {
-                if (state != quitting) {
-                    if (traveler) {
-                        double scrollSpeed = static_cast<double>(Settings::scroll);
-                        switch (state) {
-                        case traveling:
-                            switch (k.keysym.sym) {
-                            case SDLK_LEFT:
-                                scrollX = static_cast<int>(-scrollSpeed * d);
-                                showPlayer = false;
-                                break;
-                            case SDLK_RIGHT:
-                                scrollX = static_cast<int>(scrollSpeed * d);
-                                showPlayer = false;
-                                break;
-                            case SDLK_UP:
-                                scrollY = static_cast<int>(-scrollSpeed * d);
-                                showPlayer = false;
-                                break;
-                            case SDLK_DOWN:
-                                scrollY = static_cast<int>(scrollSpeed * d);
-                                showPlayer = false;
-                                break;
-                                /*case SDLK_u:
-                                      --offsetY;
-                                      place();
-                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
-                                  mapRect.y - 2250 << std::endl; break; case SDLK_j:
-                                      ++offsetY;
-                                      place();
-                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
-                                  mapRect.y - 2250 << std::endl; break; case SDLK_h:
-                                      --offsetX;
-                                      place();
-                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
-                                  mapRect.y - 2250 << std::endl; break; case SDLK_k:
-                                      ++offsetX;
-                                      place();
-                                      std::cout << "New Offsets: " << offsetX + mapRect.x - 3330 << "," << offsetY +
-                                  mapRect.y - 2250 << std::endl; break; case SDLK_s: focusPrev(Focusable::neighbor); break;
-                                  case SDLK_d:
-                                      focusNext(Focusable::neighbor);
-                                      break;*/
-                            }
-                            break;
-                        case trading:
-                            switch (k.keysym.sym) {
-                            case SDLK_LEFT:
-                                focusPrev(Focusable::box);
-                                break;
-                            case SDLK_RIGHT:
-                                focusNext(Focusable::box);
-                                break;
-                            case SDLK_UP:
-                                for (int i = 0; i < 7; ++i)
-                                    focusPrev(Focusable::box);
-                                break;
-                            case SDLK_DOWN:
-                                for (int i = 0; i < 7; ++i)
-                                    focusNext(Focusable::box);
-                                break;
-                            case SDLK_COMMA:
-                                traveler->changePortion(-0.1);
-                                updatePortionBox();
-                                break;
-                            case SDLK_PERIOD:
-                                traveler->changePortion(0.1);
-                                updatePortionBox();
-                                break;
-                            case SDLK_KP_MINUS:
-                                traveler->adjustAreas(boxes, requestButtonIndex, -d);
-                                break;
-                            case SDLK_KP_PLUS:
-                                traveler->adjustAreas(boxes, requestButtonIndex, d);
-                                break;
-                            case SDLK_m:
-                                saveData();
-                                break;
-                            case SDLK_o:
-                                traveler->adjustDemand(boxes, requestButtonIndex, -d);
-                                break;
-                            case SDLK_p:
-                                traveler->adjustDemand(boxes, requestButtonIndex, d);
-                                break;
-                            case SDLK_r:
-                                traveler->resetTown();
-                                break;
-                            case SDLK_x:
-                                traveler->toggleMaxGoods();
-                                break;
-                            }
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-                }
-                switch (k.keysym.sym) {
-                case SDLK_ESCAPE:
-                    toggleState(quitting);
-                    break;
-                case SDLK_TAB:
-                    if (SDL_GetModState() & KMOD_SHIFT)
-                        focusPrev(Focusable::box);
-                    else
-                        focusNext(Focusable::box);
-                    break;
-                case SDLK_n:
-                    saveRoutes();
-                    break;
-                }
-            } else
-                boxes[static_cast<size_t>(focusBox)]->handleKey(k);
-        } else {
-            if (not boxes.empty()) {
-                auto keyedBox = std::find_if(boxes.begin(), boxes.end(), [&k](const std::unique_ptr<TextBox> &t) {
-                    return k.keysym.sym == t->getKey();
-                });
-                if (keyedBox != boxes.end())
-                    // A box's key was released.
-                    (*keyedBox)->handleKey(k);
-            }
-            if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
-                switch (k.keysym.sym) {
-                case SDLK_LEFT:
-                case SDLK_RIGHT:
-                    scrollX = 0;
-                    break;
-                case SDLK_UP:
-                case SDLK_DOWN:
-                    scrollY = 0;
-                    break;
-                }
-            else
-                boxes[static_cast<size_t>(focusBox)]->handleKey(k);
-        }
-}
-
-void Player::handleTextInput(const SDL_TextInputEvent &t) {
-    if (focusBox > -1)
-        boxes[static_cast<size_t>(focusBox)]->handleTextInput(t);
-}
-
-void Player::handleClick(const SDL_MouseButtonEvent &b) {
-    if (not towns.empty() and state == traveling) {
-        auto clickedTown = std::find_if(towns.begin(), towns.end(),
-                                        [&b](const Town &t) { return t.clickCaptured(b); });
-        if (clickedTown != towns.end())
-            focus(static_cast<int>(std::distance(towns.begin(), clickedTown)), Focusable::town);
-    }
-    if (not boxes.empty()) {
-        auto clickedBox = std::find_if(boxes.begin(), boxes.end(), [&b](const std::unique_ptr<TextBox> &t) {
-            return t->getCanFocus() and t->clickCaptured(b);
-        });
-        if (clickedBox != boxes.end()) {
-            int cI = static_cast<int>(std::distance(boxes.begin(), clickedBox));
-            if (cI != focusBox)
-                focus(cI, Focusable::box);
-            (*clickedBox)->handleClick(b);
-        } else
-            focus(-1, Focusable::box);
-    }
-}
-
 void Player::draw(SDL_Renderer *s) {
+    if (traveler.get())
+        traveler->draw(s);
     for (auto &b : boxes) {
         b->draw(s);
     }
-    traveler->draw(s);
 }

@@ -192,11 +192,7 @@ void Traveler::setPortion(double d) {
         portion = 1;
 }
 
-void Traveler::changePortion(double d) {
-    setPortion(portion + d);
-}
-
-
+void Traveler::changePortion(double d) { setPortion(portion + d); }
 
 void Traveler::pickTown(const Town *t) {
     if (netWeight() > 0 /* or moving*/)
@@ -221,7 +217,6 @@ void Traveler::draw(SDL_Renderer *s) const {
         col = Settings::playerColor;
     drawCircle(s, px, py, 1, col, true);
 }
-
 
 void Traveler::makeTrade() {
     if (not(offer.empty() or request.empty())) {
