@@ -131,11 +131,11 @@ Game::~Game() {
 
 void Game::loadDisplayVariables() {
     // Load screen height and width and starting offsets and scale from settings.
-    screenRect = Settings::screenRect;
-    mapRect = Settings::mapRect;
-    offsetX = Settings::offsetX;
-    offsetY = Settings::offsetY;
-    scale = Settings::scale;
+    screenRect = Settings::getScreenRect();
+    mapRect = Settings::getMapRect();
+    offsetX = Settings::getOffsetX();
+    offsetY = Settings::getOffsetY();
+    scale = Settings::getScale();
 }
 
 void Game::renderMapTexture() {
@@ -213,7 +213,7 @@ void Game::loadNations(sqlite3 *c) {
     }
     sqlite3_finalize(quer);
     // Load good images.
-    int tradeHeight = screenRect.h * 29 / Settings::goodButtonYDivisor - 2 * Settings::tradeBorder;
+    int tradeHeight = screenRect.h * 29 / Settings::getGoodButtonYDivisor() - 2 * Settings::getTradeBorder();
     SDL_Rect rt = {0, 0, tradeHeight, tradeHeight};
     gameData.goodImages.resize(goods.size());
     for (size_t i = 0; i < goods.size(); ++i) {
@@ -290,9 +290,10 @@ void Game::newGame() {
         std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
     loadNations(conn);
     // Load towns from sqlite database.
+    const SDL_Color &fgr = Settings::getLoadBarColor(), &bgr = Settings::getUIForeground();
+    int b = Settings::getBigBoxBorder(), r = Settings::getBigBoxRadius(), fS = Settings::getLoadBarFontSize();
     LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                    {"Loading towns..."}, Settings::loadBarColor, Settings::uIForeground, Settings::bigBoxBorder,
-                    Settings::bigBoxRadius, Settings::loadBarFontSize);
+                    {"Loading towns..."}, fgr, bgr, b, r, fS);
     // Load businesses.
     sqlite3_stmt *quer;
     sqlite3_prepare_v2(conn, "SELECT modes FROM businesses", -1, &quer, nullptr);
@@ -327,7 +328,7 @@ void Game::newGame() {
     SDL_Texture *freezeTexture = SDL_CreateTextureFromSurface(screen, freezeSurface);
     while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
         SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
-        towns.push_back(Town(quer, nations, businesses, frequencyFactors, Settings::townFontSize));
+        towns.push_back(Town(quer, nations, businesses, frequencyFactors, Settings::getTownFontSize()));
         loadBar.progress(1. / tC);
         loadBar.draw(screen);
         SDL_RenderPresent(screen);
@@ -346,7 +347,7 @@ void Game::newGame() {
     for (auto &t : towns) {
         SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
         t.loadNeighbors(towns, routes[t.getId() - 1]);
-        t.update(Settings::businessRunTime);
+        t.update(Settings::getBusinessRunTime());
         loadBar.progress(1. / tC);
         loadBar.draw(screen);
         SDL_RenderPresent(screen);
@@ -394,11 +395,11 @@ void Game::loadGame(const fs::path &p) {
         auto game = Save::GetGame(buffer);
         auto lTowns = game->towns();
         LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                        {"Loading towns..."}, Settings::loadBarColor, Settings::uIForeground, Settings::bigBoxBorder,
-                        Settings::bigBoxRadius, Settings::loadBarFontSize);
+                        {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(), Settings::getBigBoxBorder(),
+                        Settings::getBigBoxRadius(), Settings::getLoadBarFontSize());
         towns.reserve(lTowns->size());
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
-            towns.push_back(Town(*lTI, nations, Settings::townFontSize));
+            towns.push_back(Town(*lTI, nations, Settings::getTownFontSize()));
             loadBar.progress(1. / lTowns->size());
             loadBar.draw(screen);
             SDL_RenderPresent(screen);
@@ -505,8 +506,8 @@ void Game::draw() {
 void Game::saveRoutes() {
     // Recalculate routes between towns and save new routes to database.
     LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                    {"Finding routes..."}, {0, 255, 0, 255}, Settings::uIForeground, Settings::bigBoxRadius,
-                    Settings::bigBoxBorder, Settings::loadBarFontSize);
+                    {"Finding routes..."}, {0, 255, 0, 255}, Settings::getUIForeground(), Settings::getBigBoxRadius(),
+                    Settings::getBigBoxBorder(), Settings::getLoadBarFontSize());
     for (auto &t : towns) {
         t.findNeighbors(towns, mapSurface, mapRect.x, mapRect.y);
         loadBar.progress(1. / static_cast<double>(towns.size()));

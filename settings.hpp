@@ -30,7 +30,7 @@ namespace pt = boost::property_tree;
 
 #include <SDL2/SDL.h>
 
-struct Settings {
+class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapRect;
     static SDL_Color uIForeground;
@@ -96,7 +96,7 @@ struct Settings {
     static int getBigBoxBorder() { return bigBoxBorder; }
     static int getBigBoxRadius() { return bigBoxRadius; }
     static int getBigBoxFontSize() { return bigBoxFontSize; }
-    static int getLoadBarDivisor() { return loadBarFontSize; }
+    static int getLoadBarFontSize() { return loadBarFontSize; }
     static int getSmallBoxBorder() { return smallBoxBorder; }
     static int getSmallBoxRadius() { return smallBoxRadius; }
     static int getSmallBoxFontSize() { return smallBoxFontSize; }
@@ -129,7 +129,7 @@ struct Settings {
     static double getLimitFactorMin() { return limitFactorMin; }
     static double getLimitFactorMax() { return limitFactorMax; }
     static double getAIAttackThreshold() { return aIAttackThreshold; }
-    static std::mt19937 *getRng() { return &rng; }
+    static std::mt19937 &getRng() { return rng; }
 };
 
 #endif // SETTINGS_H

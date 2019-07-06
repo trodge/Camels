@@ -57,10 +57,10 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     // Start with enough inputs for one run cycle.
     resetGoods();
     // randomize business run counter
-    static std::uniform_int_distribution<unsigned int> dis(0, Settings::businessRunTime);
-    businessCounter = static_cast<int>(dis(Settings::rng));
-    travelersDis = std::uniform_int_distribution<>(Settings::travelersMin,
-                                                   static_cast<int>(pow(population, Settings::travelersExponent)));
+    static std::uniform_int_distribution<unsigned int> dis(0, Settings::getBusinessRunTime());
+    businessCounter = static_cast<int>(dis(Settings::getRng()));
+    travelersDis = std::uniform_int_distribution<>(Settings::getTravelersMin(),
+                                                   static_cast<int>(pow(population, Settings::getTravelersExponent())));
 }
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS)
@@ -104,10 +104,10 @@ void Town::setMax() {
                 // Livestock get full space for input amounts.
                 goods[ip.getId()].setMax(ip.getAmount());
             else
-                goods[ip.getId()].setMax(ip.getAmount() * Settings::inputSpaceFactor);
+                goods[ip.getId()].setMax(ip.getAmount() * Settings::getInputSpaceFactor());
         }
         for (auto &op : ops)
-            goods[op.getId()].setMax(op.getAmount() * Settings::outputSpaceFactor);
+            goods[op.getId()].setMax(op.getAmount() * Settings::getOutputSpaceFactor());
     }
 }
 
@@ -126,7 +126,7 @@ void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
 }
 
 void Town::drawRoutes(SDL_Renderer *s) {
-    const SDL_Color &col = Settings::routeColor;
+    const SDL_Color &col = Settings::getRouteColor();
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
     for (auto &n : neighbors) {
         SDL_RenderDrawLine(s, dpx, dpy, n->dpx, n->dpy);
@@ -145,9 +145,9 @@ void Town::drawDot(SDL_Renderer *s) {
 
 void Town::update(unsigned int e) {
     businessCounter += e;
-    if (businessCounter > static_cast<int>(Settings::businessRunTime)) {
+    if (businessCounter > static_cast<int>(Settings::getBusinessRunTime())) {
         for (auto &g : goods)
-            g.consume(Settings::businessRunTime);
+            g.consume(Settings::getBusinessRunTime());
         std::vector<int> conflicts(goods.size(), 0);
         if (maxGoods) // When maxGoods is true, towns create as many goods as possible for testing purposes.
             for (auto &g : goods) {
@@ -164,7 +164,7 @@ void Town::update(unsigned int e) {
             }
         for (auto &b : businesses) {
             // For each business, start by setting factor to business run time.
-            b.setFactor(Settings::businessRunTime / static_cast<double>(kDaysPerYear * Settings::dayLength));
+            b.setFactor(Settings::getBusinessRunTime() / static_cast<double>(kDaysPerYear * Settings::getDayLength()));
             // Count conflicts of businesses for available goods.
             b.addConflicts(conflicts, goods);
         }
@@ -174,7 +174,7 @@ void Town::update(unsigned int e) {
             // Run businesses on town's goods.
             b.run(goods);
         }
-        businessCounter -= Settings::businessRunTime;
+        businessCounter -= Settings::getBusinessRunTime();
     }
 }
 
@@ -184,7 +184,7 @@ void Town::put(Good &g) { goods[g.getId()].put(g); }
 
 void Town::generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Traveler>> &ts) {
     // Create a random number of travelers from this town, weighted down
-    int n = travelersDis(Settings::rng);
+    int n = travelersDis(Settings::getRng());
     if (n < 0)
         n = 0;
     ts.reserve(ts.size() + static_cast<size_t>(n));
@@ -239,11 +239,11 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
                 if (mx >= 0 and mx < mS->w and my >= 0 and my < mS->h)
                     SDL_GetRGB(getAt(mS, mx, my), mS->format, &r, &g, &b);
                 else {
-                    r = Settings::waterColor.r;
-                    g = Settings::waterColor.g;
-                    b = Settings::waterColor.b;
+                    r = Settings::getWaterColor().r;
+                    g = Settings::getWaterColor().g;
+                    b = Settings::getWaterColor().b;
                 }
-                if (r <= Settings::waterColor.r and g <= Settings::waterColor.g and b >= Settings::waterColor.b) {
+                if (r <= Settings::getWaterColor().r and g <= Settings::getWaterColor().g and b >= Settings::getWaterColor().b) {
                     ++water;
                 }
             }
@@ -321,8 +321,8 @@ void Town::resetGoods() {
             if (ip == b.getOutputs().back())
                 goods[ip.getId()].create(ip.getAmount());
             else
-                goods[ip.getId()].create(ip.getAmount() * Settings::businessRunTime /
-                                         static_cast<double>(Settings::dayLength * kDaysPerYear));
+                goods[ip.getId()].create(ip.getAmount() * Settings::getBusinessRunTime() /
+                                         static_cast<double>(Settings::getDayLength() * kDaysPerYear));
 }
 
 void Town::saveFrequencies(std::string &u) const {

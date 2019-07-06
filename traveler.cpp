@@ -35,9 +35,9 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     equip(2);
     equip(3);
     // Randomize stats.
-    static std::uniform_int_distribution<unsigned int> dis(1, Settings::statMax);
+    static std::uniform_int_distribution<unsigned int> dis(1, Settings::getStatMax());
     for (auto &s : stats)
-        s = dis(Settings::rng);
+        s = dis(Settings::getRng());
     // Set parts status to normal.
     parts.fill(0);
 }
@@ -162,7 +162,7 @@ double Traveler::requestGood(const Good &g, const Material &m, double oV, int rC
     // Add the given good and material to request. Return excess amount of good.
     double excess = 0;
     // Calculate amount based on offer value divided by request count.
-    double amount = m.getQuantity(oV / rC * Settings::townProfit, excess);
+    double amount = m.getQuantity(oV / rC * Settings::getTownProfit(), excess);
     if (not g.getSplit())
         // Remove extra portion of goods that don't split.
         excess += modf(amount, &amount);
@@ -177,7 +177,7 @@ void Traveler::divideExcess(double e) {
     e /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
-        double q = tM.getQuantity(e / Settings::townProfit);
+        double q = tM.getQuantity(e / Settings::getTownProfit());
         if (not goods[of.getId()].getSplit())
             q = floor(q);
         of.use(q);
@@ -212,9 +212,9 @@ void Traveler::place(int ox, int oy, double s) {
 void Traveler::draw(SDL_Renderer *s) const {
     SDL_Color col;
     if (ai)
-        col = Settings::aIColor;
+        col = Settings::getAIColor();
     else
-        col = Settings::playerColor;
+        col = Settings::getPlayerColor();
     drawCircle(s, px, py, 1, col, true);
 }
 
@@ -349,7 +349,7 @@ std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
         // Eliminate travelers which are too far away or have reached town or are already fighting or are this traveler.
         able.erase(std::remove_if(able.begin(), able.end(),
                                   [this](std::shared_ptr<Traveler> t) {
-                                      return t->toTown == t->fromTown or distSq(t->px, t->py) > Settings::attackDistSq or
+                                      return t->toTown == t->fromTown or distSq(t->px, t->py) > Settings::getAttackDistSq() or
                                              t->target.lock() or not t->alive() or t == shared_from_this();
                                   }),
                    able.end());
@@ -403,7 +403,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
             }
             auto cO = gameData.odds[type - 1];
             // Calculate number of swings before hit happens.
-            double r = d(Settings::rng);
+            double r = d(Settings::getRng());
             double p = attack / cO.hitOdds / defense[type - 1];
             double time;
             if (p < 1)
@@ -413,10 +413,10 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
             if (time < first.time) {
                 first.time = time;
                 // Pick a random part.
-                first.partId = static_cast<unsigned int>(d(Settings::rng) * static_cast<double>(parts.size()));
+                first.partId = static_cast<unsigned int>(d(Settings::getRng()) * static_cast<double>(parts.size()));
                 // Start status at part's current status.
                 first.status = t.parts[first.partId];
-                r = d(Settings::rng);
+                r = d(Settings::getRng());
                 auto sCI = cO.statusChances.begin();
                 while (r > 0 and sCI != cO.statusChances.end()) {
                     // Find status such that part becomes more damaged.
@@ -530,7 +530,7 @@ void Traveler::runAI(unsigned int e) {
 void Traveler::update(unsigned int e) {
     // Move traveler toward destination and perform combat with target.
     if (toTown and moving) {
-        double t = static_cast<double>(e) / static_cast<double>(Settings::dayLength);
+        double t = static_cast<double>(e) / static_cast<double>(Settings::getDayLength());
         // Take a step toward town.
         double dlt = toTown->getLatitude() - latitude;
         double dlg = toTown->getLongitude() - longitude;
@@ -575,8 +575,8 @@ void Traveler::update(unsigned int e) {
                 break;
             case FightChoice::run:
                 // Check if target escapes.
-                escapeChance = Settings::escapeChance * t->speed() / speed();
-                if (dis(Settings::rng) > escapeChance) {
+                escapeChance = Settings::getEscapeChance() * t->speed() / speed();
+                if (dis(Settings::getRng()) > escapeChance) {
                     // Target is caught, fight.
                     t->choice = FightChoice::fight;
                     runFight(*t, e, dis);

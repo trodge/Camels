@@ -21,7 +21,7 @@
 
 Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI)
     : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
-      minPrice(dI / Settings::minPriceDivisor), lastAmount(a) {}
+      minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a) {}
 
 Material::Material(unsigned int i, const std::string &n, double c, double dS, double dI) : Material(i, n, 0, c, dS, dI) {}
 
@@ -208,7 +208,7 @@ void Material::create(double a) {
 double Material::perish(unsigned int e, double p) {
     // Perish this material for e milliseconds with maximum shelf life p years. Find the first perish counter that will
     // expire.
-    PerishCounter ePC = {int(p * Settings::dayLength * kDaysPerYear - e), 0};
+    PerishCounter ePC = {int(p * Settings::getDayLength() * kDaysPerYear - e), 0};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), ePC);
     // Remove expired amounts from amount and total them.
     double a =
@@ -231,7 +231,7 @@ double Material::perish(unsigned int e, double p) {
 
 double Material::consume(unsigned int e) {
     lastAmount = amount;
-    double c = consumption * e / kDaysPerYear / Settings::dayLength;
+    double c = consumption * e / kDaysPerYear / Settings::getDayLength();
     if (c > amount)
         c = amount;
     if (c > 0.)
@@ -267,7 +267,7 @@ void Material::updateButton(bool gS, double oV, int rC, TextBox *b) const {
     // Update amount shown on this material's button
     std::string amountText;
     if (rC and oV > 0.) {
-        double quantity = getQuantity(oV / rC * Settings::townProfit);
+        double quantity = getQuantity(oV / rC * Settings::getTownProfit());
         amountText = std::to_string(std::min(quantity, amount));
     } else
         amountText = std::to_string(amount);
