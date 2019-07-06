@@ -81,6 +81,10 @@ void loadColor(const std::string &n, SDL_Color *c, const SDL_Color &d, const pt:
 }
 
 void Settings::load(const fs::path &p) {
+    if (not fs::exists(p)) {
+        fs::ofstream s(p);
+        s.close();
+    }
     pt::ptree tree;
     pt::read_ini(p.string(), tree);
     SDL_DisplayMode current;
