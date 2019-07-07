@@ -395,8 +395,8 @@ void Game::loadGame(const fs::path &p) {
         auto game = Save::GetGame(buffer);
         auto lTowns = game->towns();
         LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                        {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(), Settings::getBigBoxBorder(),
-                        Settings::getBigBoxRadius(), Settings::getLoadBarFontSize());
+                        {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
+                        Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize());
         towns.reserve(lTowns->size());
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
             towns.push_back(Town(*lTI, nations, Settings::getTownFontSize()));
@@ -478,14 +478,14 @@ void Game::update() {
     if (not(player->getPause())) {
         for (auto &t : towns)
             t.update(elapsed);
-        for (auto &t : aITravelers)
+        for (auto &t : aITravelers) {
             t->runAI(elapsed);
-        for (auto &t : aITravelers)
             t->update(elapsed);
-        for (auto &t : aITravelers)
             t->place(offsetX, offsetY, scale);
+        }
     }
     player->update(elapsed);
+    player->place(offsetX, offsetY, scale);
 }
 
 void Game::draw() {
@@ -574,20 +574,17 @@ void Game::saveGame() {
 void Game::fillFocusableTowns(std::vector<Focusable *> &fcbls) {
     // Fill the focusables vector with towns.
     for (auto &t : towns)
-        fcbls.push_back(&t);    
+        fcbls.push_back(&t);
 }
 
 std::shared_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) {
     if (n.empty())
         n = nations[nId].randomName();
     // Create traveler object for player
-    auto traveler =
-        std::make_shared<Traveler>(n, &towns[nId - 1], gameData);
+    auto traveler = std::make_shared<Traveler>(n, &towns[nId - 1], gameData);
     traveler->addToTown();
     traveler->place(offsetX, offsetY, scale);
     return traveler;
 }
 
-void Game::pickTown(std::shared_ptr<Traveler> t, size_t tId) {
-    t->pickTown(&towns[tId]);
-}
+void Game::pickTown(std::shared_ptr<Traveler> t, size_t tId) { t->pickTown(&towns[tId]); }

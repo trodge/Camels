@@ -65,7 +65,6 @@ unsigned int Settings::aITownRange;
 double Settings::limitFactorMin, Settings::limitFactorMax;
 double Settings::aIAttackThreshold;
 
-
 std::mt19937 Settings::rng(static_cast<unsigned long>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
 
 void loadRect(const std::string &n, SDL_Rect *r, const SDL_Rect &d, const pt::ptree &t) {

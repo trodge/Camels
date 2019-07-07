@@ -64,11 +64,11 @@ void AI::randomizeLimitFactors(const std::vector<Good> &gs) {
 
 void AI::randomizeCriteria() {
     // Randomize AI decision criteria.
-    static std::uniform_real_distribution<> rDis(1, Settings::getCriteriaMax());
+    static std::uniform_real_distribution<double> rDis(1, Settings::getCriteriaMax());
     for (auto &c : decisionCriteria)
         c = rDis(Settings::getRng());
     // Randomize decision counter.
-    static std::uniform_int_distribution<> iDis(0, Settings::getAIDecisionTime());
+    static std::uniform_int_distribution<int> iDis(0, Settings::getAIDecisionTime());
     decisionCounter = iDis(Settings::getRng());
 }
 

@@ -41,6 +41,7 @@ class Player {
     size_t portionBoxIndex;                      // index of box for setting portion
     size_t setPortionButtonIndex;                // index of button for setting portion
     size_t equipButtonIndex;                     // index of first equip button
+    size_t lootButtonIndex;                      // index of first loot button
     enum UIState {
         starting,
         beginning,
@@ -63,24 +64,9 @@ class Player {
     void focus(int f, Focusable::FocusGroup g);
     void focusPrev(Focusable::FocusGroup g);
     void focusNext(Focusable::FocusGroup g);
-    void createStartButtons();
-    void createBeginButtons();
-    void createQuitButtons();
-    void createLoadButtons();
     void createTravelButtons();
-    void createLogBox();
-    void createTradeButtons();
-    void updateTradeButtons();
     void updatePortionBox();
     void createStorageView(const Town *t);
-    void createEquipButtons();
-    void createStorageButtons();
-    void createManageButtons();
-    void createAttackButton();
-    void createFightBoxes();
-    void updateFightBoxes();
-    void createLootButtons();
-    void createDyingBoxes();
     void setState(UIState s);
     void toggleState(UIState s);
     void handleKey(const SDL_KeyboardEvent &k);

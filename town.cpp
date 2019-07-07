@@ -243,7 +243,8 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
                     g = Settings::getWaterColor().g;
                     b = Settings::getWaterColor().b;
                 }
-                if (r <= Settings::getWaterColor().r and g <= Settings::getWaterColor().g and b >= Settings::getWaterColor().b) {
+                if (r <= Settings::getWaterColor().r and g <= Settings::getWaterColor().g and
+                    b >= Settings::getWaterColor().b) {
                     ++water;
                 }
             }
