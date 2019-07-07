@@ -19,11 +19,11 @@
 
 #include "player.hpp"
 
-Player::Player(Game *g) : game(g) {}
+Player::Player(Game &g) : game(g) {}
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
-    traveler = std::make_shared<Traveler>(t, ts, game->getNations(), game->getData());
+    traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
 void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls) {
@@ -43,15 +43,15 @@ void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focu
             neighbors.begin());
         s = static_cast<int>(neighbors.size());
         if (i == s) {
-            if (focusTown > -1 and static_cast<size_t>(focusTown) < game->getTowns().size())
-                game->unFocusTown(static_cast<size_t>(focusTown));
+            if (focusTown > -1 and static_cast<size_t>(focusTown) < game.getTowns().size())
+                game.unFocusTown(static_cast<size_t>(focusTown));
             i = -1;
         }
         fcbls = std::vector<Focusable *>(neighbors.begin(), neighbors.end());
         break;
     case Focusable::town:
         i = focusTown;
-        game->fillFocusableTowns(fcbls);
+        game.fillFocusableTowns(fcbls);
         s = static_cast<int>(fcbls.size());
         break;
     }
@@ -300,7 +300,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             traveler->adjustAreas(boxes, requestButtonIndex, d);
                             break;
                         case SDLK_m:
-                            game->saveData();
+                            game.saveData();
                             break;
                         case SDLK_o:
                             traveler->adjustDemand(boxes, requestButtonIndex, -d);
@@ -332,7 +332,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                     focusNext(Focusable::box);
                 break;
             case SDLK_n:
-                game->saveRoutes();
+                game.saveRoutes();
                 break;
             }
         } else
@@ -369,7 +369,7 @@ void Player::handleTextInput(const SDL_TextInputEvent &t) {
 void Player::handleClick(const SDL_MouseButtonEvent &b) {
     if (state == traveling) {
         std::vector<Focusable *> fcbls;
-        game->fillFocusableTowns(fcbls);
+        game.fillFocusableTowns(fcbls);
         auto clickedTown = std::find_if(fcbls.begin(), fcbls.end(), [&b](const Focusable *t) { return t->clickCaptured(b); });
         if (clickedTown != fcbls.end())
             focus(static_cast<int>(std::distance(fcbls.begin(), clickedTown)), Focusable::town);
@@ -442,7 +442,7 @@ void Player::update(unsigned int e) {
     if (show) {
         scrollX = 0;
         scrollY = 0;
-        const SDL_Rect &mR = game->getMapRect();
+        const SDL_Rect &mR = game.getMapRect();
         int sS = Settings::getScroll();
         if (traveler->getPX() < int(mR.w * kShowPlayerPadding))
             scrollX = -sS;
@@ -454,7 +454,7 @@ void Player::update(unsigned int e) {
             scrollY = sS;
     }
     if (scrollX or scrollY)
-        game->moveView(scrollX, scrollY);
+        game.moveView(scrollX, scrollY);
     if (traveler.get() and not pause)
         traveler->update(e);
 }
@@ -470,7 +470,7 @@ void Player::createStartButtons() {
     boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
                                                  Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getBigBoxFontSize(),
                                                  [this] {
-                                                     game->newGame();
+                                                     game.newGame();
                                                      setState(beginning);
                                                  }));
     boxes.back()->setKey(SDLK_n);
@@ -493,7 +493,7 @@ void Player::createBeginButtons() {
     boxes.push_back(std::make_unique<TextBox>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(), Settings::getBigBoxBorder(),
                                               Settings::getBigBoxRadius(), Settings::getBigBoxFontSize()));
     boxes.back()->toggleLock();
-    for (auto &n : game->getNations()) {
+    for (auto &n : game.getNations()) {
         // Create a button for each nation to start in that nation.
         rt = {sR.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6, sR.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7,
               0, 0};
@@ -505,7 +505,7 @@ void Player::createBeginButtons() {
                                                          if (name.empty())
                                                              name = n.randomName();
                                                          // Create traveler object for player
-                                                         traveler = game->createPlayerTraveler(nId, name);
+                                                         traveler = game.createPlayerTraveler(nId, name);
                                                          show = true;
                                                          setState(traveling);
                                                      }));
@@ -525,7 +525,7 @@ void Player::createQuitButtons() {
     if (traveler) {
         tx = {"Save and Quit"};
         f = [this] {
-            game->saveGame();
+            game.saveGame();
             stop = true;
         };
     } else {
@@ -558,7 +558,7 @@ void Player::createLoadButtons() {
     boxes.push_back(std::make_unique<SelectButton>(
         rt, saves, Settings::getUIForeground(), Settings::getUIBackground(), Settings::getUIHighlight(), Settings::getBigBoxBorder(),
         Settings::getBigBoxRadius(), Settings::getBigBoxFontSize(),
-        [this, path] { game->loadGame((path / boxes.back()->getItem()).replace_extension("sav")); }));
+        [this, path] { game.loadGame((path / boxes.back()->getItem()).replace_extension("sav")); }));
     focus(2, Focusable::box);
 }
 
@@ -576,7 +576,7 @@ void Player::createTravelButtons() {
                                                  Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
                                                  Settings::getSmallBoxFontSize(), [this] {
                                                      if (focusTown > -1)
-                                                         game->pickTown(traveler, static_cast<size_t>(focusTown));
+                                                         game.pickTown(traveler, static_cast<size_t>(focusTown));
                                                      show = true;
                                                      boxes[1]->setClicked(false);
                                                  }));
@@ -670,7 +670,7 @@ void Player::createTradeButtons() {
     for (auto &g : traveler->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, game->getData(), f));
+                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, game.getData(), f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -688,7 +688,7 @@ void Player::createTradeButtons() {
     for (auto &g : traveler->getTown()->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.00 and g.getSplit()) or (m.getAmount() >= 0)) {
-                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, b, r, fS, game->getData(), f));
+                boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, b, r, fS, game.getData(), f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -756,9 +756,9 @@ void Player::createEquipButtons() {
     const SDL_Rect &sR = Settings::getScreenRect();
     SDL_Rect rt = {sR.w / 2, sR.h * 14 / 15, 0, 0};
     std::vector<std::string> tx = {"Stop (E)quipping"};
-    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
-                                                 Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
-                                                 Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
+    const SDL_Color &uIFgr = Settings::getUIForeground(), &uIBgr = Settings::getUIBackground();
+    int b = Settings::getSmallBoxBorder(), r = Settings::getSmallBoxRadius(), fS = Settings::getSmallBoxFontSize();
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, b, r, fS, [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_e);
     focus(0, Focusable::box);
     // Create array of vectors of equippable goods corresponding to each part that can hold equipment.
@@ -781,12 +781,14 @@ void Player::createEquipButtons() {
     int dx = sR.w * 36 / gBXD, dy = sR.h * 31 / gBYD;
     rt = {left, top, sR.w * 35 / gBXD, sR.h * 29 / gBYD};
     const SDL_Color &fgr = traveler->getNation()->getForeground(), &bgr = traveler->getNation()->getBackground();
-    int b = Settings::getEquipBorder(), r = Settings::getEquipRadius(), fS = Settings::getEquipFontSize();
+    b = Settings::getEquipBorder();
+    r = Settings::getEquipRadius();
+    fS = Settings::getEquipFontSize();
     equipButtonIndex = boxes.size();
     for (auto &eP : equippable) {
         for (auto &e : eP) {
             boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS,
-                                                   game->getData(), [this, e]() mutable {
+                                                   game.getData(), [this, e]() mutable {
                                                        traveler->equip(e);
                                                        // Refresh buttons.
                                                        setState(equipping);
@@ -803,7 +805,7 @@ void Player::createEquipButtons() {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
         rt.x = left + static_cast<int>(pI) * dx;
-        boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS, game->getData(),
+        boxes.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, b, r, fS, game.getData(),
                                                [this, pI, ss] {
                                                    traveler->unequip(pI);
                                                    // Equip fists.
@@ -824,7 +826,7 @@ void Player::createStorageButtons() {
     for (auto &g : traveler->getGoods())
         for (auto &m : g.getMaterials()) {
             Good dG(g.getId(), g.getAmount() * traveler->getPortion());
-            boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, game->getData(),
+            boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, b, r, fS, game.getData(),
                                      [this, &dG] { traveler->deposit(dG); }));
         }
 }
@@ -839,9 +841,9 @@ void Player::createAttackButton() {
     const SDL_Rect &sR = Settings::getScreenRect();
     SDL_Rect rt = {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0};
     std::vector<std::string> tx = {"Cancel (F)ight"};
-    boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
-                                                 Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
-                                                 Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
+    const SDL_Color &uIFgr = Settings::getUIForeground(), &uIBgr = Settings::getUIBackground();
+    int b = Settings::getSmallBoxBorder(), r = Settings::getSmallBoxRadius(), fS = Settings::getSmallBoxFontSize();
+    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, b, r, fS, [this] { setState(traveling); }));
     boxes.back()->setKey(SDLK_f);
     // Create vector of names of attackable travelers.
     auto able = traveler->attackable();
@@ -925,14 +927,14 @@ void Player::updateFightBoxes() {
     std::vector<std::string> statusText(7);
     statusText[0] = traveler->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = game->getData().parts[i - 1] + ": " + game->getData().statuses[traveler->getPart(i - 1)];
+        statusText[i] = game.getData().parts[i - 1] + ": " + game.getData().statuses[traveler->getPart(i - 1)];
     boxes[1]->setText(statusText);
     auto t = traveler->getTarget().lock();
     if (not t)
         return;
     statusText[0] = t->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = game->getData().parts[i - 1] + ": " + game->getData().statuses[t->getPart(i - 1)];
+        statusText[i] = game.getData().parts[i - 1] + ": " + game.getData().statuses[t->getPart(i - 1)];
     boxes[2]->setText(statusText);
 }
 
@@ -971,7 +973,7 @@ void Player::createLootButtons() {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
                                          traveler->getNation()->getForeground(), traveler->getNation()->getBackground(),
-                                         Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), game->getData(),
+                                         Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), game.getData(),
                                          [this, &g, &m, &t = *target] {
                                              Good l(g.getId(), m.getAmount());
                                              l.addMaterial(Material(m.getId(), m.getAmount()));
@@ -994,7 +996,7 @@ void Player::createLootButtons() {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 boxes.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt,
                                          traveler->getNation()->getForeground(), traveler->getNation()->getBackground(),
-                                         Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), game->getData(),
+                                         Settings::getTradeBorder(), Settings::getTradeRadius(), Settings::getTradeFontSize(), game.getData(),
                                          [this, &g, &m, &t = *target] {
                                              Good l(g.getId(), m.getAmount());
                                              l.addMaterial(Material(m.getId(), m.getAmount()));

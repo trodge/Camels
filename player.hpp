@@ -33,7 +33,7 @@ class Player {
     std::shared_ptr<Traveler> traveler;
     std::vector<std::unique_ptr<TextBox>> boxes, storedBoxes;
     int focusBox = -1; // index of box currently focused, -1 if no focus
-    Game *game;
+    Game &game;
     bool stop = false, show = false, pause = false, storedPause = true;
     int scrollX = 0, scrollY = 0;
     int focusTown = -1;                          // index of town currently focused, -1 if no focus
@@ -88,7 +88,7 @@ class Player {
     void handleClick(const SDL_MouseButtonEvent &b);
 
   public:
-    Player(Game *g);
+    Player(Game &g);
     bool getStop() const { return stop; }
     bool getPause() const { return pause; }
     bool getShow() const { return show; }

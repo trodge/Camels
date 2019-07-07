@@ -34,7 +34,7 @@ SDL_Texture *textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const
 }
 
 Game::Game() {
-    player = std::make_unique<Player>(this);
+    player = std::make_unique<Player>(*this);
     Settings::load("settings.ini");
     loadDisplayVariables();
     player->start();
