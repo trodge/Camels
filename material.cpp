@@ -241,9 +241,9 @@ double Material::consume(unsigned int e) {
     return c;
 }
 
-std::unique_ptr<MenuButton> Material::button(bool aS, unsigned int gI, const std::string &gN, bool gS, SDL_Rect rt,
-                                             SDL_Color fgr, SDL_Color bgr, int b, int r, int fS, const GameData &gD,
-                                             std::function<void()> f) const {
+std::unique_ptr<MenuButton> Material::button(bool aS, unsigned int gI, const std::string &gN, bool gS, const SDL_Rect &rt,
+                                             const SDL_Color &fgr, const SDL_Color &bgr, int b, int r, int fS, const GameData &gD,
+                                             const std::function<void()> &f) const {
     // Create a new button to represent this material.
     auto nameText = name;
     if (nameText != gN)

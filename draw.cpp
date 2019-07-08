@@ -19,6 +19,20 @@
 
 #include "draw.hpp"
 
+SDL_Texture *textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
+    int bpp = sf->format->BytesPerPixel;
+    Uint8 *p = static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * bpp;
+    SDL_Surface *c = SDL_CreateRGBSurfaceWithFormatFrom(p, rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24);
+    if (!c)
+        std::cout << "Surface is null at " << rt.x << "," << rt.y << " " << rt.w << "x" << rt.h << " bpp:" << bpp
+                  << " SDL Error: " << SDL_GetError() << std::endl;
+    SDL_Texture *t = SDL_CreateTextureFromSurface(rdr, c);
+    if (!t)
+        std::cout << "Failed to create clipped texture, SDL Error:" << SDL_GetError() << std::endl;
+    SDL_FreeSurface(c);
+    return t;
+}
+
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.
     // Fill top, middle, bottom rectangles

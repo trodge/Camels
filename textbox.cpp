@@ -19,24 +19,13 @@
 
 #include "textbox.hpp"
 
-TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN, int b,
                  int r, int fS, SDL_Surface *img)
     : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS),
       image(img) {
     fixedSize = (rt.w and rt.h);
     setText(t);
 }
-
-TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, bool iN, int b,
-                 int r, int fS)
-    : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr) {}
-
-TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, unsigned int i, int b, int r,
-                 int fS)
-    : TextBox(rt, t, fg, bg, i, false, b, r, fS) {}
-
-TextBox::TextBox(SDL_Rect rt, const std::vector<std::string> &t, SDL_Color fg, SDL_Color bg, int b, int r, int fS)
-    : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
 
 TextBox::~TextBox() {
     if (surface)

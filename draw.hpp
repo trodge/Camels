@@ -27,6 +27,7 @@
 
 #include <SDL2/SDL.h>
 
+SDL_Texture *textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt);
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
 void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl);
 void addCircleSymmetryPoints(std::vector<SDL_Point> ps, int cx, int cy, int x, int y);

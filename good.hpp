@@ -21,6 +21,7 @@
 #define GOOD_H
 
 #include <unordered_map>
+#include <vector>
 
 #include "material.hpp"
 

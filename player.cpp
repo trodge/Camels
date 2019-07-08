@@ -311,7 +311,7 @@ void Player::setState(UIState s) {
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(traveling); }));
         boxes.back()->setKey(SDLK_s);
         storageButtonIndex = boxes.size();
-        traveler->createStorageButtons(boxes, storageButtonIndex);
+        traveler->createStorageButtons(boxes, focusBox, storageButtonIndex);
         break;
     case managing:
         rt = {sR.w / 2, sR.h * 14 / 15, 0, 0};
@@ -325,7 +325,7 @@ void Player::setState(UIState s) {
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(traveling); }));
         boxes.back()->setKey(SDLK_e);
         equipButtonIndex = boxes.size();
-        traveler->createEquipButtons(boxes, equipButtonIndex);
+        traveler->createEquipButtons(boxes, focusBox, equipButtonIndex);
         break;
     case attacking:
         rt = {sR.w * 3 / 4, sR.h * 14 / 15, 0, 0};
@@ -356,7 +356,7 @@ void Player::setState(UIState s) {
             }));
         boxes.back()->setKey(SDLK_l);
         lootButtonIndex = boxes.size();
-        traveler->createLootButtons(boxes, lootButtonIndex);
+        traveler->createLootButtons(boxes, focusBox, lootButtonIndex);
         pause = true;
         break;
     case logging:

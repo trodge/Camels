@@ -27,6 +27,8 @@
 #include <string>
 #include <vector>
 
+#include <SDL2/SDL_image.h>
+
 #include "business.hpp"
 #include "nation.hpp"
 #include "player.hpp"
@@ -65,6 +67,7 @@ class Game {
   public:
     Game();
     ~Game();
+    void run();
     void newGame();
     void place();
     void moveView(int dx, int dy);

@@ -78,12 +78,13 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
-    void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t eBI);
+    void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI);
+    void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
     void runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d);
     void takeHit(const CombatHit &cH, Traveler &t);
-    void refreshLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t lBI);
+    void refreshLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t lBI);
 
   public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
@@ -122,15 +123,14 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void makeTrade();
     void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t &oBI, size_t &rBI);
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t oBI, size_t rBI);
-    void unequip(unsigned int pI);
-    void equip(Good &g);
-    void equip(unsigned int pI);
-    void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t eBI);
     std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     void deposit(Good &g);
     void withdraw(Good &g);
-    void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t sBI);
-    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t sBI);
+    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI);
+    void unequip(unsigned int pI);
+    void equip(Good &g);
+    void equip(unsigned int pI);
+    void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);
     void createAttackButton(std::vector<std::unique_ptr<TextBox>> &bs, const std::function<void()> &sSF);
@@ -140,7 +140,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs);
     void loot(Good &g, Traveler &t);
     void loot(Traveler &t);
-    void createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t lBI);
+    void createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t lBI);
     void startAI();
     void startAI(const Traveler &p);
     void runAI(unsigned int e);

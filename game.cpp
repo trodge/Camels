@@ -19,21 +19,14 @@
 
 #include "game.hpp"
 
-SDL_Texture *textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
-    int bpp = sf->format->BytesPerPixel;
-    Uint8 *p = static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * bpp;
-    SDL_Surface *c = SDL_CreateRGBSurfaceWithFormatFrom(p, rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24);
-    if (!c)
-        std::cout << "Surface is null at " << rt.x << "," << rt.y << " " << rt.w << "x" << rt.h << " bpp:" << bpp
-                  << " SDL Error: " << SDL_GetError() << std::endl;
-    SDL_Texture *t = SDL_CreateTextureFromSurface(rdr, c);
-    if (!t)
-        std::cout << "Failed to create clipped texture, SDL Error:" << SDL_GetError() << std::endl;
-    SDL_FreeSurface(c);
-    return t;
-}
-
 Game::Game() {
+    // Start SDL, SDL_ttf, and SDL_image.
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+        std::cout << "SDL initialization failed, SDL Error: " << SDL_GetError() << std::endl;
+    if (TTF_Init() < 0)
+        std::cout << "TTF initialization failed, TTF Error: " << TTF_GetError() << std::endl;
+    if (IMG_Init(IMG_INIT_PNG) < 0)
+        std::cout << "TTF initialization failed, IMG Error: " << SDL_GetError() << std::endl;
     player = std::make_unique<Player>(*this);
     Settings::load("settings.ini");
     loadDisplayVariables();
@@ -94,16 +87,10 @@ Game::Game() {
     SDL_BlitScaled(mapOriginal, NULL, mapImage, NULL);*/
     SDL_ShowWindow(window);
     SDL_RaiseWindow(window);
-    while (not player->getStop()) {
-        handleEvents();
-        update();
-        draw();
-        SDL_Delay(20);
-    }
-    Settings::save("settings.ini");
 }
 
 Game::~Game() {
+    Settings::save("settings.ini");
     std::cout << "Freeing map surface" << std::endl;
     if (mapSurface)
         SDL_FreeSurface(mapSurface);
@@ -127,6 +114,20 @@ Game::~Game() {
     SDL_DestroyRenderer(screen);
     std::cout << "Destroying window" << std::endl;
     SDL_DestroyWindow(window);
+    std::cout << "Quitting SDL" << std::endl;
+    SDL_Quit();
+    std::cout << "Quitting TTF" << std::endl;
+    TTF_Quit();
+}
+
+void Game::run() {
+    // Run the game loop.
+    while (not player->getStop()) {
+        handleEvents();
+        update();
+        draw();
+        SDL_Delay(20);
+    }
 }
 
 void Game::loadDisplayVariables() {
