@@ -129,7 +129,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     void deposit(Good &g);
     void withdraw(Good &g);
-    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs);
+    void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t sBI);
+    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t sBI);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);
     void createAttackButton(std::vector<std::unique_ptr<TextBox>> &bs, const std::function<void()> &sSF);

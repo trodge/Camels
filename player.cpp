@@ -230,11 +230,8 @@ void Player::setState(UIState s) {
             [this, path] { game.loadGame((path / boxes.back()->getItem()).replace_extension("sav")); }));
         break;
     case traveling:
-        rt = {sR.w / 6, sR.h * 14 / 15, 0, 0};
-        tx = {"(T)rade"};
-        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(trading); }));
-        boxes.back()->setKey(SDLK_t);
-        rt.x += sR.w / 6;
+        // Create go button.
+        rt = {sR.w / 8, sR.h * 14 / 15, 0, 0};
         tx = {"(G)o"};
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] {
             if (focusTown > -1)
@@ -243,37 +240,40 @@ void Player::setState(UIState s) {
             boxes[1]->setClicked(false);
         }));
         boxes.back()->setKey(SDLK_g);
-        rt.x += sR.w / 6;
+        // Create trade button.
+        rt.x += sR.w / 8;
+        tx = {"(T)rade"};
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(trading); }));
+        boxes.back()->setKey(SDLK_t);
+        // Create store button.
+        rt.x += sR.w / 8;
+        tx = {"(S)tore"};
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(storing); }));
+        boxes.back()->setKey(SDLK_s);
+        // Create manage button.
+        rt.x += sR.w / 8;
+        tx = {"(M)anage"};
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(managing); }));
+        boxes.back()->setKey(SDLK_m);
+        // Create equip button.
+        rt.x += sR.w / 8;
         tx = {"(E)quip"};
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(equipping); }));
         boxes.back()->setKey(SDLK_e);
-        rt.x += sR.w / 6;
+        // Create fight button.
+        rt.x += sR.w / 8;
         tx = {"(F)ight"};
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(attacking); }));
         boxes.back()->setKey(SDLK_f);
-        rt.x += sR.w / 6;
-        tx = {"View (L)og"};
+        // Create log button.
+        rt.x += sR.w / 8;
+        tx = {"(L)og"};
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(logging); }));
         boxes.back()->setKey(SDLK_l);
         pause = false;
         break;
-    case logging:
-        rt = {sR.w * 5 / 6, sR.h * 14 / 15, 0, 0};
-        tx = {"Close (L)og"};
-        boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
-                                                     Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
-                                                     Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
-        boxes.back()->setKey(SDLK_l);
-        // Create log box.
-        rt = {sR.w / 15, sR.h * 2 / 15, sR.w * 13 / 15, sR.h * 11 / 15};
-        boxes.push_back(std::make_unique<ScrollBox>(rt, traveler->getLogText(), traveler->getNation()->getForeground(),
-                                                    traveler->getNation()->getBackground(),
-                                                    traveler->getNation()->getHighlight(), Settings::getBigBoxBorder(),
-                                                    Settings::getBigBoxRadius(), Settings::getFightFontSize()));
-        boxes.back()->setHighlightLine(-1);
-        break;
     case trading:
-        rt = {sR.w / 6, sR.h * 14 / 15, 0, 0};
+        rt = {sR.w / 4, sR.h * 14 / 15, 0, 0};
         tx = {"Stop (T)rading"};
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(traveling); }));
         boxes.back()->setKey(SDLK_t);
@@ -305,21 +305,30 @@ void Player::setState(UIState s) {
         // Create buttons for trading goods.
         traveler->createTradeButtons(boxes, offerButtonIndex, requestButtonIndex);
         break;
-    case equipping:
+    case storing:
+        rt = {sR.w * 3 / 8, sR.h * 14 / 15, 0, 0};
+        tx = {"Stop (S)toring"};
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(traveling); }));
+        boxes.back()->setKey(SDLK_s);
+        storageButtonIndex = boxes.size();
+        traveler->createStorageButtons(boxes, storageButtonIndex);
+        break;
+    case managing:
         rt = {sR.w / 2, sR.h * 14 / 15, 0, 0};
+        tx = {"Stop (M)anaging"};
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(traveling); }));
+        boxes.back()->setKey(SDLK_m);
+        break;
+    case equipping:
+        rt = {sR.w * 5 / 8, sR.h * 14 / 15, 0, 0};
         tx = {"Stop (E)quipping"};
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(traveling); }));
         boxes.back()->setKey(SDLK_e);
         equipButtonIndex = boxes.size();
         traveler->createEquipButtons(boxes, equipButtonIndex);
         break;
-    case storing:
-        traveler->createStorageButtons(boxes);
-        break;
-    case managing:
-        break;
     case attacking:
-        rt = {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0};
+        rt = {sR.w * 3 / 4, sR.h * 14 / 15, 0, 0};
         tx = {"Cancel (F)ight"};
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, [this] { setState(traveling); }));
         boxes.back()->setKey(SDLK_f);
@@ -349,6 +358,21 @@ void Player::setState(UIState s) {
         lootButtonIndex = boxes.size();
         traveler->createLootButtons(boxes, lootButtonIndex);
         pause = true;
+        break;
+    case logging:
+        rt = {sR.w * 7 / 8, sR.h * 14 / 15, 0, 0};
+        tx = {"Close (L)og"};
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, Settings::getUIForeground(), Settings::getUIBackground(),
+                                                     Settings::getSmallBoxBorder(), Settings::getSmallBoxRadius(),
+                                                     Settings::getSmallBoxFontSize(), [this] { setState(traveling); }));
+        boxes.back()->setKey(SDLK_l);
+        // Create log box.
+        rt = {sR.w / 15, sR.h * 2 / 15, sR.w * 13 / 15, sR.h * 11 / 15};
+        boxes.push_back(std::make_unique<ScrollBox>(rt, traveler->getLogText(), traveler->getNation()->getForeground(),
+                                                    traveler->getNation()->getBackground(),
+                                                    traveler->getNation()->getHighlight(), Settings::getBigBoxBorder(),
+                                                    Settings::getBigBoxRadius(), Settings::getFightFontSize()));
+        boxes.back()->setHighlightLine(-1);
         break;
     case dying:
         rt = {sR.w / 2, sR.h / 2, 0, 0};
@@ -384,24 +408,24 @@ void Player::toggleState(UIState s) {
 
 void Player::handleKey(const SDL_KeyboardEvent &k) {
     SDL_Keymod mod = SDL_GetModState();
-    double d;
     if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT) and (mod & KMOD_ALT))
-        d = 10000;
+        modMultiplier = 10000;
     else if ((mod & KMOD_CTRL) and (mod & KMOD_ALT))
-        d = 0.001;
+        modMultiplier = 0.001;
     else if ((mod & KMOD_SHIFT) and (mod & KMOD_ALT))
-        d = 0.01;
+        modMultiplier = 0.01;
     else if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT))
-        d = 1000;
+        modMultiplier = 1000;
     else if (mod & KMOD_ALT)
-        d = 0.1;
+        modMultiplier = 0.1;
     else if (mod & KMOD_SHIFT)
-        d = 10;
+        modMultiplier = 10;
     else if (mod & KMOD_CTRL)
-        d = 100;
+        modMultiplier = 100;
     else
-        d = 1;
+        modMultiplier = 1;
     if (k.state == SDL_PRESSED) {
+        // Event is SDL_KEYDOWN
         if (not boxes.empty()) {
             auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
                                          [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
@@ -414,31 +438,21 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
         if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k))) {
             if (state != quitting) {
                 if (traveler) {
-                    double dSS = static_cast<double>(Settings::getScroll());
                     switch (state) {
                     case traveling:
                         switch (k.keysym.sym) {
                         case SDLK_LEFT:
-                            scrollX = static_cast<int>(-dSS * d);
-                            show = false;
-                            break;
                         case SDLK_RIGHT:
-                            scrollX = static_cast<int>(dSS * d);
-                            show = false;
-                            break;
                         case SDLK_UP:
-                            scrollY = static_cast<int>(-dSS * d);
-                            show = false;
-                            break;
                         case SDLK_DOWN:
-                            scrollY = static_cast<int>(dSS * d);
+                            scrollKeys.insert(k.keysym.sym);
                             show = false;
                             break;
-                        case SDLK_s:
-                            focusPrev(Focusable::neighbor);
-                            break;
-                        case SDLK_d:
-                            focusNext(Focusable::neighbor);
+                        case SDLK_n:
+                            if (mod & KMOD_SHIFT)
+                                focusPrev(Focusable::neighbor);
+                            else
+                                focusNext(Focusable::neighbor);
                             break;
                         }
                         break;
@@ -466,27 +480,6 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             traveler->changePortion(0.1);
                             updatePortionBox();
                             break;
-                        case SDLK_KP_MINUS:
-                            traveler->adjustAreas(boxes, requestButtonIndex, -d);
-                            break;
-                        case SDLK_KP_PLUS:
-                            traveler->adjustAreas(boxes, requestButtonIndex, d);
-                            break;
-                        case SDLK_m:
-                            game.saveData();
-                            break;
-                        case SDLK_o:
-                            traveler->adjustDemand(boxes, requestButtonIndex, -d);
-                            break;
-                        case SDLK_p:
-                            traveler->adjustDemand(boxes, requestButtonIndex, d);
-                            break;
-                        case SDLK_r:
-                            traveler->resetTown();
-                            break;
-                        case SDLK_x:
-                            traveler->toggleMaxGoods();
-                            break;
                         }
                         break;
                     default:
@@ -499,38 +492,36 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                 toggleState(quitting);
                 break;
             case SDLK_TAB:
-                if (SDL_GetModState() & KMOD_SHIFT)
+                if (mod & KMOD_SHIFT)
                     focusPrev(Focusable::box);
                 else
                     focusNext(Focusable::box);
-                break;
-            case SDLK_n:
-                game.saveRoutes();
                 break;
             }
         } else
             boxes[static_cast<size_t>(focusBox)]->handleKey(k);
     } else {
+        // Event is SDL_KEYUP.
         if (not boxes.empty()) {
+            // Find a box which handles this key.
             auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
                                          [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
             if (keyedBox != boxes.end())
                 // A box's key was released.
                 (*keyedBox)->handleKey(k);
+            if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
+                // Key is not used by currently focused box.
+                switch (k.keysym.sym) {
+                case SDLK_LEFT:
+                case SDLK_RIGHT:
+                case SDLK_UP:
+                case SDLK_DOWN:
+                    scrollKeys.erase(k.keysym.sym);
+                    break;
+                }
+            else
+                boxes[static_cast<size_t>(focusBox)]->handleKey(k);
         }
-        if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
-            switch (k.keysym.sym) {
-            case SDLK_LEFT:
-            case SDLK_RIGHT:
-                scrollX = 0;
-                break;
-            case SDLK_UP:
-            case SDLK_DOWN:
-                scrollY = 0;
-                break;
-            }
-        else
-            boxes[static_cast<size_t>(focusBox)]->handleKey(k);
     }
 }
 
@@ -565,7 +556,6 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
 void Player::handleEvent(const SDL_Event &e) {
     switch (e.type) {
     case SDL_KEYDOWN:
-        __attribute__((fallthrough));
     case SDL_KEYUP:
         handleKey(e.key);
         break;
@@ -573,7 +563,6 @@ void Player::handleEvent(const SDL_Event &e) {
         handleTextInput(e.text);
         break;
     case SDL_MOUSEBUTTONDOWN:
-        __attribute__((fallthrough));
     case SDL_MOUSEBUTTONUP:
         handleClick(e.button);
         break;
@@ -613,11 +602,9 @@ void Player::update(unsigned int e) {
     default:
         break;
     }
+    int scrollX = 0, scrollY = 0, sS = Settings::getScroll();
     if (show) {
-        scrollX = 0;
-        scrollY = 0;
         const SDL_Rect &mR = game.getMapRect();
-        int sS = Settings::getScroll();
         if (traveler->getPX() < int(mR.w * kShowPlayerPadding))
             scrollX = -sS;
         if (traveler->getPY() < int(mR.h * kShowPlayerPadding))
@@ -626,6 +613,14 @@ void Player::update(unsigned int e) {
             scrollX = sS;
         if (traveler->getPY() > int(mR.h * (1 - kShowPlayerPadding)))
             scrollY = sS;
+    }
+    if (not(scrollKeys.empty())) {
+        auto upIt = scrollKeys.find(SDLK_UP), dnIt = scrollKeys.find(SDLK_DOWN), lfIt = scrollKeys.find(SDLK_LEFT),
+             rtIt = scrollKeys.find(SDLK_RIGHT);
+        scrollX -= (lfIt != scrollKeys.end()) * sS;
+        scrollX += (rtIt != scrollKeys.end()) * sS;
+        scrollY -= (upIt != scrollKeys.end()) * sS;
+        scrollY += (dnIt != scrollKeys.end()) * sS;
     }
     if (scrollX or scrollY)
         game.moveView(scrollX, scrollY);
