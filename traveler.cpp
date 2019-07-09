@@ -269,7 +269,7 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     SDL_Rect rt = {left, top, sR.w * 29 / gBXD, sR.h * 29 / gBYD};
     for (auto &g : getGoods()) {
         for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
+            if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1.)) {
                 bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, tB, tR, tFS, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
@@ -285,7 +285,7 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     rBI = bs.size();
     for (auto &g : toTown->getGoods()) {
         for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
+            if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1.)) {
                 bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, tB, tR, tFS, gameData, f));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {

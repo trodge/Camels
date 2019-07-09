@@ -110,14 +110,16 @@ Game::~Game() {
         for (auto &gI : gIs)
             if (gI.second)
                 SDL_FreeSurface(gI.second);
+    std::cout << "Closing fonts" << std::endl;
+    Printer::closeFonts();
     std::cout << "Destroying screen" << std::endl;
     SDL_DestroyRenderer(screen);
     std::cout << "Destroying window" << std::endl;
     SDL_DestroyWindow(window);
-    std::cout << "Quitting SDL" << std::endl;
-    SDL_Quit();
     std::cout << "Quitting TTF" << std::endl;
     TTF_Quit();
+    std::cout << "Quitting SDL" << std::endl;
+    SDL_Quit();
 }
 
 void Game::run() {
@@ -220,7 +222,13 @@ void Game::loadNations(sqlite3 *c) {
     for (size_t i = 0; i < goods.size(); ++i) {
         auto &g = goods[i];
         for (auto &m : g.getMaterials()) {
-            fs::path imagePath("images/" + m.getName() + "-" + g.getName() + ".png");
+            std::array<std::string, 2> names = {g.getName(), m.getName()};
+            for (auto &nm : names) {
+                size_t sI = nm.find(' ');
+                if (sI < nm.size())
+                    nm.replace(sI, 1, "-");
+            }
+            fs::path imagePath("images/" + names[1] + "-" + names[0] + ".png");
             SDL_Surface *image, *scaledImage = nullptr;
             if (fs::exists(imagePath)) {
                 image = IMG_Load(imagePath.string().c_str());
@@ -327,6 +335,7 @@ void Game::newGame() {
     SDL_Surface *freezeSurface = SDL_CreateRGBSurface(0u, screenRect.w, screenRect.h, 32, rmask, gmask, bmask, amask);
     SDL_RenderReadPixels(screen, nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
     SDL_Texture *freezeTexture = SDL_CreateTextureFromSurface(screen, freezeSurface);
+    SDL_FreeSurface(freezeSurface);
     while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
         SDL_RenderCopy(screen, freezeTexture, nullptr, nullptr);
         towns.push_back(Town(quer, nations, businesses, frequencyFactors, Settings::getTownFontSize()));
@@ -374,6 +383,7 @@ void Game::newGame() {
         loadBar.draw(screen);
         SDL_RenderPresent(screen);
     }
+    SDL_DestroyTexture(freezeTexture);
 }
 
 void Game::loadGame(const fs::path &p) {
