@@ -185,8 +185,8 @@ void Game::loadNations(sqlite3 *c) {
     }
     sqlite3_finalize(quer);
     // Load good images.
-    int tradeHeight = screenRect.h * 29 / Settings::getGoodButtonYDivisor() - 2 * Settings::getTradeBorder();
-    SDL_Rect rt = {0, 0, tradeHeight, tradeHeight};
+    int imageSide = screenRect.h * 29 / kGoodButtonYDivisor - 2 * Settings::getTradeBorder();
+    SDL_Rect rt = {0, 0, imageSide, imageSide};
     gameData.goodImages.resize(goods.size());
     for (size_t i = 0; i < goods.size(); ++i) {
         auto &g = goods[i];

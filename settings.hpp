@@ -58,7 +58,6 @@ class Settings {
     static int tradeBorder;
     static int tradeRadius;
     static int tradeFontSize;
-    static int goodButtonXDivisor, goodButtonYDivisor;
     static double scale;
     static int dayLength;
     static unsigned int businessRunTime;
@@ -108,8 +107,6 @@ class Settings {
     static int getTradeBorder() { return tradeBorder; }
     static int getTradeRadius() { return tradeRadius; }
     static int getTradeFontSize() { return tradeFontSize; }
-    static int getGoodButtonXDivisor() { return goodButtonXDivisor; }
-    static int getGoodButtonYDivisor() { return goodButtonYDivisor; }
     static double getScale() { return scale; }
     static int getDayLength() { return dayLength; }
     static unsigned int getBusinessRunTime() { return businessRunTime; }

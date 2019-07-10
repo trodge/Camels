@@ -259,14 +259,13 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
-        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     std::function<void()> f = [this, &bs, &oBI, &rBI] {
         updateTradeButtons(bs, oBI, rBI);
     }; // function to call when buttons are clicked
     // Create the offer buttons for the player.
-    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBXD, dx = sR.w * 31 / gBXD, dy = sR.h * 31 / gBYD;
-    SDL_Rect rt = {left, top, sR.w * 29 / gBXD, sR.h * 29 / gBYD};
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, dx = sR.w * 31 / kGoodButtonXDivisor, dy = sR.h * 31 / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * 29 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
     for (auto &g : getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1.)) {
@@ -278,8 +277,8 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
                 }
             }
     }
-    left = sR.w / 2 + sR.w / gBXD;
-    right = sR.w - sR.w / gBXD;
+    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
+    right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
     rt.y = top;
     rBI = bs.size();
@@ -393,11 +392,10 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
-        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     // Create buttons for depositing goods.
-    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBXD, dx = sR.w * 31 / gBXD, dy = sR.h * 31 / gBYD;
-    SDL_Rect rt = {left, top, sR.w * 29 / gBXD, sR.h * 29 / gBYD};
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, dx = sR.w * 31 / kGoodButtonXDivisor, dy = sR.h * 31 / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * 29 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if (((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1))) {
@@ -416,8 +414,8 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
                 }
             }
         }
-    left = sR.w / 2 + sR.w / gBXD;
-    right = sR.w - sR.w / gBXD;
+    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
+    right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
     rt.y = top;
     auto sI = storage.find(toTown);
@@ -506,9 +504,8 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
     int eB = Settings::getEquipBorder(), eR = Settings::getEquipRadius(), eFS = Settings::getEquipFontSize();
-    int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor();
-    int left = sR.w / gBXD, top = sR.h / gBYD, dx = sR.w * 36 / gBXD, dy = sR.h * 31 / gBYD;
-    SDL_Rect rt = {left, top, sR.w * 35 / gBXD, sR.h * 29 / gBYD};
+    int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor, dx = sR.w * 36 / kGoodButtonXDivisor, dy = sR.h * 31 / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * 35 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
     std::array<std::vector<Good>, 6> equippable; // array of vectors corresponding to parts that can hold equipment
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
@@ -539,7 +536,7 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
     }
     // Create buttons for unequipping equipment.
     rt.y = top;
-    left = sR.w * 218 / gBXD;
+    left = sR.w * 218 / kGoodButtonXDivisor;
     for (auto &e : getEquipment()) {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
@@ -824,15 +821,14 @@ void Traveler::refreshLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
 
 void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t lBI) {
     const SDL_Rect &sR = Settings::getScreenRect();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
-        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     auto &tgt = *target.lock();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &tFgr = tgt.nation->getForeground(),
                     &tBgr = tgt.nation->getBackground();
-    int left = sR.w / gBXD, right = sR.w / 2;
-    int top = sR.h / gBYD;
-    int dx = sR.w * 31 / gBXD, dy = sR.h * 31 / gBYD;
-    SDL_Rect rt = {left, top, sR.w * 29 / gBXD, sR.h * 29 / gBYD};
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2;
+    int top = sR.h / kGoodButtonYDivisor;
+    int dx = sR.w * 31 / kGoodButtonXDivisor, dy = sR.h * 31 / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * 29 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
@@ -850,8 +846,8 @@ void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, cons
                 }
             }
         }
-    left = sR.w / 2 + sR.w / gBXD;
-    right = sR.w - sR.w / gBXD;
+    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
+    right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
     rt.y = top;
     for (auto &g : tgt.goods)

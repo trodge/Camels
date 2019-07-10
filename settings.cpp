@@ -47,7 +47,6 @@ int Settings::townFontSize;
 int Settings::tradeBorder;
 int Settings::tradeRadius;
 int Settings::tradeFontSize;
-int Settings::goodButtonXDivisor, Settings::goodButtonYDivisor;
 double Settings::scale;
 int Settings::dayLength;
 unsigned int Settings::businessRunTime;
@@ -119,8 +118,6 @@ void Settings::load(const fs::path &p) {
     tradeBorder = tree.get("ui.tradeBorder", current.h * 2 / 1080);
     tradeRadius = tree.get("ui.tradeRadius", current.h * 5 / 1080);
     tradeFontSize = tree.get("ui.tradeFontSize", current.h * 12 / 1080);
-    goodButtonXDivisor = tree.get("ui.goodButtonXDivisor", 434);
-    goodButtonYDivisor = tree.get("ui.goodButtonYDivisor", 527);
     dayLength = tree.get("time.dayLength", 5000);
     businessRunTime = static_cast<unsigned int>(tree.get("time.businessRunTime", 1500));
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
@@ -177,8 +174,6 @@ void Settings::save(const fs::path &p) {
     tree.put("ui.equipFontSize", equipFontSize);
     tree.put("ui.townFontSize", townFontSize);
     tree.put("ui.tradeFontSize", tradeFontSize);
-    tree.put("ui.goodButtonXDivisor", goodButtonXDivisor);
-    tree.put("ui.goodButtonYDivisor", goodButtonYDivisor);
     tree.put("time.dayLength", dayLength);
     tree.put("time.businessRunTime", businessRunTime);
     tree.put("goods.consumptionSpaceFactor", consumptionSpaceFactor);
