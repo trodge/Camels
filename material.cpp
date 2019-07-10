@@ -151,19 +151,19 @@ void Material::take(Material &m) {
     }
     double movedAmount = m.getAmount();
     while (movedAmount > 0 and not perishCounters.empty()) {
-        // amount is going down
+        // Amount is going down.
         PerishCounter pC = perishCounters.back();
         perishCounters.pop_back();
         if (pC.amount > movedAmount) {
-            // perish counter is enough to make change and stay around
+            // Perish counter is enough to make change and stay around.
             pC.amount -= movedAmount;
             perishCounters.push_back(pC);
-            // taken pc has just the amount taken
+            // Taken pc has just the amount taken.
             pC.amount = movedAmount;
             m.perishCounters.push_front(pC);
             movedAmount = 0;
         } else {
-            // perish counter is used up to make change
+            // Perish counter is used up to make change.
             m.perishCounters.push_front(pC);
             movedAmount -= pC.amount;
         }
@@ -177,16 +177,16 @@ void Material::use(double a) {
     else
         a = 0.;
     while (a > 0. and not perishCounters.empty()) {
-        // amount is going down
+        // Amount is going down.
         PerishCounter pC = perishCounters.back();
         perishCounters.pop_back();
         if (pC.amount > a) {
-            // perish counter is enough to make change and stay around
+            // Perish counter is enough to make change and stay around.
             pC.amount -= a;
             perishCounters.push_back(pC);
             a = 0.;
         } else {
-            // perish counter is used up to make change
+            // Perish counter is used up to make change.
             a -= pC.amount;
         }
     }

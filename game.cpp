@@ -42,8 +42,8 @@ Game::Game()
     if (SDL_GetRendererInfo(screen.get(), &screenInfo) < 0)
         std::cout << "Failed to get renderer info, SDL Error:" << SDL_GetError() << std::endl;
     // For debugging, pretend renderer can't handle textures over 64x64
-    //     screenInfo.max_texture_height = 64;
-    //     screenInfo.max_texture_width = 64;
+    //screenInfo.max_texture_height = 64;
+    //screenInfo.max_texture_width = 64;
     if (!mapSurface)
         std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
     SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
