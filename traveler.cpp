@@ -442,8 +442,6 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     }
 }
 
-
-
 void Traveler::unequip(unsigned int pI) {
     // Unequip all equipment using the given part id.
     auto unused = [pI](const Good &e) {

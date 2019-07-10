@@ -40,24 +40,23 @@ class Player;
 class Nation;
 
 class Game {
-    SDL_Window *window;
-    SDL_Renderer *screen;
-    SDL_Surface *mapSurface; // surface of entire map loaded from image
-    SDL_RendererInfo screenInfo;
-    std::vector<SDL_Texture *> mapTextures;        // textures for map broken down to maximum size for graphics card
-    int mapTextureRowCount, mapTextureColumnCount; // number of columns in map textures matrix
-    SDL_Texture *mapTexture;                       // texture for drawing map on screen at current position
     SDL_Rect screenRect, mapRect;
     int offsetX, offsetY;
-    unsigned int lastTime = 0, currentTime;
     double scale;
+    sdl2::WindowPtr window;
+    sdl2::RendererPtr screen;
+    sdl2::SurfacePtr mapSurface; // surface of entire map loaded from image
+    SDL_RendererInfo screenInfo;
+    std::vector<sdl2::TexturePtr> mapTextures;        // textures for map broken down to maximum size for graphics card
+    int mapTextureRowCount, mapTextureColumnCount; // number of columns in map textures matrix
+    sdl2::TexturePtr mapTexture;                       // texture for drawing map on screen at current position
+    unsigned int lastTime = 0, currentTime;
     std::vector<Nation> nations;
     std::vector<Town> towns;
     std::vector<Business> businesses;
     GameData gameData;
     std::vector<std::shared_ptr<Traveler>> aITravelers;
     std::unique_ptr<Player> player;
-    void loadDisplayVariables();
     void renderMapTexture();
     void loadNations(sqlite3 *c);
     void handleEvents();

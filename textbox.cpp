@@ -19,8 +19,8 @@
 
 #include "textbox.hpp"
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN, int b,
-                 int r, int fS, SDL_Surface *img)
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
+                 unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img)
     : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS),
       image(img) {
     fixedSize = (rt.w and rt.h);

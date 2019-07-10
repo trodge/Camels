@@ -52,7 +52,7 @@ struct CombatOdd {
 };
 
 struct GameData {
-    std::vector<std::unordered_map<unsigned int, SDL_Surface *>> goodImages;
+    std::vector<std::unordered_map<unsigned int, sdl2::SurfacePtr>> goodImages;
     std::vector<std::string> parts;
     std::vector<std::string> statuses;
     std::vector<CombatOdd> odds;

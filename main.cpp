@@ -25,7 +25,22 @@
 #include "traveler.hpp"
 
 int main(int, char **) {
-    Game game;
-    game.run();
+    // Start SDL, SDL_ttf, and SDL_image.
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+        std::cout << "SDL initialization failed, SDL Error: " << SDL_GetError() << std::endl;
+    if (TTF_Init() < 0)
+        std::cout << "TTF initialization failed, TTF Error: " << TTF_GetError() << std::endl;
+    if (IMG_Init(IMG_INIT_PNG) < 0)
+        std::cout << "TTF initialization failed, IMG Error: " << SDL_GetError() << std::endl;
+    Settings::load("settings.ini");
+    {
+        Game game;
+        game.run();
+    }
+    Settings::save("settings.ini");
+    std::cout << "Quitting TTF" << std::endl;
+    TTF_Quit();
+    std::cout << "Quitting SDL" << std::endl;
+    SDL_Quit();
     return 0;
 }

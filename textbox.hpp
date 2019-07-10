@@ -52,16 +52,17 @@ class TextBox : public Focusable {
     void setBorder(int b);
 
   public:
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN, int b,
-            int r, int fS, SDL_Surface *img);
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN, int b,
-            int r, int fS) 
-    : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr) {}
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, int b, int r,
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+            bool iN, int b, int r, int fS, SDL_Surface *img);
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+            bool iN, int b, int r, int fS)
+        : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr) {}
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+            int b, int r, int fS)
+        : TextBox(rt, t, fg, bg, i, false, b, r, fS) {}
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
             int fS)
-    : TextBox(rt, t, fg, bg, i, false, b, r, fS) {}
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r, int fS)
-    : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
+        : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
     virtual ~TextBox();
     virtual void setText();
     void setText(const std::vector<std::string> &tx) {
