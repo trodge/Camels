@@ -44,7 +44,7 @@ const Uint32 bmask = 0x00ff0000;
 const Uint32 amask = 0xff000000;
 #endif
 
-namespace sdl2 {
+namespace sdl {
 
 struct Deleter {
     void operator()(SDL_Window *wndw) { SDL_DestroyWindow(wndw); }
@@ -100,7 +100,7 @@ inline TexturePtr makeTextureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *
                                   rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
     return makeTextureFromSurface(rdr, c.get());
 }
-} // namespace sdl2
+} // namespace sdl
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
 void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl);

@@ -44,8 +44,8 @@ class TextBox : public Focusable {
     bool clicked = false;
     int fontSize;
     int lineHeight = -1;
-    sdl2::SurfacePtr surface;
-    sdl2::TexturePtr texture;
+    sdl::SurfacePtr surface;
+    sdl::TexturePtr texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface
     SDL_Surface *image;
     TextBox() {}

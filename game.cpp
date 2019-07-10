@@ -22,11 +22,11 @@
 Game::Game()
     : screenRect(Settings::getScreenRect()), mapRect(Settings::getMapRect()), offsetX(Settings::getOffsetX()),
       offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
-      window(sdl2::makeWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
-                              SDL_WINDOW_BORDERLESS)),
-      screen(sdl2::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)),
-      mapSurface(sdl2::loadSurface(fs::path("images/map-scaled.png").string().c_str())),
-      mapTexture(sdl2::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h)) {
+      window(sdl::makeWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
+                             SDL_WINDOW_BORDERLESS)),
+      screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)),
+      mapSurface(sdl::loadSurface(fs::path("images/map-scaled.png").string().c_str())),
+      mapTexture(sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h)) {
     player = std::make_unique<Player>(*this);
     player->start();
     if (!window.get())
@@ -54,11 +54,11 @@ Game::Game()
         // Loop from top to bottom.
         for (rt.x = 0; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
             // Loop from left to right.
-            mapTextures.push_back(sdl2::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
         if (rt.x < mapSurface->w) {
             // Fill right side rectangles of map.
             rt.w = mapSurface->w - rt.x;
-            mapTextures.push_back(sdl2::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
             rt.w = screenInfo.max_texture_width;
         }
     }
@@ -66,11 +66,11 @@ Game::Game()
         // Fill in bottom side rectangles of map.
         rt.h = mapSurface->h - rt.y;
         for (; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
-            mapTextures.push_back(sdl2::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
         if (rt.x < mapSurface->w) {
             // Fill bottom right corner of map.
             rt.w = mapSurface->w - rt.x;
-            mapTextures.push_back(sdl2::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
         }
     }
     renderMapTexture();
@@ -199,8 +199,8 @@ void Game::loadNations(sqlite3 *c) {
             }
             fs::path imagePath("images/" + names[1] + "-" + names[0] + ".png");
             if (fs::exists(imagePath)) {
-                sdl2::SurfacePtr image(sdl2::loadSurface(imagePath.string().c_str()));
-                sdl2::SurfacePtr scaledImage(sdl2::makeSurface(rt.w, rt.h));
+                sdl::SurfacePtr image(sdl::loadSurface(imagePath.string().c_str()));
+                sdl::SurfacePtr scaledImage(sdl::makeSurface(rt.w, rt.h));
                 SDL_BlitScaled(image.get(), nullptr, scaledImage.get(), &rt);
                 gameData.goodImages[i].emplace_hint(gameData.goodImages[i].end(), m.getId(), std::move(scaledImage));
             }
