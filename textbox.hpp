@@ -48,21 +48,22 @@ class TextBox : public Focusable {
     sdl::TexturePtr texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface
     SDL_Surface *image;
-    TextBox() {}
+    Printer &printer;
+    TextBox(Printer &pr) : printer(pr) {}
     void setBorder(int b);
 
   public:
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            bool iN, int b, int r, int fS, SDL_Surface *img);
+            bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr);
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            bool iN, int b, int r, int fS)
-        : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr) {}
+            bool iN, int b, int r, int fS, Printer &pr)
+        : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr, pr) {}
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            int b, int r, int fS)
-        : TextBox(rt, t, fg, bg, i, false, b, r, fS) {}
+            int b, int r, int fS, Printer &pr)
+        : TextBox(rt, t, fg, bg, i, false, b, r, fS, pr) {}
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-            int fS)
-        : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
+            int fS, Printer &pr)
+        : TextBox(rt, t, fg, bg, 0, b, r, fS, pr) {}
     virtual ~TextBox() {}
     virtual void setText();
     void setText(const std::vector<std::string> &tx) {

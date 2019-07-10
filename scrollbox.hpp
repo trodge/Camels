@@ -28,11 +28,11 @@ class ScrollBox : virtual public TextBox {
     size_t scroll = 0;
     SDL_Color highlight;
     std::vector<std::string> items;
-    ScrollBox(const std::vector<std::string> &is, SDL_Color hl) : highlight(hl), items(is) {}
+    ScrollBox(const std::vector<std::string> &is, SDL_Color hl, Printer &pr) : TextBox(pr), highlight(hl), items(is) {}
 
   public:
     ScrollBox(const SDL_Rect &rt, const std::vector<std::string> &is, const SDL_Color &fg, const SDL_Color &bg,
-              const SDL_Color &hl, int b, int r, int fS);
+              const SDL_Color &hl, int b, int r, int fS, Printer &pr);
     virtual ~ScrollBox() {}
     void setText();
     void setText(const std::vector<std::string> &t) {

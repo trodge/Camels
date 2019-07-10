@@ -31,5 +31,4 @@ const size_t kFightChoiceIndex = 3;                            // Index of box r
 const int kGoodButtonXDivisor = 434;
 const int kGoodButtonYDivisor = 527;
 
-
 #endif

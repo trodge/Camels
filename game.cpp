@@ -24,26 +24,25 @@ Game::Game()
       offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
       window(sdl::makeWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
                              SDL_WINDOW_BORDERLESS)),
-      screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)),
-      mapSurface(sdl::loadSurface(fs::path("images/map-scaled.png").string().c_str())),
-      mapTexture(sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h)) {
+      screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)) {
     player = std::make_unique<Player>(*this);
     player->start();
     if (!window.get())
         std::cout << "Window creation failed, SDL Error:" << SDL_GetError() << std::endl;
-    fs::path iconPath("images/icon.png");
-    SDL_Surface *icon = IMG_Load(iconPath.string().c_str());
-    if (!icon)
+    sdl::SurfacePtr icon = sdl::loadImage(fs::path("images/icon.png").string().c_str());
+    if (!icon.get())
         std::cout << "Failed to load icon, IMG Error:" << IMG_GetError() << std::endl;
-    SDL_SetWindowIcon(window.get(), icon);
-    SDL_FreeSurface(icon);
+    SDL_SetWindowIcon(window.get(), icon.get());
+    icon = nullptr;
+    mapSurface = sdl::loadImage(fs::path("images/map-scaled.png").string().c_str());
+    mapTexture = sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h);
     if (!screen.get())
         std::cout << "Failed to create renderer, SDL Error:" << SDL_GetError() << std::endl;
     if (SDL_GetRendererInfo(screen.get(), &screenInfo) < 0)
         std::cout << "Failed to get renderer info, SDL Error:" << SDL_GetError() << std::endl;
     // For debugging, pretend renderer can't handle textures over 64x64
-    //screenInfo.max_texture_height = 64;
-    //screenInfo.max_texture_width = 64;
+    // screenInfo.max_texture_height = 64;
+    // screenInfo.max_texture_width = 64;
     if (!mapSurface)
         std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
     SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
@@ -93,8 +92,6 @@ Game::~Game() {
     for (auto &gIs : gameData.goodImages)
         for (auto &gI : gIs)
             gI.second = nullptr;
-    std::cout << "Closing fonts" << std::endl;
-    Printer::closeFonts();
     std::cout << "Destroying screen" << std::endl;
     screen = nullptr;
     std::cout << "Destroying window" << std::endl;
@@ -199,7 +196,7 @@ void Game::loadNations(sqlite3 *c) {
             }
             fs::path imagePath("images/" + names[1] + "-" + names[0] + ".png");
             if (fs::exists(imagePath)) {
-                sdl::SurfacePtr image(sdl::loadSurface(imagePath.string().c_str()));
+                sdl::SurfacePtr image(sdl::loadImage(imagePath.string().c_str()));
                 sdl::SurfacePtr scaledImage(sdl::makeSurface(rt.w, rt.h));
                 SDL_BlitScaled(image.get(), nullptr, scaledImage.get(), &rt);
                 gameData.goodImages[i].emplace_hint(gameData.goodImages[i].end(), m.getId(), std::move(scaledImage));
@@ -266,10 +263,9 @@ void Game::newGame() {
         std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
     loadNations(conn);
     // Load towns from sqlite database.
-    const SDL_Color &fgr = Settings::getLoadBarColor(), &bgr = Settings::getUIForeground();
-    int b = Settings::getBigBoxBorder(), r = Settings::getBigBoxRadius(), fS = Settings::getLoadBarFontSize();
     LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                    {"Loading towns..."}, fgr, bgr, b, r, fS);
+                    {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
+                    Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
     // Load businesses.
     sqlite3_stmt *quer;
     sqlite3_prepare_v2(conn, "SELECT modes FROM businesses", -1, &quer, nullptr);
@@ -305,7 +301,7 @@ void Game::newGame() {
     SDL_FreeSurface(freezeSurface);
     while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
         SDL_RenderCopy(screen.get(), freezeTexture, nullptr, nullptr);
-        towns.push_back(Town(quer, nations, businesses, frequencyFactors, Settings::getTownFontSize()));
+        towns.push_back(Town(quer, nations, businesses, frequencyFactors, Settings::getTownFontSize(), printer));
         loadBar.progress(1. / tC);
         loadBar.draw(screen.get());
         SDL_RenderPresent(screen.get());
@@ -374,10 +370,10 @@ void Game::loadGame(const fs::path &p) {
         auto lTowns = game->towns();
         LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
                         {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
-                        Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize());
+                        Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
         towns.reserve(lTowns->size());
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
-            towns.push_back(Town(*lTI, nations, Settings::getTownFontSize()));
+            towns.push_back(Town(*lTI, nations, Settings::getTownFontSize(), printer));
             loadBar.progress(1. / lTowns->size());
             loadBar.draw(screen.get());
             SDL_RenderPresent(screen.get());
@@ -485,7 +481,7 @@ void Game::saveRoutes() {
     // Recalculate routes between towns and save new routes to database.
     LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
                     {"Finding routes..."}, {0, 255, 0, 255}, Settings::getUIForeground(), Settings::getBigBoxRadius(),
-                    Settings::getBigBoxBorder(), Settings::getLoadBarFontSize());
+                    Settings::getBigBoxBorder(), Settings::getLoadBarFontSize(), printer);
     for (auto &t : towns) {
         t.findNeighbors(towns, mapSurface.get(), mapRect.x, mapRect.y);
         loadBar.progress(1. / static_cast<double>(towns.size()));

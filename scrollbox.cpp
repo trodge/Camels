@@ -20,16 +20,16 @@
 #include "scrollbox.hpp"
 
 ScrollBox::ScrollBox(const SDL_Rect &rt, const std::vector<std::string> &is, const SDL_Color &fg, const SDL_Color &bg,
-                     const SDL_Color &hl, int b, int r, int fS)
-    : TextBox(rt, is, fg, bg, 0, false, b, r, fS), highlight(hl), items(is) {
+                     const SDL_Color &hl, int b, int r, int fS, Printer &pr)
+    : TextBox(rt, is, fg, bg, 0, false, b, r, fS, pr), highlight(hl), items(is) {
     canFocus = true;
 }
 
 void ScrollBox::setText() {
-    Printer::setHighlightLine(highlightLine - static_cast<int>(scroll));
-    Printer::setHighlight(highlight);
+    printer.setHighlightLine(highlightLine - static_cast<int>(scroll));
+    printer.setHighlight(highlight);
     TextBox::setText();
-    Printer::setHighlightLine(-1);
+    printer.setHighlightLine(-1);
 }
 
 void ScrollBox::setItems(const std::vector<std::string> &is) {
@@ -40,9 +40,9 @@ void ScrollBox::setItems(const std::vector<std::string> &is) {
 }
 
 void ScrollBox::addItem(const std::string &i) {
-    Printer::setSize(fontSize);
+    printer.setSize(fontSize);
     std::string entry = i, overflow;
-    while (Printer::getFontWidth(entry) > rect.w) {
+    while (printer.getFontWidth(entry) > rect.w) {
         overflow.insert(overflow.begin(), entry.back());
         entry.pop_back();
     }

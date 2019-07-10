@@ -243,7 +243,7 @@ double Material::consume(unsigned int e) {
 
 std::unique_ptr<MenuButton> Material::button(bool aS, unsigned int gI, const std::string &gN, bool gS, const SDL_Rect &rt,
                                              const SDL_Color &fgr, const SDL_Color &bgr, int b, int r, int fS,
-                                             const GameData &gD, const std::function<void()> &f) const {
+                                             const GameData &gD, Printer &pr, const std::function<void()> &f) const {
     // Create a new button to represent this material.
     auto nameText = name;
     if (nameText != gN)
@@ -257,10 +257,10 @@ std::unique_ptr<MenuButton> Material::button(bool aS, unsigned int gI, const std
         std::string amountText = std::to_string(amount);
         dropTrail(&amountText, gS ? 3 : 0);
         tx.push_back(std::move(amountText));
-        return std::make_unique<MenuButton>(rt, tx, fgr, bgr, gI, false, b, r, fS, img, f);
+        return std::make_unique<MenuButton>(rt, tx, fgr, bgr, gI, false, b, r, fS, img, pr, f);
     }
     // Button does not show amount.
-    return std::make_unique<MenuButton>(rt, tx, fgr, bgr, gI, false, b, r, fS, img, f);
+    return std::make_unique<MenuButton>(rt, tx, fgr, bgr, gI, false, b, r, fS, img, pr, f);
 }
 
 void Material::updateButton(bool gS, double oV, int rC, TextBox *b) const {

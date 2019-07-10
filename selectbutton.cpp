@@ -20,8 +20,8 @@
 #include "selectbutton.hpp"
 
 SelectButton::SelectButton(const SDL_Rect &rt, const std::vector<std::string> &is, const SDL_Color &fg, const SDL_Color &bg,
-                           const SDL_Color &hl, int b, int r, int fS, const std::function<void()> &oC)
-    : TextBox(rt, is, fg, bg, 0, false, b, r, fS), ScrollBox(is, hl), MenuButton(oC) {
+                           const SDL_Color &hl, int b, int r, int fS, Printer &pr, const std::function<void()> &oC)
+    : TextBox(rt, is, fg, bg, 0, false, b, r, fS, pr), ScrollBox(is, hl, pr), MenuButton(pr, oC) {
     canFocus = true;
 }
 

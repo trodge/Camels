@@ -29,27 +29,26 @@
 #include "draw.hpp"
 
 class Printer {
-    static std::vector<int> sizes;
-    static std::vector<int>::difference_type sizeIndex;
-    static unsigned int nationId;
-    static SDL_Color foreground, background, highlight;
-    static int highlightLine;
-    static std::vector<TTF_Font *> fonts;
+    std::vector<int> sizes;
+    std::vector<int>::difference_type sizeIndex;
+    unsigned int nationId;
+    SDL_Color foreground, background, highlight;
+    int highlightLine;
+    std::vector<sdl::FontPtr> fonts;
 
   public:
-    static void closeFonts();
-    static void setSize(int s);
-    static void setColors(const SDL_Color &fg, const SDL_Color &bg) {
+    void setSize(int s);
+    void setColors(const SDL_Color &fg, const SDL_Color &bg) {
         foreground = fg;
         background = bg;
     }
-    static void setHighlight(const SDL_Color &hl) { highlight = hl; };
-    static void setHighlightLine(int h) { highlightLine = h; }
-    static void setNationId(unsigned int n) { nationId = n; }
-    static int getFontHeight() { return TTF_FontHeight(fonts[static_cast<size_t>(sizeIndex * kFontCount)]); }
-    static int getFontWidth(const std::string &tx);
-    static sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img);
-    static sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
+    void setHighlight(const SDL_Color &hl) { highlight = hl; };
+    void setHighlightLine(int h) { highlightLine = h; }
+    void setNationId(unsigned int n) { nationId = n; }
+    int getFontHeight() { return TTF_FontHeight(fonts[static_cast<size_t>(sizeIndex * kFontCount)].get()); }
+    int getFontWidth(const std::string &tx);
+    sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img);
+    sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
         return print(tx, rt, b, r, nullptr);
     }
 };

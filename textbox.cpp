@@ -20,9 +20,9 @@
 #include "textbox.hpp"
 
 TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-                 unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img)
+                 unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr)
     : rect(rt), fixedSize(rt.w and rt.h), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
-      fontSize(fS), image(img) {
+      fontSize(fS), image(img), printer(pr) {
     setText(t);
 }
 
@@ -36,15 +36,15 @@ void TextBox::setText() {
         rect.h = 0;
     }
     if (isNation)
-        Printer::setNationId(id);
+        printer.setNationId(id);
     else
-        Printer::setNationId(0);
+        printer.setNationId(0);
     if (invColors)
-        Printer::setColors(background, foreground);
+        printer.setColors(background, foreground);
     else
-        Printer::setColors(foreground, background);
-    Printer::setSize(fontSize);
-    lineHeight = Printer::getFontHeight();
+        printer.setColors(foreground, background);
+    printer.setSize(fontSize);
+    lineHeight = printer.getFontHeight();
     lines = text.size();
     if (rect.h and lines > size_t(rect.h / lineHeight)) {
         // Truncate lines of text if they won't fit in box of fixed size.
@@ -52,7 +52,7 @@ void TextBox::setText() {
         text = std::vector<std::string>(text.begin(),
                                         text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
     }
-    surface = Printer::print(text, rect, border, radius, image);
+    surface = printer.print(text, rect, border, radius, image);
     updateTexture = true;
 
     if (not fixedSize) {

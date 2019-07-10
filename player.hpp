@@ -35,6 +35,7 @@ class Player {
     std::vector<std::unique_ptr<TextBox>> boxes, storedBoxes;
     int focusBox = -1; // index of box currently focused, -1 if no focus
     Game &game;
+    Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = true;
     std::unordered_set<SDL_Keycode> scrollKeys;
     double modMultiplier;
@@ -67,7 +68,6 @@ class Player {
     void focus(int f, Focusable::FocusGroup g);
     void focusPrev(Focusable::FocusGroup g);
     void focusNext(Focusable::FocusGroup g);
-    void createTravelButtons();
     void updatePortionBox();
     void createStorageView(const Town *t);
     void setState(UIState s);

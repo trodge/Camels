@@ -51,6 +51,7 @@ struct Deleter {
     void operator()(SDL_Renderer *rndr) { SDL_DestroyRenderer(rndr); }
     void operator()(SDL_Surface *srfc) { SDL_FreeSurface(srfc); }
     void operator()(SDL_Texture *txtr) { SDL_DestroyTexture(txtr); }
+    void operator()(TTF_Font *font) { TTF_CloseFont(font); }
 };
 
 template <typename Creator, typename... Arguments> auto makeResource(Creator c, Arguments &&... args) {
@@ -65,6 +66,7 @@ using WindowPtr = std::unique_ptr<SDL_Window, Deleter>;
 using RendererPtr = std::unique_ptr<SDL_Renderer, Deleter>;
 using SurfacePtr = std::unique_ptr<SDL_Surface, Deleter>;
 using TexturePtr = std::unique_ptr<SDL_Texture, Deleter>;
+using FontPtr = std::unique_ptr<TTF_Font, Deleter>;
 
 inline WindowPtr makeWindow(const char *title, int x, int y, int w, int h, Uint32 flags) {
     return makeResource(SDL_CreateWindow, title, x, y, w, h, flags);
@@ -84,7 +86,7 @@ inline SurfacePtr makeSurfaceWithFormatFrom(void *pixels, int width, int height,
     return makeResource(SDL_CreateRGBSurfaceWithFormatFrom, pixels, width, height, depth, pitch, format);
 }
 
-inline SurfacePtr loadSurface(const char *file) { return makeResource(IMG_Load, file); }
+inline SurfacePtr loadImage(const char *file) { return makeResource(IMG_Load, file); }
 
 inline TexturePtr makeTexture(SDL_Renderer *renderer, Uint32 format, int access, int w, int h) {
     return makeResource(SDL_CreateTexture, renderer, format, access, w, h);
@@ -100,6 +102,8 @@ inline TexturePtr makeTextureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *
                                   rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
     return makeTextureFromSurface(rdr, c.get());
 }
+
+inline FontPtr openFont(const char *file, int ptsize) { return makeResource(TTF_OpenFont, file, ptsize); }
 } // namespace sdl
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);

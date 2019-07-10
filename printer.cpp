@@ -19,34 +19,21 @@
 
 #include "printer.hpp"
 
-std::vector<int> Printer::sizes;
-std::vector<int>::difference_type Printer::sizeIndex;
-unsigned int Printer::nationId;
-SDL_Color Printer::foreground, Printer::background, Printer::highlight;
-int Printer::highlightLine = -1;
-std::vector<TTF_Font *> Printer::fonts;
-
-void Printer::closeFonts() {
-    for (auto &f : fonts) {
-        TTF_CloseFont(f);
-    }
-}
-
 void Printer::setSize(int s) {
     sizeIndex = std::lower_bound(sizes.begin(), sizes.end(), s) - sizes.begin();
     if (static_cast<size_t>(sizeIndex) == sizes.size() or sizes[static_cast<size_t>(sizeIndex)] != s) {
         sizes.insert(sizes.begin() + sizeIndex, s);
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount, TTF_OpenFont("DejaVuSerif.ttf", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 1, TTF_OpenFont("DejaVuSans.ttf", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 2, TTF_OpenFont("NotoSerifDevanagari-Regular.ttf", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 3, TTF_OpenFont("wqy-microhei-lite.ttc", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 4, TTF_OpenFont("NotoSerifBengali-Regular.ttf", s));
+        fonts.insert(fonts.begin() + sizeIndex * kFontCount, sdl::openFont("DejaVuSerif.ttf", s));
+        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 1, sdl::openFont("DejaVuSans.ttf", s));
+        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 2, sdl::openFont("NotoSerifDevanagari-Regular.ttf", s));
+        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 3, sdl::openFont("wqy-microhei-lite.ttc", s));
+        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 4, sdl::openFont("NotoSerifBengali-Regular.ttf", s));
     }
 }
 
 int Printer::getFontWidth(const std::string &tx) {
     int w;
-    TTF_SizeUTF8(fonts[static_cast<size_t>(sizeIndex * kFontCount)], tx.c_str(), &w, nullptr);
+    TTF_SizeUTF8(fonts[static_cast<size_t>(sizeIndex * kFontCount)].get(), tx.c_str(), &w, nullptr);
     return w;
 }
 
@@ -58,19 +45,19 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     tWs.reserve(numLines);
     tHs.reserve(numLines);
     tSs.reserve(numLines);
-    int mW = 0;                                                                    // Minimum width to fit text.
-    int mH = 0;                                                                    // Minimum height to fit text.
-    std::vector<TTF_Font *>::iterator fI = fonts.begin() + sizeIndex * kFontCount; // Font to use.
+    int mW = 0;                                                                      // Minimum width to fit text.
+    int mH = 0;                                                                      // Minimum height to fit text.
+    std::vector<sdl::FontPtr>::iterator fI = fonts.begin() + sizeIndex * kFontCount; // Font to use.
     for (auto &t : tx) {
         // Render lines of text.
         if (t.empty())
-            tSs.push_back(TTF_RenderUTF8_Solid(*fI, " ", foreground));
+            tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), " ", foreground));
         else
-            tSs.push_back(TTF_RenderUTF8_Solid(*fI, t.c_str(), foreground));
+            tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), t.c_str(), foreground));
         tWs.push_back(tSs.back()->w);
         if (tWs.back() > mW)
             mW = tWs.back();
-        tHs.push_back(TTF_FontHeight(*fI));
+        tHs.push_back(TTF_FontHeight(fI->get()));
         mH += tHs.back();
         switch (nationId) {
         case 0:

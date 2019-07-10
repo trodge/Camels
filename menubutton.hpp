@@ -30,20 +30,21 @@ class MenuButton : virtual public TextBox {
   protected:
     SDL_Keycode key = SDLK_UNKNOWN;
     std::function<void()> onClick;
-    MenuButton(std::function<void()> oC) : onClick(oC) {}
+    MenuButton(Printer &pr, std::function<void()> oC) : TextBox(pr), onClick(oC) {}
 
   public:
     MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-               unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, const std::function<void()> &oC);
+               unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr,
+               const std::function<void()> &oC);
     MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-               unsigned int i, bool iN, int b, int r, int fS, const std::function<void()> &oC)
-        : MenuButton(rt, t, fg, bg, i, iN, b, r, fS, nullptr, oC) {}
+               unsigned int i, bool iN, int b, int r, int fS, Printer &pr, const std::function<void()> &oC)
+        : MenuButton(rt, t, fg, bg, i, iN, b, r, fS, nullptr, pr, oC) {}
     MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-               int fS, SDL_Surface *img, const std::function<void()> &oC)
-        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, img, oC) {}
+               int fS, SDL_Surface *img, Printer &pr, const std::function<void()> &oC)
+        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, img, pr, oC) {}
     MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-               int fS, const std::function<void()> &oC)
-        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, nullptr, oC) {}
+               int fS, Printer &pr, const std::function<void()> &oC)
+        : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, nullptr, pr, oC) {}
     virtual ~MenuButton() {}
     void setKey(const SDL_Keycode &k) { key = k; }
     SDL_Keycode getKey() const { return key; }

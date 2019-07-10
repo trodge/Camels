@@ -78,13 +78,13 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
-    void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI);
-    void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI);
+    void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
+    void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI, Printer &pr);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
     void runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d);
     void takeHit(const CombatHit &cH, Traveler &t);
-    void refreshLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t lBI);
+    void refreshLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t lBI, Printer &pr);
 
   public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
@@ -121,26 +121,26 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
     void makeTrade();
-    void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t &oBI, size_t &rBI);
+    void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t &oBI, size_t &rBI, Printer &pr);
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t oBI, size_t rBI);
     std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     void deposit(Good &g);
     void withdraw(Good &g);
-    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI);
+    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
-    void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI);
+    void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI, Printer &pr);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);
-    void createAttackButton(std::vector<std::unique_ptr<TextBox>> &bs, const std::function<void()> &sSF);
+    void createAttackButton(std::vector<std::unique_ptr<TextBox>> &bs, const std::function<void()> &sSF, Printer &pr);
     void choose(FightChoice c) { choice = c; }
     void loseTarget();
-    void createFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs, bool &p);
+    void createFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs, bool &p, Printer &pr);
     void updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs);
     void loot(Good &g, Traveler &t);
     void loot(Traveler &t);
-    void createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t lBI);
+    void createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t lBI, Printer &pr);
     void startAI();
     void startAI(const Traveler &p);
     void runAI(unsigned int e);

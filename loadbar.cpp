@@ -20,8 +20,8 @@
 #include "loadbar.hpp"
 
 LoadBar::LoadBar(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b,
-                 int r, int fS)
-    : TextBox({rt.x + rt.w / 2, rt.y + rt.h / 2, 0, 0}, t, fg, bg, 0, r, fS),
+                 int r, int fS, Printer &pr)
+    : TextBox({rt.x + rt.w / 2, rt.y + rt.h / 2, 0, 0}, t, fg, bg, 0, r, fS, pr),
       completeRect({rt.x + b, rt.y + b, 0, rt.h - 2 * b}), insideRect({rt.x + b, rt.y + b, rt.w - 2 * b, rt.h - 2 * b}),
       outsideRect(rt), outsideBorder(b) {}
 

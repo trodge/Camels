@@ -47,6 +47,7 @@ class Game {
     sdl::RendererPtr screen;
     sdl::SurfacePtr mapSurface; // surface of entire map loaded from image
     SDL_RendererInfo screenInfo;
+    Printer printer;
     std::vector<sdl::TexturePtr> mapTextures;      // textures for map broken down to maximum size for graphics card
     int mapTextureRowCount, mapTextureColumnCount; // number of columns in map textures matrix
     sdl::TexturePtr mapTexture;                    // texture for drawing map on screen at current position
@@ -78,6 +79,7 @@ class Game {
     const std::vector<Nation> &getNations() { return nations; }
     const std::vector<Town> &getTowns() { return towns; }
     const GameData &getData() const { return gameData; }
+    Printer &getPrinter() { return printer; }
     void unFocusTown(size_t i) { towns[i].unFocus(); }
     void fillFocusableTowns(std::vector<Focusable *> &fcbls);
     std::shared_ptr<Traveler> createPlayerTraveler(size_t nId, std::string n);
