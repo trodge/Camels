@@ -33,7 +33,7 @@ class ScrollBox : virtual public TextBox {
   public:
     ScrollBox(const SDL_Rect &rt, const std::vector<std::string> &is, const SDL_Color &fg, const SDL_Color &bg,
               const SDL_Color &hl, int b, int r, int fS);
-    virtual ~ScrollBox();
+    virtual ~ScrollBox() {}
     void setText();
     void setText(const std::vector<std::string> &t) {
         text = t;

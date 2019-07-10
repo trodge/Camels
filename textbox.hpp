@@ -44,8 +44,8 @@ class TextBox : public Focusable {
     bool clicked = false;
     int fontSize;
     int lineHeight = -1;
-    SDL_Surface *surface = nullptr;
-    SDL_Texture *texture = nullptr;
+    sdl2::SurfacePtr surface;
+    sdl2::TexturePtr texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface
     SDL_Surface *image;
     TextBox() {}
@@ -63,7 +63,7 @@ class TextBox : public Focusable {
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
             int fS)
         : TextBox(rt, t, fg, bg, 0, b, r, fS) {}
-    virtual ~TextBox();
+    virtual ~TextBox() {}
     virtual void setText();
     void setText(const std::vector<std::string> &tx) {
         text = tx;

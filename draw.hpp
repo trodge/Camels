@@ -45,45 +45,53 @@ const Uint32 amask = 0xff000000;
 #endif
 
 namespace sdl2 {
-template <typename Creator, typename Destructor, typename... Arguments>
-auto makeResource(Creator c, Destructor d, Arguments &&... args) {
+
+struct Deleter {
+    void operator()(SDL_Window *wndw) { SDL_DestroyWindow(wndw); }
+    void operator()(SDL_Renderer *rndr) { SDL_DestroyRenderer(rndr); }
+    void operator()(SDL_Surface *srfc) { SDL_FreeSurface(srfc); }
+    void operator()(SDL_Texture *txtr) { SDL_DestroyTexture(txtr); }
+};
+
+template <typename Creator, typename... Arguments> auto makeResource(Creator c, Arguments &&... args) {
     auto r = c(std::forward<Arguments>(args)...);
     if (!r) {
         throw std::system_error(errno, std::generic_category());
     }
-    return std::unique_ptr<std::decay_t<decltype(*r)>, decltype(d)>(r, d);
+    return std::unique_ptr<std::decay_t<decltype(*r)>, Deleter>(r);
 }
 
-using WindowPtr = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>;
-using RendererPtr = std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)>;
-using SurfacePtr = std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)>;
-using TexturePtr = std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)>;
+using WindowPtr = std::unique_ptr<SDL_Window, Deleter>;
+using RendererPtr = std::unique_ptr<SDL_Renderer, Deleter>;
+using SurfacePtr = std::unique_ptr<SDL_Surface, Deleter>;
+using TexturePtr = std::unique_ptr<SDL_Texture, Deleter>;
 
 inline WindowPtr makeWindow(const char *title, int x, int y, int w, int h, Uint32 flags) {
-    return makeResource(SDL_CreateWindow, SDL_DestroyWindow, title, x, y, w, h, flags);
+    return makeResource(SDL_CreateWindow, title, x, y, w, h, flags);
 }
 
 inline RendererPtr makeRenderer(SDL_Window *window, int index, Uint32 flags) {
-    return makeResource(SDL_CreateRenderer, SDL_DestroyRenderer, window, index, flags);
+    return makeResource(SDL_CreateRenderer, window, index, flags);
 }
 
-inline SurfacePtr makeSurface(Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask,
-                              Uint32 Amask) {
-    return makeResource(SDL_CreateRGBSurface, SDL_FreeSurface, flags, width, height, depth, Rmask, Gmask, Bmask, Amask);
+inline RendererPtr makeSoftwareRenderer(SDL_Surface *surface) { return makeResource(SDL_CreateSoftwareRenderer, surface); }
+
+inline SurfacePtr makeSurface(int width, int height) {
+    return makeResource(SDL_CreateRGBSurface, 0u, width, height, 32, rmask, gmask, bmask, amask);
 }
 
 inline SurfacePtr makeSurfaceWithFormatFrom(void *pixels, int width, int height, int depth, int pitch, Uint32 format) {
-    return makeResource(SDL_CreateRGBSurfaceWithFormatFrom, SDL_FreeSurface, pixels, width, height, depth, pitch, format);
+    return makeResource(SDL_CreateRGBSurfaceWithFormatFrom, pixels, width, height, depth, pitch, format);
 }
 
-inline SurfacePtr loadSurface(const char *file) { return makeResource(IMG_Load, SDL_FreeSurface, file); }
+inline SurfacePtr loadSurface(const char *file) { return makeResource(IMG_Load, file); }
 
 inline TexturePtr makeTexture(SDL_Renderer *renderer, Uint32 format, int access, int w, int h) {
-    return makeResource(SDL_CreateTexture, SDL_DestroyTexture, renderer, format, access, w, h);
+    return makeResource(SDL_CreateTexture, renderer, format, access, w, h);
 }
 
 inline TexturePtr makeTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
-    return makeResource(SDL_CreateTextureFromSurface, SDL_DestroyTexture, renderer, surface);
+    return makeResource(SDL_CreateTextureFromSurface, renderer, surface);
 }
 
 inline TexturePtr makeTextureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {

@@ -200,7 +200,7 @@ void Game::loadNations(sqlite3 *c) {
             fs::path imagePath("images/" + names[1] + "-" + names[0] + ".png");
             if (fs::exists(imagePath)) {
                 sdl2::SurfacePtr image(sdl2::loadSurface(imagePath.string().c_str()));
-                sdl2::SurfacePtr scaledImage(sdl2::makeSurface(0u, rt.w, rt.h, 32, rmask, gmask, bmask, amask));
+                sdl2::SurfacePtr scaledImage(sdl2::makeSurface(rt.w, rt.h));
                 SDL_BlitScaled(image.get(), nullptr, scaledImage.get(), &rt);
                 gameData.goodImages[i].emplace_hint(gameData.goodImages[i].end(), m.getId(), std::move(scaledImage));
             }

@@ -25,8 +25,6 @@ LoadBar::LoadBar(const SDL_Rect &rt, const std::vector<std::string> &t, const SD
       completeRect({rt.x + b, rt.y + b, 0, rt.h - 2 * b}), insideRect({rt.x + b, rt.y + b, rt.w - 2 * b, rt.h - 2 * b}),
       outsideRect(rt), outsideBorder(b) {}
 
-LoadBar::~LoadBar() {}
-
 void LoadBar::progress(double c) {
     if (complete + c < 1)
         complete += c;

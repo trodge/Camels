@@ -50,7 +50,7 @@ int Printer::getFontWidth(const std::string &tx) {
     return w;
 }
 
-SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img) {
+sdl2::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img) {
     // Create a new SDL_Surface with the given text printed on it. Nation ID used to determine fonts.
     size_t numLines = tx.size();
     std::vector<int> tWs, tHs;      // Widths and heights for each line of text.
@@ -95,22 +95,22 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
     if (not rt.h)
         rt.h = mH + 2 * b;
 
-    SDL_Surface *p = SDL_CreateRGBSurface(0, rt.w, rt.h, 32, rmask, gmask, bmask, amask);
-    SDL_Renderer *s = SDL_CreateSoftwareRenderer(p);
+    sdl2::SurfacePtr p(sdl2::makeSurface(rt.w, rt.h));
+    sdl2::RendererPtr swRdr(sdl2::makeSoftwareRenderer(p.get()));
     // Draw border.
     SDL_Rect dR = {0, 0, rt.w, rt.h};
     if (true) {
-        drawRoundedRectangle(s, r, &dR, foreground);
+        drawRoundedRectangle(swRdr.get(), r, &dR, foreground);
     }
     dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
-    drawRoundedRectangle(s, r, &dR, background);
+    drawRoundedRectangle(swRdr.get(), r, &dR, background);
     if (img) {
         // Center image vertically and place on left side of text
         dR.w = rt.h - 2 * b;
         dR.h = rt.h - 2 * b;
         dR.x = 2 * b;
         dR.y = rt.h / 2 - dR.h / 2;
-        SDL_BlitSurface(img, nullptr, p, &dR);
+        SDL_BlitSurface(img, nullptr, p.get(), &dR);
     }
     // Center text vertically.
     dR.y = rt.h / 2 - mH / 2;
@@ -126,13 +126,12 @@ SDL_Surface *Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
             dR.x = rt.w / 2 - dR.w / 2;
         if (i == size_t(highlightLine)) {
             SDL_Rect hlR = {b, dR.y, rt.w - 2 * b, dR.h};
-            SDL_SetRenderDrawColor(s, highlight.r, highlight.g, highlight.b, highlight.a);
-            SDL_RenderFillRect(s, &hlR);
+            SDL_SetRenderDrawColor(swRdr.get(), highlight.r, highlight.g, highlight.b, highlight.a);
+            SDL_RenderFillRect(swRdr.get(), &hlR);
         }
-        SDL_BlitSurface(tSs[i], nullptr, p, &dR);
+        SDL_BlitSurface(tSs[i], nullptr, p.get(), &dR);
         SDL_FreeSurface(tSs[i]);
         dR.y += dR.h;
     }
-    SDL_DestroyRenderer(s);
     return p;
 }

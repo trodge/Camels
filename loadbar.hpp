@@ -31,7 +31,6 @@ class LoadBar : public TextBox {
   public:
     LoadBar(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
             int fS);
-    ~LoadBar();
     void progress(double c);
     void draw(SDL_Renderer *s);
 };

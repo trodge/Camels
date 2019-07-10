@@ -237,7 +237,7 @@ void Player::setState(UIState s) {
             if (focusTown > -1)
                 game.pickTown(traveler, static_cast<size_t>(focusTown));
             show = true;
-            boxes[1]->setClicked(false);
+            boxes.front()->setClicked(false);
         }));
         boxes.back()->setKey(SDLK_g);
         // Create trade button.

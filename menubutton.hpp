@@ -44,7 +44,7 @@ class MenuButton : virtual public TextBox {
     MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
                int fS, const std::function<void()> &oC)
         : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, nullptr, oC) {}
-    virtual ~MenuButton();
+    virtual ~MenuButton() {}
     void setKey(const SDL_Keycode &k) { key = k; }
     SDL_Keycode getKey() const { return key; }
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;

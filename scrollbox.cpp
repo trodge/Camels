@@ -25,8 +25,6 @@ ScrollBox::ScrollBox(const SDL_Rect &rt, const std::vector<std::string> &is, con
     canFocus = true;
 }
 
-ScrollBox::~ScrollBox() {}
-
 void ScrollBox::setText() {
     Printer::setHighlightLine(highlightLine - static_cast<int>(scroll));
     Printer::setHighlight(highlight);

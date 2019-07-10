@@ -21,29 +21,20 @@
 
 TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
                  unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img)
-    : rect(rt), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r), fontSize(fS),
-      image(img) {
-    fixedSize = (rt.w and rt.h);
+    : rect(rt), fixedSize(rt.w and rt.h), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
+      fontSize(fS), image(img) {
     setText(t);
-}
-
-TextBox::~TextBox() {
-    if (surface)
-        SDL_FreeSurface(surface);
-    if (texture)
-        SDL_DestroyTexture(texture);
 }
 
 void TextBox::setText() {
     // Renders the text using the printer. Call any time text changes.
     if (not fixedSize) {
+        // Get rid of old width and height and move rectangle to center.
         rect.x += rect.w / 2;
         rect.y += rect.h / 2;
         rect.w = 0;
         rect.h = 0;
     }
-    if (surface)
-        SDL_FreeSurface(surface);
     if (isNation)
         Printer::setNationId(id);
     else
@@ -64,8 +55,8 @@ void TextBox::setText() {
     surface = Printer::print(text, rect, border, radius, image);
     updateTexture = true;
 
-    // If rectangle dimensions were not provided, rectagle coordinates are text center.
     if (not fixedSize) {
+        // Rectagle coordinates are at center, move them to top-left corner.
         rect.x -= rect.w / 2;
         rect.y -= rect.h / 2;
     }
@@ -117,12 +108,10 @@ void TextBox::move(int dx, int dy) {
 void TextBox::draw(SDL_Renderer *s) {
     // Copy this TextBox's texture onto s, updating texture if necessary.
     if (updateTexture) {
-        if (texture)
-            SDL_DestroyTexture(texture);
-        texture = SDL_CreateTextureFromSurface(s, surface);
+        texture = sdl2::makeTextureFromSurface(s, surface.get());
         updateTexture = false;
     }
-    SDL_RenderCopy(s, texture, nullptr, &rect);
+    SDL_RenderCopy(s, texture.get(), nullptr, &rect);
 }
 
 bool TextBox::keyCaptured(const SDL_KeyboardEvent &k) const {

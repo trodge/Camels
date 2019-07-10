@@ -25,8 +25,6 @@ MenuButton::MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, co
     canFocus = true;
 }
 
-MenuButton::~MenuButton() {}
-
 bool MenuButton::keyCaptured(const SDL_KeyboardEvent &k) const {
     switch (k.keysym.sym) {
     case SDLK_SPACE:
