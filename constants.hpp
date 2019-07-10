@@ -29,5 +29,4 @@ const int kDaysPerYear = 365;
 const std::vector<TTF_Font *>::difference_type kFontCount = 5; // Number of fonts used to display text
 const size_t kFightChoiceIndex = 3;                            // Index of box representing choice when fighting
 
-
 #endif

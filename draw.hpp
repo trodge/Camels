@@ -30,7 +30,6 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
-
 /* SDL interprets each pixel as a 32-bit number, so our masks must depend
    on the endianness (byte order) of the machine */
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -45,9 +44,6 @@ const Uint32 bmask = 0x00ff0000;
 const Uint32 amask = 0xff000000;
 #endif
 
-
-SDL_Texture *textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt);
-
 namespace sdl2 {
 template <typename Creator, typename Destructor, typename... Arguments>
 auto makeResource(Creator c, Destructor d, Arguments &&... args) {
@@ -60,8 +56,8 @@ auto makeResource(Creator c, Destructor d, Arguments &&... args) {
 
 using WindowPtr = std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)>;
 using RendererPtr = std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)>;
-using TexturePtr = std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)>;
 using SurfacePtr = std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)>;
+using TexturePtr = std::unique_ptr<SDL_Texture, decltype(&SDL_DestroyTexture)>;
 
 inline WindowPtr makeWindow(const char *title, int x, int y, int w, int h, Uint32 flags) {
     return makeResource(SDL_CreateWindow, SDL_DestroyWindow, title, x, y, w, h, flags);
@@ -71,20 +67,31 @@ inline RendererPtr makeRenderer(SDL_Window *window, int index, Uint32 flags) {
     return makeResource(SDL_CreateRenderer, SDL_DestroyRenderer, window, index, flags);
 }
 
+inline SurfacePtr makeSurface(Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask,
+                              Uint32 Amask) {
+    return makeResource(SDL_CreateRGBSurface, SDL_FreeSurface, flags, width, height, depth, Rmask, Gmask, Bmask, Amask);
+}
+
+inline SurfacePtr makeSurfaceWithFormatFrom(void *pixels, int width, int height, int depth, int pitch, Uint32 format) {
+    return makeResource(SDL_CreateRGBSurfaceWithFormatFrom, SDL_FreeSurface, pixels, width, height, depth, pitch, format);
+}
+
+inline SurfacePtr loadSurface(const char *file) { return makeResource(IMG_Load, SDL_FreeSurface, file); }
+
 inline TexturePtr makeTexture(SDL_Renderer *renderer, Uint32 format, int access, int w, int h) {
     return makeResource(SDL_CreateTexture, SDL_DestroyTexture, renderer, format, access, w, h);
 }
 
+inline TexturePtr makeTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
+    return makeResource(SDL_CreateTextureFromSurface, SDL_DestroyTexture, renderer, surface);
+}
+
 inline TexturePtr makeTextureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
-    return makeResource(textureFromSurfaceSection, SDL_DestroyTexture, rdr, sf, rt);
+    SurfacePtr c(
+        makeSurfaceWithFormatFrom(static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel,
+                                  rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
+    return makeTextureFromSurface(rdr, c.get());
 }
-
-inline SurfacePtr makeSurface(Uint32 flags, int width, int height, int depth, Uint32 Rmask, Uint32 Gmask, Uint32 Bmask,
-                                  Uint32 Amask) {
-    return makeResource(SDL_CreateRGBSurface, SDL_FreeSurface, flags, width, height, depth, Rmask, Gmask, Bmask, Amask);
-}
-
-inline SurfacePtr loadSurface(const char *file) { return makeResource(IMG_Load, SDL_FreeSurface, file); }
 } // namespace sdl2
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
