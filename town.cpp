@@ -82,6 +82,13 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
     auto lGoods = t->goods();
     for (auto lGI = lGoods->begin(); lGI != lGoods->end(); ++lGI)
         goods.push_back(Good(*lGI));
+    auto &nGs = nation->getGoods();
+    // Copy image pointers from nation's goods.
+    for (size_t i = 0; i < nGs.size(); ++i) {
+        auto &nGMs = nGs[i].getMaterials();
+        for (size_t j = 0; j < nGMs.size(); ++j)
+            goods[i].setImage(j, nGMs[j].getImage());
+    }
     setMax();
 }
 

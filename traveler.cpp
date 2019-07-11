@@ -61,6 +61,13 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     auto lEquipment = t->equipment();
     for (auto lEI = lEquipment->begin(); lEI != lEquipment->end(); ++lEI)
         equipment.push_back(Good(*lEI));
+    // Copy good image pointers from nation's goods to traveler's goods.
+    auto &nGs = nation->getGoods();
+    for (size_t i = 0; i < nGs.size(); ++i) {
+        auto &nGMs = nGs[i].getMaterials();
+        for (size_t j = 0; j < nGMs.size(); ++j)
+            goods[i].setImage(j, nGMs[j].getImage());
+    }
 }
 
 void Traveler::addToTown() { fromTown->addTraveler(shared_from_this()); }
@@ -524,6 +531,7 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
                 size_t i = ss.front().partId;
                 Good e(g.getId(), g.getName(), 1);
                 Material eM(m.getId(), m.getName(), 1);
+                eM.setImage(m.getImage());
                 eM.setCombatStats(ss);
                 e.addMaterial(eM);
                 equippable[i].push_back(e);
