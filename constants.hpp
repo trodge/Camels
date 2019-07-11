@@ -23,11 +23,16 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <boost/math/constants/constants.hpp>
+
+const double kPi = boost::math::constants::pi<double>();
 const double kShowPlayerPadding = 0.2; // Portion of screen to pad around player when map zooms to player
 const size_t kMaxTowns = 500;          // Maximum number of towns allowed to be loaded
 const int kDaysPerYear = 365;
 const size_t kFontCount = 5; // Number of fonts used to display text
 const size_t kFightChoiceIndex = 3;                            // Index of box representing choice when fighting
+const int kGoodButtonSizeMultiplier = 29;
+const int kGoodButtonSpaceMultiplier = 31;
 const int kGoodButtonXDivisor = 434;
 const int kGoodButtonYDivisor = 527;
 

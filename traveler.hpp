@@ -41,7 +41,19 @@
 #include "selectbutton.hpp"
 #include "town.hpp"
 
-struct GameData;
+struct CombatOdd {
+    double hitOdds;
+    std::array<std::pair<unsigned int, double>, 3> statusChances;
+    // statuses are normal, bruised, wounded, broken, infected, pulverized, amputated, impaled
+};
+
+struct GameData {
+    std::vector<std::string> parts;
+    std::vector<std::string> statuses;
+    std::vector<CombatOdd> odds;
+    std::vector<std::string> townTypeNouns;
+    std::map<unsigned long, std::string> populationAdjectives;
+};
 
 struct CombatHit {
     double time;

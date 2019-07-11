@@ -72,6 +72,7 @@ class Good {
         if (m > max)
             max = m;
     }
+    void setImage(size_t i, SDL_Surface *img) { materials[i].setImage(img); }
     void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
     void assignConsumption(unsigned long p);
     void take(Good &g);
@@ -81,6 +82,14 @@ class Good {
     void create(const std::unordered_map<unsigned int, double> &mAs);
     void create(double a);
     void consume(unsigned int e);
+    std::unique_ptr<MenuButton> button(bool aS, const Material &mtr, const SDL_Rect &rt,
+                                       const SDL_Color &fgr, const SDL_Color &bgr, int b, int r, int fS,
+                                       Printer &pr, const std::function<void()> &fn) const;
+    std::unique_ptr<MenuButton> button(bool aS, const SDL_Rect &rt,
+                                       const SDL_Color &fgr, const SDL_Color &bgr, int b, int r, int fS,
+                                       Printer &pr, const std::function<void()> &fn) const {
+        return button(aS, materials.front(), rt, fgr, bgr, b, r, fS, pr, fn);
+    }                                      
     void adjustDemand(std::string rBN, double d);
     void saveDemand(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;

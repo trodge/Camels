@@ -89,9 +89,8 @@ Game::~Game() {
     std::cout << "Freeing map texture" << std::endl;
     mapTexture = nullptr;
     std::cout << "Freeing good images" << std::endl;
-    for (auto &gIs : gameData.goodImages)
-        for (auto &gI : gIs)
-            gI.second = nullptr;
+    for (auto &gI : goodImages)
+        gI = nullptr;
     std::cout << "Destroying screen" << std::endl;
     screen = nullptr;
     std::cout << "Destroying window" << std::endl;
@@ -182,24 +181,34 @@ void Game::loadNations(sqlite3 *c) {
     }
     sqlite3_finalize(quer);
     // Load good images.
-    int imageSide = screenRect.h * 29 / kGoodButtonYDivisor - 2 * Settings::getTradeBorder();
-    SDL_Rect rt = {0, 0, imageSide, imageSide};
-    gameData.goodImages.resize(goods.size());
+    int imageSize = screenRect.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor - 2 * Settings::getTradeBorder();
+    SDL_Rect rt = {0, 0, imageSize, imageSize};
+    goodImages.reserve(goods.size());
     for (size_t i = 0; i < goods.size(); ++i) {
+        // Loop over goods by index.
         auto &g = goods[i];
-        for (auto &m : g.getMaterials()) {
+        auto &gMs = goods[i].getMaterials();
+        for (size_t j = 0; j < gMs.size(); ++j) {
+            // Loop over materials by index.
+            auto &m = gMs[j];
             std::array<std::string, 2> names = {g.getName(), m.getName()};
             for (auto &nm : names) {
+                // Replace spaces in names with dashes.
                 size_t sI = nm.find(' ');
                 if (sI < nm.size())
                     nm.replace(sI, 1, "-");
             }
+            // Concatenate material name with good name.
             fs::path imagePath("images/" + names[1] + "-" + names[0] + ".png");
             if (fs::exists(imagePath)) {
+                // Load image from file.
                 sdl::SurfacePtr image(sdl::loadImage(imagePath.string().c_str()));
-                sdl::SurfacePtr scaledImage(sdl::makeSurface(rt.w, rt.h));
-                SDL_BlitScaled(image.get(), nullptr, scaledImage.get(), &rt);
-                gameData.goodImages[i].emplace_hint(gameData.goodImages[i].end(), m.getId(), std::move(scaledImage));
+                // Put empty surface in vector.
+                goodImages.push_back(sdl::makeSurface(rt.w, rt.h));
+                // Scale image into vector.
+                SDL_BlitScaled(image.get(), nullptr, goodImages.back().get(), &rt);
+                // Pass pointer to good and material.
+                g.setImage(j, goodImages.back().get());
             }
         }
     }

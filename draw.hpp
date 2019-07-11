@@ -30,6 +30,8 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
+#include "constants.hpp"
+
 /* SDL interprets each pixel as a 32-bit number, so our masks must depend
    on the endianness (byte order) of the machine */
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -61,6 +63,7 @@ template <typename Creator, typename... Arguments> auto makeResource(Creator c, 
     }
     return std::unique_ptr<std::decay_t<decltype(*r)>, Deleter>(r);
 }
+
 
 using WindowPtr = std::unique_ptr<SDL_Window, Deleter>;
 using RendererPtr = std::unique_ptr<SDL_Renderer, Deleter>;

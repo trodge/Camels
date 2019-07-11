@@ -55,6 +55,7 @@ class Game {
     std::vector<Nation> nations;
     std::vector<Town> towns;
     std::vector<Business> businesses;
+    std::vector<sdl::SurfacePtr> goodImages;
     GameData gameData;
     std::vector<std::shared_ptr<Traveler>> aITravelers;
     std::unique_ptr<Player> player;

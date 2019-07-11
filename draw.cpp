@@ -28,7 +28,7 @@ void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col)
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
     SDL_RenderFillRects(s, rects.data(), 3);
     std::vector<SDL_Point> ps; // points to draw partial circles
-    ps.reserve(static_cast<size_t>(M_PI * r * r + 1.));
+    ps.reserve(static_cast<size_t>(kPi * r * r + 1.));
     // Fill partial circle in top-left corner.
     for (int x = -r; x <= 0; ++x)
         for (int y = -r; y <= 0; ++y)
@@ -57,13 +57,13 @@ void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl) 
     std::vector<SDL_Point> ps;
     if (fl) {
         // filled circle
-        ps.reserve(static_cast<size_t>(M_PI * r * r + 1.));
+        ps.reserve(static_cast<size_t>(kPi * r * r + 1.));
         for (int x = -r; x <= r; ++x)
             for (int y = -r; y <= r; ++y)
                 if ((x * x) + (y * y) <= r * r)
                     ps.push_back({cx + x, cy + y});
     } else {
-        ps.reserve(static_cast<size_t>(M_PI * r * 2. + 1.));
+        ps.reserve(static_cast<size_t>(kPi * r * 2. + 1.));
         int x = 0;
         int y = r;
         int d = 1 - r;

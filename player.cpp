@@ -640,10 +640,10 @@ void Player::update(unsigned int e) {
     if (not(scrollKeys.empty())) {
         auto upIt = scrollKeys.find(SDLK_UP), dnIt = scrollKeys.find(SDLK_DOWN), lfIt = scrollKeys.find(SDLK_LEFT),
              rtIt = scrollKeys.find(SDLK_RIGHT);
-        scrollX -= (lfIt != scrollKeys.end()) * sS;
-        scrollX += (rtIt != scrollKeys.end()) * sS;
-        scrollY -= (upIt != scrollKeys.end()) * sS;
-        scrollY += (dnIt != scrollKeys.end()) * sS;
+        scrollX -= (lfIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
+        scrollX += (rtIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
+        scrollY -= (upIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
+        scrollY += (dnIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
     }
     if (scrollX or scrollY)
         game.moveView(scrollX, scrollY);

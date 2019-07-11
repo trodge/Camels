@@ -45,21 +45,6 @@ struct CombatStat {
     std::array<unsigned int, 3> defense;
 };
 
-struct CombatOdd {
-    double hitOdds;
-    std::array<std::pair<unsigned int, double>, 3> statusChances;
-    // statuses are normal, bruised, wounded, broken, infected, pulverized, amputated, impaled
-};
-
-struct GameData {
-    std::vector<std::unordered_map<unsigned int, sdl::SurfacePtr>> goodImages;
-    std::vector<std::string> parts;
-    std::vector<std::string> statuses;
-    std::vector<CombatOdd> odds;
-    std::vector<std::string> townTypeNouns;
-    std::map<unsigned long, std::string> populationAdjectives;
-};
-
 class Material {
     unsigned int id;
     std::string name;
@@ -76,6 +61,7 @@ class Material {
     std::deque<PerishCounter> perishCounters;
     std::vector<CombatStat> combatStats;
     double lastAmount = 0;
+    SDL_Surface *image = nullptr;
 
   public:
     Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI);
@@ -112,8 +98,10 @@ class Material {
             return p / s;
         return 0;
     } // score buying at price p
+    SDL_Surface *getImage() const { return image; }
     void setAmount(double a) { amount = a; }
     void setCombatStats(const std::vector<CombatStat> &cSs) { combatStats = cSs; }
+    void setImage(SDL_Surface *img) { image = img; }
     void assignConsumption(std::array<double, 3> c);
     void assignConsumption(unsigned long p);
     void take(Material &m);
@@ -122,9 +110,6 @@ class Material {
     void create(double a);
     double perish(unsigned int e, double p);
     double consume(unsigned int e);
-    std::unique_ptr<MenuButton> button(bool aS, unsigned int gI, const std::string &gN, bool gS, const SDL_Rect &rt,
-                                       const SDL_Color &fgr, const SDL_Color &bgr, int b, int r, int fS, const GameData &gD,
-                                       Printer &pr, const std::function<void()> &f) const;
     void updateButton(bool gS, double oV, int rC, TextBox *b) const;
     void adjustDemand(double d);
     void fixDemand(double m);

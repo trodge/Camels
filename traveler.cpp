@@ -260,17 +260,17 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
-    std::function<void()> f = [this, &bs, &oBI, &rBI] {
+    std::function<void()> fn = [this, &bs, &oBI, &rBI] {
         updateTradeButtons(bs, oBI, rBI);
     }; // function to call when buttons are clicked
     // Create the offer buttons for the player.
     int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor,
-        dx = sR.w * 31 / kGoodButtonXDivisor, dy = sR.h * 31 / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * 29 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
+        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     for (auto &g : getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1.)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, tB, tR, tFS, gameData, pr, f));
+                bs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, fn));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -286,7 +286,7 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     for (auto &g : toTown->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1.)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, tB, tR, tFS, gameData, pr, f));
+                bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, fn));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -396,12 +396,12 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     // Create buttons for depositing goods.
     int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor,
-        dx = sR.w * 31 / kGoodButtonXDivisor, dy = sR.h * 31 / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * 29 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
+        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if (((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1))) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, tB, tR, tFS, gameData, pr,
+                bs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr,
                                       [this, &g, &m, &bs, &fB, sBI, &pr] {
                                           Good dG(g.getId(), g.getAmount() * portion);
                                           dG.addMaterial(Material(m.getId(), m.getAmount()));
@@ -426,7 +426,7 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     for (auto &g : sI->second) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, tB, tR, tFS, gameData, pr,
+                bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr,
                                       [this, &g, &m, &bs, &fB, sBI, &pr] {
                                           Good dG(g.getId(), g.getAmount() * portion);
                                           dG.addMaterial(Material(m.getId(), m.getAmount()));
@@ -473,24 +473,26 @@ void Traveler::equip(Good &g) {
 }
 
 void Traveler::equip(unsigned int pI) {
+    // Equip fists if nothing is equipped in part.
+    // Look for equipment in part.
     for (auto &e : equipment)
         for (auto &s : e.getMaterial().getCombatStats())
             if (s.partId == pI)
                 return;
     if (pI == 2) {
         // Add left fist to equipment.
-        Good f = Good(0, "fist");
+        Good fn = Good(0, "fist");
         Material fM(0, "left");
         fM.setCombatStats({{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}});
-        f.addMaterial(fM);
-        equipment.push_back(f);
+        fn.addMaterial(fM);
+        equipment.push_back(fn);
     } else if (pI == 3) {
         // Add right fist to equipment.
-        Good f = Good(0, "fist");
+        Good fn = Good(0, "fist");
         Material fM(0, "right");
         fM.setCombatStats({{1, 3, 1, 1, 0, {{1, 1, 1}}}, {2, 3, 0, 1, 1, {{1, 1, 1}}}});
-        f.addMaterial(fM);
-        equipment.push_back(f);
+        fn.addMaterial(fM);
+        equipment.push_back(fn);
     }
 }
 
@@ -506,9 +508,9 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
     int eB = Settings::getEquipBorder(), eR = Settings::getEquipRadius(), eFS = Settings::getEquipFontSize();
-    int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor, dx = sR.w * 36 / kGoodButtonXDivisor,
-        dy = sR.h * 31 / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * 35 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
+    int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor, dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+        dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     std::array<std::vector<Good>, 6> equippable; // array of vectors corresponding to parts that can hold equipment
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
@@ -526,8 +528,8 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
     // Create buttons for equipping equipment.
     for (auto &eP : equippable) {
         for (auto &e : eP) {
-            bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, eB, eR, eFS,
-                                                gameData, pr, [this, e, &bs, &fB, eBI, &pr]() mutable {
+            bs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS,
+                                                pr, [this, e, &bs, &fB, eBI, &pr]() mutable {
                                                     equip(e);
                                                     // Refresh buttons.
                                                     refreshEquipButtons(bs, fB, eBI, pr);
@@ -544,7 +546,7 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
         rt.x = left + static_cast<int>(pI) * dx;
-        bs.push_back(e.getMaterial().button(false, e.getId(), e.getName(), e.getSplit(), rt, fgr, bgr, eB, eR, eFS, gameData, pr,
+        bs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr,
                                             [this, pI, ss, &bs, &fB, eBI, &pr] {
                                                 unequip(pI);
                                                 // Equip fists.
@@ -828,12 +830,12 @@ void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, cons
                     &tBgr = tgt.nation->getBackground();
     int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2;
     int top = sR.h / kGoodButtonYDivisor;
-    int dx = sR.w * 31 / kGoodButtonXDivisor, dy = sR.h * 31 / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * 29 / kGoodButtonXDivisor, sR.h * 29 / kGoodButtonYDivisor};
+    int dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, fgr, bgr, tB, tR, tFS, gameData, pr,
+                bs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr,
                                       [this, &g, &m, &tgt, &bs, &fB, lBI, &pr] {
                                           Good lG(g.getId(), m.getAmount());
                                           lG.addMaterial(Material(m.getId(), m.getAmount()));
@@ -854,7 +856,7 @@ void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, cons
     for (auto &g : tgt.goods)
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(m.button(true, g.getId(), g.getName(), g.getSplit(), rt, tFgr, tBgr, tB, tR, tFS, gameData, pr,
+                bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr,
                                       [this, &g, &m, &tgt, &bs, &fB, lBI, &pr] {
                                           Good lG(g.getId(), m.getAmount());
                                           lG.addMaterial(Material(m.getId(), m.getAmount()));
