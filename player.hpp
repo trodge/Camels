@@ -56,6 +56,7 @@ class Player {
         storing,
         managing,
         equipping,
+        hiring,
         attacking,
         fighting,
         looting,

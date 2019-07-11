@@ -65,7 +65,7 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
     : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]), longitude(t->longitude()),
-      latitude(t->latitude()), coastal(t->coastal()), population(t->population()), townType(t->townType()),
+      latitude(t->latitude()), coastal(t->coastal()), population(static_cast<unsigned long>(t->population())), townType(t->townType()),
       businessCounter(t->businessCounter()) {
     // Load a town from the given flatbuffers save object.
     canFocus = true;

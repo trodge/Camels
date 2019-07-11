@@ -405,30 +405,6 @@ void Game::handleEvents() {
         Uint8 r, g, b;
         int mx, my, mw, mh;
         switch (event.type) {
-        case SDL_KEYDOWN:
-            switch (event.key.keysym.sym) {
-            case SDLK_u:
-                --offsetY;
-                place();
-                std::cout << "Y offset decreased" << std::endl;
-                break;
-            case SDLK_j:
-                ++offsetY;
-                place();
-                std::cout << "Y offset increased" << std::endl;
-                break;
-            case SDLK_h:
-                --offsetX;
-                place();
-                std::cout << "X offset decreased" << std::endl;
-                break;
-            case SDLK_k:
-                ++offsetX;
-                place();
-                std::cout << "X offset increased" << std::endl;
-                break;
-            }
-            break;
         case SDL_MOUSEBUTTONDOWN:
             // Print r g b values at clicked coordinates
             mx = event.button.x + mapRect.x;
