@@ -19,7 +19,9 @@
 
 #include "player.hpp"
 
-Player::Player(Game &g) : game(g), printer(g.getPrinter()) {}
+Player::Player(Game &g) : game(g), printer(g.getPrinter()), stateTextKeys({{{trading, "(T)rade", SDLK_t}, {storing, "(S)tore", SDLK_s}, {managing, "(M)anage", SDLK_m},
+                                                                           {equipping, "(E)quip", SDLK_e}, {hiring, "(H)ire", SDLK_h}, {attacking, "(A)ttack", SDLK_a},
+                                                                           {logging, "(L)og", SDLK_l}}}) {}
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
@@ -147,24 +149,24 @@ void Player::setState(UIState s) {
         sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize(),
         fFS = Settings::getFightFontSize();
     SDL_Rect rt;
-    std::vector<std::string> tx;
+    std::vector<std::string> tx(1);
     std::function<void()> f;
     fs::path path;
     std::vector<std::string> saves;
     switch (s) {
     case starting:
         rt = {sR.w / 2, sR.h / 15, 0, 0};
-        tx = {"Camels and Silk"};
+        tx.back() = "Camels and Silk";
         boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
         rt = {sR.w / 7, sR.h / 3, 0, 0};
-        tx = {"(N)ew Game"};
+        tx.back() = "(N)ew Game";
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] {
             game.newGame();
             setState(beginning);
         }));
         boxes.back()->setKey(SDLK_n);
         rt = {sR.w / 7, sR.h * 2 / 3, 0, 0};
-        tx = {"(L)oad Game"};
+        tx.back() = "(L)oad Game";
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] {
             boxes.back()->setClicked(false);
             toggleState(loading);
@@ -196,25 +198,25 @@ void Player::setState(UIState s) {
         break;
     case quitting:
         rt = {sR.w / 2, sR.h / 4, 0, 0};
-        tx = {"Continue"};
+        tx.back() = "Continue";
         boxes.push_back(
             std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] { toggleState(quitting); }));
         rt = {sR.w / 2, sR.h * 3 / 4, 0, 0};
         if (traveler) {
-            tx = {"Save and Quit"};
+            tx.back() = "Save and Quit";
             f = [this] {
                 game.saveGame();
                 stop = true;
             };
         } else {
-            tx = {"Quit"};
+            tx.back() = "Quit";
             f = [this] { stop = true; };
         }
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, f));
         break;
     case loading:
         rt = {sR.w / 7, sR.h / 7, 0, 0};
-        tx = {"(B)ack"};
+        tx.back() = "(B)ack";
         boxes.push_back(
             std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] { toggleState(loading); }));
         boxes.back()->setKey(SDLK_b);
@@ -222,7 +224,7 @@ void Player::setState(UIState s) {
         for (auto &file : fs::directory_iterator(path))
             saves.push_back(file.path().stem().string());
         rt = {sR.w / 2, sR.h / 15, 0, 0};
-        tx = {"Load"};
+        tx.back() = "Load";
         boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
         rt = {sR.w / 5, sR.h / 7, sR.w * 3 / 5, sR.h * 5 / 7};
         boxes.push_back(std::make_unique<SelectButton>(
@@ -232,7 +234,7 @@ void Player::setState(UIState s) {
     case traveling:
         // Create go button.
         rt = {sR.w / 9, sR.h * 14 / 15, 0, 0};
-        tx = {"(G)o"};
+        tx.back() = "(G)o";
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] {
             if (focusTown > -1)
                 game.pickTown(traveler, static_cast<size_t>(focusTown));
@@ -240,48 +242,14 @@ void Player::setState(UIState s) {
             boxes.front()->setClicked(false);
         }));
         boxes.back()->setKey(SDLK_g);
-        // Create trade button.
-        rt.x += sR.w / 9;
-        tx = {"(T)rade"};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(trading); }));
-        boxes.back()->setKey(SDLK_t);
-        // Create store button.
-        rt.x += sR.w / 9;
-        tx = {"(S)tore"};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(storing); }));
-        boxes.back()->setKey(SDLK_s);
-        // Create manage button.
-        rt.x += sR.w / 9;
-        tx = {"(M)anage"};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(managing); }));
-        boxes.back()->setKey(SDLK_m);
-        // Create equip button.
-        rt.x += sR.w / 9;
-        tx = {"(E)quip"};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(equipping); }));
-        boxes.back()->setKey(SDLK_e);
-        // Create hire button.
-        rt.x += sR.w / 9;
-        tx = {"(H)ire"};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(hiring); }));
-        boxes.back()->setKey(SDLK_h);
-        // Create fight button.
-        rt.x += sR.w / 9;
-        tx = {"(F)ight"};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(attacking); }));
-        boxes.back()->setKey(SDLK_f);
-        // Create log button.
-        rt.x += sR.w / 9;
-        tx = {"(L)og"};
-        boxes.push_back(std::make_unique<MenuButton>(
-            rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(logging); }));
-        boxes.back()->setKey(SDLK_l);
+        // Create trade, store, manage, equip, hire, attack, and log buttons
+        for (auto &sTK : stateTextKeys) {
+            rt.x += sR.w / 9;
+            tx.back() = sTK.text;
+            boxes.push_back(std::make_unique<MenuButton>(
+                rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this, &sTK] { setState(sTK.state); }));
+            boxes.back()->setKey(sTK.key);
+        }
         pause = false;
         break;
     case trading:
@@ -292,7 +260,7 @@ void Player::setState(UIState s) {
     case attacking:
     case logging:
         rt = {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0};
-        tx = {""};
+        tx.back() = "";
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR,
                                                      sBFS, printer, [this] { setState(traveling); }));
         switch (s) {
@@ -300,19 +268,19 @@ void Player::setState(UIState s) {
             boxes.back()->setText(0, "Stop (T)rading");
             boxes.back()->setKey(SDLK_t);
             rt.y -= boxes.back()->getRect().h * 3 / 2;
-            tx = {"(C)omplete Trade"};
+            tx.back() = "(C)omplete Trade";
             boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] {
                 traveler->makeTrade();
                 setState(trading);
             }));
             boxes.back()->setKey(SDLK_c);
             rt.x += sR.w / 6;
-            tx = {traveler->portionString()};
+            tx.back() = traveler->portionString();
             portionBoxIndex = boxes.size();
             boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer));
             boxes.back()->toggleLock();
             rt.y += boxes.back()->getRect().h * 3 / 2;
-            tx = {"(S)et Portion"};
+            tx.back() = "(S)et Portion";
             setPortionButtonIndex = boxes.size();
             boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] {
                 double p;
@@ -378,14 +346,14 @@ void Player::setState(UIState s) {
         break;
     case looting:
         rt = {sR.w / 15, sR.h * 14 / 15, 0, 0};
-        tx = {"(D)one Looting"};
+        tx.back() = "(D)one Looting";
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] {
             traveler->loseTarget();
             setState(traveling);
         }));
         boxes.back()->setKey(SDLK_d);
         rt.x += sR.w / 5;
-        tx = {"(L)oot All"};
+        tx.back() = "(L)oot All";
         boxes.push_back(
             std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this, &tgt = *traveler->getTarget().lock()] {
                 traveler->loot(tgt);
