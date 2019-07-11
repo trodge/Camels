@@ -190,9 +190,9 @@ void Good::consume(unsigned int e) {
     }
 }
 
-std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL_Rect &rt,
-    const SDL_Color &fgr, const SDL_Color &bgr, int b, int r, int fS,
-    Printer &pr, const std::function<void()> &fn) const {
+std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL_Rect &rt, const SDL_Color &fgr,
+                                         const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
+                                         const std::function<void()> &fn) const {
     auto &oMtr = getMaterial(mtr);
     std::vector<std::string> tx = {oMtr.getName()};
     if (tx.front() != name)

@@ -64,7 +64,6 @@ template <typename Creator, typename... Arguments> auto makeResource(Creator c, 
     return std::unique_ptr<std::decay_t<decltype(*r)>, Deleter>(r);
 }
 
-
 using WindowPtr = std::unique_ptr<SDL_Window, Deleter>;
 using RendererPtr = std::unique_ptr<SDL_Renderer, Deleter>;
 using SurfacePtr = std::unique_ptr<SDL_Surface, Deleter>;

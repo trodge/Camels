@@ -19,9 +19,14 @@
 
 #include "player.hpp"
 
-Player::Player(Game &g) : game(g), printer(g.getPrinter()), stateTextKeys({{{trading, "(T)rade", SDLK_t}, {storing, "(S)tore", SDLK_s}, {managing, "(M)anage", SDLK_m},
-                                                                           {equipping, "(E)quip", SDLK_e}, {hiring, "(H)ire", SDLK_h}, {attacking, "(A)ttack", SDLK_a},
-                                                                           {logging, "(L)og", SDLK_l}}}) {}
+Player::Player(Game &g)
+    : game(g), printer(g.getPrinter()), stateTextKeys({{{trading, "(T)rade", SDLK_t},
+                                                        {storing, "(S)tore", SDLK_s},
+                                                        {managing, "(M)anage", SDLK_m},
+                                                        {equipping, "(E)quip", SDLK_e},
+                                                        {hiring, "(H)ire", SDLK_h},
+                                                        {attacking, "(A)ttack", SDLK_a},
+                                                        {logging, "(L)og", SDLK_l}}}) {}
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
@@ -246,8 +251,8 @@ void Player::setState(UIState s) {
         for (auto &sTK : stateTextKeys) {
             rt.x += sR.w / 9;
             tx.back() = sTK.text;
-            boxes.push_back(std::make_unique<MenuButton>(
-                rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this, &sTK] { setState(sTK.state); }));
+            boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer,
+                                                         [this, &sTK] { setState(sTK.state); }));
             boxes.back()->setKey(sTK.key);
         }
         pause = false;
@@ -261,8 +266,8 @@ void Player::setState(UIState s) {
     case logging:
         rt = {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0};
         tx.back() = "";
-        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR,
-                                                     sBFS, printer, [this] { setState(traveling); }));
+        boxes.push_back(
+            std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(traveling); }));
         switch (s) {
         case trading:
             boxes.back()->setText(0, "Stop (T)rading");
@@ -354,12 +359,12 @@ void Player::setState(UIState s) {
         boxes.back()->setKey(SDLK_d);
         rt.x += sR.w / 5;
         tx.back() = "(L)oot All";
-        boxes.push_back(
-            std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this, &tgt = *traveler->getTarget().lock()] {
-                traveler->loot(tgt);
-                traveler->loseTarget();
-                setState(traveling);
-            }));
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer,
+                                                     [this, &tgt = *traveler->getTarget().lock()] {
+                                                         traveler->loot(tgt);
+                                                         traveler->loseTarget();
+                                                         setState(traveling);
+                                                     }));
         boxes.back()->setKey(SDLK_l);
         lootButtonIndex = boxes.size();
         traveler->createLootButtons(boxes, focusBox, lootButtonIndex, printer);
@@ -369,8 +374,7 @@ void Player::setState(UIState s) {
         rt = {sR.w / 2, sR.h / 2, 0, 0};
         tx = {traveler->getLogText().back(), "You have died."};
         boxes.push_back(std::make_unique<TextBox>(rt, tx, traveler->getNation()->getForeground(),
-                                                  traveler->getNation()->getBackground(), bBB, bBR,
-                                                  fFS, printer));
+                                                  traveler->getNation()->getBackground(), bBB, bBR, fFS, printer));
         break;
     }
     focus(0, Focusable::box);

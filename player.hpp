@@ -30,7 +30,6 @@
 
 class Game;
 
-
 class Player {
     std::shared_ptr<Traveler> traveler;
     std::vector<std::unique_ptr<TextBox>> boxes, storedBoxes;
@@ -70,7 +69,7 @@ class Player {
         std::string text;
         SDL_Keycode key;
     };
-    std::array<StateTextKey, 7> stateTextKeys; 
+    std::array<StateTextKey, 7> stateTextKeys;
     void prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls);
     void finishFocus(int f, Focusable::FocusGroup g, const std::vector<Focusable *> &fcbls);
     void focus(int f, Focusable::FocusGroup g);

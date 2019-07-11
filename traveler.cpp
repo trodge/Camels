@@ -265,8 +265,10 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     }; // function to call when buttons are clicked
     // Create the offer buttons for the player.
     int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor,
-        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
+        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+        dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
+                   sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     for (auto &g : getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1.)) {
@@ -396,18 +398,19 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     // Create buttons for depositing goods.
     int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor,
-        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
+        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+        dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
+                   sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if (((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1))) {
-                bs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr,
-                                      [this, &g, &m, &bs, &fB, sBI, &pr] {
-                                          Good dG(g.getId(), g.getAmount() * portion);
-                                          dG.addMaterial(Material(m.getId(), m.getAmount()));
-                                          deposit(dG);
-                                          refreshStorageButtons(bs, fB, sBI, pr);
-                                      }));
+                bs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, [this, &g, &m, &bs, &fB, sBI, &pr] {
+                    Good dG(g.getId(), g.getAmount() * portion);
+                    dG.addMaterial(Material(m.getId(), m.getAmount()));
+                    deposit(dG);
+                    refreshStorageButtons(bs, fB, sBI, pr);
+                }));
 
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
@@ -426,13 +429,12 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     for (auto &g : sI->second) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr,
-                                      [this, &g, &m, &bs, &fB, sBI, &pr] {
-                                          Good dG(g.getId(), g.getAmount() * portion);
-                                          dG.addMaterial(Material(m.getId(), m.getAmount()));
-                                          withdraw(dG);
-                                          refreshStorageButtons(bs, fB, sBI, pr);
-                                      }));
+                bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &g, &m, &bs, &fB, sBI, &pr] {
+                    Good dG(g.getId(), g.getAmount() * portion);
+                    dG.addMaterial(Material(m.getId(), m.getAmount()));
+                    withdraw(dG);
+                    refreshStorageButtons(bs, fB, sBI, pr);
+                }));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -508,9 +510,11 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
     int eB = Settings::getEquipBorder(), eR = Settings::getEquipRadius(), eFS = Settings::getEquipFontSize();
-    int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor, dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+    int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor,
+        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
         dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
+                   sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     std::array<std::vector<Good>, 6> equippable; // array of vectors corresponding to parts that can hold equipment
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
@@ -528,12 +532,11 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
     // Create buttons for equipping equipment.
     for (auto &eP : equippable) {
         for (auto &e : eP) {
-            bs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS,
-                                                pr, [this, e, &bs, &fB, eBI, &pr]() mutable {
-                                                    equip(e);
-                                                    // Refresh buttons.
-                                                    refreshEquipButtons(bs, fB, eBI, pr);
-                                                }));
+            bs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr, [this, e, &bs, &fB, eBI, &pr]() mutable {
+                equip(e);
+                // Refresh buttons.
+                refreshEquipButtons(bs, fB, eBI, pr);
+            }));
             rt.y += dy;
         }
         rt.y = top;
@@ -546,15 +549,14 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
         rt.x = left + static_cast<int>(pI) * dx;
-        bs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr,
-                                            [this, pI, ss, &bs, &fB, eBI, &pr] {
-                                                unequip(pI);
-                                                // Equip fists.
-                                                for (auto &s : ss)
-                                                    equip(s.partId);
-                                                // Refresh buttons.
-                                                refreshEquipButtons(bs, fB, eBI, pr);
-                                            }));
+        bs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr, [this, pI, ss, &bs, &fB, eBI, &pr] {
+            unequip(pI);
+            // Equip fists.
+            for (auto &s : ss)
+                equip(s.partId);
+            // Refresh buttons.
+            refreshEquipButtons(bs, fB, eBI, pr);
+        }));
     }
 }
 
@@ -608,16 +610,14 @@ void Traveler::createAttackButton(std::vector<std::unique_ptr<TextBox>> &bs, con
                    [](const std::shared_ptr<Traveler> t) { return t->getName(); });
     // Create attack button.
     SDL_Rect rt = {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2};
-    bs.push_back(std::make_unique<SelectButton>(
-        rt, names, fgr, bgr, hl, bBB, bBR, fFS, pr,
-        [this, &bs, able, &sSF] {
-            int i = bs.back()->getHighlightLine();
-            if (i > -1) {
-                attack(able[static_cast<size_t>(i)]);
-                sSF();
-            } else
-                bs.back()->setClicked(false);
-        }));
+    bs.push_back(std::make_unique<SelectButton>(rt, names, fgr, bgr, hl, bBB, bBR, fFS, pr, [this, &bs, able, &sSF] {
+        int i = bs.back()->getHighlightLine();
+        if (i > -1) {
+            attack(able[static_cast<size_t>(i)]);
+            sSF();
+        } else
+            bs.back()->setClicked(false);
+    }));
 }
 
 void Traveler::loseTarget() {
@@ -757,18 +757,17 @@ void Traveler::createFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs, bool 
     bs.push_back(std::make_unique<TextBox>(rt, tx, fgr, bgr, b, r, fS, pr));
     rt = {sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2};
     tx = {};
-    bs.push_back(std::make_unique<TextBox>(rt, tx, tgt->nation->getForeground(), tgt->nation->getBackground(), b, r, fS, pr));
+    bs.push_back(
+        std::make_unique<TextBox>(rt, tx, tgt->nation->getForeground(), tgt->nation->getBackground(), b, r, fS, pr));
     rt = {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3};
     tx = {"Fight", "Run", "Yield"};
-    bs.push_back(std::make_unique<SelectButton>(
-        rt, tx, fgr, bgr, hl, b, r, fS, pr,
-        [this, &bs, &p] {
-            int choice = bs[kFightChoiceIndex]->getHighlightLine();
-            if (choice > -1) {
-                choose(static_cast<FightChoice>(choice));
-                p = false;
-            }
-        }));
+    bs.push_back(std::make_unique<SelectButton>(rt, tx, fgr, bgr, hl, b, r, fS, pr, [this, &bs, &p] {
+        int choice = bs[kFightChoiceIndex]->getHighlightLine();
+        if (choice > -1) {
+            choose(static_cast<FightChoice>(choice));
+            p = false;
+        }
+    }));
 }
 
 void Traveler::updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bs) {
@@ -830,18 +829,19 @@ void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, cons
                     &tBgr = tgt.nation->getBackground();
     int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2;
     int top = sR.h / kGoodButtonYDivisor;
-    int dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor, sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
+    int dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+        dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
+                   sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr,
-                                      [this, &g, &m, &tgt, &bs, &fB, lBI, &pr] {
-                                          Good lG(g.getId(), m.getAmount());
-                                          lG.addMaterial(Material(m.getId(), m.getAmount()));
-                                          tgt.loot(lG, *this);
-                                          refreshLootButtons(bs, fB, lBI, pr);
-                                      }));
+                bs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, [this, &g, &m, &tgt, &bs, &fB, lBI, &pr] {
+                    Good lG(g.getId(), m.getAmount());
+                    lG.addMaterial(Material(m.getId(), m.getAmount()));
+                    tgt.loot(lG, *this);
+                    refreshLootButtons(bs, fB, lBI, pr);
+                }));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
@@ -856,13 +856,12 @@ void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bs, cons
     for (auto &g : tgt.goods)
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
-                bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr,
-                                      [this, &g, &m, &tgt, &bs, &fB, lBI, &pr] {
-                                          Good lG(g.getId(), m.getAmount());
-                                          lG.addMaterial(Material(m.getId(), m.getAmount()));
-                                          loot(lG, tgt);
-                                          refreshLootButtons(bs, fB, lBI, pr);
-                                      }));
+                bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &g, &m, &tgt, &bs, &fB, lBI, &pr] {
+                    Good lG(g.getId(), m.getAmount());
+                    lG.addMaterial(Material(m.getId(), m.getAmount()));
+                    loot(lG, tgt);
+                    refreshLootButtons(bs, fB, lBI, pr);
+                }));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;

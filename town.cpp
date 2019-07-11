@@ -65,8 +65,8 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
     : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]), longitude(t->longitude()),
-      latitude(t->latitude()), coastal(t->coastal()), population(static_cast<unsigned long>(t->population())), townType(t->townType()),
-      businessCounter(t->businessCounter()) {
+      latitude(t->latitude()), coastal(t->coastal()), population(static_cast<unsigned long>(t->population())),
+      townType(t->townType()), businessCounter(t->businessCounter()) {
     // Load a town from the given flatbuffers save object.
     canFocus = true;
     SDL_Rect rt = {0, 0, 0, 0};
@@ -74,8 +74,8 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
     std::vector<std::string> names;
     names.push_back(lNames->Get(0)->str());
     names.push_back(lNames->Get(1)->str());
-    box =
-        std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, fS, pr);
+    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1,
+                                    fS, pr);
     auto lBusinesses = t->businesses();
     for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI)
         businesses.push_back(Business(*lBI));
