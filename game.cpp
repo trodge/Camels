@@ -402,9 +402,9 @@ void Game::loadGame(const fs::path &p) {
             loadBar.draw(screen.get());
             SDL_RenderPresent(screen.get());
         }
+        player->loadTraveler(game->playerTraveler(), towns);
         auto lTravelers = game->aITravelers();
         auto lTI = lTravelers->begin();
-        player->loadTraveler(*lTI, towns);
         for (++lTI; lTI != lTravelers->end(); ++lTI)
             aITravelers.push_back(std::make_shared<Traveler>(*lTI, towns, nations, gameData));
         for (auto &t : aITravelers)
@@ -501,14 +501,14 @@ void Game::saveData() {
     if (sqlite3_open("1025ad.db", &conn) != SQLITE_OK)
         std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
     std::string updates = "UPDATE frequencies SET frequency = CASE";
-    player->getTown()->saveFrequencies(updates);
+    player->getTraveler()->getTown()->saveFrequencies(updates);
     sqlite3_stmt *comm;
     sqlite3_prepare_v2(conn, updates.c_str(), -1, &comm, nullptr);
     if (sqlite3_step(comm) != SQLITE_DONE)
         std::cout << "Error updating frequencies: " << sqlite3_errmsg(conn) << std::endl << updates << std::endl;
     sqlite3_finalize(comm);
     updates = "UPDATE consumption SET demand_slope = CASE";
-    player->getTown()->saveDemand(updates);
+    player->getTraveler()->getTown()->saveDemand(updates);
     sqlite3_prepare_v2(conn, updates.c_str(), -1, &comm, nullptr);
     if (sqlite3_step(comm) != SQLITE_DONE)
         std::cout << "Error updating demand slopes: " << sqlite3_errmsg(conn) << std::endl << updates << std::endl;
@@ -526,10 +526,10 @@ void Game::saveGame() {
         towns.size(), [this, &builder](size_t i) { return towns[i].save(builder); });
     auto sAITravelers = builder.CreateVector<flatbuffers::Offset<Save::Traveler>>(
         aITravelers.size(), [this, &builder](size_t i) { return aITravelers[i]->save(builder); });
-    auto game = Save::CreateGame(builder, sTowns, player->save(builder), sAITravelers);
+    auto game = Save::CreateGame(builder, sTowns, player->getTraveler()->save(builder), sAITravelers);
     builder.Finish(game);
     fs::path path("save");
-    path /= aITravelers.front()->getName();
+    path /= player->getTraveler()->getName();
     path.replace_extension("sav");
     std::ofstream file(path.string(), std::ofstream::binary);
     if (file.is_open())

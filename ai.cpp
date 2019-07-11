@@ -131,7 +131,7 @@ void AI::autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector
             for (auto mI = gMs.begin(); mI != gMs.end(); ++mI) {
                 auto &tM = tGs[gI->getId()].getMaterial(*mI);
                 amount = mI->getAmount();
-                if (amount) {
+                if (amount > 0.) {
                     if (carry < 0 and weight > carry * amount)
                         // This good is needed to carry existing goods, reduce amount.
                         amount = weight / carry;
@@ -181,7 +181,7 @@ void AI::autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector
                     // Remove amout town takes as profit, store excess.
                     excess = 0;
                     amount = mI->getQuantity(offerValue * Settings::getTownProfit(), excess);
-                    if (amount) {
+                    if (amount > 0.) {
                         if (overWeight) {
                             // Try to buy minimum that will bring net weight back below 0
                             double needed = ceil(weight / -carry);
@@ -204,7 +204,7 @@ void AI::autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector
     }
     if (not bestGood)
         return;
-    if (excess) {
+    if (excess > 0.) {
         // Convert excess value to quantity of offered good.
         auto &tM = tGs[o.back().getId()].getMaterial(o.back().getMaterial());
         double q = tM.getQuantity(excess / Settings::getTownProfit());
@@ -432,7 +432,7 @@ void AI::run(unsigned int e, bool m, std::vector<Good> &o, std::vector<Good> &r,
     }
 }
 
-flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) {
+flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const {
     auto sDecisionCriteria = b.CreateVector(std::vector<double>(decisionCriteria.begin(), decisionCriteria.end()));
     auto sMaterialInfo =
         b.CreateVectorOfStructs<Save::MaterialInfo>(materialInfo.size(), [this](size_t i, Save::MaterialInfo *mI) {

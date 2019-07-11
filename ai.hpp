@@ -84,7 +84,7 @@ class AI {
              const std::array<unsigned int, 5> &sts, const std::function<double()> &netWgt, const std::function<void()> &mT,
              const std::function<void(Good &e)> &eqp, const std::function<std::vector<std::shared_ptr<Traveler>>()> &atkabl,
              const std::function<void(std::shared_ptr<Traveler>)> &atk, const std::function<void(Town *)> pT);
-    flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b);
+    flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 #endif // AI_H

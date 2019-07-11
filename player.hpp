@@ -88,13 +88,10 @@ class Player {
     bool getStop() const { return stop; }
     bool getPause() const { return pause; }
     bool getShow() const { return show; }
-    int getPX() const { return traveler->getPX(); }
-    int getPY() const { return traveler->getPY(); }
-    const Town *getTown() const { return traveler->getTown(); }
+    const Traveler *getTraveler() const { return traveler.get(); }
     bool hasTraveler() const { return traveler.get(); }
     void start() { setState(starting); }
     void loadTraveler(const Save::Traveler *t, std::vector<Town> &ts);
-    flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) { return traveler->save(b); }
     void place(int ox, int oy, double s) {
         if (traveler.get())
             traveler->place(ox, oy, s);

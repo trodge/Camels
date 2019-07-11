@@ -161,7 +161,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d);
     void resetTown();
     void toggleMaxGoods();
-    flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b);
+    flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 #endif // TRAVELER_H

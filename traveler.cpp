@@ -987,7 +987,7 @@ void Traveler::resetTown() { toTown->resetGoods(); }
 
 void Traveler::toggleMaxGoods() { toTown->toggleMaxGoods(); }
 
-flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilder &b) {
+flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilder &b) const {
     // Return a flatbuffers save object for this traveler.
     auto sName = b.CreateString(name);
     auto sLog = b.CreateVectorOfStrings(logText);
