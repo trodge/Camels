@@ -304,12 +304,13 @@ void Game::newGame() {
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(conn, "SELECT * FROM towns", -1, &quer, nullptr);
     towns.reserve(static_cast<size_t>(tC));
-    SDL_Surface *freezeSurface = SDL_CreateRGBSurface(0u, screenRect.w, screenRect.h, 32, rmask, gmask, bmask, amask);
+    // Create a texture for keeping the current screen frozen behind load bar.
+    sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
     SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
-    SDL_Texture *freezeTexture = SDL_CreateTextureFromSurface(screen.get(), freezeSurface);
-    SDL_FreeSurface(freezeSurface);
+    sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
+    freezeSurface = nullptr;
     while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
-        SDL_RenderCopy(screen.get(), freezeTexture, nullptr, nullptr);
+        SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
         towns.push_back(Town(quer, nations, businesses, frequencyFactors, Settings::getTownFontSize(), printer));
         loadBar.progress(1. / tC);
         loadBar.draw(screen.get());
@@ -327,7 +328,7 @@ void Game::newGame() {
     sqlite3_finalize(quer);
     sqlite3_close(conn);
     for (auto &t : towns) {
-        SDL_RenderCopy(screen.get(), freezeTexture, nullptr, nullptr);
+        SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
         t.loadNeighbors(towns, routes[t.getId() - 1]);
         t.update(Settings::getBusinessRunTime());
         loadBar.progress(1. / tC);
@@ -337,7 +338,7 @@ void Game::newGame() {
     loadBar.progress(-1);
     loadBar.setText(0, "Generating Travelers...");
     for (auto &t : towns) {
-        SDL_RenderCopy(screen.get(), freezeTexture, nullptr, nullptr);
+        SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
         t.generateTravelers(gameData, aITravelers);
         loadBar.setText(0, "Generating Travelers..." + std::to_string(aITravelers.size()));
         loadBar.progress(1. / tC);
@@ -348,14 +349,13 @@ void Game::newGame() {
     tC = static_cast<double>(aITravelers.size());
     loadBar.setText(0, "Starting AI...");
     for (auto &t : aITravelers) {
-        SDL_RenderCopy(screen.get(), freezeTexture, nullptr, nullptr);
+        SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
         t->startAI();
         t->addToTown();
         loadBar.progress(1. / tC);
         loadBar.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
-    SDL_DestroyTexture(freezeTexture);
 }
 
 void Game::loadGame(const fs::path &p) {
@@ -377,11 +377,16 @@ void Game::loadGame(const fs::path &p) {
         file.read(buffer, length);
         auto game = Save::GetGame(buffer);
         auto lTowns = game->towns();
+        towns.reserve(lTowns->size());
         LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
                         {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
                         Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
-        towns.reserve(lTowns->size());
+        sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
+        SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
+        sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
+        freezeSurface = nullptr;
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
+            SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
             towns.push_back(Town(*lTI, nations, Settings::getTownFontSize(), printer));
             loadBar.progress(1. / lTowns->size());
             loadBar.draw(screen.get());
@@ -390,6 +395,7 @@ void Game::loadGame(const fs::path &p) {
         loadBar.progress(-1);
         loadBar.setText(0, "Finalizing towns...");
         for (flatbuffers::uoffset_t i = 0; i < towns.size(); ++i) {
+            SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
             std::vector<size_t> neighborIds(lTowns->Get(i)->neighbors()->begin(), lTowns->Get(i)->neighbors()->end());
             towns[i].loadNeighbors(towns, neighborIds);
             loadBar.progress(1. / static_cast<double>(towns.size()));

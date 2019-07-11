@@ -234,7 +234,7 @@ void Player::setState(UIState s) {
         rt = {sR.w / 5, sR.h / 7, sR.w * 3 / 5, sR.h * 5 / 7};
         boxes.push_back(std::make_unique<SelectButton>(
             rt, saves, uIFgr, uIBgr, Settings::getUIHighlight(), bBB, bBR, bBFS, printer,
-            [this, path] { game.loadGame((path / boxes.back()->getItem()).replace_extension("sav")); }));
+            [this, path] { game.loadGame((path / boxes.back()->getItem()).replace_extension("sav")); show = true; setState(traveling); }));
         break;
     case traveling:
         // Create go button.
@@ -339,7 +339,7 @@ void Player::setState(UIState s) {
             rt = {sR.w / 15, sR.h * 2 / 15, sR.w * 13 / 15, sR.h * 11 / 15};
             boxes.push_back(std::make_unique<ScrollBox>(rt, traveler->getLogText(), traveler->getNation()->getForeground(),
                                                         traveler->getNation()->getBackground(),
-                                                        traveler->getNation()->getHighlight(), bBB, bBR, bBFS, printer));
+                                                        traveler->getNation()->getHighlight(), bBB, bBR, fFS, printer));
             boxes.back()->setHighlightLine(-1);
             break;
         default:
