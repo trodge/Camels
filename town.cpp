@@ -74,7 +74,7 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
     std::vector<std::string> names;
     names.push_back(lNames->Get(0)->str());
     names.push_back(lNames->Get(1)->str());
-    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1,
+    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
                                     fS, pr);
     auto lBusinesses = t->businesses();
     for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI)

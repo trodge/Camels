@@ -62,6 +62,7 @@ class Material {
     std::vector<CombatStat> combatStats;
     double lastAmount = 0;
     SDL_Surface *image = nullptr;
+    void updateButton(std::string &aT, bool gS, TextBox *b) const;
 
   public:
     Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI);
@@ -110,13 +111,14 @@ class Material {
     void create(double a);
     double perish(unsigned int e, double p);
     double consume(unsigned int e);
-    void updateButton(bool gS, double oV, int rC, TextBox *b) const;
+    void updateButton(bool gS, TextBox *b) const;
+    void updateButton(bool gS, double oV, unsigned int rC, TextBox *b) const;
     void adjustDemand(double d);
     void fixDemand(double m);
     void saveDemand(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Material> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
-void dropTrail(std::string *t, unsigned int dK);
+void dropTrail(std::string &tx, unsigned int dK);
 
 #endif // MATERIAL_H

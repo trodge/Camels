@@ -123,9 +123,6 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     }
     double getFightTime() const { return fightTime; }
     FightChoice getChoice() const { return choice; }
-    double offerGood(const Good &g, const Material &m);
-    double requestGood(const Good &g, const Material &m, double oV, int rC);
-    void divideExcess(double e);
     void setPortion(double p);
     void changePortion(double d);
     void addToTown();

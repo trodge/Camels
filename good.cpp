@@ -55,7 +55,7 @@ double Good::getConsumption() const {
 
 std::string Good::logEntry() const {
     std::string lT = std::to_string(amount);
-    dropTrail(&lT, split ? 3 : 0);
+    dropTrail(lT, split ? 3 : 0);
     if (split) {
         lT += " " + measure;
         if (amount != 1)
@@ -202,7 +202,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());
-        dropTrail(&amountText, split ? 3 : 0);
+        dropTrail(amountText, split ? 3 : 0);
         tx.push_back(std::move(amountText));
         return std::make_unique<MenuButton>(rt, tx, fgr, bgr, id, false, b, r, fS, img, pr, fn);
     }

@@ -90,7 +90,7 @@ double Material::getQuantity(double p, double &e) const {
         return 0;
     if (amount > q)
         return q;
-    // there's not enough good to sell in the town
+    // There's not enough good to sell in the town.
     e = q - amount;
     return amount;
 }
@@ -241,18 +241,30 @@ double Material::consume(unsigned int e) {
     return c;
 }
 
-void Material::updateButton(bool gS, double oV, int rC, TextBox *b) const {
-    // Update amount shown on this material's button
+void Material::updateButton(std::string &aT, bool gS, TextBox *b) const {
+    // Finish updating button.
+    std::string changeText = std::to_string(amount - lastAmount);
+    dropTrail(changeText, 5);
+    dropTrail(aT, gS ? 3 : 0);
+    b->setText({b->getText()[0], aT, changeText});
+}
+
+void Material::updateButton(bool gS, TextBox *b) const {
+    // Update amount shown on this material's button. Call when no offer or request has been made.
     std::string amountText;
-    if (rC and oV > 0.) {
+    amountText = std::to_string(amount);
+    updateButton(amountText, gS, b);
+}
+
+void Material::updateButton(bool gS, double oV, unsigned int rC, TextBox *b) const {
+    // Update amount shown on this material's button. Call only when offer value and request count are non-zero.
+    std::string amountText;
+    if (rC) {
         double quantity = getQuantity(oV / rC * Settings::getTownProfit());
         amountText = std::to_string(std::min(quantity, amount));
     } else
         amountText = std::to_string(amount);
-    std::string changeText = std::to_string(amount - lastAmount);
-    dropTrail(&changeText, 5);
-    dropTrail(&amountText, gS ? 3 : 0);
-    b->setText({b->getText()[0], amountText, changeText});
+    updateButton(amountText, gS, b);
 }
 
 void Material::adjustDemand(double d) {
@@ -290,10 +302,10 @@ flatbuffers::Offset<Save::Material> Material::save(flatbuffers::FlatBufferBuilde
                                 sCombatStats);
 }
 
-void dropTrail(std::string *t, unsigned int dK) {
+void dropTrail(std::string &tx, unsigned int dK) {
     // Trim decimal places beyond dK from string t.
     size_t dP; // position to drop
-    dP = t->find('.') + dK;
+    dP = tx.find('.') + dK;
     if (dP < std::string::npos)
-        t->erase(dP);
+        tx.erase(dP);
 }

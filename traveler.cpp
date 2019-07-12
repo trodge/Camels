@@ -154,43 +154,6 @@ std::string Traveler::portionString() const {
     return tPS;
 }
 
-double Traveler::offerGood(const Good &g, const Material &m) {
-    // Add the given good and material to offer. Return amount added based on portion.
-    double amount = m.getAmount() * portion;
-    if (not g.getSplit())
-        amount = floor(amount);
-    Good oG(g.getId(), g.getName(), amount, g.getMeasure());
-    oG.addMaterial(Material(m.getId(), m.getName(), amount));
-    offer.push_back(oG);
-    return amount;
-}
-
-double Traveler::requestGood(const Good &g, const Material &m, double oV, int rC) {
-    // Add the given good and material to request. Return excess amount of good.
-    double excess = 0;
-    // Calculate amount based on offer value divided by request count.
-    double amount = m.getQuantity(oV / rC * Settings::getTownProfit(), excess);
-    if (not g.getSplit())
-        // Remove extra portion of goods that don't split.
-        excess += modf(amount, &amount);
-    Good rG(g.getId(), g.getName(), amount, g.getMeasure());
-    rG.addMaterial(Material(m.getId(), m.getName(), amount));
-    request.push_back(rG);
-    return excess;
-}
-
-void Traveler::divideExcess(double e) {
-    // Divide excess among offered goods.
-    e /= static_cast<double>(offer.size());
-    for (auto &of : offer) {
-        auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
-        double q = tM.getQuantity(e / Settings::getTownProfit());
-        if (not goods[of.getId()].getSplit())
-            q = floor(q);
-        of.use(q);
-    }
-}
-
 void Traveler::setPortion(double d) {
     portion = d;
     if (portion < 0)
@@ -306,57 +269,86 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
 }
 
 void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t oBI, size_t rBI) {
-    // Update the values shown on trade portion, offer, and request bs and set offer and request.
+    // Update the values shown on offer and request boxes and set offer and request.
+    std::string bN;
     offer.clear();
     request.clear();
-    std::string bN;
-    double offerValue = 0;
-    auto rBBIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(
-                                  rBI); // iterator to first request button
-    // Loop through all bs after cancel button and before first request button.
-    for (auto oBIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(oBI); oBIt != rBBIt;
-         ++oBIt) {
-        auto &g = getGood((*oBIt)->getId()); // good corresponding to oBIt
+    double offerValue = 0.;
+    auto rBBIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(rBI); // iterator to first request button
+    // Loop through all boxes after cancel button and before first request button.
+    for (auto bIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(oBI); bIt != rBBIt; ++bIt) {
+        auto &g = goods[(*bIt)->getId()]; // good corresponding to bIt
+        auto &gMs = g.getMaterials(); // g's materials
+        bN = (*bIt)->getText()[0]; // name of material and good on button
+        auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
+            const std::string &mN = m.getName(); // material name
+            // Find material such that first word of material name matches first word on button.
+            return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
+        });
+        if (mI != gMs.end()) {
+            // mI is iterator to the material on bIt
+            mI->updateButton(g.getSplit(), bIt->get());
+            if ((*bIt)->getClicked()) {
+                // Button was clicked, so add corresponding good to offer.
+                double amount = mI->getAmount() * portion;
+                if (not g.getSplit())
+                    amount = floor(amount);
+                auto &tM = toTown->getGood(g.getId()).getMaterial(*mI);
+                double p = tM.getPrice(amount);
+                if (p > 0.) {
+                    offerValue += p;
+                    offer.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
+                    offer.back().addMaterial(Material(mI->getId(), mI->getName(), amount));
+                } else
+                    // Good is worthless in this town, don't allow it to be offered.
+                    (*bIt)->setClicked(false);
+            }
+        }
+    }
+    unsigned int requestCount =
+        std::accumulate(rBBIt, bs.end(), 0u, [](unsigned int c, const std::unique_ptr<TextBox> &rB) { return c + rB->getClicked(); });
+    double excess = 0; // excess value of offer over value needed for request
+    // Loop through request buttons.
+    for (auto bIt = rBBIt; bIt != bs.end(); ++bIt) {
+        auto &g = toTown->getGood((*bIt)->getId()); // good in town corresponding to bIt
         auto &gMs = g.getMaterials();
-        bN = (*oBIt)->getText()[0]; // first name on button
+        bN = (*bIt)->getText()[0];
         auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
             const std::string &mN = m.getName();
             return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
         });
         if (mI != gMs.end()) {
-            // mI is iterator to the material on oBIt
-            mI->updateButton(g.getSplit(), 0, 0, oBIt->get());
-            if ((*oBIt)->getClicked()) {
-                double amount = offerGood(g, *mI);
-                // Use town's version of same material to get price.
-                auto &tM = toTown->getGood(g.getId()).getMaterial(*mI);
-                offerValue += tM.getPrice(amount);
-            }
+            // mI is iterator to the material on bIt.
+            if (offer.size()) {
+                mI->updateButton(g.getSplit(), offerValue, std::max(1u, requestCount), bIt->get());
+                if ((*bIt)->getClicked() and offerValue > 0.) {
+                    double mE = 0; // excess quantity of this material
+                    double amount = mI->getQuantity(offerValue / requestCount * Settings::getTownProfit(), mE);
+                    if (not g.getSplit())
+                        // Remove extra portion of goods that don't split.
+                        mE += modf(amount, &amount);
+                    // Convert material excess to value and add to overall excess.
+                    excess += mI->getPrice(mE);
+                    request.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
+                    request.back().addMaterial(Material(mI->getId(), mI->getName(), amount));
+                }
+            } else
+                mI->updateButton(g.getSplit(), bIt->get());
         }
     }
-    int requestCount =
-        std::accumulate(rBBIt, bs.end(), 0, [](int c, const std::unique_ptr<TextBox> &rB) { return c + rB->getClicked(); });
-    double excess = 0; // excess value of offer over value needed for request
-    // Loop through request buttons.
-    for (auto rBI = rBBIt; rBI != bs.end(); ++rBI) {
-        auto &g = toTown->getGood((*rBI)->getId()); // good in town corresponding to rBI
-        auto &gMs = g.getMaterials();
-        bN = (*rBI)->getText()[0];
-        auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](Material m) {
-            const std::string &mN = m.getName();
-            return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
-        });
-        if (mI != gMs.end()) {
-            // mI is iterator to the material on rBI
-            mI->updateButton(g.getSplit(), offerValue, requestCount ? requestCount : 1, rBI->get());
-            if ((*rBI)->getClicked()) {
-                // Convert material excess to value and add to overall excess.
-                excess += mI->getPrice(requestGood(g, *mI, offerValue, requestCount));
-            }
+    if (offer.size()) {
+        // Divide excess among offered goods.
+        excess /= static_cast<double>(offer.size());
+        for (auto &of : offer) {
+            auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial());
+            double q = tM.getQuantity(excess / Settings::getTownProfit());
+            if (not goods[of.getId()].getSplit())
+                q = floor(q);
+            of.use(q);
         }
     }
-    divideExcess(excess);
 }
+
 
 std::unordered_map<Town *, std::vector<Good>>::iterator Traveler::createStorage(Town *t) {
     // Put a vector of goods for current town in storage map and return iterator to it.
