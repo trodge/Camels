@@ -17,12 +17,7 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
-#include "business.hpp"
 #include "game.hpp"
-#include "good.hpp"
-#include "material.hpp"
-#include "town.hpp"
-#include "traveler.hpp"
 
 int main(int, char **) {
     // Start SDL, SDL_ttf, and SDL_image.
