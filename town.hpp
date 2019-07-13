@@ -70,6 +70,7 @@ class Town : public Focusable {
     double getLatitude() const { return latitude; }
     unsigned long getPopulation() const { return population; }
     unsigned int getTownType() const { return townType; }
+    const std::vector<Business> &getBusinesses() const { return businesses; }
     const std::vector<Good> &getGoods() const { return goods; }
     const Good &getGood(size_t i) const { return goods[i]; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }

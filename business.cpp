@@ -63,6 +63,11 @@ Business::Business(const Save::Business *b)
         outputs.push_back(Good(*lOI));
 }
 
+Business::Business(const Business &b) : id(b.id), mode(b.mode), name(b.name), area(0.), canSwitch(b.canSwitch),
+                                        requireCoast(b.requireCoast), keepMaterial(b.keepMaterial), requirements(b.requirements),
+                                        inputs(b.inputs), outputs(b.outputs) {
+}
+
 bool Business::operator==(const Business &other) const { return (id == other.id and mode == other.mode); }
 
 void Business::run(std::vector<Good> &gs) {

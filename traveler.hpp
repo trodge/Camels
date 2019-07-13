@@ -95,6 +95,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double pathDist(const Town *t) const;
     void createStorage(const Town *t);
     void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
+    void createBusinesses(const Town *t);
     void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI, Printer &pr);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
@@ -139,6 +140,8 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void deposit(Good &g);
     void withdraw(Good &g);
     void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
+    void build(Business &b, double a);
+    void demolish(Business &b, double a);
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);

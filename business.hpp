@@ -47,6 +47,7 @@ class Business {
   public:
     Business(unsigned int i, unsigned int m, sqlite3 *c);
     Business(const Save::Business *b);
+    Business(const Business &b);
     bool operator==(const Business &other) const;
     unsigned int getId() const { return id; }
     unsigned int getMode() const { return mode; }

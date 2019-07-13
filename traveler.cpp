@@ -443,6 +443,16 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     }
 }
 
+void Traveler::createBusinesses(const Town *t) {
+    // Resize vector to hold business properties in town.
+    unsigned int townId = t->getId();
+    auto &tBs = t->getBusinesses();
+    auto &businesses = properties[townId].businesses;
+    businesses.reserve(tBs.size());
+    for (auto &b : tBs)
+        businesses.push_back(Business(b));
+}
+
 void Traveler::unequip(unsigned int pI) {
     // Unequip all equipment using the given part id.
     auto unused = [pI](const Good &e) {
