@@ -22,7 +22,7 @@
 Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI,
                    SDL_Surface *img)
     : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
-      image(img), minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a) {}
+      minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
 
 Material::Material(const Save::Material *m)
     : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()),

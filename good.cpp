@@ -117,8 +117,8 @@ void Good::take(Good &g) {
     for (auto &gM : g.materials) {
         // Find parameter material in this good's materials.
         auto it = std::lower_bound(materials.begin(), materials.end(), gM);
-        if (it == materials.end() or *it != gM) // Material was not found, so take
-            // its amount from overall transfer.
+        if (it == materials.end() or *it != gM)
+            // Material was not found, so take its amount from overall transfer.
             g.amount -= gM.getAmount();
         else
             it->take(gM);

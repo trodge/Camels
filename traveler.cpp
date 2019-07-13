@@ -52,6 +52,16 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     auto lGoods = t->goods();
     for (auto lGI = lGoods->begin(); lGI != lGoods->end(); ++lGI)
         goods.push_back(Good(*lGI));
+    auto lProperties = t->properties();
+    for (auto lPI = lProperties->begin(); lPI != lProperties->end(); ++lPI) {
+        properties.push_back(Property());
+        auto lStorage = lPI->storage();
+        for (auto lSI = lStorage->begin(); lSI != lStorage->end(); ++lSI)
+            properties.back().storage.push_back(Good(*lSI));
+        auto lBusinesses = lPI->businesses();
+        for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI)
+            properties.back().businesses.push_back(Business(*lBI));
+    }
     auto lStats = t->stats();
     for (size_t i = 0; i < stats.size(); ++i)
         stats[i] = lStats->Get(static_cast<unsigned int>(i));
@@ -315,6 +325,7 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
         bN = (*bIt)->getText()[0];
         auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
             const std::string &mN = m.getName();
+            // Find material such that first word of name matches first word on button.
             return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
         });
         if (mI != gMs.end()) {
@@ -350,22 +361,22 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
 }
 
 void Traveler::createStorage(const Town *t) {
-    unsigned int townId = t->getId();
-    auto &tGs = t->getGoods(); // goods from the town
-    auto &sGs = properties[townId].storage;
-    sGs.reserve(tGs.size());
-    for (auto &g : tGs) {
-        sGs.push_back(Good(g.getId(), g.getName(), g.getPerish(), g.getCarry(), g.getMeasure()));
+    // Resize storage vector to hold goods. Call only if storage is empty for given town.
+    auto &townGoods = t->getGoods(); // goods from the town
+    auto &storage = properties[t->getId()].storage;
+    storage.reserve(townGoods.size());
+    for (auto &g : townGoods) {
+        storage.push_back(Good(g.getId(), g.getName(), g.getPerish(), g.getCarry(), g.getMeasure()));
         for (auto &m : g.getMaterials())
-            sGs.back().addMaterial(Material(m.getId(), m.getName(), m.getImage()));
+            storage.back().addMaterial(Material(m.getId(), m.getName(), m.getImage()));
     }
 }
 
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
-    unsigned int townId = toTown->getId();
-    auto &storage = properties[townId].storage;
+    auto &storage = properties[toTown->getId()].storage;
     if (not(storage.size()))
+        // Storage has not been created yet.
         createStorage(toTown);
     unsigned int gId = g.getId();
     goods[gId].take(g);
@@ -374,16 +385,17 @@ void Traveler::deposit(Good &g) {
 
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
-    unsigned int townId = toTown->getId();
-    auto &storage = properties[townId].storage;
+    auto &storage = properties[toTown->getId()].storage;
     if (not(storage.size()))
-        createStorage(toTown);
+        // Cannot withdraw from empty storage.
+        return;
     unsigned int gId = g.getId();
     storage[gId].take(g);
     goods[gId].put(g);
 }
 
 void Traveler::refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr) {
+    // Delete and re-create storage buttons to reflect changes.
     bs.erase(bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(sBI), bs.end());
     createStorageButtons(bs, fB, sBI, pr);
     if (fB > -1 and static_cast<size_t>(fB) < bs.size())
@@ -532,8 +544,7 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, con
                 // This good has combat stats and we have at least one of it.
                 size_t i = ss.front().partId;
                 Good e(g.getId(), g.getName(), 1);
-                Material eM(m.getId(), m.getName(), 1);
-                eM.setImage(m.getImage());
+                Material eM(m.getId(), m.getName(), 1, m.getImage());
                 eM.setCombatStats(ss);
                 e.addMaterial(eM);
                 equippable[i].push_back(e);
@@ -972,7 +983,7 @@ void Traveler::update(unsigned int e) {
 
 void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d) {
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bs.begin() + i; rBI != bs.end(); ++rBI)
+    for (auto rBI = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(i); rBI != bs.end(); ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustAreas(requestButtons, d);
 }
@@ -980,7 +991,7 @@ void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, size
 void Traveler::adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bs.begin() + i; rBI != bs.end(); ++rBI)
+    for (auto rBI = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(i); rBI != bs.end(); ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustDemand(requestButtons, d);
 }
@@ -995,14 +1006,22 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto sLog = b.CreateVectorOfStrings(logText);
     auto sGoods =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
+    auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(properties.size(), [this, &b](size_t i) {
+        auto &property = properties[i];
+        auto sStorage = b.CreateVector<flatbuffers::Offset<Save::Good>>(properties[i].storage.size(), [&property, &b](size_t j) {
+            return property.storage[j].save(b); });
+        auto sBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(properties[i].businesses.size(), [&property, &b](size_t j) {
+            return property.businesses[j].save(b); });
+        return Save::CreateProperty(b, sStorage, sBusinesses);
+    });
     auto sStats = b.CreateVector(std::vector<unsigned int>(stats.begin(), stats.end()));
     auto sParts = b.CreateVector(std::vector<unsigned int>(parts.begin(), parts.end()));
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(equipment.size(),
                                                                       [this, &b](size_t i) { return equipment[i].save(b); });
     if (ai)
         return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude, latitude,
-                                    sGoods, sStats, sParts, sEquipment, ai->save(b), moving);
+                                    sGoods, sProperties, sStats, sParts, sEquipment, ai->save(b), moving);
     else
         return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude, latitude,
-                                    sGoods, sStats, sParts, sEquipment, 0, moving);
+                                    sGoods, sProperties, sStats, sParts, sEquipment, 0, moving);
 }

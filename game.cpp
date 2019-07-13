@@ -162,7 +162,7 @@ void Game::moveView(int dx, int dy) {
 }
 
 void Game::loadNations(sqlite3 *c) {
-    // Load nations and goods data from sqlite database.
+    // Load nations and goods data from sqlite database. Called for both new game and loaded game.
     // Load goods.
     std::vector<Good> goods;
     sqlite3_stmt *quer;

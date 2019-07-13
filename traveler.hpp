@@ -61,8 +61,8 @@ struct CombatHit {
 };
 
 struct Property {
-    std::vector<Business> businesses;
     std::vector<Good> storage;
+    std::vector<Business> businesses;
 };
 
 enum class FightChoice { none = -1, fight, run, yield };
