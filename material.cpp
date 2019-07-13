@@ -19,19 +19,10 @@
 
 #include "material.hpp"
 
-Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI)
+Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI,
+                   SDL_Surface *img)
     : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
-      minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a) {}
-
-Material::Material(unsigned int i, const std::string &n, double c, double dS, double dI) : Material(i, n, 0, c, dS, dI) {}
-
-Material::Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, 0, 0, 0) {}
-
-Material::Material(unsigned int i, const std::string &n) : Material(i, n, 0) {}
-
-Material::Material(unsigned int i, double a) : Material(i, "", a) {}
-
-Material::Material(unsigned int i) : Material(i, "") {}
+      image(img), minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a) {}
 
 Material::Material(const Save::Material *m)
     : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()),

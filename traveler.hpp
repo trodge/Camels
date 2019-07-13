@@ -26,10 +26,8 @@
 #include <forward_list>
 #include <functional>
 #include <limits>
-#include <set>
-#include <string>
-#include <unordered_map>
 #include <unordered_set>
+#include <string>
 #include <vector>
 
 #include <SDL2/SDL.h>
@@ -48,6 +46,7 @@ struct CombatOdd {
 };
 
 struct GameData {
+    unsigned int townCount;
     std::vector<std::string> parts;
     std::vector<std::string> statuses;
     std::vector<CombatOdd> odds;
@@ -61,6 +60,11 @@ struct CombatHit {
     std::string weapon;
 };
 
+struct Property {
+    std::vector<Business> businesses;
+    std::vector<Good> storage;
+};
+
 enum class FightChoice { none = -1, fight, run, yield };
 
 class AI;
@@ -71,25 +75,25 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const Nation *nation;
     std::vector<std::string> logText;
     double longitude, latitude;
+    bool moving;
+    int px, py;
+    double portion;                    // portion of goods offered in next trade
     std::vector<Good> goods;           // goods carried by traveler
     std::vector<Good> offer, request;  // goods offered and requested in next trade
-    double portion;                    // portion of goods offered in next trade
+    std::vector<Property> properties; // vector of owned goods and businesses indexed by town id
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
     std::weak_ptr<Traveler> target; // pointer to enemy if currently fighting
     double fightTime;               // time left to fight this round
     FightChoice choice;
-    const GameData &gameData;
-    std::unordered_map<Town *, std::vector<Business>> businesses; // businesses owned by this traveler in given towns
-    std::unordered_map<Town *, std::vector<Good>> storage;        // goods stored by this traveler in given towns
     std::unique_ptr<AI> ai;
-    bool moving;
-    int px, py;
+    const GameData &gameData;
     double netWeight() const;
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
+    void createStorage(const Town *t);
     void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
     void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI, Printer &pr);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
@@ -132,7 +136,6 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void makeTrade();
     void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t &oBI, size_t &rBI, Printer &pr);
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t oBI, size_t rBI);
-    std::unordered_map<Town *, std::vector<Good>>::iterator createStorage(Town *t);
     void deposit(Good &g);
     void withdraw(Good &g);
     void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);

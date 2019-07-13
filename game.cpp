@@ -300,7 +300,8 @@ void Game::newGame() {
     sqlite3_prepare_v2(conn, "SELECT COUNT(*) FROM towns", -1, &quer, nullptr);
     sqlite3_step(quer);
     // Store number of towns as double for progress bar purposes.
-    double tC = static_cast<double>(sqlite3_column_int(quer, 0));
+    gameData.townCount = sqlite3_column_int(quer, 0);
+    double tC = static_cast<double>(gameData.townCount);
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(conn, "SELECT * FROM towns", -1, &quer, nullptr);
     towns.reserve(static_cast<size_t>(tC));

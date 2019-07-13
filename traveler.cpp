@@ -21,7 +21,7 @@
 
 Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
-      portion(1), gameData(gD), moving(false) {
+      moving(false), portion(1), properties(gD.townCount), gameData(gD) {
     // Copy goods vector from nation.
     const std::vector<Good> &gs = t->getNation()->getGoods();
     goods.reserve(gs.size());
@@ -45,7 +45,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
 Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD)
     : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->toTown() - 1)]),
       fromTown(&ts[static_cast<size_t>(t->fromTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
-      longitude(t->longitude()), latitude(t->latitude()), portion(1), gameData(gD), moving(t->moving()) {
+      longitude(t->longitude()), latitude(t->latitude()), moving(t->moving()), portion(1), gameData(gD) {
     auto lLog = t->log();
     for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI)
         logText.push_back(lLI->str());
@@ -349,36 +349,37 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     }
 }
 
-
-std::unordered_map<Town *, std::vector<Good>>::iterator Traveler::createStorage(Town *t) {
-    // Put a vector of goods for current town in storage map and return iterator to it.
-    std::vector<Good> sGs;
-    sGs.reserve(goods.size());
-    for (auto &g : goods) {
+void Traveler::createStorage(const Town *t) {
+    unsigned int townId = t->getId();
+    auto &tGs = t->getGoods(); // goods from the town
+    auto &sGs = properties[townId].storage;
+    sGs.reserve(tGs.size());
+    for (auto &g : tGs) {
         sGs.push_back(Good(g.getId(), g.getName(), g.getPerish(), g.getCarry(), g.getMeasure()));
         for (auto &m : g.getMaterials())
-            sGs.back().addMaterial(Material(m.getId(), m.getName()));
+            sGs.back().addMaterial(Material(m.getId(), m.getName(), m.getImage()));
     }
-    return storage.emplace(t, sGs).first;
 }
 
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
-    auto sI = storage.find(toTown);
-    if (sI == storage.end())
-        sI = createStorage(toTown);
+    unsigned int townId = toTown->getId();
+    auto &storage = properties[townId].storage;
+    if (not(storage.size()))
+        createStorage(toTown);
     unsigned int gId = g.getId();
     goods[gId].take(g);
-    sI->second[gId].put(g);
+    storage[gId].put(g);
 }
 
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
-    auto sI = storage.find(toTown);
-    if (sI == storage.end())
-        sI = createStorage(toTown);
+    unsigned int townId = toTown->getId();
+    auto &storage = properties[townId].storage;
+    if (not(storage.size()))
+        createStorage(toTown);
     unsigned int gId = g.getId();
-    sI->second[gId].take(g);
+    storage[gId].take(g);
     goods[gId].put(g);
 }
 
@@ -422,10 +423,9 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
     rt.y = top;
-    auto sI = storage.find(toTown);
-    if (sI == storage.end())
-        sI = createStorage(toTown);
-    for (auto &g : sI->second) {
+    unsigned int townId = toTown->getId();
+    auto &storage = properties[townId].storage;
+    for (auto &g : storage) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
                 bs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &g, &m, &bs, &fB, sBI, &pr] {
