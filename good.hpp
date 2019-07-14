@@ -20,6 +20,7 @@
 #ifndef GOOD_H
 #define GOOD_H
 
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -49,6 +50,7 @@ class Good {
     Good(const Save::Good *g);
     bool operator==(const Good &other) const { return id == other.id; }
     bool operator!=(const Good &other) const { return id != other.id; }
+    bool operator<(const Good &other) const { return id < other.id; }
     unsigned int getId() const { return id; }
     const std::string getName() const { return name; }
     const std::vector<Material> &getMaterials() const { return materials; }

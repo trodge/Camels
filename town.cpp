@@ -40,7 +40,7 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
                                     fS, pr);
     for (auto &b : bs) {
         double f = nation->getFrequency(b.getId(), b.getMode());
-        if (f != 0 and (coastal or not b.getRequireCoast())) {
+        if (f != 0. and (coastal or not b.getRequireCoast())) {
             businesses.push_back(Business(b));
             businesses.back().setArea(static_cast<double>(population) * f);
             auto fFI = fFs.find(std::make_pair(townType, b.getId()));

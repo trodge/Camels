@@ -72,9 +72,10 @@ std::string Good::logEntry() const {
 }
 
 void Good::setAmount(double a) {
-    amount = a;
+    // Set amount to given amount proportionally distributed among materials, if present.
     for (auto &m : materials)
-        m.setAmount(amount / static_cast<double>(materials.size()));
+        m.setAmount(a * m.getAmount() / amount);
+    amount = a;
 }
 
 void Good::addMaterial(Material m) { materials.push_back(m); }

@@ -284,12 +284,14 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     offer.clear();
     request.clear();
     double offerValue = 0.;
-    auto rBBIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(rBI); // iterator to first request button
+    auto rBBIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(
+                                  rBI); // iterator to first request button
     // Loop through all boxes after cancel button and before first request button.
-    for (auto bIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(oBI); bIt != rBBIt; ++bIt) {
+    for (auto bIt = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(oBI); bIt != rBBIt;
+         ++bIt) {
         auto &g = goods[(*bIt)->getId()]; // good corresponding to bIt
-        auto &gMs = g.getMaterials(); // g's materials
-        bN = (*bIt)->getText()[0]; // name of material and good on button
+        auto &gMs = g.getMaterials();     // g's materials
+        bN = (*bIt)->getText()[0];        // name of material and good on button
         auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
             const std::string &mN = m.getName(); // material name
             // Find material such that first word of material name matches first word on button.
@@ -315,8 +317,8 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
             }
         }
     }
-    unsigned int requestCount =
-        std::accumulate(rBBIt, bs.end(), 0u, [](unsigned int c, const std::unique_ptr<TextBox> &rB) { return c + rB->getClicked(); });
+    unsigned int requestCount = std::accumulate(
+        rBBIt, bs.end(), 0u, [](unsigned int c, const std::unique_ptr<TextBox> &rB) { return c + rB->getClicked(); });
     double excess = 0; // excess value of offer over value needed for request
     // Loop through request buttons.
     for (auto bIt = rBBIt; bIt != bs.end(); ++bIt) {
@@ -360,24 +362,20 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
     }
 }
 
-void Traveler::createStorage(const Town *t) {
-    // Resize storage vector to hold goods. Call only if storage is empty for given town.
-    auto &townGoods = t->getGoods(); // goods from the town
-    auto &storage = properties[t->getId()].storage;
-    storage.reserve(townGoods.size());
-    for (auto &g : townGoods) {
-        storage.push_back(Good(g.getId(), g.getName(), g.getPerish(), g.getCarry(), g.getMeasure()));
-        for (auto &m : g.getMaterials())
-            storage.back().addMaterial(Material(m.getId(), m.getName(), m.getImage()));
-    }
-}
-
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
     auto &storage = properties[toTown->getId()].storage;
-    if (not(storage.size()))
+    if (storage.empty()) {
         // Storage has not been created yet.
-        createStorage(toTown);
+        auto &townGoods = toTown->getGoods(); // goods from the town
+        storage.reserve(townGoods.size());
+        for (auto &g : townGoods) {
+            // Copy goods from town, omitting amounts.
+            storage.push_back(Good(g.getId(), g.getName(), g.getPerish(), g.getCarry(), g.getMeasure()));
+            for (auto &m : g.getMaterials())
+                storage.back().addMaterial(Material(m.getId(), m.getName(), m.getImage()));
+        }
+    }
     unsigned int gId = g.getId();
     goods[gId].take(g);
     storage[gId].put(g);
@@ -386,7 +384,7 @@ void Traveler::deposit(Good &g) {
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
     auto &storage = properties[toTown->getId()].storage;
-    if (not(storage.size()))
+    if (storage.empty())
         // Cannot withdraw from empty storage.
         return;
     unsigned int gId = g.getId();
@@ -455,14 +453,33 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     }
 }
 
-void Traveler::createBusinesses(const Town *t) {
-    // Resize vector to hold business properties in town.
-    unsigned int townId = t->getId();
-    auto &tBs = t->getBusinesses();
-    auto &businesses = properties[townId].businesses;
-    businesses.reserve(tBs.size());
-    for (auto &b : tBs)
-        businesses.push_back(Business(b));
+void Traveler::build(const Business &bsn, double a) {
+    // Build the given area of the given business. Check requirements before calling.
+    // Determine if business exists in property.
+    unsigned int townId = toTown->getId();
+    auto &prBsns = properties[townId].businesses;
+    auto prBsnIt = std::lower_bound(prBsns.begin(), prBsns.end(), bsn);
+    if (*prBsnIt == bsn) {
+        // Business already exists, grow it.
+        prBsnIt->takeRequirements(goods, a);
+        prBsnIt->changeArea(a);
+    } else {
+        // Insert new business into properties and set its area.
+        auto nwBsns = prBsns.insert(prBsnIt, Business(bsn));
+        nwBsns->takeRequirements(goods, a);
+        nwBsns->setArea(a);
+    }
+}
+
+void Traveler::demolish(const Business &bsn, double a) {
+    // Demolish the given area of the given business. Check area before calling.
+    unsigned int townId = toTown->getId();
+    auto &prBsns = properties[townId].businesses;
+    auto prBsnIt = std::lower_bound(prBsns.begin(), prBsns.end(), bsn);
+    prBsnIt->changeArea(-a);
+    prBsnIt->reclaim(goods, a);
+    if (prBsnIt->getArea() == 0.)
+        prBsns.erase(prBsnIt);
 }
 
 void Traveler::unequip(unsigned int pI) {
@@ -983,7 +1000,8 @@ void Traveler::update(unsigned int e) {
 
 void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d) {
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(i); rBI != bs.end(); ++rBI)
+    for (auto rBI = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(i); rBI != bs.end();
+         ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustAreas(requestButtons, d);
 }
@@ -991,7 +1009,8 @@ void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bs, size
 void Traveler::adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bs, size_t i, double d) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(i); rBI != bs.end(); ++rBI)
+    for (auto rBI = bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(i); rBI != bs.end();
+         ++rBI)
         requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
     toTown->adjustDemand(requestButtons, d);
 }
@@ -1008,10 +1027,10 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
         b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
     auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(properties.size(), [this, &b](size_t i) {
         auto &property = properties[i];
-        auto sStorage = b.CreateVector<flatbuffers::Offset<Save::Good>>(properties[i].storage.size(), [&property, &b](size_t j) {
-            return property.storage[j].save(b); });
-        auto sBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(properties[i].businesses.size(), [&property, &b](size_t j) {
-            return property.businesses[j].save(b); });
+        auto sStorage = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+            properties[i].storage.size(), [&property, &b](size_t j) { return property.storage[j].save(b); });
+        auto sBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
+            properties[i].businesses.size(), [&property, &b](size_t j) { return property.businesses[j].save(b); });
         return Save::CreateProperty(b, sStorage, sBusinesses);
     });
     auto sStats = b.CreateVector(std::vector<unsigned int>(stats.begin(), stats.end()));

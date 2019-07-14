@@ -292,15 +292,14 @@ void Game::newGame() {
     }
     std::map<std::pair<int, int>, double> frequencyFactors;
     sqlite3_prepare_v2(conn, "SELECT * FROM frequency_factors", -1, &quer, nullptr);
-
     while (sqlite3_step(quer) != SQLITE_DONE)
         frequencyFactors.emplace(std::make_pair(sqlite3_column_int(quer, 0), sqlite3_column_int(quer, 1)),
                                  sqlite3_column_double(quer, 2));
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(conn, "SELECT COUNT(*) FROM towns", -1, &quer, nullptr);
     sqlite3_step(quer);
+    gameData.townCount = static_cast<unsigned int>(sqlite3_column_int(quer, 0));
     // Store number of towns as double for progress bar purposes.
-    gameData.townCount = sqlite3_column_int(quer, 0);
     double tC = static_cast<double>(gameData.townCount);
     sqlite3_finalize(quer);
     sqlite3_prepare_v2(conn, "SELECT * FROM towns", -1, &quer, nullptr);
@@ -383,7 +382,8 @@ void Game::loadGame(const fs::path &p) {
                         {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
                         Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
         sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
-        SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
+        SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels,
+                             freezeSurface->pitch);
         sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
         freezeSurface = nullptr;
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {

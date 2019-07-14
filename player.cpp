@@ -233,8 +233,11 @@ void Player::setState(UIState s) {
         boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
         rt = {sR.w / 5, sR.h / 7, sR.w * 3 / 5, sR.h * 5 / 7};
         boxes.push_back(std::make_unique<SelectButton>(
-            rt, saves, uIFgr, uIBgr, Settings::getUIHighlight(), bBB, bBR, bBFS, printer,
-            [this, path] { game.loadGame((path / boxes.back()->getItem()).replace_extension("sav")); show = true; setState(traveling); }));
+            rt, saves, uIFgr, uIBgr, Settings::getUIHighlight(), bBB, bBR, bBFS, printer, [this, path] {
+                game.loadGame((path / boxes.back()->getItem()).replace_extension("sav"));
+                show = true;
+                setState(traveling);
+            }));
         break;
     case traveling:
         // Create go button.

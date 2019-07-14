@@ -26,8 +26,8 @@
 #include <forward_list>
 #include <functional>
 #include <limits>
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <SDL2/SDL.h>
@@ -80,7 +80,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double portion;                    // portion of goods offered in next trade
     std::vector<Good> goods;           // goods carried by traveler
     std::vector<Good> offer, request;  // goods offered and requested in next trade
-    std::vector<Property> properties; // vector of owned goods and businesses indexed by town id
+    std::vector<Property> properties;  // vector of owned goods and businesses indexed by town id
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
@@ -93,9 +93,11 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
-    void createStorage(const Town *t);
+    void deposit(Good &g);
+    void withdraw(Good &g);
     void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
-    void createBusinesses(const Town *t);
+    void build(const Business &bsn, double a);
+    void demolish(const Business &bsn, double a);
     void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI, Printer &pr);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
@@ -137,11 +139,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void makeTrade();
     void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t &oBI, size_t &rBI, Printer &pr);
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t oBI, size_t rBI);
-    void deposit(Good &g);
-    void withdraw(Good &g);
     void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
-    void build(Business &b, double a);
-    void demolish(Business &b, double a);
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
