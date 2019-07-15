@@ -169,6 +169,13 @@ void Business::run(std::vector<Good> &gds) {
     }
 }
 
+std::unique_ptr<MenuButton> Business::button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr,
+                                       const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
+                                       const std::function<void()> &fn) {
+    std::vector<std::string> tx = {};
+    return std::make_unique<MenuButton>(rt, tx, fgr, bgr, b, r, fS, pr, fn);
+}
+
 void Business::saveFrequency(unsigned long p, std::string &u) const {
     if (frequencyFactor > 0.) {
         u.append(" WHEN business_id = ");
