@@ -44,54 +44,30 @@ Nation::Nation(sqlite3_stmt *q, const std::vector<Good> &gs) {
     goods = gs;
 }
 
-bool Nation::operator==(const Nation &other) const { return id == other.id; }
+Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr, const SDL_Color &bgr, const std::string &rlg,
+               const std::vector<Good> &gds, const std::vector<Business> &bsns) : id(i), names(nms), adjective(adj), foreground(fgr), background(bgr),
+           dot({static_cast<Uint8>((fgr.r + bgr.r) / 2u),
+                static_cast<Uint8>((fgr.g + bgr.g) / 2u),
+                static_cast<Uint8>((fgr.b + bgr.b) / 2u), 255u}),
+           highlight({static_cast<Uint8>(255u - dot.r),
+                      static_cast<Uint8>(255u - dot.g),
+                      static_cast<Uint8>(255u - dot.b), 255u}),
+           religion(rlg), goods(gds), businesses(bsns) { }
 
-double Nation::getFrequency(unsigned int b, unsigned int m) const {
-    auto it = frequencies.find(std::make_pair(b, m));
-    if (it == frequencies.end())
-        return 0;
-    else
-        return it->second;
-}
+bool Nation::operator==(const Nation &other) const { return id == other.id; }
 
 std::string Nation::randomName() const {
     std::uniform_int_distribution<size_t> dis(0, travelerNames.size() - 1);
     return travelerNames[dis(Settings::getRng())];
 }
 
-void Nation::loadData(sqlite3 *c) {
-    // Load traveler names, business frequencies map, and good consumption data for this nation.
-    sqlite3_stmt *quer;
-    sqlite3_prepare_v2(c, "SELECT name FROM names WHERE nation_id = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, static_cast<int>(id));
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        travelerNames.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 0))));
-    sqlite3_finalize(quer);
-    sqlite3_prepare_v2(c,
-                       "SELECT business_id, mode, frequency FROM "
-                       "frequencies WHERE nation_id = ?",
-                       -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, static_cast<int>(id));
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        frequencies.emplace(std::make_pair(sqlite3_column_int(quer, 0), sqlite3_column_int(quer, 1)),
-                            sqlite3_column_double(quer, 2));
-    sqlite3_finalize(quer);
-    // Load this nation's consumption information for each material of each good.
-    sqlite3_prepare_v2(c, "SELECT * FROM consumption WHERE nation_id = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, static_cast<int>(id));
-    unsigned int oGId = 0;
-    std::unordered_map<unsigned int, std::array<double, 3>> consumptions;
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 1));
-        if (gId != oGId) {
-            // Good id changed, flush consumptions map.
-            goods[oGId].assignConsumption(consumptions);
-            consumptions.clear();
-            oGId = gId;
-        }
-        int mId = sqlite3_column_int(quer, 2);
-        std::array<double, 3> consumption{
-            {sqlite3_column_double(quer, 3), sqlite3_column_double(quer, 4), sqlite3_column_double(quer, 5)}};
-        consumptions.emplace(std::make_pair(mId, consumption));
-    }
+void Nation::setGoodConsumptions(const std::vector<std::vector<std::array<double, 3>>> &gCnps) {
+    // Takes a vector of consumption rates, demand slopes, and demand intercepts for this nation's goods' materials
+    for (size_t i = 0; i < goods.size(); ++i)
+        goods[i].setConsumptions(gCnps[i]);
+}
+
+void Nation::setFrequencies(const std::vector<double> &fqs) {
+    for (size_t i = 0; i < fqs.size(); ++i)
+        businesses[i].setFrequency(fqs[i]);
 }

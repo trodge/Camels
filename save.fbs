@@ -82,10 +82,14 @@ table Business {
     name:string;
     area:double;
     canSwitch:bool;
+    requireCoast:bool;
     keepMaterial:bool;
+    requirements:[Good];
+    reclaimables:[Good];
     inputs:[Good];
     outputs:[Good];
-    frequencyFactor:double;
+    frequency:double;
+    reclaimFactor:double;
 }
 
 table Town {

@@ -19,14 +19,18 @@
 
 #include "good.hpp"
 
-Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
-    : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(not m.empty()) {}
+Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s)
+    : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(not m.empty()), shoots(s) {}
 
-Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0, p, c, m) {}
+Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s) : Good(i, n, 0., p, c, m, s) {}
+    
+Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m) : Good(i, n, a, p, c, m, 0u) {}
 
-Good::Good(unsigned int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, 0, 0, m) {}
+Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0., p, c, m) {}
 
-Good::Good(unsigned int i, const std::string &n, double a) : Good(i, n, a, 0, 0, "") {}
+Good::Good(unsigned int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, 0., 0., m) {}
+
+Good::Good(unsigned int i, const std::string &n, double a) : Good(i, n, a, "") {}
 
 Good::Good(unsigned int i, const std::string &n) : Good(i, n, 0) {}
 
@@ -78,7 +82,9 @@ void Good::setAmount(double a) {
     amount = a;
 }
 
-void Good::addMaterial(Material m) { materials.push_back(m); }
+void Good::addMaterial(const Material &m) { materials.push_back(m); }
+
+void Good::addMaterial(const Good &g) { materials.push_back(Material(g.id, g.name)); }
 
 void Good::setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs) {
     for (auto &m : materials) {
@@ -89,18 +95,15 @@ void Good::setCombatStats(const std::unordered_map<unsigned int, std::vector<Com
     }
 }
 
-void Good::assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs) {
-    for (auto &m : materials) {
-        auto it = cs.find(m.getId());
-        if (it == cs.end())
-            continue;
-        m.assignConsumption(it->second);
-    }
+void Good::setConsumptions(const std::vector<std::array<double, 3>> &cs) {
+    // Takes a vector of consumption rates, demand slopes, and demand intercepts for each material of this good.
+    for (size_t i = 0; i < cs.size(); ++i)
+        materials[i].setConsumption(cs[i]);
 }
 
-void Good::assignConsumption(unsigned long p) {
+void Good::scaleConsumptions(unsigned long p) {
     for (auto &m : materials)
-        m.assignConsumption(p);
+        m.scaleConsumption(p);
 }
 
 void Good::removeExcess() {

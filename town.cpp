@@ -19,7 +19,7 @@
 
 #include "town.hpp"
 
-Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Business> &bs,
+Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns,
            const std::map<std::pair<int, int>, double> &fFs, int fS, Printer &pr) {
     // Load a town from the given sqlite query.
     canFocus = true;
@@ -38,20 +38,20 @@ Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Bus
     SDL_Rect rt = {0, 0, 0, 0};
     box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
                                     fS, pr);
-    for (auto &b : bs) {
-        double f = nation->getFrequency(b.getId(), b.getMode());
+    for (auto &b : nation->getBusinesses()) {
+        double f = b.getFrequency();
         if (f != 0. and (coastal or not b.getRequireCoast())) {
             businesses.push_back(Business(b));
             businesses.back().setArea(static_cast<double>(population) * f);
             auto fFI = fFs.find(std::make_pair(townType, b.getId()));
             if (fFI != fFs.end())
-                businesses.back().setFrequencyFactor(fFI->second);
+                businesses.back().setFrequency(f * fFI->second);
         }
     }
     // Copy goods list from nation.
     for (auto &g : nation->getGoods()) {
         goods.push_back(Good(g));
-        goods.back().assignConsumption(population);
+        goods.back().scaleConsumptions(population);
     }
     setMax();
     // Start with enough inputs for one run cycle.

@@ -42,12 +42,14 @@ class Business {
     std::vector<Good> reclaimables; // goods which will be reclaimed when business is demolished
     std::vector<Good> inputs;       // goods needed every production cycle
     std::vector<Good> outputs;      // goods created every production cycle
+    std::vector<Good> *goods;       // pointer to the goods this business operates on
     double factor;                  // factor based on area and available inputs for production
-    double frequencyFactor;         // area of business per unit of population
+    double frequency = 0.;         // area of business per unit of population
     double reclaimFactor = 0.7;     // portion of requirements that can be reclaimed
 
   public:
     Business(unsigned int i, unsigned int m, sqlite3 *c);
+    Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM);
     Business(const Save::Business *b);
     bool operator==(const Business &other) const;
     bool operator<(const Business &other) const;
@@ -60,13 +62,14 @@ class Business {
     const std::vector<Good> &getRequirements() const { return requirements; }
     const std::vector<Good> &getInputs() const { return inputs; }
     const std::vector<Good> &getOutputs() const { return outputs; }
+    double getFrequency() const { return frequency; }
     void setArea(double a);
     void changeArea(double a) { setArea(area + a); }
+    void setRequirements(const std::vector<Good> &rqs) { requirements = rqs; }
+    void setInputs(const std::vector<Good> &ips) { inputs = ips; }
+    void setOutputs(const std::vector<Good> &ops) { outputs = ops; }
     void setFactor(double f) { factor = f; }
-    void setFrequencyFactor(double f) {
-        frequencyFactor = f;
-        area *= f;
-    }
+    void setFrequency(double f);
     void takeRequirements(std::vector<Good> &gds, double a);
     void reclaim(std::vector<Good> &gds, double a);
     void addConflicts(std::vector<int> &cs, std::vector<Good> &gds);

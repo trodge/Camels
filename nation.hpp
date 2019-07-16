@@ -27,6 +27,7 @@
 #include <SDL2/SDL.h>
 #include <sqlite3.h>
 
+#include "business.hpp"
 #include "good.hpp"
 
 class Good;
@@ -35,14 +36,16 @@ class Nation {
     unsigned int id;
     std::vector<std::string> names;
     std::string adjective;
-    SDL_Color foreground, background, highlight, dot;
+    SDL_Color foreground, background, dot, highlight;
     std::string religion;
     std::vector<std::string> travelerNames;
     std::vector<Good> goods;
-    std::map<std::pair<unsigned int, unsigned int>, double> frequencies;
+    std::vector<Business> businesses;
 
   public:
     Nation(sqlite3_stmt *q, const std::vector<Good> &gs);
+    Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr, const SDL_Color &bgr, const std::string &rlg,
+           const std::vector<Good> &gds, const std::vector<Business> &bsns);
     bool operator==(const Nation &other) const;
     unsigned int getId() const { return id; }
     const std::vector<std::string> getNames() const { return names; }
@@ -51,10 +54,12 @@ class Nation {
     const SDL_Color &getBackground() const { return background; }
     const SDL_Color &getHighlight() const { return highlight; }
     const SDL_Color &getDotColor() const { return dot; }
-    double getFrequency(unsigned int b, unsigned int m) const;
     const std::vector<Good> &getGoods() const { return goods; }
+    const std::vector<Business> &getBusinesses() const { return businesses; }
+    void setTravelerNames(const std::vector<std::string> &tNms) { travelerNames = tNms; }
+    void setGoodConsumptions(const std::vector<std::vector<std::array<double, 3>>> &gCnps);
+    void setFrequencies(const std::vector<double> &fqs);
     std::string randomName() const;
-    void loadData(sqlite3 *c);
 };
 
 #endif // NATION_H

@@ -132,14 +132,14 @@ double Material::getQuantum(double c) const {
     return q;
 }
 
-void Material::assignConsumption(std::array<double, 3> c) {
+void Material::setConsumption(const std::array<double, 3> &c) {
     // Assign the given three values to consumption, demand slope, and demand intercept.
     consumption = c[0];
     demandSlope = c[1];
     demandIntercept = c[2];
 }
 
-void Material::assignConsumption(unsigned long p) {
+void Material::scaleConsumption(unsigned long p) {
     // Assign consumption to match given population.
     demandSlope /= static_cast<double>(p);
     consumption *= static_cast<double>(p);

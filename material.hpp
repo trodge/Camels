@@ -105,8 +105,8 @@ class Material {
     void setAmount(double a) { amount = a; }
     void setCombatStats(const std::vector<CombatStat> &cSs) { combatStats = cSs; }
     void setImage(SDL_Surface *img) { image = img; }
-    void assignConsumption(std::array<double, 3> c);
-    void assignConsumption(unsigned long p);
+    void setConsumption(const std::array<double, 3> &c);
+    void scaleConsumption(unsigned long p);
     void take(Material &m);
     void use(double a);
     void put(Material &m);

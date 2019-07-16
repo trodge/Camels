@@ -52,9 +52,18 @@ Business::Business(unsigned int i, unsigned int m, sqlite3 *c) : id(i), mode(m),
     sqlite3_finalize(quer);
 }
 
+Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM)
+    : id(i), mode(m), name(nm), area(1.), canSwitch(cS), requireCoast(rC), keepMaterial(kM) { }
+
 Business::Business(const Save::Business *b)
     : id(b->id()), mode(b->mode()), name(b->name()->str()), area(b->area()), canSwitch(b->canSwitch()),
-      keepMaterial(b->keepMaterial()) {
+      requireCoast(b->requireCoast()), keepMaterial(b->keepMaterial()), frequency(b->frequency()), reclaimFactor(b->reclaimFactor()) {
+    auto lRequirements = b->requirements();
+    for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII)
+        requirements.push_back(Good(*lII));
+    auto lReclaimables = b->reclaimables();
+    for (auto lOI = lReclaimables->begin(); lOI != lReclaimables->end(); ++lOI)
+        reclaimables.push_back(Good(*lOI));
     auto lInputs = b->inputs();
     for (auto lII = lInputs->begin(); lII != lInputs->end(); ++lII)
         inputs.push_back(Good(*lII));
@@ -76,6 +85,13 @@ void Business::setArea(double a) {
         area = a;
     }
 }
+
+void Business::setFrequency(double f) {
+    if (frequency != 0.)
+        area *= f / frequency;
+    frequency = f;
+}
+
 
 void Business::takeRequirements(std::vector<Good> &gds, double a) {
     // Take the requirments to add given area to business from parameter and store them in reclaimables.
@@ -172,26 +188,37 @@ void Business::run(std::vector<Good> &gds) {
 std::unique_ptr<MenuButton> Business::button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr,
                                        const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
                                        const std::function<void()> &fn) {
-    std::vector<std::string> tx = {};
+    std::vector<std::string> tx = {name, "Inputs:"};
+    for (auto &ip : inputs)
+        tx.push_back(ip.getName());
+    if (aS) {
+        
+    } else {
+        
+    }
     return std::make_unique<MenuButton>(rt, tx, fgr, bgr, b, r, fS, pr, fn);
 }
 
 void Business::saveFrequency(unsigned long p, std::string &u) const {
-    if (frequencyFactor > 0.) {
+    if (frequency > 0.) {
         u.append(" WHEN business_id = ");
         u.append(std::to_string(id));
         u.append(" AND mode = ");
         u.append(std::to_string(mode));
         u.append(" THEN ");
-        u.append(std::to_string(area / static_cast<double>(p) / frequencyFactor));
+        u.append(std::to_string(area / static_cast<double>(p) / frequency));
     }
 }
 
 flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilder &b) const {
     auto sName = b.CreateString(name);
+    auto sRequirements =
+        b.CreateVector<flatbuffers::Offset<Save::Good>>(requirements.size(), [this, &b](size_t i) { return requirements[i].save(b); });
+    auto sReclaimables =
+        b.CreateVector<flatbuffers::Offset<Save::Good>>(reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
     auto sInputs =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
     auto sOutputs =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
-    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, keepMaterial, sInputs, sOutputs, frequencyFactor);
+    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements, sReclaimables, sInputs, sOutputs, frequency);
 }

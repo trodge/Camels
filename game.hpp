@@ -54,13 +54,11 @@ class Game {
     unsigned int lastTime = 0, currentTime;
     std::vector<Nation> nations;
     std::vector<Town> towns;
-    std::vector<Business> businesses;
     std::vector<sdl::SurfacePtr> goodImages;
     GameData gameData;
     std::vector<std::shared_ptr<Traveler>> aITravelers;
     std::unique_ptr<Player> player;
     void renderMapTexture();
-    void loadNations(sqlite3 *c);
     void handleEvents();
     void update();
     void draw();

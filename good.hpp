@@ -36,10 +36,12 @@ class Good {
     std::string measure;
     bool split;
     double max = 0.;
-    unsigned int shoots = 0;
+    unsigned int shoots;
     void removeExcess();
 
   public:
+    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s);
+    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s);
     Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m);
     Good(unsigned int i, const std::string &n, double p, double c, const std::string &m);
     Good(unsigned int i, const std::string &n, double a, const std::string &m);
@@ -67,7 +69,8 @@ class Good {
     double getConsumption() const;
     std::string logEntry() const;
     void setAmount(double a);
-    void addMaterial(Material m);
+    void addMaterial(const Material &m);
+    void addMaterial(const Good &g);
     void setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs);
     void setMax() { max = std::abs(getConsumption()) * Settings::getConsumptionSpaceFactor(); }
     void setMax(double m) {
@@ -75,8 +78,8 @@ class Good {
             max = m;
     }
     void setImage(size_t i, SDL_Surface *img) { materials[i].setImage(img); }
-    void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
-    void assignConsumption(unsigned long p);
+    void setConsumptions(const std::vector<std::array<double, 3>> &cs);
+    void scaleConsumptions(unsigned long p);
     void take(Good &g);
     void use(double a);
     void use() { use(amount); }

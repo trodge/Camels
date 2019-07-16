@@ -810,10 +810,14 @@ struct Business FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_NAME = 8,
     VT_AREA = 10,
     VT_CANSWITCH = 12,
-    VT_KEEPMATERIAL = 14,
-    VT_INPUTS = 16,
-    VT_OUTPUTS = 18,
-    VT_FREQUENCYFACTOR = 20
+    VT_REQUIRECOAST = 14,
+    VT_KEEPMATERIAL = 16,
+    VT_REQUIREMENTS = 18,
+    VT_RECLAIMABLES = 20,
+    VT_INPUTS = 22,
+    VT_OUTPUTS = 24,
+    VT_FREQUENCY = 26,
+    VT_RECLAIMFACTOR = 28
   };
   uint32_t id() const {
     return GetField<uint32_t>(VT_ID, 0);
@@ -830,8 +834,17 @@ struct Business FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool canSwitch() const {
     return GetField<uint8_t>(VT_CANSWITCH, 0) != 0;
   }
+  bool requireCoast() const {
+    return GetField<uint8_t>(VT_REQUIRECOAST, 0) != 0;
+  }
   bool keepMaterial() const {
     return GetField<uint8_t>(VT_KEEPMATERIAL, 0) != 0;
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<Good>> *requirements() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_REQUIREMENTS);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<Good>> *reclaimables() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_RECLAIMABLES);
   }
   const flatbuffers::Vector<flatbuffers::Offset<Good>> *inputs() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_INPUTS);
@@ -839,8 +852,11 @@ struct Business FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<Good>> *outputs() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_OUTPUTS);
   }
-  double frequencyFactor() const {
-    return GetField<double>(VT_FREQUENCYFACTOR, 0.0);
+  double frequency() const {
+    return GetField<double>(VT_FREQUENCY, 0.0);
+  }
+  double reclaimFactor() const {
+    return GetField<double>(VT_RECLAIMFACTOR, 0.0);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -850,14 +866,22 @@ struct Business FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            verifier.VerifyString(name()) &&
            VerifyField<double>(verifier, VT_AREA) &&
            VerifyField<uint8_t>(verifier, VT_CANSWITCH) &&
+           VerifyField<uint8_t>(verifier, VT_REQUIRECOAST) &&
            VerifyField<uint8_t>(verifier, VT_KEEPMATERIAL) &&
+           VerifyOffset(verifier, VT_REQUIREMENTS) &&
+           verifier.VerifyVector(requirements()) &&
+           verifier.VerifyVectorOfTables(requirements()) &&
+           VerifyOffset(verifier, VT_RECLAIMABLES) &&
+           verifier.VerifyVector(reclaimables()) &&
+           verifier.VerifyVectorOfTables(reclaimables()) &&
            VerifyOffset(verifier, VT_INPUTS) &&
            verifier.VerifyVector(inputs()) &&
            verifier.VerifyVectorOfTables(inputs()) &&
            VerifyOffset(verifier, VT_OUTPUTS) &&
            verifier.VerifyVector(outputs()) &&
            verifier.VerifyVectorOfTables(outputs()) &&
-           VerifyField<double>(verifier, VT_FREQUENCYFACTOR) &&
+           VerifyField<double>(verifier, VT_FREQUENCY) &&
+           VerifyField<double>(verifier, VT_RECLAIMFACTOR) &&
            verifier.EndTable();
   }
 };
@@ -880,8 +904,17 @@ struct BusinessBuilder {
   void add_canSwitch(bool canSwitch) {
     fbb_.AddElement<uint8_t>(Business::VT_CANSWITCH, static_cast<uint8_t>(canSwitch), 0);
   }
+  void add_requireCoast(bool requireCoast) {
+    fbb_.AddElement<uint8_t>(Business::VT_REQUIRECOAST, static_cast<uint8_t>(requireCoast), 0);
+  }
   void add_keepMaterial(bool keepMaterial) {
     fbb_.AddElement<uint8_t>(Business::VT_KEEPMATERIAL, static_cast<uint8_t>(keepMaterial), 0);
+  }
+  void add_requirements(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> requirements) {
+    fbb_.AddOffset(Business::VT_REQUIREMENTS, requirements);
+  }
+  void add_reclaimables(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> reclaimables) {
+    fbb_.AddOffset(Business::VT_RECLAIMABLES, reclaimables);
   }
   void add_inputs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> inputs) {
     fbb_.AddOffset(Business::VT_INPUTS, inputs);
@@ -889,8 +922,11 @@ struct BusinessBuilder {
   void add_outputs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> outputs) {
     fbb_.AddOffset(Business::VT_OUTPUTS, outputs);
   }
-  void add_frequencyFactor(double frequencyFactor) {
-    fbb_.AddElement<double>(Business::VT_FREQUENCYFACTOR, frequencyFactor, 0.0);
+  void add_frequency(double frequency) {
+    fbb_.AddElement<double>(Business::VT_FREQUENCY, frequency, 0.0);
+  }
+  void add_reclaimFactor(double reclaimFactor) {
+    fbb_.AddElement<double>(Business::VT_RECLAIMFACTOR, reclaimFactor, 0.0);
   }
   explicit BusinessBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -911,19 +947,27 @@ inline flatbuffers::Offset<Business> CreateBusiness(
     flatbuffers::Offset<flatbuffers::String> name = 0,
     double area = 0.0,
     bool canSwitch = false,
+    bool requireCoast = false,
     bool keepMaterial = false,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> requirements = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> reclaimables = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> inputs = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> outputs = 0,
-    double frequencyFactor = 0.0) {
+    double frequency = 0.0,
+    double reclaimFactor = 0.0) {
   BusinessBuilder builder_(_fbb);
-  builder_.add_frequencyFactor(frequencyFactor);
+  builder_.add_reclaimFactor(reclaimFactor);
+  builder_.add_frequency(frequency);
   builder_.add_area(area);
   builder_.add_outputs(outputs);
   builder_.add_inputs(inputs);
+  builder_.add_reclaimables(reclaimables);
+  builder_.add_requirements(requirements);
   builder_.add_name(name);
   builder_.add_mode(mode);
   builder_.add_id(id);
   builder_.add_keepMaterial(keepMaterial);
+  builder_.add_requireCoast(requireCoast);
   builder_.add_canSwitch(canSwitch);
   return builder_.Finish();
 }
@@ -935,11 +979,17 @@ inline flatbuffers::Offset<Business> CreateBusinessDirect(
     const char *name = nullptr,
     double area = 0.0,
     bool canSwitch = false,
+    bool requireCoast = false,
     bool keepMaterial = false,
+    const std::vector<flatbuffers::Offset<Good>> *requirements = nullptr,
+    const std::vector<flatbuffers::Offset<Good>> *reclaimables = nullptr,
     const std::vector<flatbuffers::Offset<Good>> *inputs = nullptr,
     const std::vector<flatbuffers::Offset<Good>> *outputs = nullptr,
-    double frequencyFactor = 0.0) {
+    double frequency = 0.0,
+    double reclaimFactor = 0.0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto requirements__ = requirements ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*requirements) : 0;
+  auto reclaimables__ = reclaimables ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*reclaimables) : 0;
   auto inputs__ = inputs ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*inputs) : 0;
   auto outputs__ = outputs ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*outputs) : 0;
   return Save::CreateBusiness(
@@ -949,10 +999,14 @@ inline flatbuffers::Offset<Business> CreateBusinessDirect(
       name__,
       area,
       canSwitch,
+      requireCoast,
       keepMaterial,
+      requirements__,
+      reclaimables__,
       inputs__,
       outputs__,
-      frequencyFactor);
+      frequency,
+      reclaimFactor);
 }
 
 struct Town FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

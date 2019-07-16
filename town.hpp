@@ -59,7 +59,7 @@ class Town : public Focusable {
     void setMax();
 
   public:
-    Town(sqlite3_stmt *q, const std::vector<Nation> &ns, const std::vector<Business> &bs,
+    Town(sqlite3_stmt *q, const std::vector<Nation> &ns,
          const std::map<std::pair<int, int>, double> &fFs, int fS, Printer &pr);
     Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr);
     bool operator==(const Town &other) const;
