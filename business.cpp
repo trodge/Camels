@@ -19,39 +19,6 @@
 
 #include "business.hpp"
 
-Business::Business(unsigned int i, unsigned int m, sqlite3 *c) : id(i), mode(m), area(1.) {
-    // Load a new business with the given id and mode from the database
-    sqlite3_stmt *quer;
-    sqlite3_prepare_v2(c,
-                       "SELECT name, can_switch, require_coast, keep_material FROM "
-                       "businesses WHERE business_id = ?",
-                       -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, static_cast<int>(i));
-    sqlite3_step(quer);
-    name = std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 0)));
-    canSwitch = bool(sqlite3_column_int(quer, 1));
-    requireCoast = bool(sqlite3_column_int(quer, 2));
-    keepMaterial = bool(sqlite3_column_int(quer, 3));
-    sqlite3_finalize(quer);
-    sqlite3_prepare_v2(c, "SELECT * FROM requirements WHERE business_id = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, static_cast<int>(i));
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        requirements.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 2)), sqlite3_column_double(quer, 3)));
-    sqlite3_finalize(quer);
-    sqlite3_prepare_v2(c, "SELECT * FROM inputs WHERE business_id = ? AND mode = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, static_cast<int>(i));
-    sqlite3_bind_int(quer, 2, static_cast<int>(m));
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        inputs.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 2)), sqlite3_column_double(quer, 3)));
-    sqlite3_finalize(quer);
-    sqlite3_prepare_v2(c, "SELECT * FROM outputs WHERE business_id = ? AND mode = ?", -1, &quer, nullptr);
-    sqlite3_bind_int(quer, 1, static_cast<int>(i));
-    sqlite3_bind_int(quer, 2, static_cast<int>(m));
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        outputs.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 2)), sqlite3_column_double(quer, 3)));
-    sqlite3_finalize(quer);
-}
-
 Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM)
     : id(i), mode(m), name(nm), area(1.), canSwitch(cS), requireCoast(rC), keepMaterial(kM) { }
 

@@ -25,7 +25,6 @@
 #include <vector>
 
 #include <SDL2/SDL.h>
-#include <sqlite3.h>
 
 #include "business.hpp"
 #include "good.hpp"
@@ -43,7 +42,6 @@ class Nation {
     std::vector<Business> businesses;
 
   public:
-    Nation(sqlite3_stmt *q, const std::vector<Good> &gs);
     Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr, const SDL_Color &bgr, const std::string &rlg,
            const std::vector<Good> &gds, const std::vector<Business> &bsns);
     bool operator==(const Nation &other) const;

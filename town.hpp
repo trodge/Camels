@@ -27,6 +27,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <sqlite3.h>
+
 #include "business.hpp"
 #include "draw.hpp"
 #include "loadbar.hpp"

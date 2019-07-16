@@ -29,6 +29,8 @@
 
 #include <SDL2/SDL_image.h>
 
+#include <sqlite3.h>
+
 #include "business.hpp"
 #include "nation.hpp"
 #include "player.hpp"

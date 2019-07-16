@@ -25,8 +25,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <sqlite3.h>
-
 #include "good.hpp"
 
 class Good;
@@ -48,7 +46,6 @@ class Business {
     double reclaimFactor = 0.7;     // portion of requirements that can be reclaimed
 
   public:
-    Business(unsigned int i, unsigned int m, sqlite3 *c);
     Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM);
     Business(const Save::Business *b);
     bool operator==(const Business &other) const;

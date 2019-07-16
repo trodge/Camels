@@ -19,31 +19,6 @@
 
 #include "nation.hpp"
 
-Nation::Nation(sqlite3_stmt *q, const std::vector<Good> &gs) {
-    id = static_cast<unsigned int>(sqlite3_column_int(q, 0));
-    names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))));
-    names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))));
-    adjective = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 3)));
-    foreground.r = static_cast<Uint8>(sqlite3_column_int(q, 4));
-    foreground.g = static_cast<Uint8>(sqlite3_column_int(q, 5));
-    foreground.b = static_cast<Uint8>(sqlite3_column_int(q, 6));
-    foreground.a = 255u;
-    background.r = static_cast<Uint8>(sqlite3_column_int(q, 7));
-    background.g = static_cast<Uint8>(sqlite3_column_int(q, 8));
-    background.b = static_cast<Uint8>(sqlite3_column_int(q, 9));
-    background.a = 255u;
-    dot.r = static_cast<Uint8>((foreground.r + background.r) / 2);
-    dot.g = static_cast<Uint8>((foreground.g + background.g) / 2);
-    dot.b = static_cast<Uint8>((foreground.b + background.b) / 2);
-    dot.a = 255u;
-    highlight.r = static_cast<Uint8>(255 - dot.r);
-    highlight.g = static_cast<Uint8>(255 - dot.g);
-    highlight.b = static_cast<Uint8>(255 - dot.b);
-    highlight.a = 255u;
-    religion = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 10)));
-    goods = gs;
-}
-
 Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr, const SDL_Color &bgr, const std::string &rlg,
                const std::vector<Good> &gds, const std::vector<Business> &bsns) : id(i), names(nms), adjective(adj), foreground(fgr), background(bgr),
            dot({static_cast<Uint8>((fgr.r + bgr.r) / 2u),
