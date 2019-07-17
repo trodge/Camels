@@ -21,12 +21,16 @@
 
 int main(int, char **) {
     // Start SDL, SDL_ttf, and SDL_image.
+    std::cout << "Initializing SDL" << std::endl;
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
         std::cout << "SDL initialization failed, SDL Error: " << SDL_GetError() << std::endl;
+    std::cout << "Initializing TTF" << std::endl;
     if (TTF_Init() < 0)
         std::cout << "TTF initialization failed, TTF Error: " << TTF_GetError() << std::endl;
+    std::cout << "Initializing IMG" << std::endl;
     if (IMG_Init(IMG_INIT_PNG) < 0)
         std::cout << "TTF initialization failed, IMG Error: " << SDL_GetError() << std::endl;
+    std::cout << "Loading settings" << std::endl;
     Settings::load("settings.ini");
     {
         Game game;

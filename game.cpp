@@ -27,6 +27,7 @@ Game::Game()
       screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)) {
     player = std::make_unique<Player>(*this);
     player->start();
+    std::cout << "Creating Game" << std::endl;
     if (!window.get())
         std::cout << "Window creation failed, SDL Error:" << SDL_GetError() << std::endl;
     sdl::SurfacePtr icon = sdl::loadImage(fs::path("images/icon.png").string().c_str());
@@ -34,8 +35,6 @@ Game::Game()
         std::cout << "Failed to load icon, IMG Error:" << IMG_GetError() << std::endl;
     SDL_SetWindowIcon(window.get(), icon.get());
     icon = nullptr;
-    mapSurface = sdl::loadImage(fs::path("images/map-scaled.png").string().c_str());
-    mapTexture = sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h);
     if (!screen.get())
         std::cout << "Failed to create renderer, SDL Error:" << SDL_GetError() << std::endl;
     if (SDL_GetRendererInfo(screen.get(), &screenInfo) < 0)
@@ -43,6 +42,9 @@ Game::Game()
     // For debugging, pretend renderer can't handle textures over 64x64
     // screenInfo.max_texture_height = 64;
     // screenInfo.max_texture_width = 64;
+    std::cout << "Loading Map" << std::endl;
+    mapSurface = sdl::loadImage(fs::path("images/map-scaled.png").string().c_str());
+    mapTexture = sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h);
     if (!mapSurface)
         std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
     SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
@@ -226,15 +228,10 @@ void Game::loadData(sqlite3 *cn) {
         for (size_t j = 0; j < gMs.size(); ++j) {
             // Loop over materials by index.
             auto &m = gMs[j];
-            std::array<std::string, 2> names = {g.getName(), m.getName()};
-            for (auto &nm : names) {
-                // Replace spaces in names with dashes.
-                size_t sI = nm.find(' ');
-                if (sI < nm.size())
-                    nm.replace(sI, 1, "-");
-            }
+            std::string name = g.getFullName(m);
+            boost::replace_all(name, " ", "-");
             // Concatenate material name with good name.
-            fs::path imagePath("images/" + names[1] + "-" + names[0] + ".png");
+            fs::path imagePath("images/" + name + ".png");
             if (fs::exists(imagePath)) {
                 // Load image from file.
                 sdl::SurfacePtr image(sdl::loadImage(imagePath.string().c_str()));

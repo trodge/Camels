@@ -65,8 +65,8 @@ class Business {
     void setRequirements(const std::vector<Good> &rqs) { requirements = rqs; }
     void setInputs(const std::vector<Good> &ips) { inputs = ips; }
     void setOutputs(const std::vector<Good> &ops) { outputs = ops; }
-    void setFactor(double f) { factor = f; }
-    void setFrequency(double f);
+    void setFactor(double ft) { factor = ft; }
+    void setFrequency(double fq) { frequency = fq; }
     void takeRequirements(std::vector<Good> &gds, double a);
     void reclaim(std::vector<Good> &gds, double a);
     void addConflicts(std::vector<int> &cs, std::vector<Good> &gds);

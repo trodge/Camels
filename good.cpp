@@ -46,6 +46,10 @@ Good::Good(const Save::Good *g)
         materials.push_back(Material(*lMI));
 }
 
+std::string Good::getFullName(const Material &m) const {
+    return name == m.getName() ? name : m.getName() + " " + name;
+}
+
 const Material &Good::getMaterial(const Material &m) const {
     return *std::lower_bound(materials.begin(), materials.end(), m);
 }
@@ -198,9 +202,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL
                                          const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
                                          const std::function<void()> &fn) const {
     auto &oMtr = getMaterial(mtr);
-    std::vector<std::string> tx = {oMtr.getName()};
-    if (tx.front() != name)
-        tx.front() += ' ' + name;
+    std::vector<std::string> tx = {getFullName(mtr)};
     // Find image in game data.
     SDL_Surface *img = oMtr.getImage();
     if (aS) {

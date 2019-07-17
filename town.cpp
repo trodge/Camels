@@ -23,18 +23,21 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
            unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>,
            double> &fFs, int fS, Printer &pr) 
     : id(i), box(std::make_unique<TextBox>(nms, nt->getForeground(), nt->getBackground(), nt->getId(), true, 1, 1, fS, pr)),
-    nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT) {
+      nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT) {
     // Create new town based on parameters.
     // Copy businesses from nations, scaling with frequencies.
-    for (auto &b : nation->getBusinesses()) {
-        double fq = b.getFrequency();
-        if (fq != 0. and (coastal or not b.getRequireCoast())) {
-            auto tTBI = std::make_pair(townType, b.getId());
+    auto &nBsns = nt->getBusinesses();
+    businesses.reserve(nBsns.size());
+    for (auto &bsn : nBsns) {
+        double fq = bsn.getFrequency();
+        if (fq != 0. and (coastal or not bsn.getRequireCoast())) {
+            double fF = 1.;
+            auto tTBI = std::make_pair(townType, bsn.getId());
             auto fFI = fFs.lower_bound(tTBI);
             if (fFI != fFs.end() and fFI->first == tTBI)
-                businesses.back().setFrequency(fq * fFI->second);
-            businesses.push_back(Business(b));
-            businesses.back().setArea(static_cast<double>(population));
+                fF = fFI->second;
+            businesses.push_back(Business(bsn));
+            businesses.back().setArea(static_cast<double>(ppl) * fq * fF);
         }
     }
     // Copy goods list from nation.

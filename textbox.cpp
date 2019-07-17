@@ -19,27 +19,27 @@
 
 #include "textbox.hpp"
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
                  unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr)
-    : rect(rt), fixedSize(rt.w and rt.h), text(t), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
+    : rect(rt), fixedSize(rt.w and rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
       fontSize(fS), image(img), printer(pr) {
-    setText(t);
+    setText(tx);
 }
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
         bool iN, int b, int r, int fS, Printer &pr)
-    : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr, pr) {}
+    : TextBox(rt, tx, fg, bg, i, iN, b, r, fS, nullptr, pr) {}
 
-TextBox::TextBox(const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
-            int b, int r, int fS, Printer &pr) : TextBox({0, 0, 0, 0}, t, fg, bg, i, iN, b, r, fS, pr) {}
+TextBox::TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
+            int b, int r, int fS, Printer &pr) : TextBox({0, 0, 0, 0}, tx, fg, bg, i, iN, b, r, fS, pr) {}
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
         int b, int r, int fS, Printer &pr)
-    : TextBox(rt, t, fg, bg, i, false, b, r, fS, pr) {}
+    : TextBox(rt, tx, fg, bg, i, false, b, r, fS, pr) {}
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
         int fS, Printer &pr)
-    : TextBox(rt, t, fg, bg, 0u, b, r, fS, pr) {}
+    : TextBox(rt, tx, fg, bg, 0u, b, r, fS, pr) {}
 
 void TextBox::setText() {
     // Renders the text using the printer. Call any time text changes.
@@ -62,7 +62,7 @@ void TextBox::setText() {
     lineHeight = printer.getFontHeight();
     lines = text.size();
     if (rect.h and lines > size_t(rect.h / lineHeight)) {
-        // Truncate lines of text if they won't fit in box of fixed size.
+        // Truncate lines of text if they won'tx fit in box of fixed size.
         lines = static_cast<size_t>(rect.h / lineHeight);
         text = std::vector<std::string>(text.begin(),
                                         text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
@@ -158,9 +158,9 @@ void TextBox::handleKey(const SDL_KeyboardEvent &k) {
         }
 }
 
-void TextBox::handleTextInput(const SDL_TextInputEvent &t) {
+void TextBox::handleTextInput(const SDL_TextInputEvent &tx) {
     if (not text.empty()) {
-        text.back().append(t.text);
+        text.back().append(tx.text);
         setText();
     }
 }

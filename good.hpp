@@ -54,7 +54,8 @@ class Good {
     bool operator!=(const Good &other) const { return id != other.id; }
     bool operator<(const Good &other) const { return id < other.id; }
     unsigned int getId() const { return id; }
-    const std::string getName() const { return name; }
+    const std::string &getName() const { return name; }
+    std::string getFullName(const Material &m) const;
     const std::vector<Material> &getMaterials() const { return materials; }
     const Material &getMaterial(const Material &m) const;
     const Material &getMaterial(size_t i) const { return materials[i]; }
