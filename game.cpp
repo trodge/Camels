@@ -229,7 +229,10 @@ void Game::loadData(sqlite3 *cn) {
             // Loop over materials by index.
             auto &m = gMs[j];
             std::string name = g.getFullName(m);
-            boost::replace_all(name, " ", "-");
+            // Replace a space in the good's full name with a dash.
+            size_t spacePos = name.find(' ');
+            if (spacePos != std::string::npos)
+                name.replace(spacePos, 1u, "-");
             // Concatenate material name with good name.
             fs::path imagePath("images/" + name + ".png");
             if (fs::exists(imagePath)) {

@@ -47,7 +47,7 @@ Good::Good(const Save::Good *g)
 }
 
 std::string Good::getFullName(const Material &m) const {
-    return name == m.getName() ? name : m.getName() + " " + name;
+    return id == m.getId() ? name : m.getName() + " " + name;
 }
 
 const Material &Good::getMaterial(const Material &m) const {
