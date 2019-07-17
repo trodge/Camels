@@ -60,6 +60,7 @@ class Game {
     GameData gameData;
     std::vector<std::shared_ptr<Traveler>> aITravelers;
     std::unique_ptr<Player> player;
+    void loadData(sqlite3 *cn);
     void renderMapTexture();
     void handleEvents();
     void update();

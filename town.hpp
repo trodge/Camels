@@ -61,8 +61,9 @@ class Town : public Focusable {
     void setMax();
 
   public:
-    Town(sqlite3_stmt *q, const std::vector<Nation> &ns,
-         const std::map<std::pair<int, int>, double> &fFs, int fS, Printer &pr);
+    Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
+         unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs,
+         int fS, Printer &pr);
     Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr);
     bool operator==(const Town &other) const;
     unsigned int getId() const { return id; }

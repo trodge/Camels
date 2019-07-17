@@ -107,25 +107,6 @@ table Town {
     businessCounter:int;
 }
 
-struct Color {
-    r:ubyte;
-    g:ubyte;
-    b:ubyte;
-    a:ubyte;
-}
-
-table Nation {
-    id:uint;
-    names:[string];
-    adjective:string;
-    foreground:Color;
-    background:Color:
-    religion:string;
-    travelerNames:[string];
-    goods:[Good];
-    businesses:[Business];
-}
-
 table Game {
     towns:[Town];
     playerTraveler:Traveler;

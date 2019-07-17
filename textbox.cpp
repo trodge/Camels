@@ -26,6 +26,21 @@ TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SD
     setText(t);
 }
 
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+        bool iN, int b, int r, int fS, Printer &pr)
+    : TextBox(rt, t, fg, bg, i, iN, b, r, fS, nullptr, pr) {}
+
+TextBox::TextBox(const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
+            int b, int r, int fS, Printer &pr) : TextBox({0, 0, 0, 0}, t, fg, bg, i, iN, b, r, fS, pr) {}
+
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+        int b, int r, int fS, Printer &pr)
+    : TextBox(rt, t, fg, bg, i, false, b, r, fS, pr) {}
+
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
+        int fS, Printer &pr)
+    : TextBox(rt, t, fg, bg, 0u, b, r, fS, pr) {}
+
 void TextBox::setText() {
     // Renders the text using the printer. Call any time text changes.
     if (not fixedSize) {

@@ -19,33 +19,22 @@
 
 #include "town.hpp"
 
-Town::Town(sqlite3_stmt *q, const std::vector<Nation> &ns,
-           const std::map<std::pair<int, int>, double> &fFs, int fS, Printer &pr) {
-    // Load a town from the given sqlite query.
-    canFocus = true;
-    // Load town info.
-    id = static_cast<unsigned int>(sqlite3_column_int(q, 0));
-    std::vector<std::string> names;
-    names.reserve(2);
-    names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))));
-    names.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))));
-    nation = &ns[static_cast<size_t>(sqlite3_column_int(q, 3) - 1)];
-    longitude = sqlite3_column_double(q, 5);
-    latitude = sqlite3_column_double(q, 4);
-    coastal = bool(sqlite3_column_int(q, 6));
-    population = static_cast<unsigned long>(sqlite3_column_int(q, 7));
-    townType = static_cast<unsigned int>(sqlite3_column_int(q, 8));
-    SDL_Rect rt = {0, 0, 0, 0};
-    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
-                                    fS, pr);
+Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
+           unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>,
+           double> &fFs, int fS, Printer &pr) 
+    : id(i), box(std::make_unique<TextBox>(nms, nt->getForeground(), nt->getBackground(), nt->getId(), true, 1, 1, fS, pr)),
+    nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT) {
+    // Create new town based on parameters.
+    // Copy businesses from nations, scaling with frequencies.
     for (auto &b : nation->getBusinesses()) {
-        double f = b.getFrequency();
-        if (f != 0. and (coastal or not b.getRequireCoast())) {
+        double fq = b.getFrequency();
+        if (fq != 0. and (coastal or not b.getRequireCoast())) {
+            auto tTBI = std::make_pair(townType, b.getId());
+            auto fFI = fFs.lower_bound(tTBI);
+            if (fFI != fFs.end() and fFI->first == tTBI)
+                businesses.back().setFrequency(fq * fFI->second);
             businesses.push_back(Business(b));
-            businesses.back().setArea(static_cast<double>(population) * f);
-            auto fFI = fFs.find(std::make_pair(townType, b.getId()));
-            if (fFI != fFs.end())
-                businesses.back().setFrequency(f * fFI->second);
+            businesses.back().setArea(static_cast<double>(population));
         }
     }
     // Copy goods list from nation.

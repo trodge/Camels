@@ -20,7 +20,7 @@
 #include "business.hpp"
 
 Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM)
-    : id(i), mode(m), name(nm), area(1.), canSwitch(cS), requireCoast(rC), keepMaterial(kM) { }
+    : id(i), mode(m), name(nm), area(1.), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1.) { }
 
 Business::Business(const Save::Business *b)
     : id(b->id()), mode(b->mode()), name(b->name()->str()), area(b->area()), canSwitch(b->canSwitch()),
@@ -54,8 +54,7 @@ void Business::setArea(double a) {
 }
 
 void Business::setFrequency(double f) {
-    if (frequency != 0.)
-        area *= f / frequency;
+    area *= f / frequency;
     frequency = f;
 }
 
