@@ -224,13 +224,13 @@ void AI::autoEquip(const std::vector<Good> &gs, const std::array<unsigned int, 5
     // Equip best scoring item for each part.
     std::array<double, 6> bestScore{};
     for (auto &g : gs)
-        if (g.getAmount() >= 1)
+        if (g.getAmount() >= 1.)
             for (auto &m : g.getMaterials())
-                if (m.getAmount() >= 1) {
+                if (m.getAmount() >= 1.) {
                     auto &ss = m.getCombatStats();
                     if (not ss.empty()) {
-                        Good e(g.getId(), g.getName(), 1);
-                        Material eM(m.getId(), m.getName(), 1);
+                        Good e(g.getId(), g.getName(), 1.);
+                        Material eM(m.getId(), m.getName(), 1.);
                         eM.setCombatStats(ss);
                         e.addMaterial(eM);
                         double score = equipScore(e, sts);

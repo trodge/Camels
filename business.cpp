@@ -147,7 +147,7 @@ void Business::run(std::vector<Good> &gds) {
 }
 
 std::unique_ptr<MenuButton> Business::button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr, const SDL_Color &bgr, int b,
-                                             int r, int fS, Printer &pr, const std::function<void()> &fn) {
+                                             int r, int fS, Printer &pr, const std::function<void()> &fn) const {
     std::vector<std::string> tx = {name};
     std::string unitText; // Units of input and output post-fix.
     if (aS) {

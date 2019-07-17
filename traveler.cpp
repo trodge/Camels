@@ -364,7 +364,7 @@ void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, siz
 
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
-    auto &storage = properties[toTown->getId()].storage;
+    auto &storage = properties[toTown->getId() - 1].storage;
     if (storage.empty()) {
         // Storage has not been created yet.
         auto &townGoods = toTown->getGoods(); // goods from the town
@@ -383,7 +383,7 @@ void Traveler::deposit(Good &g) {
 
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
-    auto &storage = properties[toTown->getId()].storage;
+    auto &storage = properties[toTown->getId() - 1].storage;
     if (storage.empty())
         // Cannot withdraw from empty storage.
         return;
@@ -433,8 +433,7 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
     right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
     rt.y = top;
-    unsigned int townId = toTown->getId();
-    auto &storage = properties[townId].storage;
+    auto &storage = properties[toTown->getId() - 1].storage;
     for (auto &g : storage) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 and g.getSplit()) or (m.getAmount() >= 1)) {
@@ -456,16 +455,15 @@ void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, c
 void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before calling.
     // Determine if business exists in property.
-    unsigned int townId = toTown->getId();
-    auto &prBsns = properties[townId].businesses;
-    auto prBsnIt = std::lower_bound(prBsns.begin(), prBsns.end(), bsn);
-    if (*prBsnIt == bsn) {
+    auto &oBsns = properties[toTown->getId() - 1].businesses;
+    auto oBsnIt = std::lower_bound(oBsns.begin(), oBsns.end(), bsn);
+    if (*oBsnIt == bsn) {
         // Business already exists, grow it.
-        prBsnIt->takeRequirements(goods, a);
-        prBsnIt->changeArea(a);
+        oBsnIt->takeRequirements(goods, a);
+        oBsnIt->changeArea(a);
     } else {
         // Insert new business into properties and set its area.
-        auto nwBsns = prBsns.insert(prBsnIt, Business(bsn));
+        auto nwBsns = oBsns.insert(oBsnIt, Business(bsn));
         nwBsns->takeRequirements(goods, a);
         nwBsns->setArea(a);
     }
@@ -473,13 +471,54 @@ void Traveler::build(const Business &bsn, double a) {
 
 void Traveler::demolish(const Business &bsn, double a) {
     // Demolish the given area of the given business. Check area before calling.
-    unsigned int townId = toTown->getId();
-    auto &prBsns = properties[townId].businesses;
-    auto prBsnIt = std::lower_bound(prBsns.begin(), prBsns.end(), bsn);
-    prBsnIt->changeArea(-a);
-    prBsnIt->reclaim(goods, a);
-    if (prBsnIt->getArea() == 0.)
-        prBsns.erase(prBsnIt);
+    auto &oBsns = properties[toTown->getId() - 1].businesses;
+    auto oBsnIt = std::lower_bound(oBsns.begin(), oBsns.end(), bsn);
+    oBsnIt->changeArea(-a);
+    oBsnIt->reclaim(goods, a);
+    if (oBsnIt->getArea() == 0.)
+        oBsns.erase(oBsnIt);
+}
+
+void Traveler::createManageButtons(std::vector<std::unique_ptr<TextBox>> &bs, Printer &pr) {
+    // Create buttons for managing businesses.
+    const SDL_Rect &sR = Settings::getScreenRect();
+    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
+                    &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
+    // Create buttons for demolishing businesses.
+    std::vector<Business> &oBsns = properties[toTown->getId() - 1].businesses;
+    int left = sR.w / kBusinessButtonXDivisor, right = sR.w / 2, top = sR.h / kBusinessButtonYDivisor,
+        dx = sR.w * kBusinessButtonSpaceMultiplier / kBusinessButtonXDivisor,
+        dy = sR.h * kBusinessButtonSpaceMultiplier / kBusinessButtonYDivisor;
+    SDL_Rect rt = {left, top, sR.w * kBusinessButtonSizeMultiplier / kBusinessButtonXDivisor,
+                   sR.h * kBusinessButtonSizeMultiplier / kBusinessButtonYDivisor};
+    for (auto &bsn : oBsns) {
+        bs.push_back(bsn.button(true, rt, fgr, bgr, tB, tR, tFS, pr, [this, &bsn, &pr] {
+            
+        }));
+
+        rt.x += dx;
+        if (rt.x + rt.w >= right) {
+            rt.x = left;
+            rt.y += dy;
+        }
+    }
+    const std::vector<Business> &tBsns = toTown->getBusinesses();
+    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
+    right = sR.w - sR.w / kGoodButtonXDivisor;
+    rt.x = left;
+    rt.y = top;
+    for (auto &bsn : tBsns) {
+        bs.push_back(bsn.button(true, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &bsn, &pr] {
+            
+        }));
+
+        rt.x += dx;
+        if (rt.x + rt.w >= right) {
+            rt.x = left;
+            rt.y += dy;
+        }
+    }
 }
 
 void Traveler::unequip(unsigned int pI) {
@@ -521,18 +560,18 @@ void Traveler::equip(unsigned int pI) {
                 return;
     if (pI == 2) {
         // Add left fist to equipment.
-        Good fn = Good(0u, "fist");
-        Material fM(1u, "left");
+        Good fist = Good(0u, "fist");
+        Material fM(2u, "left");
         fM.setCombatStats({{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}});
-        fn.addMaterial(fM);
-        equipment.push_back(fn);
+        fist.addMaterial(fM);
+        equipment.push_back(fist);
     } else if (pI == 3) {
         // Add right fist to equipment.
-        Good fn = Good(0u, "fist");
-        Material fM(2u, "right");
+        Good fist = Good(0u, "fist");
+        Material fM(3u, "right");
         fM.setCombatStats({{1, 3, 1, 1, 0, {{1, 1, 1}}}, {2, 3, 0, 1, 1, {{1, 1, 1}}}});
-        fn.addMaterial(fM);
-        equipment.push_back(fn);
+        fist.addMaterial(fM);
+        equipment.push_back(fist);
     }
 }
 

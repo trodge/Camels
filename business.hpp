@@ -73,7 +73,7 @@ class Business {
     void handleConflicts(std::vector<int> &cs);
     void run(std::vector<Good> &gds);
     std::unique_ptr<MenuButton> button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr, const SDL_Color &bgr, int b, int r,
-                                       int fS, Printer &pr, const std::function<void()> &fn);
+                                       int fS, Printer &pr, const std::function<void()> &fn) const;
     void saveFrequency(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
 };

@@ -513,7 +513,7 @@ void Game::newGame() {
     loadBar.setText(0, "Starting AI...");
     for (auto &t : aITravelers) {
         SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-        t->startAI();
+        //t->startAI();
         t->addToTown();
         loadBar.progress(1. / tC);
         loadBar.draw(screen.get());
@@ -614,7 +614,7 @@ void Game::update() {
         for (auto &t : towns)
             t.update(elapsed);
         for (auto &t : aITravelers) {
-            t->runAI(elapsed);
+            //t->runAI(elapsed);
             t->update(elapsed);
             t->place(offsetX, offsetY, scale);
         }

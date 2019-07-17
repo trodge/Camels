@@ -39,7 +39,11 @@
 
 struct CombatStat {
     unsigned int statId, partId, attack, type, speed;
-    // attack types are 1: bash, 2: slash, 3: stab
+    // stat this material uses in combat
+    // part this material can be equpped on
+    // power of this material's attack
+    // attack type - 1: bash, 2: slash, 3: stab
+    // speed when attacking
     std::array<unsigned int, 3> defense;
 };
 

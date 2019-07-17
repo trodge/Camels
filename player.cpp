@@ -275,7 +275,9 @@ void Player::setState(UIState s) {
     case attacking:
     case logging:
         sBtnIIt = std::find_if(stopButtonsInfo.begin(), stopButtonsInfo.end(),
-                               [s](const ButtonInfo &sRTK) { return sRTK.state == s; });
+                               [s](const ButtonInfo &bI) { return bI.state == s; });
+        if (sBtnIIt == stopButtonsInfo.end())
+            return;
         rt = sBtnIIt->rect;
         tx.back() = sBtnIIt->text;
         boxes.push_back(
@@ -315,6 +317,7 @@ void Player::setState(UIState s) {
             traveler->createStorageButtons(boxes, focusBox, storageButtonIndex, printer);
             break;
         case managing:
+            traveler->createManageButtons(boxes, printer);
             break;
         case equipping:
             equipButtonIndex = boxes.size();
