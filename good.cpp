@@ -22,9 +22,11 @@
 Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s)
     : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(not m.empty()), shoots(s) {}
 
-Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s) : Good(i, n, 0., p, c, m, s) {}
-    
-Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m) : Good(i, n, a, p, c, m, 0u) {}
+Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s)
+    : Good(i, n, 0., p, c, m, s) {}
+
+Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
+    : Good(i, n, a, p, c, m, 0u) {}
 
 Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0., p, c, m) {}
 
@@ -46,9 +48,7 @@ Good::Good(const Save::Good *g)
         materials.push_back(Material(*lMI));
 }
 
-std::string Good::getFullName(const Material &m) const {
-    return id == m.getId() ? name : m.getName() + " " + name;
-}
+std::string Good::getFullName(const Material &m) const { return id == m.getId() ? name : m.getName() + " " + name; }
 
 const Material &Good::getMaterial(const Material &m) const {
     return *std::lower_bound(materials.begin(), materials.end(), m);

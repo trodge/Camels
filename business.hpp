@@ -42,7 +42,7 @@ class Business {
     std::vector<Good> outputs;      // goods created every production cycle
     std::vector<Good> *goods;       // pointer to the goods this business operates on
     double factor;                  // factor based on area and available inputs for production
-    double frequency = 0.;         // area of business per unit of population
+    double frequency = 0.;          // area of business per unit of population
     double reclaimFactor = 0.7;     // portion of requirements that can be reclaimed
 
   public:
@@ -72,9 +72,8 @@ class Business {
     void addConflicts(std::vector<int> &cs, std::vector<Good> &gds);
     void handleConflicts(std::vector<int> &cs);
     void run(std::vector<Good> &gds);
-    std::unique_ptr<MenuButton> button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr,
-                                       const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
-                                       const std::function<void()> &fn);
+    std::unique_ptr<MenuButton> button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr, const SDL_Color &bgr, int b, int r,
+                                       int fS, Printer &pr, const std::function<void()> &fn);
     void saveFrequency(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
 };

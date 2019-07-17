@@ -19,15 +19,14 @@
 
 #include "nation.hpp"
 
-Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr, const SDL_Color &bgr, const std::string &rlg,
-               const std::vector<Good> &gds, const std::vector<Business> &bsns) : id(i), names(nms), adjective(adj), foreground(fgr), background(bgr),
-           dot({static_cast<Uint8>((fgr.r + bgr.r) / 2u),
-                static_cast<Uint8>((fgr.g + bgr.g) / 2u),
-                static_cast<Uint8>((fgr.b + bgr.b) / 2u), 255u}),
-           highlight({static_cast<Uint8>(255u - dot.r),
-                      static_cast<Uint8>(255u - dot.g),
-                      static_cast<Uint8>(255u - dot.b), 255u}),
-           religion(rlg), goods(gds), businesses(bsns) { }
+Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr,
+               const SDL_Color &bgr, const std::string &rlg, const std::vector<Good> &gds, const std::vector<Business> &bsns)
+    : id(i), names(nms), adjective(adj), foreground(fgr), background(bgr),
+      dot({static_cast<Uint8>((fgr.r + bgr.r) / 2u), static_cast<Uint8>((fgr.g + bgr.g) / 2u),
+           static_cast<Uint8>((fgr.b + bgr.b) / 2u), 255u}),
+      highlight(
+          {static_cast<Uint8>(255u - dot.r), static_cast<Uint8>(255u - dot.g), static_cast<Uint8>(255u - dot.b), 255u}),
+      religion(rlg), goods(gds), businesses(bsns) {}
 
 bool Nation::operator==(const Nation &other) const { return id == other.id; }
 

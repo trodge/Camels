@@ -20,8 +20,8 @@
 #include "town.hpp"
 
 Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
-           unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>,
-           double> &fFs, int fS, Printer &pr) 
+           unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS,
+           Printer &pr)
     : id(i), box(std::make_unique<TextBox>(nms, nt->getForeground(), nt->getBackground(), nt->getId(), true, 1, 1, fS, pr)),
       nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT) {
     // Create new town based on parameters.

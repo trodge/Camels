@@ -57,8 +57,8 @@ class TextBox : public Focusable {
             bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr);
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
             bool iN, int b, int r, int fS, Printer &pr);
-    TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
-            int b, int r, int fS, Printer &pr);
+    TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN, int b,
+            int r, int fS, Printer &pr);
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
             int b, int r, int fS, Printer &pr);
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b, int r,

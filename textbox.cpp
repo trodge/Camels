@@ -21,24 +21,25 @@
 
 TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
                  unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr)
-    : rect(rt), fixedSize(rt.w and rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
-      fontSize(fS), image(img), printer(pr) {
+    : rect(rt), fixedSize(rt.w and rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b),
+      radius(r), fontSize(fS), image(img), printer(pr) {
     setText(tx);
 }
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-        bool iN, int b, int r, int fS, Printer &pr)
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
+                 unsigned int i, bool iN, int b, int r, int fS, Printer &pr)
     : TextBox(rt, tx, fg, bg, i, iN, b, r, fS, nullptr, pr) {}
 
 TextBox::TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
-            int b, int r, int fS, Printer &pr) : TextBox({0, 0, 0, 0}, tx, fg, bg, i, iN, b, r, fS, pr) {}
+                 int b, int r, int fS, Printer &pr)
+    : TextBox({0, 0, 0, 0}, tx, fg, bg, i, iN, b, r, fS, pr) {}
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-        int b, int r, int fS, Printer &pr)
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
+                 unsigned int i, int b, int r, int fS, Printer &pr)
     : TextBox(rt, tx, fg, bg, i, false, b, r, fS, pr) {}
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-        int fS, Printer &pr)
+TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b,
+                 int r, int fS, Printer &pr)
     : TextBox(rt, tx, fg, bg, 0u, b, r, fS, pr) {}
 
 void TextBox::setText() {

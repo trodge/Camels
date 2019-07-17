@@ -20,11 +20,12 @@
 #include "business.hpp"
 
 Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM)
-    : id(i), mode(m), name(nm), area(1.), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1.) { }
+    : id(i), mode(m), name(nm), area(1.), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1.) {}
 
 Business::Business(const Save::Business *b)
     : id(b->id()), mode(b->mode()), name(b->name()->str()), area(b->area()), canSwitch(b->canSwitch()),
-      requireCoast(b->requireCoast()), keepMaterial(b->keepMaterial()), frequency(b->frequency()), reclaimFactor(b->reclaimFactor()) {
+      requireCoast(b->requireCoast()), keepMaterial(b->keepMaterial()), frequency(b->frequency()),
+      reclaimFactor(b->reclaimFactor()) {
     auto lRequirements = b->requirements();
     for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII)
         requirements.push_back(Good(*lII));
@@ -52,7 +53,6 @@ void Business::setArea(double a) {
         area = a;
     }
 }
-
 
 void Business::takeRequirements(std::vector<Good> &gds, double a) {
     // Take the requirments to add given area to business from parameter and store them in reclaimables.
@@ -146,16 +146,14 @@ void Business::run(std::vector<Good> &gds) {
     }
 }
 
-std::unique_ptr<MenuButton> Business::button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr,
-                                       const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
-                                       const std::function<void()> &fn) {
+std::unique_ptr<MenuButton> Business::button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr, const SDL_Color &bgr, int b,
+                                             int r, int fS, Printer &pr, const std::function<void()> &fn) {
     std::vector<std::string> tx = {name, "Inputs:"};
     for (auto &ip : inputs)
         tx.push_back(ip.getName());
     if (aS) {
-        
+
     } else {
-        
     }
     return std::make_unique<MenuButton>(rt, tx, fgr, bgr, b, r, fS, pr, fn);
 }
@@ -173,13 +171,14 @@ void Business::saveFrequency(unsigned long p, std::string &u) const {
 
 flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilder &b) const {
     auto sName = b.CreateString(name);
-    auto sRequirements =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(requirements.size(), [this, &b](size_t i) { return requirements[i].save(b); });
-    auto sReclaimables =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
+    auto sRequirements = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        requirements.size(), [this, &b](size_t i) { return requirements[i].save(b); });
+    auto sReclaimables = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
     auto sInputs =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
     auto sOutputs =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
-    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements, sReclaimables, sInputs, sOutputs, frequency);
+    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements,
+                                sReclaimables, sInputs, sOutputs, frequency);
 }
