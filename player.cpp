@@ -21,20 +21,20 @@
 
 Player::Player(Game &g)
     : game(g), printer(g.getPrinter()), screenRect(Settings::getScreenRect()),
-    travelButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
-                            {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "(S)tore", SDLK_s},
-                            {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "(M)anage", SDLK_m},
-                            {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "(E)quip", SDLK_e},
-                            {hiring, {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0}, "(H)ire", SDLK_h},
-                            {attacking, {screenRect.w * 7 / 9, screenRect.h * 14 / 15, 0, 0}, "(A)ttack", SDLK_a},
-                            {logging, {screenRect.w * 8 / 9, screenRect.h * 14 / 15, 0, 0}, "(L)og", SDLK_l}}}),
-    stopButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (T)rading", SDLK_t},
-                            {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "Stop (S)toring", SDLK_s},
-                            {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (M)anaging", SDLK_m},
-                            {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (E)quipping", SDLK_e},
-                            {hiring, {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0}, "Stop (H)iring", SDLK_h},
-                            {attacking, {screenRect.w * 7 / 9, screenRect.h * 14 / 15, 0, 0}, "Cancel (A)ttack", SDLK_a},
-                            {logging, {screenRect.w * 8 / 9, screenRect.h * 14 / 15, 0, 0}, "Close (L)og", SDLK_l}}}) { }
+      travelButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
+                          {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "(S)tore", SDLK_s},
+                          {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "(M)anage", SDLK_m},
+                          {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "(E)quip", SDLK_e},
+                          {hiring, {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0}, "(H)ire", SDLK_h},
+                          {attacking, {screenRect.w * 7 / 9, screenRect.h * 14 / 15, 0, 0}, "(A)ttack", SDLK_a},
+                          {logging, {screenRect.w * 8 / 9, screenRect.h * 14 / 15, 0, 0}, "(L)og", SDLK_l}}}),
+      stopButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (T)rading", SDLK_t},
+                        {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "Stop (S)toring", SDLK_s},
+                        {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (M)anaging", SDLK_m},
+                        {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (E)quipping", SDLK_e},
+                        {hiring, {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0}, "Stop (H)iring", SDLK_h},
+                        {attacking, {screenRect.w * 7 / 9, screenRect.h * 14 / 15, 0, 0}, "Cancel (A)ttack", SDLK_a},
+                        {logging, {screenRect.w * 8 / 9, screenRect.h * 14 / 15, 0, 0}, "Close (L)og", SDLK_l}}}) {}
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
@@ -274,9 +274,8 @@ void Player::setState(UIState s) {
     case hiring:
     case attacking:
     case logging:
-        sBtnIIt = std::find_if(stopButtonsInfo.begin(), stopButtonsInfo.end(), [s](const ButtonInfo &sRTK) {
-            return sRTK.state == s;
-        });
+        sBtnIIt = std::find_if(stopButtonsInfo.begin(), stopButtonsInfo.end(),
+                               [s](const ButtonInfo &sRTK) { return sRTK.state == s; });
         rt = sBtnIIt->rect;
         tx.back() = sBtnIIt->text;
         boxes.push_back(
