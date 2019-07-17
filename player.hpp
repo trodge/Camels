@@ -65,14 +65,14 @@ class Player {
         dying
     };
     UIState state = starting, storedState = starting;
-    struct StateRectTextKey {
+    struct ButtonInfo {
         UIState state;
         SDL_Rect rect;
         std::string text;
         SDL_Keycode key;
     };
-    std::array<StateRectTextKey, 7> travelStateRectTextKeys;
-    std::array<StateRectTextKey, 7> stopStateRectTextKeys;
+    std::array<ButtonInfo, 7> travelButtonsInfo;
+    std::array<ButtonInfo, 7> stopButtonsInfo;
     void prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls);
     void finishFocus(int f, Focusable::FocusGroup g, const std::vector<Focusable *> &fcbls);
     void focus(int f, Focusable::FocusGroup g);

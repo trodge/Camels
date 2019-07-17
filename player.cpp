@@ -21,14 +21,14 @@
 
 Player::Player(Game &g)
     : game(g), printer(g.getPrinter()), screenRect(Settings::getScreenRect()),
-    travelStateRectTextKeys({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
+    travelButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
                             {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "(S)tore", SDLK_s},
                             {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "(M)anage", SDLK_m},
                             {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "(E)quip", SDLK_e},
                             {hiring, {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0}, "(H)ire", SDLK_h},
                             {attacking, {screenRect.w * 7 / 9, screenRect.h * 14 / 15, 0, 0}, "(A)ttack", SDLK_a},
                             {logging, {screenRect.w * 8 / 9, screenRect.h * 14 / 15, 0, 0}, "(L)og", SDLK_l}}}),
-    stopStateRectTextKeys({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (T)rading", SDLK_t},
+    stopButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (T)rading", SDLK_t},
                             {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "Stop (S)toring", SDLK_s},
                             {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (M)anaging", SDLK_m},
                             {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (E)quipping", SDLK_e},
@@ -165,7 +165,7 @@ void Player::setState(UIState s) {
     std::function<void()> f;
     fs::path path;
     std::vector<std::string> saves;
-    std::array<StateRectTextKey, 7>::iterator sSRTKIt;
+    std::array<ButtonInfo, 7>::iterator sBtnIIt;
     switch (s) {
     case starting:
         rt = {screenRect.w / 2, screenRect.h / 15, 0, 0};
@@ -259,7 +259,7 @@ void Player::setState(UIState s) {
         }));
         boxes.back()->setKey(SDLK_g);
         // Create trade, store, manage, equip, hire, attack, and log buttons
-        for (auto &sRTK : travelStateRectTextKeys) {
+        for (auto &sRTK : travelButtonsInfo) {
             tx.back() = sRTK.text;
             boxes.push_back(std::make_unique<MenuButton>(sRTK.rect, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer,
                                                          [this, &sRTK] { setState(sRTK.state); }));
@@ -274,14 +274,14 @@ void Player::setState(UIState s) {
     case hiring:
     case attacking:
     case logging:
-        sSRTKIt = std::find_if(stopStateRectTextKeys.begin(), stopStateRectTextKeys.end(), [s](const StateRectTextKey &sRTK) {
+        sBtnIIt = std::find_if(stopButtonsInfo.begin(), stopButtonsInfo.end(), [s](const ButtonInfo &sRTK) {
             return sRTK.state == s;
         });
-        rt = sSRTKIt->rect;
-        tx.back() = sSRTKIt->text;
+        rt = sBtnIIt->rect;
+        tx.back() = sBtnIIt->text;
         boxes.push_back(
             std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(traveling); }));
-        boxes.back()->setKey(sSRTKIt->key);
+        boxes.back()->setKey(sBtnIIt->key);
         switch (s) {
         case trading:
             rt.y -= boxes.back()->getRect().h * 3 / 2;
