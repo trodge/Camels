@@ -28,6 +28,10 @@ struct Business;
 
 struct Town;
 
+struct Color;
+
+struct Nation;
+
 struct Game;
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PerishCounter FLATBUFFERS_FINAL_CLASS {
@@ -148,6 +152,38 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) MaterialInfo FLATBUFFERS_FINAL_CLASS {
   }
 };
 FLATBUFFERS_STRUCT_END(MaterialInfo, 48);
+
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(1) Color FLATBUFFERS_FINAL_CLASS {
+ private:
+  uint8_t r_;
+  uint8_t g_;
+  uint8_t b_;
+  uint8_t a_;
+
+ public:
+  Color() {
+    memset(static_cast<void *>(this), 0, sizeof(Color));
+  }
+  Color(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a)
+      : r_(flatbuffers::EndianScalar(_r)),
+        g_(flatbuffers::EndianScalar(_g)),
+        b_(flatbuffers::EndianScalar(_b)),
+        a_(flatbuffers::EndianScalar(_a)) {
+  }
+  uint8_t r() const {
+    return flatbuffers::EndianScalar(r_);
+  }
+  uint8_t g() const {
+    return flatbuffers::EndianScalar(g_);
+  }
+  uint8_t b() const {
+    return flatbuffers::EndianScalar(b_);
+  }
+  uint8_t a() const {
+    return flatbuffers::EndianScalar(a_);
+  }
+};
+FLATBUFFERS_STRUCT_END(Color, 4);
 
 struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -1198,6 +1234,166 @@ inline flatbuffers::Offset<Town> CreateTownDirect(
       goods__,
       neighbors__,
       businessCounter);
+}
+
+struct Nation FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_ID = 4,
+    VT_NAMES = 6,
+    VT_ADJECTIVE = 8,
+    VT_FOREGROUND = 10,
+    VT_BACKGROUND = 12,
+    VT_RELIGION = 14,
+    VT_TRAVELERNAMES = 16,
+    VT_GOODS = 18,
+    VT_BUSINESSES = 20
+  };
+  uint32_t id() const {
+    return GetField<uint32_t>(VT_ID, 0);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *names() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(VT_NAMES);
+  }
+  const flatbuffers::String *adjective() const {
+    return GetPointer<const flatbuffers::String *>(VT_ADJECTIVE);
+  }
+  const Color *foreground() const {
+    return GetStruct<const Color *>(VT_FOREGROUND);
+  }
+  const Color *background() const {
+    return GetStruct<const Color *>(VT_BACKGROUND);
+  }
+  const flatbuffers::String *religion() const {
+    return GetPointer<const flatbuffers::String *>(VT_RELIGION);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *travelerNames() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>> *>(VT_TRAVELERNAMES);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<Good>> *goods() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_GOODS);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<Business>> *businesses() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Business>> *>(VT_BUSINESSES);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint32_t>(verifier, VT_ID) &&
+           VerifyOffset(verifier, VT_NAMES) &&
+           verifier.VerifyVector(names()) &&
+           verifier.VerifyVectorOfStrings(names()) &&
+           VerifyOffset(verifier, VT_ADJECTIVE) &&
+           verifier.VerifyString(adjective()) &&
+           VerifyField<Color>(verifier, VT_FOREGROUND) &&
+           VerifyField<Color>(verifier, VT_BACKGROUND) &&
+           VerifyOffset(verifier, VT_RELIGION) &&
+           verifier.VerifyString(religion()) &&
+           VerifyOffset(verifier, VT_TRAVELERNAMES) &&
+           verifier.VerifyVector(travelerNames()) &&
+           verifier.VerifyVectorOfStrings(travelerNames()) &&
+           VerifyOffset(verifier, VT_GOODS) &&
+           verifier.VerifyVector(goods()) &&
+           verifier.VerifyVectorOfTables(goods()) &&
+           VerifyOffset(verifier, VT_BUSINESSES) &&
+           verifier.VerifyVector(businesses()) &&
+           verifier.VerifyVectorOfTables(businesses()) &&
+           verifier.EndTable();
+  }
+};
+
+struct NationBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_id(uint32_t id) {
+    fbb_.AddElement<uint32_t>(Nation::VT_ID, id, 0);
+  }
+  void add_names(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> names) {
+    fbb_.AddOffset(Nation::VT_NAMES, names);
+  }
+  void add_adjective(flatbuffers::Offset<flatbuffers::String> adjective) {
+    fbb_.AddOffset(Nation::VT_ADJECTIVE, adjective);
+  }
+  void add_foreground(const Color *foreground) {
+    fbb_.AddStruct(Nation::VT_FOREGROUND, foreground);
+  }
+  void add_background(const Color *background) {
+    fbb_.AddStruct(Nation::VT_BACKGROUND, background);
+  }
+  void add_religion(flatbuffers::Offset<flatbuffers::String> religion) {
+    fbb_.AddOffset(Nation::VT_RELIGION, religion);
+  }
+  void add_travelerNames(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> travelerNames) {
+    fbb_.AddOffset(Nation::VT_TRAVELERNAMES, travelerNames);
+  }
+  void add_goods(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods) {
+    fbb_.AddOffset(Nation::VT_GOODS, goods);
+  }
+  void add_businesses(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Business>>> businesses) {
+    fbb_.AddOffset(Nation::VT_BUSINESSES, businesses);
+  }
+  explicit NationBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  NationBuilder &operator=(const NationBuilder &);
+  flatbuffers::Offset<Nation> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Nation>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Nation> CreateNation(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t id = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> names = 0,
+    flatbuffers::Offset<flatbuffers::String> adjective = 0,
+    const Color *foreground = 0,
+    const Color *background = 0,
+    flatbuffers::Offset<flatbuffers::String> religion = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> travelerNames = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Business>>> businesses = 0) {
+  NationBuilder builder_(_fbb);
+  builder_.add_businesses(businesses);
+  builder_.add_goods(goods);
+  builder_.add_travelerNames(travelerNames);
+  builder_.add_religion(religion);
+  builder_.add_background(background);
+  builder_.add_foreground(foreground);
+  builder_.add_adjective(adjective);
+  builder_.add_names(names);
+  builder_.add_id(id);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Nation> CreateNationDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t id = 0,
+    const std::vector<flatbuffers::Offset<flatbuffers::String>> *names = nullptr,
+    const char *adjective = nullptr,
+    const Color *foreground = 0,
+    const Color *background = 0,
+    const char *religion = nullptr,
+    const std::vector<flatbuffers::Offset<flatbuffers::String>> *travelerNames = nullptr,
+    const std::vector<flatbuffers::Offset<Good>> *goods = nullptr,
+    const std::vector<flatbuffers::Offset<Business>> *businesses = nullptr) {
+  auto names__ = names ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*names) : 0;
+  auto adjective__ = adjective ? _fbb.CreateString(adjective) : 0;
+  auto religion__ = religion ? _fbb.CreateString(religion) : 0;
+  auto travelerNames__ = travelerNames ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*travelerNames) : 0;
+  auto goods__ = goods ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*goods) : 0;
+  auto businesses__ = businesses ? _fbb.CreateVector<flatbuffers::Offset<Business>>(*businesses) : 0;
+  return Save::CreateNation(
+      _fbb,
+      id,
+      names__,
+      adjective__,
+      foreground,
+      background,
+      religion__,
+      travelerNames__,
+      goods__,
+      businesses__);
 }
 
 struct Game FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
