@@ -68,7 +68,8 @@ class Good {
     double getMax() const { return max; }
     unsigned int getShoots() const { return shoots; }
     double getConsumption() const;
-    std::string logEntry() const;
+    std::string businessText() const;
+    std::string logText() const;
     void setAmount(double a);
     void addMaterial(const Material &m);
     void addMaterial(const Good &g);

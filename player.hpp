@@ -36,6 +36,7 @@ class Player {
     int focusBox = -1; // index of box currently focused, -1 if no focus
     Game &game;
     Printer &printer;
+    SDL_Rect screenRect;
     bool stop = false, show = false, pause = false, storedPause = true;
     std::unordered_set<SDL_Keycode> scrollKeys;
     double modMultiplier;
@@ -64,12 +65,14 @@ class Player {
         dying
     };
     UIState state = starting, storedState = starting;
-    struct StateTextKey {
+    struct StateRectTextKey {
         UIState state;
+        SDL_Rect rect;
         std::string text;
         SDL_Keycode key;
     };
-    std::array<StateTextKey, 7> stateTextKeys;
+    std::array<StateRectTextKey, 7> travelStateRectTextKeys;
+    std::array<StateRectTextKey, 7> stopStateRectTextKeys;
     void prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls);
     void finishFocus(int f, Focusable::FocusGroup g, const std::vector<Focusable *> &fcbls);
     void focus(int f, Focusable::FocusGroup g);

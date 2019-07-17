@@ -98,6 +98,9 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
+    void unequip(unsigned int pI);
+    void equip(Good &g);
+    void equip(unsigned int pI);
     void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI, Printer &pr);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
@@ -140,9 +143,6 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t &oBI, size_t &rBI, Printer &pr);
     void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bs, size_t oBI, size_t rBI);
     void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t sBI, Printer &pr);
-    void unequip(unsigned int pI);
-    void equip(Good &g);
-    void equip(unsigned int pI);
     void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bs, const int &fB, size_t eBI, Printer &pr);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);

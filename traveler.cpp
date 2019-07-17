@@ -212,7 +212,7 @@ void Traveler::makeTrade() {
             }
             goods[gI->getId()].take(*gI);
             toTown->put(*gI);
-            logEntry += gI->logEntry();
+            logEntry += gI->logText();
         }
         logEntry += " for ";
         for (auto gI = request.begin(); gI != request.end(); ++gI) {
@@ -226,7 +226,7 @@ void Traveler::makeTrade() {
             }
             toTown->take(*gI);
             goods[gI->getId()].put(*gI);
-            logEntry += gI->logEntry();
+            logEntry += gI->logText();
         }
         logEntry += " in " + toTown->getName() + ".";
         logText.push_back(logEntry);
@@ -521,15 +521,15 @@ void Traveler::equip(unsigned int pI) {
                 return;
     if (pI == 2) {
         // Add left fist to equipment.
-        Good fn = Good(0, "fist");
-        Material fM(0, "left");
+        Good fn = Good(0u, "fist");
+        Material fM(1u, "left");
         fM.setCombatStats({{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}});
         fn.addMaterial(fM);
         equipment.push_back(fn);
     } else if (pI == 3) {
         // Add right fist to equipment.
-        Good fn = Good(0, "fist");
-        Material fM(0, "right");
+        Good fn = Good(0u, "fist");
+        Material fM(2u, "right");
         fM.setCombatStats({{1, 3, 1, 1, 0, {{1, 1, 1}}}, {2, 3, 0, 1, 1, {{1, 1, 1}}}});
         fn.addMaterial(fM);
         equipment.push_back(fn);

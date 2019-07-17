@@ -61,22 +61,42 @@ double Good::getConsumption() const {
     return c;
 }
 
-std::string Good::logEntry() const {
-    std::string lT = std::to_string(amount);
-    dropTrail(lT, split ? 3 : 0);
+std::string Good::businessText() const {
+    std::string bsnTx = std::to_string(amount);
+    dropTrail(bsnTx, split ? 3u : 0u);
     if (split) {
-        lT += " " + measure;
-        if (amount != 1)
-            lT += "s";
-        lT += " of";
+        // Goods that split must be measured.
+        bsnTx += " " + measure;
+        if (amount != 1.)
+            // Pluralize.
+            bsnTx += "s";
     }
-    lT += " ";
+    if (split or amount == 1. or name == "sheep")
+        bsnTx = name + ": " + bsnTx;
+    else
+        bsnTx = name + "s: " + bsnTx;
+    return bsnTx;
+}
+
+std::string Good::logText() const {
+    std::string lTx = std::to_string(amount);
+    dropTrail(lTx, split ? 3u : 0u);
+    if (split) {
+        // Goods that split must be measured.
+        lTx += " " + measure;
+        if (amount != 1.)
+            // Pluralize.
+            lTx += "s";
+        lTx += " of";
+    }
+    lTx += " ";
     if (id != materials.front().getId())
-        lT += materials.front().getName() + " ";
-    lT += name;
-    if (not split and amount != 1)
-        lT += "s";
-    return lT;
+        lTx += materials.front().getName() + " ";
+    lTx += name;
+    if (not split and amount != 1. and name != "sheep")
+        // Pluralize.
+        lTx += "s";
+    return lTx;
 }
 
 void Good::setAmount(double a) {
@@ -208,7 +228,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());
-        dropTrail(amountText, split ? 3 : 0);
+        dropTrail(amountText, split ? 3u : 0u);
         tx.push_back(std::move(amountText));
         return std::make_unique<MenuButton>(rt, tx, fgr, bgr, id, false, b, r, fS, img, pr, fn);
     }
@@ -219,7 +239,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL
 void Good::adjustDemand(std::string rBN, double d) {
     for (auto &m : materials) {
         std::string mN = m.getName();
-        if (rBN == mN.substr(0, mN.find(' '))) {
+        if (rBN == mN.substr(0u, mN.find(' '))) {
             m.adjustDemand(d);
         }
     }

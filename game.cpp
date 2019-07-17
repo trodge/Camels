@@ -295,7 +295,7 @@ void Game::loadData(sqlite3 *cn) {
             requirements.clear();
         }
         unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 1));
-        requirements.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 2)));
+        requirements.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 2), goods[gId].getMeasure()));
     }
     sqlite3_finalize(quer);
     // Set requirements for last business.
@@ -315,7 +315,7 @@ void Game::loadData(sqlite3 *cn) {
             ++bIt;
         }
         unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 2));
-        inputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 3)));
+        inputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 3), goods[gId].getMeasure()));
     }
     sqlite3_finalize(quer);
     // Set inputs for last business.
@@ -333,7 +333,7 @@ void Game::loadData(sqlite3 *cn) {
             ++bIt;
         }
         unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 2));
-        outputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 3)));
+        outputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 3), goods[gId].getMeasure()));
     }
     sqlite3_finalize(quer);
     // Set outputs for last business.
@@ -431,7 +431,7 @@ void Game::newGame() {
 
     // Load frequency factors.
     std::map<std::pair<unsigned int, unsigned int>, double> frequencyFactors; // Keys are town type, business id.
-    sqlite3_prepare_v2(conn, "SELECT * FROM frequency_factors", -1, &quer, nullptr);
+    sqlite3_prepare_v2(conn, "SELECT town_type, business_id, factor FROM frequency_factors", -1, &quer, nullptr);
     while (sqlite3_step(quer) != SQLITE_DONE)
         frequencyFactors.emplace(std::make_pair(sqlite3_column_int(quer, 0), sqlite3_column_int(quer, 1)),
                                  sqlite3_column_double(quer, 2));
@@ -477,21 +477,27 @@ void Game::newGame() {
     place();
     loadBar.progress(-1);
     loadBar.setText(0, "Finalizing towns...");
-    std::vector<std::vector<size_t>> routes(towns.size());
-    sqlite3_prepare_v2(conn, "SELECT * FROM routes", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        routes[static_cast<size_t>(sqlite3_column_int(quer, 0) - 1)].push_back(
-            static_cast<size_t>(sqlite3_column_int(quer, 1)));
+    std::vector<unsigned int> neighborIds;
+    sqlite3_prepare_v2(conn, "SELECT from_id, to_id FROM routes", -1, &quer, nullptr);
+    unsigned int tnId = 1;
+    while (sqlite3_step(quer) != SQLITE_DONE) {
+        if (tnId != static_cast<unsigned int>(sqlite3_column_int(quer, 0))) {
+            SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
+            // Town ids don't match, flush vector and increment.
+            towns[tnId - 1].loadNeighbors(towns, neighborIds);
+            neighborIds.clear();
+            towns[tnId - 1].update(Settings::getBusinessRunTime());
+            ++tnId;
+            loadBar.progress(1. / tC);
+            loadBar.draw(screen.get());
+            SDL_RenderPresent(screen.get());
+        }
+        neighborIds.push_back(static_cast<unsigned int>(sqlite3_column_int(quer, 1)));
+    }
     sqlite3_finalize(quer);
     sqlite3_close(conn);
-    for (auto &t : towns) {
-        SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-        t.loadNeighbors(towns, routes[t.getId() - 1]);
-        t.update(Settings::getBusinessRunTime());
-        loadBar.progress(1. / tC);
-        loadBar.draw(screen.get());
-        SDL_RenderPresent(screen.get());
-    }
+    // Load neighbors of final town.
+    towns[tnId - 1].loadNeighbors(towns, neighborIds);
     loadBar.progress(-1);
     loadBar.setText(0, "Generating Travelers...");
     for (auto &t : towns) {
@@ -560,7 +566,7 @@ void Game::loadGame(const fs::path &p) {
         loadBar.setText(0, "Finalizing towns...");
         for (flatbuffers::uoffset_t i = 0; i < towns.size(); ++i) {
             SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-            std::vector<size_t> neighborIds(lTowns->Get(i)->neighbors()->begin(), lTowns->Get(i)->neighbors()->end());
+            std::vector<unsigned int> neighborIds(lTowns->Get(i)->neighbors()->begin(), lTowns->Get(i)->neighbors()->end());
             towns[i].loadNeighbors(towns, neighborIds);
             loadBar.progress(1. / static_cast<double>(towns.size()));
             loadBar.draw(screen.get());
@@ -592,7 +598,7 @@ void Game::handleEvents() {
             mh = mapSurface->h;
             if (mx >= 0 and mx < mw and my >= 0 and my < mh) {
                 SDL_GetRGB(getAt(mapSurface.get(), mx, my), mapSurface->format, &r, &g, &b);
-                std::cout << '(' << int(r) << ',' << int(g) << ',' << int(b) << ')' << std::endl;
+                std::cout << "Clicked color: (" << int(r) << "," << int(g) << "," << int(b) << ")" << std::endl;
             }
             break;
         }

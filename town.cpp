@@ -193,10 +193,10 @@ void Town::generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Tra
 
 double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }
 
-void Town::loadNeighbors(std::vector<Town> &ts, const std::vector<size_t> &nIs) {
+void Town::loadNeighbors(std::vector<Town> &ts, const std::vector<unsigned int> &nIds) {
     // Load neighbors from vector of neighbor ids.
-    neighbors.reserve(nIs.size());
-    for (auto &nI : nIs)
+    neighbors.reserve(nIds.size());
+    for (auto &nI : nIds)
         if (nI <= ts.size())
             neighbors.push_back(&ts[nI - 1]);
 }

@@ -247,9 +247,9 @@ double Material::consume(unsigned int e) {
 void Material::updateButton(std::string &aT, bool gS, TextBox *b) const {
     // Finish updating button.
     std::string changeText = std::to_string(amount - lastAmount);
-    dropTrail(changeText, 5);
-    dropTrail(aT, gS ? 3 : 0);
-    b->setText({b->getText()[0], aT, changeText});
+    dropTrail(changeText, 4u);
+    dropTrail(aT, gS ? 3u : 0u);
+    b->setText({b->getText()[0u], aT, changeText});
 }
 
 void Material::updateButton(bool gS, TextBox *b) const {
@@ -309,6 +309,6 @@ void dropTrail(std::string &tx, unsigned int dK) {
     // Trim decimal places beyond dK from string t.
     size_t dP; // position to drop
     dP = tx.find('.') + dK;
-    if (dP < std::string::npos)
+    if (dP < tx.size())
         tx.erase(dP);
 }
