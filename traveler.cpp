@@ -670,7 +670,7 @@ void Traveler::attack(std::shared_ptr<Traveler> t) {
         choice = FightChoice::none;
     if (t->ai)
         t->ai->autoChoose(
-            t->goods, t->stats, [t] { return t->speed(); }, goods, stats, [this] { return speed(); }, choice);
+            t->goods, t->stats, t->getSpeed(), goods, stats, getSpeed(), choice);
     else
         t->choice = FightChoice::none;
 }
@@ -801,10 +801,10 @@ void Traveler::runFight(Traveler &t, unsigned int e, std::uniform_real_distribut
         }
         if (ai)
             ai->autoChoose(
-                goods, stats, [this] { return speed(); }, t.goods, t.stats, [&t] { return t.speed(); }, choice);
+                goods, stats, getSpeed(), t.goods, t.stats, t.getSpeed(), choice);
         if (t.ai)
             t.ai->autoChoose(
-                t.goods, t.stats, [&t] { return t.speed(); }, goods, stats, [this] { return speed(); }, choice);
+                t.goods, t.stats, t.getSpeed(), goods, stats, getSpeed(), choice);
     }
 }
 
@@ -1014,7 +1014,7 @@ void Traveler::update(unsigned int e) {
                 break;
             case FightChoice::run:
                 // Check if target escapes.
-                escapeChance = Settings::getEscapeChance() * t->speed() / speed();
+                escapeChance = Settings::getEscapeChance() * t->getSpeed() / getSpeed();
                 if (dis(Settings::getRng()) > escapeChance) {
                     // Target is caught, fight.
                     t->choice = FightChoice::fight;

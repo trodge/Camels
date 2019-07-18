@@ -74,8 +74,8 @@ void AI::randomizeCriteria() {
 
 double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const {
     // Scores parameter equipment based on parameter stats and this traveler's criteria
-    double attackScore = 0;
-    double defenseScore = 0;
+    double attackScore = 0.;
+    double defenseScore = 0.;
     for (auto &s : e.getMaterial().getCombatStats()) {
         attackScore += s.attack * sts[s.statId];
         attackScore *= s.speed * sts[s.statId];
@@ -272,8 +272,8 @@ void AI::autoAttack(const std::weak_ptr<Traveler> tgt, const std::function<std::
 }
 
 void AI::autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
-                    const std::function<unsigned int()> &spd, const std::vector<Good> &tGs,
-                    const std::array<unsigned int, 5> &tSts, const std::function<unsigned int()> &tSpd,
+                    double spd, const std::vector<Good> &tGs,
+                    const std::array<unsigned int, 5> &tSts, double tSpd,
                     FightChoice &choice) {
     // Choose to fight, run, or yield based on equip scores, stats, and speeds.
     std::array<double, 3> scores; // fight, run, yield scores
@@ -283,7 +283,7 @@ void AI::autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 
     scores[2] = equipmentScoreRatio * decisionCriteria[6];
     if (equipmentScoreRatio > 1.) {
         // Weigh run and yield decisions by speed ratio if target's equipment is better.
-        double speedRatio = tSpd() / spd();
+        double speedRatio = tSpd / spd;
         scores[1] /= speedRatio;
         scores[2] *= speedRatio;
     }

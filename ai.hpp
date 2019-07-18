@@ -75,8 +75,8 @@ class AI {
     AI(const AI &p, const std::vector<Good> &gs, Town *tT);
     AI(const Save::AI *a);
     void autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
-                    const std::function<unsigned int()> &spd, const std::vector<Good> &tGs,
-                    const std::array<unsigned int, 5> &tSts, const std::function<unsigned int()> &tSpd, FightChoice &choice);
+                    double spd, const std::vector<Good> &tGs,
+                    const std::array<unsigned int, 5> &tSts, double tSpd, FightChoice &choice);
     void autoLoot(const std::vector<Good> &gs, std::weak_ptr<Traveler> tgt, const std::function<double()> &netWgt,
                   const std::function<void(Good &g, Traveler &t)> &lt);
     void run(unsigned int e, bool m, std::vector<Good> &o, std::vector<Good> &r, const std::vector<Good> &gs,
