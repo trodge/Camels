@@ -210,42 +210,43 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
     for (auto &t : ts) {
         int dS = distSq(t.dpx, t.dpy);
         if (t.id != id and not std::binary_search(neighbors.begin(), neighbors.end(), &t, closer)) {
-            // determine how much water is between these two towns
+            // t is not this and not already a neighbor.
+            // Determine how much water is between these two towns.
             int water = 0;
-            // run incremental change to get from self to p
+            // Run incremental change to get from self to t.
             double x = dpx;
             double y = dpy;
             double dx = t.dpx - dpx;
             double dy = t.dpy - dpy;
-            double m;
-            if (dx != 0.)
-                m = dy / dx;
-            double dt = 0;
+            bool swap = dx == 0.;
+            if (swap) {
+                std::swap(x, y);
+                std::swap(dx, dy);
+            }
+            double m = dy / dx;
+            double dt = 0.; // distance traveled
             while (dt * dt < dS and water < 24) {
                 if (dx != 0.) {
-                    double dxs = 1 / (1 + m * m);
-                    double dys = 1 - dxs;
+                    double dxs = 1. / (1. + m * m);
+                    double dys = 1. - dxs;
                     x += copysign(sqrt(dxs), dx);
                     y += copysign(sqrt(dys), dy);
                     dt += sqrt(dxs + dys);
                 } else {
-                    y += 1;
-                    dt += 1;
+                    y += 1.;
+                    dt += 1.;
                 }
-                Uint8 r, g, b;
                 int mx = static_cast<int>(x) + mox;
                 int my = static_cast<int>(y) + moy;
-                if (mx >= 0 and mx < mS->w and my >= 0 and my < mS->h)
+                if (mx >= 0 and mx < mS->w and my >= 0 and my < mS->h) {
+                    const SDL_Color &waterColor = Settings::getWaterColor();
+                    Uint8 r, g, b;
                     SDL_GetRGB(getAt(mS, mx, my), mS->format, &r, &g, &b);
-                else {
-                    r = Settings::getWaterColor().r;
-                    g = Settings::getWaterColor().g;
-                    b = Settings::getWaterColor().b;
-                }
-                if (r <= Settings::getWaterColor().r and g <= Settings::getWaterColor().g and
-                    b >= Settings::getWaterColor().b) {
+                    if (r <= waterColor.r and g <= waterColor.g and
+                        b >= waterColor.b)
+                        ++water;
+                } else
                     ++water;
-                }
             }
             if (water < 24) {
                 neighbors.insert(std::lower_bound(neighbors.begin(), neighbors.end(), &t, closer), &t);

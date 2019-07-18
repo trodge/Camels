@@ -132,24 +132,24 @@ void Player::focusNext(Focusable::FocusGroup g) {
     std::vector<Focusable *> fcbls;
     prepFocus(g, i, s, fcbls);
     if (i == -1) {
+        // Nothing was focused, find first focusable item.
         while (++i < s)
             if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
+        // No focusable item was found in group.
+        return;
     } else {
         fcbls[static_cast<size_t>(i)]->unFocus();
         int j = i;
         while (++i != j)
+            // Loop until we come back to the same item.
             if (i >= s)
                 i = -1;
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
     }
-    if (i == s)
-        i = -1;
-    else {
-        fcbls[static_cast<size_t>(i)]->focus();
-        finishFocus(i, g, fcbls);
-    }
+    fcbls[static_cast<size_t>(i)]->focus();
+    finishFocus(i, g, fcbls);
 }
 
 void Player::setState(UIState s) {
