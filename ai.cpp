@@ -87,7 +87,7 @@ double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) con
 
 double AI::equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const {
     // Scores parameter equipment based on this traveler's criteria.
-    double score = 1;
+    double score = 1.;
     for (auto &e : eqpmt) {
         score += equipScore(e, sts);
     }
@@ -96,7 +96,7 @@ double AI::equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned 
 
 double AI::lootScore(const std::vector<Good> &gs, const std::vector<Good> &tGs) const {
     // Score for looting target parameter goods given our goods
-    double score = 0;
+    double score = 0.;
     auto mII = materialInfo.begin(); // material info iterator
     for (size_t i = 1; i < gs.size(); ++i) {
         auto &gMs = gs[i].getMaterials();
@@ -222,7 +222,7 @@ void AI::autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector
 void AI::autoEquip(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
                    const std::function<void(Good &e)> &eqp) {
     // Equip best scoring item for each part.
-    std::array<double, 6> bestScore{};
+    std::array<double, 6> bestScore;
     for (auto &g : gs)
         if (g.getAmount() >= 1.)
             for (auto &m : g.getMaterials())
@@ -278,10 +278,10 @@ void AI::autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 
     // Choose to fight, run, or yield based on equip scores, stats, and speeds.
     std::array<double, 3> scores; // fight, run, yield scores
     double equipmentScoreRatio = equipScore(tGs, tSts) / equipScore(gs, sts);
-    scores[0] = 1 / equipmentScoreRatio * decisionCriteria[4];
+    scores[0] = 1. / equipmentScoreRatio * decisionCriteria[4];
     scores[1] = equipmentScoreRatio * decisionCriteria[5];
     scores[2] = equipmentScoreRatio * decisionCriteria[6];
-    if (equipmentScoreRatio > 1) {
+    if (equipmentScoreRatio > 1.) {
         // Weigh run and yield decisions by speed ratio if target's equipment is better.
         double speedRatio = tSpd() / spd();
         scores[1] /= speedRatio;
@@ -292,7 +292,7 @@ void AI::autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 
 
 void AI::autoLoot(const std::vector<Good> &gs, std::weak_ptr<Traveler> tgt, const std::function<double()> &netWgt,
                   const std::function<void(Good &g, Traveler &t)> &lt) {
-    // Automatically loot based on scores and decision criteria
+    // Automatically loot based on scores and decision criteria.
     auto t = tgt.lock();
     if (not t)
         return;

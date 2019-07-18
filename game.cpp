@@ -251,7 +251,8 @@ void Game::loadData(sqlite3 *cn) {
 
     // Load combat stats.
     std::vector<std::unordered_map<unsigned int, std::vector<CombatStat>>> combatStats(goods.size());
-    sqlite3_prepare_v2(cn, "SELECT * FROM combat_stats", -1, &quer, nullptr);
+    sqlite3_prepare_v2(cn, "SELECT good_id, material_id, stat_id, part_id, attack, type, "
+                           "speed, bash_defense, cut_defense, stab_defense FROM combat_stats", -1, &quer, nullptr);
     while (sqlite3_step(quer) != SQLITE_DONE) {
         unsigned int g = static_cast<unsigned int>(sqlite3_column_int(quer, 0));
         unsigned int m = static_cast<unsigned int>(sqlite3_column_int(quer, 1));
@@ -513,7 +514,7 @@ void Game::newGame() {
     loadBar.setText(0, "Starting AI...");
     for (auto &t : aITravelers) {
         SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-        //t->startAI();
+        t->startAI();
         t->addToTown();
         loadBar.progress(1. / tC);
         loadBar.draw(screen.get());
@@ -614,7 +615,7 @@ void Game::update() {
         for (auto &t : towns)
             t.update(elapsed);
         for (auto &t : aITravelers) {
-            //t->runAI(elapsed);
+            t->runAI(elapsed);
             t->update(elapsed);
             t->place(offsetX, offsetY, scale);
         }

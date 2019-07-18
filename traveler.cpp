@@ -558,14 +558,14 @@ void Traveler::equip(unsigned int pI) {
         for (auto &s : e.getMaterial().getCombatStats())
             if (s.partId == pI)
                 return;
-    if (pI == 2) {
+    if (pI == 2u) {
         // Add left fist to equipment.
         Good fist = Good(0u, "fist");
         Material fM(2u, "left");
         fM.setCombatStats({{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}});
         fist.addMaterial(fM);
         equipment.push_back(fist);
-    } else if (pI == 3) {
+    } else if (pI == 3u) {
         // Add right fist to equipment.
         Good fist = Good(0u, "fist");
         Material fM(3u, "right");
@@ -1006,7 +1006,7 @@ void Traveler::update(unsigned int e) {
             return;
         }
         if (choice == FightChoice::fight) {
-            static std::uniform_real_distribution<> dis(0, 1);
+            static std::uniform_real_distribution<> dis(0., 1.);
             double escapeChance;
             switch (t->choice) {
             case FightChoice::fight:
