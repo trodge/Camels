@@ -20,14 +20,14 @@
 #include "printer.hpp"
 
 void Printer::setSize(int s) {
-    sizeIndex = std::lower_bound(sizes.begin(), sizes.end(), s) - sizes.begin();
+    sizeIndex = static_cast<size_t>(std::lower_bound(sizes.begin(), sizes.end(), s) - sizes.begin());
     if (static_cast<size_t>(sizeIndex) == sizes.size() or sizes[static_cast<size_t>(sizeIndex)] != s) {
-        sizes.insert(sizes.begin() + sizeIndex, s);
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount, sdl::openFont("DejaVuSerif.ttf", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 1, sdl::openFont("DejaVuSans.ttf", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 2, sdl::openFont("NotoSerifDevanagari-Regular.ttf", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 3, sdl::openFont("wqy-microhei-lite.ttc", s));
-        fonts.insert(fonts.begin() + sizeIndex * kFontCount + 4, sdl::openFont("NotoSerifBengali-Regular.ttf", s));
+        sizes.insert(sizes.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex), s);
+        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount), sdl::openFont("DejaVuSerif.ttf", s));
+        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 1u), sdl::openFont("DejaVuSans.ttf", s));
+        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 2u), sdl::openFont("NotoSerifDevanagari-Regular.ttf", s));
+        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 3u), sdl::openFont("wqy-microhei-lite.ttc", s));
+        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 4u), sdl::openFont("NotoSerifBengali-Regular.ttf", s));
     }
 }
 
@@ -47,7 +47,7 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     tSs.reserve(numLines);
     int mW = 0;                                                                      // Minimum width to fit text.
     int mH = 0;                                                                      // Minimum height to fit text.
-    std::vector<sdl::FontPtr>::iterator fI = fonts.begin() + sizeIndex * kFontCount; // Font to use.
+    std::vector<sdl::FontPtr>::iterator fI = fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount); // Font to use.
     for (auto &t : tx) {
         // Render lines of text.
         if (t.empty())

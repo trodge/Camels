@@ -30,7 +30,7 @@
 
 class Printer {
     std::vector<int> sizes;
-    std::vector<int>::difference_type sizeIndex;
+    size_t sizeIndex;
     unsigned int nationId;
     SDL_Color foreground, background, highlight;
     int highlightLine;

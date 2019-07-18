@@ -40,7 +40,6 @@ class Business {
     std::vector<Good> reclaimables; // goods which will be reclaimed when business is demolished
     std::vector<Good> inputs;       // goods needed every production cycle
     std::vector<Good> outputs;      // goods created every production cycle
-    std::vector<Good> *goods;       // pointer to the goods this business operates on
     double factor;                  // factor based on area and available inputs for production
     double frequency = 0.;          // area of business per unit of population
     double reclaimFactor = 0.7;     // portion of requirements that can be reclaimed
