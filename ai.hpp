@@ -36,9 +36,9 @@ class Town;
 class Traveler;
 
 struct MaterialInfo {
-    double limitFactor = 0;              // factor controlling value based on min/max price
-    double minPrice = 0, maxPrice = 0;   // minimum and maximum price of material nearby
-    double value = 0, buy = 0, sell = 0; // estimated value, maximum buy price, and minimum sell price
+    double limitFactor = 0.;              // factor controlling value based on min/max price
+    double minPrice = 0., maxPrice = 0.;   // minimum and maximum price of material nearby
+    double value = 0., buy = 0., sell = 0.; // estimated value, maximum buy price, and minimum sell price
 };
 
 struct TownInfo {
