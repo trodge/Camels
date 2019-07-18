@@ -775,7 +775,7 @@ void Traveler::runFight(Traveler &t, unsigned int e, std::uniform_real_distribut
     // Fight t for e milliseconds.
     fightTime += e;
     // Prevent fight from happening twice.
-    t.fightTime -= e;
+    t.fightTime -= static_cast<double>(e);
     // Keep fighting until one side dies, runs, or yields or time runs out.
     while (alive() and t.alive() and choice == FightChoice::fight and t.choice == FightChoice::fight and fightTime > 0) {
         CombatHit ourFirst = firstHit(t, d), theirFirst = t.firstHit(*this, d);
