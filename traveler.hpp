@@ -120,7 +120,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double getPortion() const { return portion; }
     std::string portionString() const;
     const std::array<unsigned int, 5> &getStats() const { return stats; }
-    unsigned int speed() const { return stats[1] + stats[2] + stats[3]; }
+    double getSpeed() const { return stats[1] + stats[2] + stats[3]; }
     unsigned int getPart(size_t i) const { return parts[i]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     const std::weak_ptr<Traveler> getTarget() const { return target; }
