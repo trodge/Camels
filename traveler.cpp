@@ -494,7 +494,7 @@ void Traveler::createManageButtons(std::vector<std::unique_ptr<TextBox>> &bs, Pr
                    sR.h * kBusinessButtonSizeMultiplier / kBusinessButtonYDivisor};
     for (auto &bsn : oBsns) {
         bs.push_back(bsn.button(true, rt, fgr, bgr, tB, tR, tFS, pr, [this, &bsn, &pr] {
-            
+
         }));
 
         rt.x += dx;
@@ -510,7 +510,7 @@ void Traveler::createManageButtons(std::vector<std::unique_ptr<TextBox>> &bs, Pr
     rt.y = top;
     for (auto &bsn : tBsns) {
         bs.push_back(bsn.button(true, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &bsn, &pr] {
-            
+
         }));
 
         rt.x += dx;
@@ -669,8 +669,7 @@ void Traveler::attack(std::shared_ptr<Traveler> t) {
     else
         choice = FightChoice::none;
     if (t->ai)
-        t->ai->autoChoose(
-            t->goods, t->stats, t->getSpeed(), goods, stats, getSpeed(), choice);
+        t->ai->autoChoose(t->goods, t->stats, t->getSpeed(), goods, stats, getSpeed(), choice);
     else
         t->choice = FightChoice::none;
 }
@@ -800,11 +799,9 @@ void Traveler::runFight(Traveler &t, unsigned int e, std::uniform_real_distribut
             t.useAmmo(ourFirst.time);
         }
         if (ai)
-            ai->autoChoose(
-                goods, stats, getSpeed(), t.goods, t.stats, t.getSpeed(), choice);
+            ai->autoChoose(goods, stats, getSpeed(), t.goods, t.stats, t.getSpeed(), choice);
         if (t.ai)
-            t.ai->autoChoose(
-                t.goods, t.stats, t.getSpeed(), goods, stats, getSpeed(), choice);
+            t.ai->autoChoose(t.goods, t.stats, t.getSpeed(), goods, stats, getSpeed(), choice);
     }
 }
 

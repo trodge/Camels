@@ -36,8 +36,8 @@ class Town;
 class Traveler;
 
 struct MaterialInfo {
-    double limitFactor = 0.;              // factor controlling value based on min/max price
-    double minPrice = 0., maxPrice = 0.;   // minimum and maximum price of material nearby
+    double limitFactor = 0.;                // factor controlling value based on min/max price
+    double minPrice = 0., maxPrice = 0.;    // minimum and maximum price of material nearby
     double value = 0., buy = 0., sell = 0.; // estimated value, maximum buy price, and minimum sell price
 };
 
@@ -74,9 +74,8 @@ class AI {
     AI(const std::vector<Good> &gs, Town *tT);
     AI(const AI &p, const std::vector<Good> &gs, Town *tT);
     AI(const Save::AI *a);
-    void autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
-                    double spd, const std::vector<Good> &tGs,
-                    const std::array<unsigned int, 5> &tSts, double tSpd, FightChoice &choice);
+    void autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts, double spd,
+                    const std::vector<Good> &tGs, const std::array<unsigned int, 5> &tSts, double tSpd, FightChoice &choice);
     void autoLoot(const std::vector<Good> &gs, std::weak_ptr<Traveler> tgt, const std::function<double()> &netWgt,
                   const std::function<void(Good &g, Traveler &t)> &lt);
     void run(unsigned int e, bool m, std::vector<Good> &o, std::vector<Good> &r, const std::vector<Good> &gs,

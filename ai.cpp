@@ -271,9 +271,8 @@ void AI::autoAttack(const std::weak_ptr<Traveler> tgt, const std::function<std::
     }
 }
 
-void AI::autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
-                    double spd, const std::vector<Good> &tGs,
-                    const std::array<unsigned int, 5> &tSts, double tSpd,
+void AI::autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts, double spd,
+                    const std::vector<Good> &tGs, const std::array<unsigned int, 5> &tSts, double tSpd,
                     FightChoice &choice) {
     // Choose to fight, run, or yield based on equip scores, stats, and speeds.
     std::array<double, 3> scores; // fight, run, yield scores

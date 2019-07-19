@@ -27,7 +27,7 @@ class Focusable {
     bool canFocus = false;
 
   public:
-    virtual ~Focusable() { }
+    virtual ~Focusable() {}
     enum FocusGroup { box, neighbor, town };
     bool getCanFocus() const { return canFocus; }
     void toggleLock() { canFocus = not canFocus; }

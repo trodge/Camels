@@ -38,29 +38,28 @@
 #include "traveler.hpp"
 
 namespace sql {
-    struct Deleter {
-        void operator()(sqlite3 *cn) { sqlite3_close(cn); }
-        void operator()(sqlite3_stmt *qr) { sqlite3_finalize(qr); }
-    };
-    
-    using DtbsPtr = std::unique_ptr<sqlite3, Deleter>;
-    using StmtPtr = std::unique_ptr<sqlite3_stmt, Deleter>;
-    
-    inline DtbsPtr makeConnection(const fs::path &path, int flags) {
-        sqlite3 *conn;
-        if (sqlite3_open_v2(path.string().c_str(), &conn, flags, nullptr) != SQLITE_OK)
-            throw std::system_error(sqlite3_errcode(conn), std::generic_category());
-        return std::unique_ptr<sqlite3, Deleter>(conn);
-    }
-    
-    inline StmtPtr makeQuery(
-sqlite3 *db, const char *zSql) {
-        sqlite3_stmt *quer;
-        if (sqlite3_prepare_v2(db, zSql, -1, &quer, nullptr) != SQLITE_OK)
-            throw std::system_error(sqlite3_errcode(db), std::generic_category());
-        return std::unique_ptr<sqlite3_stmt, Deleter>(quer);
-    }
+struct Deleter {
+    void operator()(sqlite3 *cn) { sqlite3_close(cn); }
+    void operator()(sqlite3_stmt *qr) { sqlite3_finalize(qr); }
+};
+
+using DtbsPtr = std::unique_ptr<sqlite3, Deleter>;
+using StmtPtr = std::unique_ptr<sqlite3_stmt, Deleter>;
+
+inline DtbsPtr makeConnection(const fs::path &path, int flags) {
+    sqlite3 *conn;
+    if (sqlite3_open_v2(path.string().c_str(), &conn, flags, nullptr) != SQLITE_OK)
+        throw std::system_error(sqlite3_errcode(conn), std::generic_category());
+    return std::unique_ptr<sqlite3, Deleter>(conn);
 }
+
+inline StmtPtr makeQuery(sqlite3 *db, const char *zSql) {
+    sqlite3_stmt *quer;
+    if (sqlite3_prepare_v2(db, zSql, -1, &quer, nullptr) != SQLITE_OK)
+        throw std::system_error(sqlite3_errcode(db), std::generic_category());
+    return std::unique_ptr<sqlite3_stmt, Deleter>(quer);
+}
+} // namespace sql
 
 class Player;
 class Nation;
