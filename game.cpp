@@ -165,58 +165,57 @@ void Game::moveView(int dx, int dy) {
 
 void Game::loadData(sqlite3 *cn) {
     // Load data from database which is needed both for new game and loading a game.
-    sqlite3_stmt *quer;
+    sql::StmtPtr quer;
     std::cout << "Loading data" << std::endl;
     // Load game data.
     // Load part names.
-    sqlite3_prepare_v2(cn, "SELECT name FROM parts", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        gameData.parts.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 0))));
-    sqlite3_finalize(quer);
+    quer = sql::makeQuery(cn, "SELECT name FROM parts");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        gameData.parts.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 0))));
+    
     // Load status names.
-    sqlite3_prepare_v2(cn, "SELECT name FROM statuses", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        gameData.statuses.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 0))));
-    sqlite3_finalize(quer);
+    quer = sql::makeQuery(cn, "SELECT name FROM statuses");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        gameData.statuses.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 0))));
+    
     // Load combat odds.
-    sqlite3_prepare_v2(
-        cn,
-        "SELECT hit_odds, status_1, status_1_chance, status_2, status_2_chance, status_3, status_3_chance FROM combat_odds",
-        -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        gameData.odds.push_back({sqlite3_column_double(quer, 0),
-                                 {{{sqlite3_column_int(quer, 1), sqlite3_column_double(quer, 2)},
-                                   {sqlite3_column_int(quer, 3), sqlite3_column_double(quer, 4)},
-                                   {sqlite3_column_int(quer, 5), sqlite3_column_double(quer, 6)}}}});
-    sqlite3_finalize(quer);
+    quer = sql::makeQuery(cn,
+                       "SELECT hit_odds, status_1, status_1_chance, status_2, "
+                       "status_2_chance, status_3, status_3_chance FROM combat_odds");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        gameData.odds.push_back({sqlite3_column_double(quer.get(), 0),
+                                 {{{sqlite3_column_int(quer.get(), 1), sqlite3_column_double(quer.get(), 2)},
+                                   {sqlite3_column_int(quer.get(), 3), sqlite3_column_double(quer.get(), 4)},
+                                   {sqlite3_column_int(quer.get(), 5), sqlite3_column_double(quer.get(), 6)}}}});
+    
     // Load town type nouns.
-    sqlite3_prepare_v2(cn, "SELECT noun FROM town_type_nouns", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        gameData.townTypeNouns.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 0))));
-    sqlite3_finalize(quer);
-    sqlite3_prepare_v2(cn, "SELECT minimum, adjective FROM population_adjectives", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
+    quer = sql::makeQuery(cn, "SELECT noun FROM town_type_nouns");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        gameData.townTypeNouns.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 0))));
+    
+    quer = sql::makeQuery(cn, "SELECT minimum, adjective FROM population_adjectives");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
         gameData.populationAdjectives.emplace(std::make_pair(
-            sqlite3_column_int(quer, 0), std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 1)))));
-    sqlite3_finalize(quer);
+            sqlite3_column_int(quer.get(), 0), std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1)))));
+    
 
     // Load goods.
     std::vector<Good> goods;
-    sqlite3_prepare_v2(cn, "SELECT good_id, name, perish, carry, measure, shoots FROM goods", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        goods.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer, 0)),
-                             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 1))),
-                             sqlite3_column_double(quer, 2), sqlite3_column_double(quer, 3),
-                             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 4))),
-                             static_cast<unsigned int>(sqlite3_column_int(quer, 5))));
-    sqlite3_finalize(quer);
+    quer = sql::makeQuery(cn, "SELECT good_id, name, perish, carry, measure, shoots FROM goods");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        goods.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)),
+                             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1))),
+                             sqlite3_column_double(quer.get(), 2), sqlite3_column_double(quer.get(), 3),
+                             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 4))),
+                             static_cast<unsigned int>(sqlite3_column_int(quer.get(), 5))));
+    
 
     // Load materials for goods.
-    sqlite3_prepare_v2(cn, "SELECT good_id, material_id FROM materials", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        goods[static_cast<size_t>(sqlite3_column_int(quer, 0))].addMaterial(
-            goods[static_cast<unsigned int>(sqlite3_column_int(quer, 1))]);
-    sqlite3_finalize(quer);
+    quer = sql::makeQuery(cn, "SELECT good_id, material_id FROM materials");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        goods[static_cast<size_t>(sqlite3_column_int(quer.get(), 0))].addMaterial(
+            goods[static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))]);
+    
 
     // Load good images.
     int imageSize = screenRect.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor - 2 * Settings::getTradeBorder();
@@ -251,43 +250,45 @@ void Game::loadData(sqlite3 *cn) {
 
     // Load combat stats.
     std::vector<std::unordered_map<unsigned int, std::vector<CombatStat>>> combatStats(goods.size());
-    sqlite3_prepare_v2(cn, "SELECT good_id, material_id, stat_id, part_id, attack, type, "
-                           "speed, bash_defense, cut_defense, stab_defense FROM combat_stats", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        unsigned int g = static_cast<unsigned int>(sqlite3_column_int(quer, 0));
-        unsigned int m = static_cast<unsigned int>(sqlite3_column_int(quer, 1));
-        combatStats[g][m].push_back({static_cast<unsigned int>(sqlite3_column_int(quer, 2)),
-                                     static_cast<unsigned int>(sqlite3_column_int(quer, 3)),
-                                     static_cast<unsigned int>(sqlite3_column_int(quer, 4)),
-                                     static_cast<unsigned int>(sqlite3_column_int(quer, 5)),
-                                     static_cast<unsigned int>(sqlite3_column_int(quer, 6)),
-                                     {{static_cast<unsigned int>(sqlite3_column_int(quer, 7)),
-                                       static_cast<unsigned int>(sqlite3_column_int(quer, 8)),
-                                       static_cast<unsigned int>(sqlite3_column_int(quer, 9))}}});
+    quer = sql::makeQuery(cn,
+                       "SELECT good_id, material_id, stat_id, part_id, attack, type, "
+                       "speed, bash_defense, cut_defense, stab_defense FROM combat_stats");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        unsigned int g = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0));
+        unsigned int m = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1));
+        combatStats[g][m].push_back({static_cast<unsigned int>(sqlite3_column_int(quer.get(), 2)),
+                                     static_cast<unsigned int>(sqlite3_column_int(quer.get(), 3)),
+                                     static_cast<unsigned int>(sqlite3_column_int(quer.get(), 4)),
+                                     static_cast<unsigned int>(sqlite3_column_int(quer.get(), 5)),
+                                     static_cast<unsigned int>(sqlite3_column_int(quer.get(), 6)),
+                                     {{static_cast<unsigned int>(sqlite3_column_int(quer.get(), 7)),
+                                       static_cast<unsigned int>(sqlite3_column_int(quer.get(), 8)),
+                                       static_cast<unsigned int>(sqlite3_column_int(quer.get(), 9))}}});
     }
-    sqlite3_finalize(quer);
+    
     for (size_t i = 0u; i < goods.size(); ++i)
         goods[i].setCombatStats(combatStats[i]);
 
     // Load businesses.
     std::vector<Business> businesses;
-    sqlite3_prepare_v2(cn, "SELECT business_id, modes, name, can_switch, require_coast, keep_material FROM businesses", -1,
-                       &quer, nullptr);
+    quer = sql::makeQuery(cn,
+                       "SELECT business_id, modes, name, can_switch, "
+                       "require_coast, keep_material FROM businesses");
     unsigned int bId = 1u;
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        for (unsigned int bMd = 1u; bMd <= static_cast<size_t>(sqlite3_column_int(quer, 1)); ++bMd)
-            businesses.push_back(Business(static_cast<unsigned int>(sqlite3_column_int(quer, 0)), bMd,
-                                          std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 2))),
-                                          static_cast<bool>(sqlite3_column_int(quer, 3)),
-                                          static_cast<bool>(sqlite3_column_int(quer, 4)),
-                                          static_cast<bool>(sqlite3_column_int(quer, 5))));
-    sqlite3_finalize(quer);
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        for (unsigned int bMd = 1u; bMd <= static_cast<size_t>(sqlite3_column_int(quer.get(), 1)); ++bMd)
+            businesses.push_back(Business(static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)), bMd,
+                                          std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 2))),
+                                          static_cast<bool>(sqlite3_column_int(quer.get(), 3)),
+                                          static_cast<bool>(sqlite3_column_int(quer.get(), 4)),
+                                          static_cast<bool>(sqlite3_column_int(quer.get(), 5))));
+    
     // Load requirements.
-    sqlite3_prepare_v2(cn, "SELECT business_id, good_id, amount FROM requirements", -1, &quer, nullptr);
+    quer = sql::makeQuery(cn, "SELECT business_id, good_id, amount FROM requirements");
     std::vector<Good> requirements;
     auto bIt = businesses.begin();
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        bId = static_cast<unsigned int>(sqlite3_column_int(quer, 0));
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        bId = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0));
         if (bIt->getId() != bId) {
             // Business ids don't match, flush vector and increment.
             for (; bIt->getId() != bId; ++bIt)
@@ -295,210 +296,215 @@ void Game::loadData(sqlite3 *cn) {
                 bIt->setRequirements(requirements);
             requirements.clear();
         }
-        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 1));
-        requirements.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 2), goods[gId].getMeasure()));
+        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1));
+        requirements.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer.get(), 2), goods[gId].getMeasure()));
     }
-    sqlite3_finalize(quer);
+    
     // Set requirements for last business.
     for (; bIt != businesses.end(); ++bIt)
         // Loop over modes.
         bIt->setRequirements(requirements);
     // Load inputs.
-    sqlite3_prepare_v2(cn, "SELECT business_id, mode, good_id, amount FROM inputs", -1, &quer, nullptr);
+    quer = sql::makeQuery(cn, "SELECT business_id, mode, good_id, amount FROM inputs");
     std::vector<Good> inputs;
     bIt = businesses.begin();
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer, 0)) or
-            bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer, 1))) {
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) or
+            bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {
             // Business ids or modes don't match, flush vector and increment
             bIt->setInputs(inputs);
             inputs.clear();
             ++bIt;
         }
-        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 2));
-        inputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 3), goods[gId].getMeasure()));
+        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 2));
+        inputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer.get(), 3), goods[gId].getMeasure()));
     }
-    sqlite3_finalize(quer);
+    
     // Set inputs for last business.
     bIt->setInputs(inputs);
     // Load outputs.
-    sqlite3_prepare_v2(cn, "SELECT business_id, mode, good_id, amount FROM outputs", -1, &quer, nullptr);
+    quer = sql::makeQuery(cn, "SELECT business_id, mode, good_id, amount FROM outputs");
     std::vector<Good> outputs;
     bIt = businesses.begin();
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer, 0)) or
-            bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer, 1))) {
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) or
+            bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {
             // Business ids or modes don't match, flush vector and increment
             bIt->setOutputs(outputs);
             outputs.clear();
             ++bIt;
         }
-        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer, 2));
-        outputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer, 3), goods[gId].getMeasure()));
+        unsigned int gId = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 2));
+        outputs.push_back(Good(gId, goods[gId].getName(), sqlite3_column_double(quer.get(), 3), goods[gId].getMeasure()));
     }
-    sqlite3_finalize(quer);
+    
     // Set outputs for last business.
     bIt->setOutputs(outputs);
 
     // Load nations.
-    sqlite3_prepare_v2(cn,
-                       "SELECT nation_id, english_name, language_name, adjective, color_r, color_g, color_b,"
-                       "background_r, background_g, background_b, religion FROM nations",
-                       -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
+    quer = sql::makeQuery(cn,
+                       "SELECT nation_id, english_name, language_name, adjective, color_r, "
+                       "color_g, color_b,"
+                       "background_r, background_g, background_b, religion FROM nations");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
         nations.push_back(
-            Nation(static_cast<unsigned int>(sqlite3_column_int(quer, 0)),
-                   {std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 1))),
-                    std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 2)))},
-                   std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 3))),
-                   {static_cast<Uint8>(sqlite3_column_int(quer, 4)), static_cast<Uint8>(sqlite3_column_int(quer, 5)),
-                    static_cast<Uint8>(sqlite3_column_int(quer, 6)), 255},
-                   {static_cast<Uint8>(sqlite3_column_int(quer, 7)), static_cast<Uint8>(sqlite3_column_int(quer, 8)),
-                    static_cast<Uint8>(sqlite3_column_int(quer, 9)), 255},
-                   std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 10))), goods, businesses));
-    sqlite3_finalize(quer);
+            Nation(static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)),
+                   {std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1))),
+                    std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 2)))},
+                   std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 3))),
+                   {static_cast<Uint8>(sqlite3_column_int(quer.get(), 4)), static_cast<Uint8>(sqlite3_column_int(quer.get(), 5)),
+                    static_cast<Uint8>(sqlite3_column_int(quer.get(), 6)), 255},
+                   {static_cast<Uint8>(sqlite3_column_int(quer.get(), 7)), static_cast<Uint8>(sqlite3_column_int(quer.get(), 8)),
+                    static_cast<Uint8>(sqlite3_column_int(quer.get(), 9)), 255},
+                   std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 10))), goods, businesses));
+    
 
     // Load traveler names into nations.
-    sqlite3_prepare_v2(cn, "SELECT nation_id, name FROM names", -1, &quer, nullptr);
+    quer = sql::makeQuery(cn, "SELECT nation_id, name FROM names");
     size_t ntId = 1;
     std::vector<std::string> travelerNames;
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        if (ntId != static_cast<size_t>(sqlite3_column_int(quer, 0))) {
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        if (ntId != static_cast<size_t>(sqlite3_column_int(quer.get(), 0))) {
             // Nation index doesn't match, flush vector and increment.
             nations[ntId - 1].setTravelerNames(travelerNames);
             travelerNames.clear();
             ++ntId;
         }
-        travelerNames.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 1))));
+        travelerNames.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1))));
     }
-    sqlite3_finalize(quer);
+    
     // Set traveler names for last nation.
     nations[ntId - 1].setTravelerNames(travelerNames);
 
     // Load frequencies of businesses into nations.
-    sqlite3_prepare_v2(cn, "SELECT nation_id, frequency FROM frequencies", -1, &quer, nullptr);
+    quer = sql::makeQuery(cn, "SELECT nation_id, frequency FROM frequencies");
     ntId = 1;
     std::vector<double> frequencies;
     frequencies.reserve(businesses.size());
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        if (ntId != static_cast<size_t>(sqlite3_column_int(quer, 0))) {
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        if (ntId != static_cast<size_t>(sqlite3_column_int(quer.get(), 0))) {
             // Nation index doesn't match, flush vector and increment.
             nations[ntId - 1].setFrequencies(frequencies);
             frequencies.clear();
             ++ntId;
         }
-        frequencies.push_back(sqlite3_column_double(quer, 1));
+        frequencies.push_back(sqlite3_column_double(quer.get(), 1));
     }
-    sqlite3_finalize(quer);
+    
     // Set frequencies for last nation.
     nations[ntId - 1].setFrequencies(frequencies);
 
     // Load consumption information for each material of each good into nations.
-    sqlite3_prepare_v2(cn, "SELECT nation_id, good_id, amount, demand_slope, demand_intercept FROM consumption", -1, &quer,
-                       nullptr);
+    quer = sql::makeQuery(cn,
+                       "SELECT nation_id, good_id, amount, demand_slope, "
+                       "demand_intercept FROM consumption");
     ntId = 1;
     size_t gdId = 0;
     std::vector<std::vector<std::array<double, 3>>> goodConsumptions;
     goodConsumptions.reserve(goods.size());
     std::vector<std::array<double, 3>> materialConsumptions;
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        if (ntId != static_cast<size_t>(sqlite3_column_int(quer, 0))) {
-            // Nation index doesn't match, flush vector, reset good id, and increment.
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        if (ntId != static_cast<size_t>(sqlite3_column_int(quer.get(), 0))) {
+            // Nation index doesn't match, flush vector, reset good id, and
+            // increment.
             nations[ntId - 1].setGoodConsumptions(goodConsumptions);
             goodConsumptions.clear();
             gdId = 0;
             ++ntId;
         }
-        if (gdId != static_cast<size_t>(sqlite3_column_int(quer, 1))) {
+        if (gdId != static_cast<size_t>(sqlite3_column_int(quer.get(), 1))) {
             // Good index doesn't match, flush vector and increment.
             goodConsumptions.push_back(materialConsumptions);
             materialConsumptions.clear();
             ++gdId;
         }
         materialConsumptions.push_back(
-            {{sqlite3_column_double(quer, 2), sqlite3_column_double(quer, 3), sqlite3_column_double(quer, 4)}});
+            {{sqlite3_column_double(quer.get(), 2), sqlite3_column_double(quer.get(), 3), sqlite3_column_double(quer.get(), 4)}});
     }
-    sqlite3_finalize(quer);
+    
 }
 
-void Game::newGame() {
-    // Load data for a new game from sqlite database.
-    sqlite3 *conn;
-    if (sqlite3_open("1025ad.db", &conn) != SQLITE_OK)
-        std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
-
-    loadData(conn);
-    sqlite3_stmt *quer;
-
+void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
+    sql::StmtPtr quer;
     // Load frequency factors.
     std::map<std::pair<unsigned int, unsigned int>, double> frequencyFactors; // Keys are town type, business id.
-    sqlite3_prepare_v2(conn, "SELECT town_type, business_id, factor FROM frequency_factors", -1, &quer, nullptr);
-    while (sqlite3_step(quer) != SQLITE_DONE)
-        frequencyFactors.emplace(std::make_pair(sqlite3_column_int(quer, 0), sqlite3_column_int(quer, 1)),
-                                 sqlite3_column_double(quer, 2));
-    sqlite3_finalize(quer);
+    quer = sql::makeQuery(cn, "SELECT town_type, business_id, factor FROM frequency_factors");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        frequencyFactors.emplace(std::make_pair(sqlite3_column_int(quer.get(), 0), sqlite3_column_int(quer.get(), 1)),
+                                 sqlite3_column_double(quer.get(), 2));
+    
 
-    // Load towns from sqlite database.
-    LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                    {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
-                    Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
-    sqlite3_prepare_v2(conn, "SELECT COUNT(*) FROM towns", -1, &quer, nullptr);
-    sqlite3_step(quer);
+    quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM towns");
+    sqlite3_step(quer.get());
     // Game data holds town count for traveler properties.
-    gameData.townCount = static_cast<unsigned int>(sqlite3_column_int(quer, 0));
+    gameData.townCount = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0));
     // Store number of towns as double for progress bar purposes.
     double tC = static_cast<double>(gameData.townCount);
-    sqlite3_finalize(quer);
-    sqlite3_prepare_v2(conn,
-                       "SELECT town_id, eng, lang, nation_id, latitude, longitude, coastal, population,"
-                       "town_type FROM towns",
-                       -1, &quer, nullptr);
+    
+    quer = sql::makeQuery(cn,
+                       "SELECT town_id, eng, lang, nation_id, latitude, "
+                       "longitude, coastal, population,"
+                       "town_type FROM towns");
     towns.reserve(gameData.townCount);
-    // Create a texture for keeping the current screen frozen behind load bar.
-    sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
-    SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
-    sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
-    freezeSurface = nullptr;
     std::cout << "Loading towns" << std::endl;
-    while (sqlite3_step(quer) != SQLITE_DONE and towns.size() < kMaxTowns) {
-        SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-        std::vector<std::string> names = {std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 1))),
-                                          std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer, 2)))};
-        towns.push_back(Town(static_cast<unsigned int>(sqlite3_column_int(quer, 0)), names,
-                             &nations[static_cast<size_t>(sqlite3_column_int(quer, 3) - 1)], sqlite3_column_double(quer, 5),
-                             sqlite3_column_double(quer, 4), static_cast<bool>(sqlite3_column_int(quer, 6)),
-                             static_cast<unsigned long>(sqlite3_column_int(quer, 7)),
-                             static_cast<unsigned int>(sqlite3_column_int(quer, 8)), frequencyFactors,
+    while (sqlite3_step(quer.get()) != SQLITE_DONE and towns.size() < kMaxTowns) {
+        SDL_RenderCopy(screen.get(), frzTx, nullptr, nullptr);
+        std::vector<std::string> names = {std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1))),
+                                          std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 2)))};
+        towns.push_back(Town(static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)), names,
+                             &nations[static_cast<size_t>(sqlite3_column_int(quer.get(), 3) - 1)], sqlite3_column_double(quer.get(), 5),
+                             sqlite3_column_double(quer.get(), 4), static_cast<bool>(sqlite3_column_int(quer.get(), 6)),
+                             static_cast<unsigned long>(sqlite3_column_int(quer.get(), 7)),
+                             static_cast<unsigned int>(sqlite3_column_int(quer.get(), 8)), frequencyFactors,
                              Settings::getTownFontSize(), printer));
-        loadBar.progress(1. / tC);
-        loadBar.draw(screen.get());
+        ldBr.progress(1. / tC);
+        ldBr.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
-    sqlite3_finalize(quer);
+    
     place();
-    loadBar.progress(-1);
-    loadBar.setText(0, "Finalizing towns...");
+    ldBr.progress(-1);
+    ldBr.setText(0, "Finalizing towns...");
     std::vector<unsigned int> neighborIds;
-    sqlite3_prepare_v2(conn, "SELECT from_id, to_id FROM routes", -1, &quer, nullptr);
+    quer = sql::makeQuery(cn, "SELECT from_id, to_id FROM routes");
     unsigned int tnId = 1;
-    while (sqlite3_step(quer) != SQLITE_DONE) {
-        if (tnId != static_cast<unsigned int>(sqlite3_column_int(quer, 0))) {
-            SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        if (tnId != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0))) {
+            SDL_RenderCopy(screen.get(), frzTx, nullptr, nullptr);
             // Town ids don't match, flush vector and increment.
             towns[tnId - 1].loadNeighbors(towns, neighborIds);
             neighborIds.clear();
             towns[tnId - 1].update(Settings::getBusinessRunTime());
             ++tnId;
-            loadBar.progress(1. / tC);
-            loadBar.draw(screen.get());
+            ldBr.progress(1. / tC);
+            ldBr.draw(screen.get());
             SDL_RenderPresent(screen.get());
         }
-        neighborIds.push_back(static_cast<unsigned int>(sqlite3_column_int(quer, 1)));
+        neighborIds.push_back(static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1)));
     }
-    sqlite3_finalize(quer);
-    sqlite3_close(conn);
+    
     // Load neighbors of final town.
     towns[tnId - 1].loadNeighbors(towns, neighborIds);
+}
+
+void Game::newGame() {
+    // Load data for a new game from sqlite database.
+    sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READONLY);
+    ;
+    loadData(conn.get());
+
+    // Load towns from sqlite database.
+    LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
+                    {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
+                    Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
+    // Create a texture for keeping the current screen frozen behind load bar.
+    sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
+    SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
+    sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
+    freezeSurface = nullptr;
+    loadTowns(conn.get(), loadBar, freezeTexture.get());
+    conn = nullptr;
+    double tC = towns.size();
     loadBar.progress(-1);
     loadBar.setText(0, "Generating Travelers...");
     for (auto &t : towns) {
@@ -523,21 +529,13 @@ void Game::newGame() {
 }
 
 void Game::loadGame(const fs::path &p) {
-
-    sqlite3 *conn;
-    if (sqlite3_open("1025ad.db", &conn) != SQLITE_OK)
-        std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
+    sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READONLY);
     nations.clear();
-    loadData(conn);
-    sqlite3_close(conn);
+    loadData(conn.get());
+    conn = nullptr;
     // Load a saved game from the given path.
     std::ifstream file(p.string(), std::ifstream::binary);
     if (file.is_open()) {
-        sqlite3 *conn;
-        if (sqlite3_open("1025ad.db", &conn) != SQLITE_OK)
-            std::cout << sqlite3_errmsg(conn) << std::endl;
-        nations.clear();
-        sqlite3_close(conn);
         aITravelers.clear();
         towns.clear();
         file.seekg(0, file.end);
@@ -656,36 +654,29 @@ void Game::saveRoutes() {
     for (auto &t : towns)
         t.saveNeighbors(inserts);
     inserts.pop_back();
-    sqlite3 *conn;
-    if (sqlite3_open("1025ad.db", &conn) != SQLITE_OK)
-        std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
-    sqlite3_stmt *comm;
-    sqlite3_prepare_v2(conn, inserts.c_str(), -1, &comm, nullptr);
-    sqlite3_step(comm);
-    sqlite3_finalize(comm);
-    sqlite3_close(conn);
+    sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READWRITE);
+    ;
+    sql::StmtPtr comm;
+    comm = sql::makeQuery(conn.get(), inserts.c_str());
+    sqlite3_step(comm.get());
 }
 
 void Game::saveData() {
     // Save changes to frequencies and demand slopes to database.
-    sqlite3 *conn;
-    if (sqlite3_open("1025ad.db", &conn) != SQLITE_OK)
-        std::cout << "Error opening sqlite database:" << sqlite3_errmsg(conn) << std::endl;
+    sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READWRITE);
     std::string updates = "UPDATE frequencies SET frequency = CASE";
     player->getTraveler()->getTown()->saveFrequencies(updates);
-    sqlite3_stmt *comm;
-    sqlite3_prepare_v2(conn, updates.c_str(), -1, &comm, nullptr);
-    if (sqlite3_step(comm) != SQLITE_DONE)
-        std::cout << "Error updating frequencies: " << sqlite3_errmsg(conn) << std::endl << updates << std::endl;
-    sqlite3_finalize(comm);
+    sql::StmtPtr comm;
+    comm = sql::makeQuery(conn.get(), updates.c_str());
+    if (sqlite3_step(comm.get()) != SQLITE_DONE)
+        std::cout << "Error updating frequencies: " << sqlite3_errmsg(conn.get()) << std::endl << updates << std::endl;
     updates = "UPDATE consumption SET demand_slope = CASE";
     player->getTraveler()->getTown()->saveDemand(updates);
-    sqlite3_prepare_v2(conn, updates.c_str(), -1, &comm, nullptr);
-    if (sqlite3_step(comm) != SQLITE_DONE)
-        std::cout << "Error updating demand slopes: " << sqlite3_errmsg(conn) << std::endl << updates << std::endl;
-    sqlite3_finalize(comm);
-    if (sqlite3_close(conn) != SQLITE_OK)
-        std::cout << sqlite3_errmsg(conn) << std::endl;
+    comm = sql::makeQuery(conn.get(), updates.c_str());
+    if (sqlite3_step(comm.get()) != SQLITE_DONE)
+        std::cout << "Error updating demand slopes: " << sqlite3_errmsg(conn.get()) << std::endl << updates << std::endl;
+    if (sqlite3_close(conn.get()) != SQLITE_OK)
+        std::cout << sqlite3_errmsg(conn.get()) << std::endl;
 }
 
 void Game::saveGame() {
