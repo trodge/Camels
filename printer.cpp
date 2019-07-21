@@ -19,26 +19,20 @@
 
 #include "printer.hpp"
 
-void Printer::setSize(int s) {
-    sizeIndex = static_cast<size_t>(std::lower_bound(sizes.begin(), sizes.end(), s) - sizes.begin());
-    if (static_cast<size_t>(sizeIndex) == sizes.size() or sizes[static_cast<size_t>(sizeIndex)] != s) {
-        sizes.insert(sizes.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex), s);
-        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount),
-                     sdl::openFont("DejaVuSerif.ttf", s));
-        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 1u),
-                     sdl::openFont("DejaVuSans.ttf", s));
-        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 2u),
-                     sdl::openFont("NotoSerifDevanagari-Regular.ttf", s));
-        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 3u),
-                     sdl::openFont("wqy-microhei-lite.ttc", s));
-        fonts.insert(fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount + 4u),
-                     sdl::openFont("NotoSerifBengali-Regular.ttf", s));
+void Printer::setSize(unsigned int sz) {
+    fontSizeIt = std::lower_bound(fontSizes.begin(), fontSizes.end(), sz); // iterator to correct font size
+    if (fontSizeIt == fontSizes.end() or fontSizeIt->size != sz) {
+        fontSizes.insert(
+            fontSizeIt, {{sdl::openFont("DejaVuSerif.ttf", sz), sdl::openFont("DejaVuSans.ttf", sz),
+                          sdl::openFont("NotoSerifDevanagari-Regular.ttf", sz),
+                          sdl::openFont("wqy-microhei-lite.ttc", sz), sdl::openFont("NotoSerifBengali-Regular.ttf", sz)},
+                         sz});
     }
 }
 
 int Printer::getFontWidth(const std::string &tx) {
     int w;
-    TTF_SizeUTF8(fonts[static_cast<size_t>(sizeIndex * kFontCount)].get(), tx.c_str(), &w, nullptr);
+    TTF_SizeUTF8(fontSizeIt->fonts.front().get(), tx.c_str(), &w, nullptr);
     return w;
 }
 
@@ -52,8 +46,8 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     tSs.reserve(numLines);
     int mW = 0; // Minimum width to fit text.
     int mH = 0; // Minimum height to fit text.
-    std::vector<sdl::FontPtr>::iterator fI =
-        fonts.begin() + static_cast<std::vector<sdl::FontPtr>::difference_type>(sizeIndex * kFontCount); // Font to use.
+    std::array<sdl::FontPtr, kFontCount>::iterator fI =
+        fontSizeIt->fonts.begin(); // Font to use.
     for (auto &t : tx) {
         // Render lines of text.
         if (t.empty())
@@ -61,8 +55,7 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
         else
             tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), t.c_str(), foreground));
         tWs.push_back(tSs.back()->w);
-        if (tWs.back() > mW)
-            mW = tWs.back();
+        if (tWs.back() > mW) mW = tWs.back();
         tHs.push_back(TTF_FontHeight(fI->get()));
         mH += tHs.back();
         switch (nationId) {
@@ -83,18 +76,14 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
             fI += 1;
         }
     }
-    if (not rt.w)
-        rt.w = mW + 2 * b;
-    if (not rt.h)
-        rt.h = mH + 2 * b;
+    if (not rt.w) rt.w = mW + 2 * b;
+    if (not rt.h) rt.h = mH + 2 * b;
 
     sdl::SurfacePtr p(sdl::makeSurface(rt.w, rt.h));
     sdl::RendererPtr swRdr(sdl::makeSoftwareRenderer(p.get()));
     // Draw border.
     SDL_Rect dR = {0, 0, rt.w, rt.h};
-    if (true) {
-        drawRoundedRectangle(swRdr.get(), r, &dR, foreground);
-    }
+    if (true) { drawRoundedRectangle(swRdr.get(), r, &dR, foreground); }
     dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
     drawRoundedRectangle(swRdr.get(), r, &dR, background);
     if (img) {

@@ -29,15 +29,19 @@
 #include "draw.hpp"
 
 class Printer {
-    std::vector<int> sizes;
-    size_t sizeIndex;
     unsigned int nationId;
     SDL_Color foreground, background, highlight;
     int highlightLine;
-    std::vector<sdl::FontPtr> fonts;
+    struct FontSize {
+        bool operator <(unsigned int sz) { return size < sz; }
+        std::array<sdl::FontPtr, kFontCount> fonts;
+        unsigned int size;
+    };
+    std::vector<FontSize> fontSizes;
+    std::vector<FontSize>::iterator fontSizeIt;
 
   public:
-    void setSize(int s);
+    void setSize(unsigned int s);
     void setColors(const SDL_Color &fg, const SDL_Color &bg) {
         foreground = fg;
         background = bg;
@@ -45,7 +49,7 @@ class Printer {
     void setHighlight(const SDL_Color &hl) { highlight = hl; };
     void setHighlightLine(int h) { highlightLine = h; }
     void setNationId(unsigned int n) { nationId = n; }
-    int getFontHeight() { return TTF_FontHeight(fonts[static_cast<size_t>(sizeIndex * kFontCount)].get()); }
+    int getFontHeight() { return TTF_FontHeight(fontSizeIt->fonts.front().get()); }
     int getFontWidth(const std::string &tx);
     sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img);
     sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
