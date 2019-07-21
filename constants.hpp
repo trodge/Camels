@@ -29,6 +29,7 @@ const double kPi = boost::math::constants::pi<double>();
 const double kShowPlayerPadding = 0.2; // Portion of screen to pad around player when map zooms to player
 const size_t kMaxTowns = 500;          // Maximum number of towns allowed to be loaded
 const int kDaysPerYear = 365;
+const double kTravelerCarry = -16.;
 const size_t kFontCount = 5;        // Number of fonts used to display text
 const size_t kFightChoiceIndex = 3; // Index of box representing choice when fighting
 const int kGoodButtonSizeMultiplier = 29;
