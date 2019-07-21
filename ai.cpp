@@ -51,12 +51,13 @@ void AI::randomizeLimitFactors() {
     // Randomize factors which will be used to choose buy and sell limits for each
     // material.
     auto &gs = traveler.getGoods();
-    size_t mC = 0; // Total count of materials across all goods, excluding labor.
-    for (auto gI = gs.begin() + 1; gI != gs.end(); ++gI) mC += gI->getMaterials().size();
+    // Total count of materials across all goods, including labor.
+    size_t mC = std::accumulate(gs.begin(), gs.end(), 0u,
+                                [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
     materialInfo = std::vector<MaterialInfo>(mC);
-    static std::uniform_real_distribution<> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
+    static std::uniform_real_distribution<double> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
     auto mII = materialInfo.begin();
-    for (size_t i = 1; i < gs.size(); ++i) {
+    for (size_t i = 0; i < gs.size(); ++i) {
         mC = gs[i].getMaterials().size();
         for (size_t j = 0; j < mC; ++j) {
             mII->limitFactor = dis(Settings::getRng());
@@ -295,8 +296,8 @@ void AI::autoLoot() {
         auto mII = materialInfo.begin(); // material info iterator
         for (size_t i = 0; i < gs.size(); ++i) {
             auto &gMs = gs[i].getMaterials(); // good materials
-            auto &tG = tGs[i]; // target good
-            auto &tGMs = tG.getMaterials(); // target good materials
+            auto &tG = tGs[i];                // target good
+            auto &tGMs = tG.getMaterials();   // target good materials
             for (unsigned int j = 0; j < gMs.size(); ++j) {
                 auto &tGM = tGMs[j]; // target good material
                 double score = tGM.getAmount() * mII->value / tG.getCarry();
@@ -345,23 +346,22 @@ void AI::setLimits() {
     auto &gs = traveler.getGoods();
     size_t gC = gs.size();           // good count
     auto mII = materialInfo.begin(); // material info iterator
-    // Find minimum and maximum price for each material of each good in nearby
-    // towns.
-    for (size_t i = 1; i < gC; ++i) {
+    // Find minimum and maximum price for each material of each good in nearby towns.
+    for (size_t i = 0; i < gC; ++i) {
         // Loop through goods.
         size_t mC = gs[i].getMaterials().size(); // materials count
         for (size_t j = 0; j < mC; ++j) {
             // Loop through materials.
             auto &gM = gs[i].getMaterial(j);
-            bool hasMaterial = gM.getAmount() != 0.; // Traveler has non-zero amount of material j
-            std::vector<double> prices;              // prices for this material of this good in
-                                                     // all nearby towns that sell it
+            bool hasMaterial = gM.getAmount() > 0.; // Traveler has non-zero amount of material j
+            std::vector<double> prices;             // prices for this material of this good in
+                                                    // all nearby towns that sell it
             prices.reserve(nC);
             for (auto &n : nearby) {
                 // Loop through nearby towns to collect price info.
                 auto &nM = n.town->getGood(i).getMaterial(j);
                 double price = nM.getPrice();
-                if (price != 0.)
+                if (price > 0.)
                     // Good i material j is sold in nearby town k.
                     prices.push_back(price);
             }
@@ -378,7 +378,7 @@ void AI::setLimits() {
                 // gathered
                 auto &nM = n.town->getGood(i).getMaterial(j);
                 double price = nM.getPrice();
-                if (hasMaterial and price != 0.) {
+                if (hasMaterial and price > 0.) {
                     double sellScore = gM.getSellScore(price, mII->sell);
                     if (sellScore > n.sellScore) n.sellScore = sellScore;
                 } else {

@@ -22,7 +22,7 @@
 void Printer::setSize(unsigned int sz) {
     fontSizeIt = std::lower_bound(fontSizes.begin(), fontSizes.end(), sz); // iterator to correct font size
     if (fontSizeIt == fontSizes.end() or fontSizeIt->size != sz) {
-        fontSizes.insert(
+        fontSizeIt = fontSizes.insert(
             fontSizeIt, {{sdl::openFont("DejaVuSerif.ttf", sz), sdl::openFont("DejaVuSans.ttf", sz),
                           sdl::openFont("NotoSerifDevanagari-Regular.ttf", sz),
                           sdl::openFont("wqy-microhei-lite.ttc", sz), sdl::openFont("NotoSerifBengali-Regular.ttf", sz)},
@@ -44,10 +44,9 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     tWs.reserve(numLines);
     tHs.reserve(numLines);
     tSs.reserve(numLines);
-    int mW = 0; // Minimum width to fit text.
-    int mH = 0; // Minimum height to fit text.
-    std::array<sdl::FontPtr, kFontCount>::iterator fI =
-        fontSizeIt->fonts.begin(); // Font to use.
+    int mW = 0;                                                                    // Minimum width to fit text.
+    int mH = 0;                                                                    // Minimum height to fit text.
+    std::array<sdl::FontPtr, kFontCount>::iterator fI = fontSizeIt->fonts.begin(); // Font to use.
     for (auto &t : tx) {
         // Render lines of text.
         if (t.empty())
