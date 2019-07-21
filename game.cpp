@@ -398,8 +398,10 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<std::array<double, 3>> materialConsumptions;
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
         if (ntId != static_cast<size_t>(sqlite3_column_int(quer.get(), 0))) {
-            // Nation index doesn't match, flush vector, reset good id, and
-            // increment.
+            // Nation index doesn't match, flush vector, reset good id, and increment.
+            // First flush final material consumptions vector.
+            goodConsumptions.push_back(materialConsumptions);
+            materialConsumptions.clear();
             nations[ntId - 1].setGoodConsumptions(goodConsumptions);
             goodConsumptions.clear();
             gdId = 0;
@@ -414,6 +416,9 @@ void Game::loadData(sqlite3 *cn) {
         materialConsumptions.push_back({{sqlite3_column_double(quer.get(), 2), sqlite3_column_double(quer.get(), 3),
                                          sqlite3_column_double(quer.get(), 4)}});
     }
+    // Flush final good and material consumptions vectors.
+    goodConsumptions.push_back(materialConsumptions);
+    nations[ntId - 1].setGoodConsumptions(goodConsumptions);
 }
 
 void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
@@ -495,7 +500,7 @@ void Game::newGame() {
     freezeSurface = nullptr;
     loadTowns(conn.get(), loadBar, freezeTexture.get());
     conn = nullptr;
-    double tC = towns.size();
+    double tC = static_cast<double>(towns.size());
     loadBar.progress(-1);
     loadBar.setText(0, "Generating Travelers...");
     for (auto &t : towns) {
