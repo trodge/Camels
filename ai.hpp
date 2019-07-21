@@ -36,9 +36,11 @@ class Town;
 class Traveler;
 
 struct MaterialInfo {
-    double limitFactor = 0.;                // factor controlling value based on min/max price
-    double minPrice = 0., maxPrice = 0.;    // minimum and maximum price of material nearby
-    double value = 0., buy = 0., sell = 0.; // estimated value, maximum buy price, and minimum sell price
+    double limitFactor = 0.; // factor controlling value based on min/max price
+    double minPrice = 0.,
+           maxPrice = 0.; // minimum and maximum price of material nearby
+    double value = 0., buy = 0.,
+           sell = 0.; // estimated value, maximum buy price, and minimum sell price
 };
 
 struct TownInfo {
@@ -50,39 +52,30 @@ struct TownInfo {
  * AI which runs non-player travelers
  */
 class AI {
+    Traveler &traveler;                     // the traveler this AI controls
     int decisionCounter;                    // counter for running AI
-    std::array<double, 8> decisionCriteria; /* buy/sell score weight, weapon/armor equip score, tendency to fight/run/yield,
-    looting greed */
+    std::array<double, 8> decisionCriteria; /* buy/sell score weight, weapon/armor
+    equip score, tendency to fight/run/yield, looting greed */
     std::vector<MaterialInfo> materialInfo; // known information about each material of each good
     std::vector<TownInfo> nearby;           // known information about nearby towns
-    void randomizeLimitFactors(const std::vector<Good> &gs);
+    void randomizeLimitFactors();
     void randomizeCriteria();
     void setNearby(const Town *t, const Town *tT, unsigned int i);
-    void setLimits(const std::vector<Good> &gs);
+    void setLimits();
     double equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
-    double lootScore(const std::vector<Good> &gs, const std::vector<Good> &tGs) const;
-    void autoTrade(std::vector<Good> &o, std::vector<Good> &r, const std::vector<Good> &gs, const Town *tT,
-                   const std::function<double()> &netWgt, const std::function<void()> &mT);
-    void autoEquip(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts,
-                   const std::function<void(Good &e)> &eqp);
-    void autoAttack(const std::weak_ptr<Traveler> tgt, const std::function<std::vector<std::shared_ptr<Traveler>>()> &atkabl,
-                    const std::vector<Good> &gs, const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts,
-                    const std::function<void(std::shared_ptr<Traveler>)> &atk);
+    double lootScore(const std::vector<Good> &tGs) const;
+    void autoTrade();
+    void autoEquip();
+    void autoAttack();
 
-  public:
-    AI(const std::vector<Good> &gs, Town *tT);
-    AI(const AI &p, const std::vector<Good> &gs, Town *tT);
-    AI(const Save::AI *a);
-    void autoChoose(const std::vector<Good> &gs, const std::array<unsigned int, 5> &sts, double spd,
-                    const std::vector<Good> &tGs, const std::array<unsigned int, 5> &tSts, double tSpd, FightChoice &choice);
-    void autoLoot(const std::vector<Good> &gs, std::weak_ptr<Traveler> tgt, const std::function<double()> &netWgt,
-                  const std::function<void(Good &g, Traveler &t)> &lt);
-    void run(unsigned int e, bool m, std::vector<Good> &o, std::vector<Good> &r, const std::vector<Good> &gs,
-             const std::vector<Good> &eqpmt, const Town *tT, const std::weak_ptr<Traveler> tgt,
-             const std::array<unsigned int, 5> &sts, const std::function<double()> &netWgt, const std::function<void()> &mT,
-             const std::function<void(Good &e)> &eqp, const std::function<std::vector<std::shared_ptr<Traveler>>()> &atkabl,
-             const std::function<void(std::shared_ptr<Traveler>)> &atk, const std::function<void(Town *)> pT);
+public:
+    AI(Traveler &tvl);
+    AI(Traveler &tvl, const AI &p);
+    AI(Traveler &tvl, const Save::AI *a);
+    void autoChoose();
+    void autoLoot();
+    void run(unsigned int e);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 

@@ -348,9 +348,9 @@ void Game::loadData(sqlite3 *cn) {
              std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 2)))},
             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 3))),
             {static_cast<Uint8>(sqlite3_column_int(quer.get(), 4)), static_cast<Uint8>(sqlite3_column_int(quer.get(), 5)),
-             static_cast<Uint8>(sqlite3_column_int(quer.get(), 6)), 255},
+             static_cast<Uint8>(sqlite3_column_int(quer.get(), 6)), 255u},
             {static_cast<Uint8>(sqlite3_column_int(quer.get(), 7)), static_cast<Uint8>(sqlite3_column_int(quer.get(), 8)),
-             static_cast<Uint8>(sqlite3_column_int(quer.get(), 9)), 255},
+             static_cast<Uint8>(sqlite3_column_int(quer.get(), 9)), 255u},
             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 10))), goods, businesses));
 
     // Load traveler names into nations.

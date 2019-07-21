@@ -645,7 +645,7 @@ void Traveler::attack(std::shared_ptr<Traveler> t) {
     else
         choice = FightChoice::none;
     if (t->ai)
-        t->ai->autoChoose(t->goods, t->stats, t->getSpeed(), goods, stats, getSpeed(), choice);
+        t->ai->autoChoose();
     else
         t->choice = FightChoice::none;
 }
@@ -771,8 +771,8 @@ void Traveler::runFight(Traveler& t, unsigned int e, std::uniform_real_distribut
             useAmmo(ourFirst.time);
             t.useAmmo(ourFirst.time);
         }
-        if (ai) ai->autoChoose(goods, stats, getSpeed(), t.goods, t.stats, t.getSpeed(), choice);
-        if (t.ai) t.ai->autoChoose(t.goods, t.stats, t.getSpeed(), goods, stats, getSpeed(), choice);
+        if (ai) ai->autoChoose();
+        if (t.ai) t.ai->autoChoose();
     }
 }
 
@@ -912,20 +912,17 @@ void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>>& bs, cons
 
 void Traveler::startAI() {
     // Initialized variables for running a new AI.
-    ai = std::make_unique<AI>(goods, toTown);
+    ai = std::make_unique<AI>(*this);
 }
 
 void Traveler::startAI(const Traveler& p) {
     // Starts an AI which imitates parameter's AI.
-    ai = std::make_unique<AI>(*p.ai, goods, toTown);
+    ai = std::make_unique<AI>(*this, *p.ai);
 }
 
 void Traveler::runAI(unsigned int e) {
     // Run the AI for the elapsed time.
-    ai->run(
-        e, moving, offer, request, goods, equipment, toTown, target, stats, [this] { return netWeight(); },
-        [this] { makeTrade(); }, [this](Good& e) { equip(e); }, [this] { return attackable(); },
-        [this](std::shared_ptr<Traveler> t) { attack(t); }, [this](Town* t) { pickTown(t); });
+    ai->run(e);
 }
 
 void Traveler::update(unsigned int e) {
@@ -962,8 +959,7 @@ void Traveler::update(unsigned int e) {
     }
     if (auto t = target.lock()) {
         if (fightWon() and ai) {
-            ai->autoLoot(
-                goods, target, [this] { return netWeight(); }, [this](Good& g, Traveler& t) { loot(g, t); });
+            ai->autoLoot();
             loseTarget();
             return;
         }

@@ -121,7 +121,7 @@ public:
     double getSpeed() const { return stats[1] + stats[2] + stats[3]; }
     unsigned int getPart(size_t i) const { return parts[i]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
-    const std::weak_ptr<Traveler> getTarget() const { return target; }
+    std::weak_ptr<Traveler> getTarget() const { return target; }
     bool alive() const { return parts[0] < 5 and parts[1] < 5; }
     bool getMoving() const { return moving; }
     int getPX() const { return px; }
