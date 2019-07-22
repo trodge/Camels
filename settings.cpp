@@ -81,7 +81,7 @@ void loadColor(const std::string &n, SDL_Color *c, const SDL_Color &d, const pt:
 }
 
 void Settings::load(const fs::path &p) {
-    if (not fs::exists(p)) {
+    if (!fs::exists(p)) {
         fs::ofstream s(p);
         s.close();
     }

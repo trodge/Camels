@@ -122,13 +122,13 @@ public:
     unsigned int getPart(size_t i) const { return parts[i]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     std::weak_ptr<Traveler> getTarget() const { return target; }
-    bool alive() const { return parts[0] < 5 and parts[1] < 5; }
+    bool alive() const { return parts[0] < 5 && parts[1] < 5; }
     bool getMoving() const { return moving; }
     int getPX() const { return px; }
     int getPY() const { return py; }
     bool fightWon() const {
         auto t = target.lock();
-        return t and (t->choice == FightChoice::yield or not t->alive());
+        return t && (t->choice == FightChoice::yield || !t->alive());
     }
     double getFightTime() const { return fightTime; }
     FightChoice getChoice() const { return choice; }

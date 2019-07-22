@@ -125,21 +125,23 @@ void AI::autoTrade() {
     // Loop through goods excluding labor.
     for (auto gI = gs.begin() + 1; gI != gs.end(); ++gI) {
         double carry = gI->getCarry();
-        if (not overWeight or carry > 0.) {
+        if (!overWeight || carry > 0.) {
             // Can carry given good.
             auto &gMs = gI->getMaterials();
             for (auto mI = gMs.begin(); mI != gMs.end(); ++mI) {
                 auto &tM = tGs[gI->getId()].getMaterial(*mI);
                 amount = mI->getAmount();
                 if (amount > 0.) {
-                    if (carry < 0 and weight > carry * amount)
+                    if (carry < 0 && weight > carry * amount)
                         // This good is needed to carry existing goods, reduce amount.
                         amount = weight / carry;
                     if (amount <= 0) continue;
                     score = mI->getSellScore(tM.getPrice(), mII->sell); // score based on minimum sell price
-                    if ((not overWeight and score > bestScore) or (overWeight and carry * amount > offerWeight)) {
+                    if ((overWeight && carry * amount > offerWeight) || (score > bestScore)) {
+                        // Either we are over weight and good is heavier than previous offer
+                        // or this good scores better.
                         bestScore = score;
-                        if (not gI->getSplit()) amount = floor(amount);
+                        if (!gI->getSplit()) amount = floor(amount);
                         bestGood = std::make_unique<Good>(gI->getId(), gI->getName(), amount, gI->getMeasure());
                         bestGood->addMaterial(Material(mI->getId(), mI->getName(), amount));
                         offerValue = tM.getPrice(amount);
@@ -151,7 +153,7 @@ void AI::autoTrade() {
         }
     }
     // If no good found, stop trading.
-    if (not bestGood) return;
+    if (!bestGood) return;
     // Add best good to offer if found.
     traveler.offerGood(*bestGood);
     bestGood = nullptr;
@@ -167,7 +169,7 @@ void AI::autoTrade() {
     // Loop through goods excluding labor.
     for (auto gI = tGs.begin() + 1; gI != tGs.end(); ++gI) {
         double carry = gI->getCarry();
-        if (not overWeight or carry < 0) {
+        if (!overWeight || carry < 0) {
             auto &gMs = gI->getMaterials();
             for (auto mI = gMs.begin(); mI != gMs.end(); ++mI) {
                 auto &rM = gs[gI->getId()].getMaterial(*mI);
@@ -188,7 +190,7 @@ void AI::autoTrade() {
                                 amount = needed;
                             }
                         }
-                        if (not gI->getSplit())
+                        if (!gI->getSplit())
                             // Remove extra portion of goods that don't split.
                             excess += modf(amount, &amount);
                         // Convert the excess from units of bought good to deniers.
@@ -200,7 +202,7 @@ void AI::autoTrade() {
             }
         }
     }
-    if (not bestGood) return;
+    if (!bestGood) return;
     if (excess > 0.) traveler.divideExcess(excess);
     traveler.requestGood(*bestGood);
     // Make the trade.
@@ -216,7 +218,7 @@ void AI::autoEquip() {
             for (auto &m : g.getMaterials())
                 if (m.getAmount() >= 1.) {
                     auto &ss = m.getCombatStats();
-                    if (not ss.empty()) {
+                    if (!ss.empty()) {
                         Good e(g.getId(), g.getName(), 1.);
                         Material eM(m.getId(), m.getName(), 1.);
                         eM.setCombatStats(ss);
@@ -233,7 +235,7 @@ void AI::autoEquip() {
 
 void AI::autoAttack() {
     // Attack traveler with lower equipment score and lootable goods.
-    if (not traveler.getTarget().lock()) {
+    if (!traveler.getTarget().lock()) {
         // There isn't already a target.
         auto able = traveler.attackable();
         double ourEquipScore = equipScore(traveler.getEquipment(), traveler.getStats());
@@ -247,7 +249,7 @@ void AI::autoAttack() {
                                                  Settings::getAIAttackThreshold();
                                   }),
                    able.end());
-        if (not able.empty()) {
+        if (!able.empty()) {
             // Attack the easiest target.
             auto easiest = std::min_element(
                 able.begin(), able.end(), [this](const std::shared_ptr<Traveler> a, const std::shared_ptr<Traveler> b) {
@@ -281,7 +283,7 @@ void AI::autoLoot() {
     // Automatically loot based on scores and decision criteria.
     auto &gs = traveler.getGoods();
     auto tgt = traveler.getTarget().lock();
-    if (not tgt) return;
+    if (!tgt) return;
     auto &tGs = tgt->getGoods();
     double lootGoal = lootScore(tGs);
     if (tgt->alive())
@@ -301,7 +303,7 @@ void AI::autoLoot() {
             for (unsigned int j = 0; j < gMs.size(); ++j) {
                 auto &tGM = tGMs[j]; // target good material
                 double score = tGM.getAmount() * mII->value / tG.getCarry();
-                if ((bestScore >= 0. and score > bestScore) or (score < 0. and score < bestScore)) {
+                if ((bestScore >= 0. && score > bestScore) || (score < 0. && score < bestScore)) {
                     bestScore = score;
                     bestGood = std::make_unique<Good>(i, tGM.getAmount());
                     bestGood->addMaterial(Material(j, tGM.getAmount()));
@@ -309,7 +311,7 @@ void AI::autoLoot() {
                 ++mII;
             }
         }
-        if (not bestGood or weight + bestGood->getCarry() * bestGood->getAmount() > 0.) break;
+        if (!bestGood || weight + bestGood->getCarry() * bestGood->getAmount() > 0.) break;
         looted += bestScore * gs[bestGood->getId()].getCarry();
         // Loot the current best good from target.
         traveler.loot(*bestGood, *tgt);
@@ -365,7 +367,7 @@ void AI::setLimits() {
                     // Good i material j is sold in nearby town k.
                     prices.push_back(price);
             }
-            if (not prices.empty()) {
+            if (!prices.empty()) {
                 auto mMP = std::minmax_element(prices.begin(), prices.end());
                 mII->minPrice = *mMP.first;
                 mII->maxPrice = *mMP.second;
@@ -378,7 +380,7 @@ void AI::setLimits() {
                 // gathered
                 auto &nM = n.town->getGood(i).getMaterial(j);
                 double price = nM.getPrice();
-                if (hasMaterial and price > 0.) {
+                if (hasMaterial && price > 0.) {
                     double sellScore = gM.getSellScore(price, mII->sell);
                     if (sellScore > n.sellScore) n.sellScore = sellScore;
                 } else {
@@ -394,7 +396,7 @@ void AI::setLimits() {
 
 void AI::run(unsigned int e) {
     // Run the AI for the elapsed time. Includes trading, equipping, and attacking.
-    if (not traveler.getMoving()) {
+    if (!traveler.getMoving()) {
         decisionCounter += e;
         if (decisionCounter > Settings::getAIDecisionTime()) {
             autoTrade();

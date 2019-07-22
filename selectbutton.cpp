@@ -26,7 +26,7 @@ SelectButton::SelectButton(const SDL_Rect &rt, const std::vector<std::string> &i
 }
 
 bool SelectButton::keyCaptured(const SDL_KeyboardEvent &k) const {
-    return MenuButton::keyCaptured(k) or ScrollBox::keyCaptured(k);
+    return MenuButton::keyCaptured(k) || ScrollBox::keyCaptured(k);
 }
 
 void SelectButton::handleKey(const SDL_KeyboardEvent &k) {

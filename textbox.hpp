@@ -78,7 +78,7 @@ class TextBox : public Focusable {
         setText();
     }
     virtual void addItem(const std::string &i) { addText(i); }
-    void toggleLock() { canFocus = not canFocus; }
+    void toggleLock() { canFocus = !canFocus; }
     void changeBorder(int db) { setBorder(border + db); }
     void setInvColors(bool i);
     void setClicked(bool c);

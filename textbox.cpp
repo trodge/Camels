@@ -21,7 +21,7 @@
 
 TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
                  unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr)
-    : rect(rt), fixedSize(rt.w and rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b),
+    : rect(rt), fixedSize(rt.w && rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b),
       radius(r), fontSize(fS), image(img), printer(pr) {
     setText(tx);
 }
@@ -44,7 +44,7 @@ TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const S
 
 void TextBox::setText() {
     // Renders the text using the printer. Call any time text changes.
-    if (not fixedSize) {
+    if (!fixedSize) {
         // Get rid of old width and height and move rectangle to center.
         rect.x += rect.w / 2;
         rect.y += rect.h / 2;
@@ -62,7 +62,7 @@ void TextBox::setText() {
     printer.setSize(fontSize);
     lineHeight = printer.getFontHeight();
     lines = text.size();
-    if (rect.h and lines > size_t(rect.h / lineHeight)) {
+    if (rect.h && lines > size_t(rect.h / lineHeight)) {
         // Truncate lines of text if they won'tx fit in box of fixed size.
         lines = static_cast<size_t>(rect.h / lineHeight);
         text = std::vector<std::string>(text.begin(),
@@ -71,7 +71,7 @@ void TextBox::setText() {
     surface = printer.print(text, rect, border, radius, image);
     updateTexture = true;
 
-    if (not fixedSize) {
+    if (!fixedSize) {
         // Rectagle coordinates are at center, move them to top-left corner.
         rect.x -= rect.w / 2;
         rect.y -= rect.h / 2;
@@ -151,7 +151,7 @@ void TextBox::handleKey(const SDL_KeyboardEvent &k) {
     if (k.state == SDL_PRESSED)
         switch (k.keysym.sym) {
         case SDLK_BACKSPACE:
-            if (not text.empty() and not text.back().empty())
+            if (!text.empty() && !text.back().empty())
                 text.back().pop_back();
             setText();
         default:
@@ -160,7 +160,7 @@ void TextBox::handleKey(const SDL_KeyboardEvent &k) {
 }
 
 void TextBox::handleTextInput(const SDL_TextInputEvent &tx) {
-    if (not text.empty()) {
+    if (!text.empty()) {
         text.back().append(tx.text);
         setText();
     }

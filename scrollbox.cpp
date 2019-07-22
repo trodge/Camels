@@ -48,13 +48,13 @@ void ScrollBox::addItem(const std::string &i) {
     }
     items.push_back(entry);
     setText();
-    if (not overflow.empty())
+    if (!overflow.empty())
         addItem(overflow);
 }
 
 void ScrollBox::setHighlightLine(int h) {
     // Set highlight line to h, count from last line if negative
-    if (not lines)
+    if (!lines)
         return;
     while (h < 0)
         h += static_cast<int>(items.size());
@@ -106,6 +106,6 @@ void ScrollBox::handleClick(const SDL_MouseButtonEvent &b) {
     int h = -1;
     if (y >= 0)
         h = y / static_cast<int>(lineHeight) + static_cast<int>(scroll);
-    if (h != highlightLine and h > -1 and size_t(h) < items.size())
+    if (h != highlightLine && h > -1 && size_t(h) < items.size())
         setHighlightLine(h);
 }

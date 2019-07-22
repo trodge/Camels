@@ -30,11 +30,11 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
     businesses.reserve(nBsns.size());
     for (auto &bsn : nBsns) {
         double fq = bsn.getFrequency();
-        if (fq != 0. and (coastal or not bsn.getRequireCoast())) {
+        if (fq != 0. && (coastal || !bsn.getRequireCoast())) {
             double fF = 1.;
             auto tTBI = std::make_pair(townType, bsn.getId());
             auto fFI = fFs.lower_bound(tTBI);
-            if (fFI != fFs.end() and fFI->first == tTBI)
+            if (fFI != fFs.end() && fFI->first == tTBI)
                 fF = fFI->second;
             businesses.push_back(Business(bsn));
             businesses.back().setArea(static_cast<double>(ppl) * fq * fF);
@@ -209,7 +209,7 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
     auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
     for (auto &t : ts) {
         int dS = distSq(t.dpx, t.dpy);
-        if (t.id != id and not std::binary_search(neighbors.begin(), neighbors.end(), &t, closer)) {
+        if (t.id != id && !std::binary_search(neighbors.begin(), neighbors.end(), &t, closer)) {
             // t is not this and not already a neighbor.
             // Determine how much water is between these two towns.
             int water = 0;
@@ -225,7 +225,7 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
             }
             double m = dy / dx;
             double dt = 0.; // distance traveled
-            while (dt * dt < dS and water < 24) {
+            while (dt * dt < dS && water < 24) {
                 if (dx != 0.) {
                     double dxs = 1. / (1. + m * m);
                     double dys = 1. - dxs;
@@ -238,11 +238,11 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
                 }
                 int mx = static_cast<int>(x) + mox;
                 int my = static_cast<int>(y) + moy;
-                if (mx >= 0 and mx < mS->w and my >= 0 and my < mS->h) {
+                if (mx >= 0 && mx < mS->w && my >= 0 && my < mS->h) {
                     const SDL_Color &waterColor = Settings::getWaterColor();
                     Uint8 r, g, b;
                     SDL_GetRGB(getAt(mS, mx, my), mS->format, &r, &g, &b);
-                    if (r <= waterColor.r and g <= waterColor.g and b >= waterColor.b)
+                    if (r <= waterColor.r && g <= waterColor.g && b >= waterColor.b)
                         ++water;
                 } else
                     ++water;
@@ -265,7 +265,7 @@ void Town::connectRoutes() {
     for (auto &n : neighbors) {
         auto &nNs = n->neighbors;
         auto it = std::lower_bound(nNs.begin(), nNs.end(), n, closer);
-        if (it == nNs.end() or *it != this)
+        if (it == nNs.end() || *it != this)
             nNs.insert(it, this);
     }
 }
@@ -297,7 +297,7 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
                     }
                 }
                 for (auto &op : b.getOutputs()) {
-                    if ((not rB->getId() or op.getId() == rB->getId()) and (not b.getKeepMaterial() or inputMatch)) {
+                    if ((!rB->getId() || op.getId() == rB->getId()) && (!b.getKeepMaterial() || inputMatch)) {
                         go = true;
                         break;
                     }
@@ -306,7 +306,7 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
             if (go)
                 break;
         }
-        if ((go) and b.getArea() > -d * static_cast<double>(population) / 5000) {
+        if ((go) && b.getArea() > -d * static_cast<double>(population) / 5000) {
             b.setArea(b.getArea() + d * static_cast<double>(population) / 5000);
         }
     }

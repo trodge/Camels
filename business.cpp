@@ -40,12 +40,12 @@ Business::Business(const Save::Business *b)
         outputs.push_back(Good(*lOI));
 }
 
-bool Business::operator==(const Business &other) const { return (id == other.id and mode == other.mode); }
+bool Business::operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
 
-bool Business::operator<(const Business &other) const { return (id < other.id or (id == other.id and mode < other.mode)); }
+bool Business::operator<(const Business &other) const { return (id < other.id || (id == other.id && mode < other.mode)); }
 
 void Business::setArea(double a) {
-    if (a > 0. and area > 0.) {
+    if (a > 0. && area > 0.) {
         for (auto &ip : inputs)
             ip.setAmount(ip.getAmount() * a / area);
         for (auto &op : outputs)
@@ -95,12 +95,12 @@ void Business::addConflicts(std::vector<int> &cs, std::vector<Good> &gds) {
         if (gds[oId].getAmount() < gds[oId].getMax())
             space = true;
     }
-    if (not space)
+    if (!space)
         factor = 0;
     for (auto &ip : inputs) {
         unsigned int iId = ip.getId();
         double mF = gds[iId].getAmount() / ip.getAmount();
-        if (ip == outputs.back() and mF < 1)
+        if (ip == outputs.back() && mF < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             factor *= mF;
         else if (factor > mF) {
@@ -128,7 +128,7 @@ void Business::run(std::vector<Good> &gds) {
     if (factor > 0) {
         auto &lastInput = gds[inputs.back().getId()];
         for (auto &op : outputs) {
-            if (keepMaterial and op != lastInput) {
+            if (keepMaterial && op != lastInput) {
                 // If last input and output are the same, ignore materials.
                 std::unordered_map<unsigned int, double> materialAmounts;
                 double lIA = lastInput.getAmount();

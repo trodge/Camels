@@ -39,7 +39,7 @@ bool MenuButton::keyCaptured(const SDL_KeyboardEvent &k) const {
 
 void MenuButton::activate(Uint8 state) {
     if (state == SDL_PRESSED)
-        setInvColors(not clicked);
+        setInvColors(!clicked);
     else if (invColors != clicked) {
         clicked = invColors;
         onClick();

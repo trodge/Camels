@@ -153,7 +153,7 @@ void Material::take(Material &m) {
         amount = 0;
     }
     double movedAmount = m.getAmount();
-    while (movedAmount > 0 and not perishCounters.empty()) {
+    while (movedAmount > 0 && !perishCounters.empty()) {
         // Amount is going down.
         PerishCounter pC = perishCounters.back();
         perishCounters.pop_back();
@@ -175,11 +175,11 @@ void Material::take(Material &m) {
 
 void Material::use(double a) {
     // Use the given amount and discard the perish counters.
-    if (a > 0. and amount >= a)
+    if (a > 0. && amount >= a)
         amount -= a;
     else
         a = 0.;
-    while (a > 0. and not perishCounters.empty()) {
+    while (a > 0. && !perishCounters.empty()) {
         // Amount is going down.
         PerishCounter pC = perishCounters.back();
         perishCounters.pop_back();

@@ -21,7 +21,7 @@
 
 void Printer::setSize(unsigned int sz) {
     fontSizeIt = std::lower_bound(fontSizes.begin(), fontSizes.end(), sz); // iterator to correct font size
-    if (fontSizeIt == fontSizes.end() or fontSizeIt->size != sz) {
+    if (fontSizeIt == fontSizes.end() || fontSizeIt->size != sz) {
         fontSizeIt = fontSizes.insert(
             fontSizeIt, {{sdl::openFont("DejaVuSerif.ttf", sz), sdl::openFont("DejaVuSans.ttf", sz),
                           sdl::openFont("NotoSerifDevanagari-Regular.ttf", sz),
@@ -75,8 +75,8 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
             fI += 1;
         }
     }
-    if (not rt.w) rt.w = mW + 2 * b;
-    if (not rt.h) rt.h = mH + 2 * b;
+    if (!rt.w) rt.w = mW + 2 * b;
+    if (!rt.h) rt.h = mH + 2 * b;
 
     sdl::SurfacePtr p(sdl::makeSurface(rt.w, rt.h));
     sdl::RendererPtr swRdr(sdl::makeSoftwareRenderer(p.get()));

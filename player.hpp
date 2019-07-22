@@ -33,6 +33,17 @@ class Game;
 class Player {
     std::shared_ptr<Traveler> traveler;
     std::vector<std::unique_ptr<TextBox>> boxes, storedBoxes;
+    class Pager {
+        std::vector<std::unique_ptr<TextBox>> &boxes;
+        std::vector<size_t> indices;                  // indices of page breaks in boxes
+        std::vector<size_t>::iterator page;           // iterator to index of current page
+        std::vector<std::unique_ptr<TextBox>> hidden; // boxes not shown on current page
+    public:
+        Pager(std::vector<std::unique_ptr<TextBox>> &bxs) : boxes(bxs) {}
+        void addIndex(size_t idx) { indices.push_back(idx); }
+        void hideBoxes();
+        void nextPage();
+    };
     int focusBox = -1; // index of box currently focused, -1 if no focus
     Game &game;
     Printer &printer;
@@ -86,7 +97,7 @@ class Player {
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);
 
-  public:
+public:
     Player(Game &g);
     bool getStop() const { return stop; }
     bool getPause() const { return pause; }
@@ -96,8 +107,7 @@ class Player {
     void start() { setState(starting); }
     void loadTraveler(const Save::Traveler *t, std::vector<Town> &ts);
     void place(int ox, int oy, double s) {
-        if (traveler.get())
-            traveler->place(ox, oy, s);
+        if (traveler.get()) traveler->place(ox, oy, s);
     }
     void handleEvent(const SDL_Event &e);
     void update(unsigned int e);

@@ -101,7 +101,7 @@ Game::~Game() {
 
 void Game::run() {
     // Run the game loop.
-    while (not player->getStop()) {
+    while (!player->getStop()) {
         handleEvents();
         update();
         draw();
@@ -153,7 +153,7 @@ void Game::place() {
 void Game::moveView(int dx, int dy) {
     // Move view around world map.
     SDL_Rect m = {mapRect.x + dx, mapRect.y + dy, mapSurface->w, mapSurface->h};
-    if (m.x > 0 and m.x < m.w - mapRect.w and m.y > 0 and m.y < m.h - mapRect.h) {
+    if (m.x > 0 && m.x < m.w - mapRect.w && m.y > 0 && m.y < m.h - mapRect.h) {
         mapRect.x = m.x;
         mapRect.y = m.y;
         offsetX -= dx;
@@ -442,7 +442,7 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
                               "town_type FROM towns");
     towns.reserve(gameData.townCount);
     std::cout << "Loading towns" << std::endl;
-    while (sqlite3_step(quer.get()) != SQLITE_DONE and towns.size() < kMaxTowns) {
+    while (sqlite3_step(quer.get()) != SQLITE_DONE && towns.size() < kMaxTowns) {
         SDL_RenderCopy(screen.get(), frzTx, nullptr, nullptr);
         std::vector<std::string> names = {std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1))),
                                           std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 2)))};
@@ -591,7 +591,7 @@ void Game::handleEvents() {
             my = event.button.y + mapRect.y;
             mw = mapSurface->w;
             mh = mapSurface->h;
-            if (mx >= 0 and mx < mw and my >= 0 and my < mh) {
+            if (mx >= 0 && mx < mw && my >= 0 && my < mh) {
                 SDL_GetRGB(getAt(mapSurface.get(), mx, my), mapSurface->format, &r, &g, &b);
                 std::cout << "Clicked color: (" << int(r) << "," << int(g) << "," << int(b) << ")" << std::endl;
             }
@@ -677,7 +677,7 @@ void Game::saveData() {
 
 void Game::saveGame() {
     // Save the game.
-    if (not player->hasTraveler())
+    if (!player->hasTraveler())
         std::cout << "Tried to save game with no player traveler" << std::endl;
     flatbuffers::FlatBufferBuilder builder(1024);
     auto sTowns = builder.CreateVector<flatbuffers::Offset<Save::Town>>(

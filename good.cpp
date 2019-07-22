@@ -20,7 +20,7 @@
 #include "good.hpp"
 
 Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s)
-    : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(not m.empty()), shoots(s) {}
+    : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(!m.empty()), shoots(s) {}
 
 Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s)
     : Good(i, n, 0., p, c, m, s) {}
@@ -42,7 +42,7 @@ Good::Good(unsigned int i) : Good(i, "") {}
 
 Good::Good(const Save::Good *g)
     : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()),
-      carry(g->carry()), measure(g->measure()->str()), split(not measure.empty()), shoots(g->shoots()) {
+      carry(g->carry()), measure(g->measure()->str()), split(!measure.empty()), shoots(g->shoots()) {
     auto lMaterials = g->materials();
     for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI)
         materials.push_back(Material(*lMI));
@@ -71,7 +71,7 @@ std::string Good::businessText() const {
             // Pluralize.
             bsnTx += "s";
     }
-    if (split or amount == 1. or name == "sheep")
+    if (split || amount == 1. || name == "sheep")
         bsnTx = name + ": " + bsnTx;
     else
         bsnTx = name + "s: " + bsnTx;
@@ -93,7 +93,7 @@ std::string Good::logText() const {
     if (id != materials.front().getId())
         lTx += materials.front().getName() + " ";
     lTx += name;
-    if (not split and amount != 1. and name != "sheep")
+    if (!split && amount != 1. && name != "sheep")
         // Pluralize.
         lTx += "s";
     return lTx;
@@ -132,7 +132,7 @@ void Good::scaleConsumptions(unsigned long p) {
 
 void Good::removeExcess() {
     // Removes materials in excess of max
-    if (max > 0 and amount > max) {
+    if (max > 0 && amount > max) {
         for (auto &m : materials) {
             m.use((amount - max) * m.getAmount() / amount);
         }
@@ -145,7 +145,7 @@ void Good::take(Good &g) {
     for (auto &gM : g.materials) {
         // Find parameter material in this good's materials.
         auto it = std::lower_bound(materials.begin(), materials.end(), gM);
-        if (it == materials.end() or *it != gM)
+        if (it == materials.end() || *it != gM)
             // Material was not found, so take its amount from overall transfer.
             g.amount -= gM.getAmount();
         else
@@ -156,7 +156,7 @@ void Good::take(Good &g) {
 
 void Good::use(double a) {
     // Uses up the given amount of this good. Each material is used proportionally.
-    if (a > 0. and amount >= a) {
+    if (a > 0. && amount >= a) {
         for (auto &m : materials)
             m.use(a * m.getAmount() / amount);
         amount -= a;
@@ -171,7 +171,7 @@ void Good::put(Good &g) {
     // Puts the given good in this good. Transfers perish counters.
     for (auto &gM : g.materials) {
         auto it = std::lower_bound(materials.begin(), materials.end(), gM);
-        if (it == materials.end() or *it != gM)
+        if (it == materials.end() || *it != gM)
             g.amount += gM.getAmount();
         else
             it->put(gM);
@@ -198,7 +198,7 @@ void Good::create(double a) {
     // Newly creates the given amount of this good's self named material
     Material m(id);
     auto it = std::lower_bound(materials.begin(), materials.end(), m);
-    if (it == materials.end() or *it != m)
+    if (it == materials.end() || *it != m)
         return;
     it->create(a);
     amount += a;

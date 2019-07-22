@@ -30,7 +30,7 @@ class Focusable {
     virtual ~Focusable() {}
     enum FocusGroup { box, neighbor, town };
     bool getCanFocus() const { return canFocus; }
-    void toggleLock() { canFocus = not canFocus; }
+    void toggleLock() { canFocus = !canFocus; }
     virtual void focus() = 0;
     virtual void unFocus() = 0;
     virtual bool clickCaptured(const SDL_MouseButtonEvent &b) const = 0;

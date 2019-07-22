@@ -84,7 +84,7 @@ class Town : public Focusable {
     void focus() { box->changeBorder(1); }
     void unFocus() { box->changeBorder(-1); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
-    void toggleMaxGoods() { maxGoods = not maxGoods; }
+    void toggleMaxGoods() { maxGoods = !maxGoods; }
     void placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s);
     void placeText(std::vector<SDL_Rect> &drawn) { box->place(dpx, dpy, drawn); }
     void drawRoutes(SDL_Renderer *s);

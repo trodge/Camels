@@ -41,14 +41,21 @@ void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
+void Player::Pager::hideBoxes() {
+    // Hide boxes that are not on the current page in the hidden vector.
+    for (auto hideIt = boxes.begin() + *page;
+         hideIt != boxes.end() && page != indices.end() && hideIt != boxes.begin() + *(page + 1u); ++hideIt)
+         // Loop over boxes between page indices.
+        hidden.push_back(std::move(*hideIt));
+}
+
 void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls) {
     std::vector<Town *> neighbors;
     switch (g) {
     case Focusable::box:
         i = focusBox;
         s = static_cast<int>(boxes.size());
-        for (auto &b : boxes)
-            fcbls.push_back(b.get());
+        for (auto &b : boxes) fcbls.push_back(b.get());
         break;
     case Focusable::neighbor:
         neighbors = traveler->getTown()->getNeighbors();
@@ -58,7 +65,7 @@ void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focu
             neighbors.begin());
         s = static_cast<int>(neighbors.size());
         if (i == s) {
-            if (focusTown > -1 and static_cast<size_t>(focusTown) < game.getTowns().size())
+            if (focusTown > -1 && static_cast<size_t>(focusTown) < game.getTowns().size())
                 game.unFocusTown(static_cast<size_t>(focusTown));
             i = -1;
         }
@@ -94,10 +101,8 @@ void Player::focus(int f, Focusable::FocusGroup g) {
     int i, s;
     std::vector<Focusable *> fcbls;
     prepFocus(g, i, s, fcbls);
-    if (i > -1 and i < s)
-        fcbls[static_cast<size_t>(i)]->unFocus();
-    if (f > -1 and f < s)
-        fcbls[static_cast<size_t>(f)]->focus();
+    if (i > -1 && i < s) fcbls[static_cast<size_t>(i)]->unFocus();
+    if (f > -1 && f < s) fcbls[static_cast<size_t>(f)]->focus();
     finishFocus(f, g, fcbls);
 }
 
@@ -109,8 +114,7 @@ void Player::focusPrev(Focusable::FocusGroup g) {
     if (i == -1) {
         i = s;
         while (i--)
-            if (fcbls[static_cast<size_t>(i)]->getCanFocus())
-                break;
+            if (fcbls[static_cast<size_t>(i)]->getCanFocus()) break;
     } else {
         fcbls[static_cast<size_t>(i)]->unFocus();
         int j = i;
@@ -134,8 +138,7 @@ void Player::focusNext(Focusable::FocusGroup g) {
     if (i == -1) {
         // Nothing was focused, find first focusable item.
         while (++i < s)
-            if (fcbls[static_cast<size_t>(i)]->getCanFocus())
-                break;
+            if (fcbls[static_cast<size_t>(i)]->getCanFocus()) break;
         // No focusable item was found in group.
         return;
     } else {
@@ -158,8 +161,8 @@ void Player::setState(UIState s) {
     focusBox = -1;
     const SDL_Color &uIFgr = Settings::getUIForeground(), &uIBgr = Settings::getUIBackground();
     int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
-        sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize(),
-        fFS = Settings::getFightFontSize();
+        sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(),
+        sBFS = Settings::getSmallBoxFontSize(), fFS = Settings::getFightFontSize();
     SDL_Rect rt;
     std::vector<std::string> tx(1);
     std::function<void()> f;
@@ -169,7 +172,7 @@ void Player::setState(UIState s) {
     switch (s) {
     case starting:
         rt = {screenRect.w / 2, screenRect.h / 15, 0, 0};
-        tx.back() = "Camels and Silk";
+        tx.back() = "Camels && Silk";
         boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
         rt = {screenRect.w / 7, screenRect.h / 3, 0, 0};
         tx.back() = "(N)ew Game";
@@ -195,13 +198,12 @@ void Player::setState(UIState s) {
             // Create a button for each nation to start in that nation.
             rt = {screenRect.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6,
                   screenRect.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7, 0, 0};
-            boxes.push_back(std::make_unique<MenuButton>(rt, n.getNames(), n.getForeground(), n.getBackground(), n.getId(),
-                                                         true, 3, bBR, bBFS, printer, [this, n] {
+            boxes.push_back(std::make_unique<MenuButton>(rt, n.getNames(), n.getForeground(), n.getBackground(),
+                                                         n.getId(), true, 3, bBR, bBFS, printer, [this, n] {
                                                              focusBox = -1;
                                                              unsigned int nId = n.getId(); // nation id
                                                              std::string name = boxes.front()->getText(1);
-                                                             if (name.empty())
-                                                                 name = n.randomName();
+                                                             if (name.empty()) name = n.randomName();
                                                              // Create traveler object for player
                                                              traveler = game.createPlayerTraveler(nId, name);
                                                              show = true;
@@ -212,11 +214,11 @@ void Player::setState(UIState s) {
     case quitting:
         rt = {screenRect.w / 2, screenRect.h / 4, 0, 0};
         tx.back() = "Continue";
-        boxes.push_back(
-            std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] { toggleState(quitting); }));
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer,
+                                                     [this] { toggleState(quitting); }));
         rt = {screenRect.w / 2, screenRect.h * 3 / 4, 0, 0};
         if (traveler) {
-            tx.back() = "Save and Quit";
+            tx.back() = "Save && Quit";
             f = [this] {
                 game.saveGame();
                 stop = true;
@@ -230,12 +232,11 @@ void Player::setState(UIState s) {
     case loading:
         rt = {screenRect.w / 7, screenRect.h / 7, 0, 0};
         tx.back() = "(B)ack";
-        boxes.push_back(
-            std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] { toggleState(loading); }));
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer,
+                                                     [this] { toggleState(loading); }));
         boxes.back()->setKey(SDLK_b);
         path = "save";
-        for (auto &file : fs::directory_iterator(path))
-            saves.push_back(file.path().stem().string());
+        for (auto &file : fs::directory_iterator(path)) saves.push_back(file.path().stem().string());
         rt = {screenRect.w / 2, screenRect.h / 15, 0, 0};
         tx.back() = "Load";
         boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
@@ -252,8 +253,7 @@ void Player::setState(UIState s) {
         rt = {screenRect.w / 9, screenRect.h * 14 / 15, 0, 0};
         tx.back() = "(G)o";
         boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] {
-            if (focusTown > -1)
-                game.pickTown(traveler, static_cast<size_t>(focusTown));
+            if (focusTown > -1) game.pickTown(traveler, static_cast<size_t>(focusTown));
             show = true;
             boxes.front()->setClicked(false);
         }));
@@ -276,12 +276,11 @@ void Player::setState(UIState s) {
     case logging:
         sBtnIIt = std::find_if(stopButtonsInfo.begin(), stopButtonsInfo.end(),
                                [s](const ButtonInfo &bI) { return bI.state == s; });
-        if (sBtnIIt == stopButtonsInfo.end())
-            return;
+        if (sBtnIIt == stopButtonsInfo.end()) return;
         rt = sBtnIIt->rect;
         tx.back() = sBtnIIt->text;
-        boxes.push_back(
-            std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] { setState(traveling); }));
+        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer,
+                                                     [this] { setState(traveling); }));
         boxes.back()->setKey(sBtnIIt->key);
         switch (s) {
         case trading:
@@ -379,9 +378,8 @@ void Player::setState(UIState s) {
 
 void Player::toggleState(UIState s) {
     // Set UI state to s if not already s, otherwise set to traveling.
-    if (s == quitting and state == loading)
-        s = loading;
-    if (s == quitting or s == loading) {
+    if (s == quitting && state == loading) s = loading;
+    if (s == quitting || s == loading) {
         // Store or restore UI state.
         focus(-1, Focusable::box);
         std::swap(boxes, storedBoxes);
@@ -391,21 +389,21 @@ void Player::toggleState(UIState s) {
             // Stored boxes have been restored, no need to create new boxes.
             return;
     }
-    if (state == s and not(s == quitting or s == loading))
+    if (state == s && not(s == quitting || s == loading))
         setState(traveling);
-    else if (not(state == fighting or state == dying) or s == quitting)
+    else if (not(state == fighting || state == dying) || s == quitting)
         setState(s);
 }
 
 void Player::handleKey(const SDL_KeyboardEvent &k) {
     SDL_Keymod mod = SDL_GetModState();
-    if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT) and (mod & KMOD_ALT))
+    if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT) && (mod & KMOD_ALT))
         modMultiplier = 10000;
-    else if ((mod & KMOD_CTRL) and (mod & KMOD_ALT))
+    else if ((mod & KMOD_CTRL) && (mod & KMOD_ALT))
         modMultiplier = 0.001;
-    else if ((mod & KMOD_SHIFT) and (mod & KMOD_ALT))
+    else if ((mod & KMOD_SHIFT) && (mod & KMOD_ALT))
         modMultiplier = 0.01;
-    else if ((mod & KMOD_CTRL) and (mod & KMOD_SHIFT))
+    else if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT))
         modMultiplier = 1000;
     else if (mod & KMOD_ALT)
         modMultiplier = 0.1;
@@ -417,7 +415,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
         modMultiplier = 1;
     if (k.state == SDL_PRESSED) {
         // Event is SDL_KEYDOWN
-        if (not boxes.empty()) {
+        if (!boxes.empty()) {
             auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
                                          [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
             if (keyedBox != boxes.end()) {
@@ -426,7 +424,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                 (*keyedBox)->handleKey(k);
             }
         }
-        if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k))) {
+        if (not(focusBox > -1 && boxes[static_cast<size_t>(focusBox)]->keyCaptured(k))) {
             if (state != quitting) {
                 if (traveler) {
                     switch (state) {
@@ -456,12 +454,10 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             focusNext(Focusable::box);
                             break;
                         case SDLK_UP:
-                            for (int i = 0; i < 7; ++i)
-                                focusPrev(Focusable::box);
+                            for (int i = 0; i < 7; ++i) focusPrev(Focusable::box);
                             break;
                         case SDLK_DOWN:
-                            for (int i = 0; i < 7; ++i)
-                                focusNext(Focusable::box);
+                            for (int i = 0; i < 7; ++i) focusNext(Focusable::box);
                             break;
                         case SDLK_COMMA:
                             traveler->changePortion(-0.1);
@@ -493,14 +489,14 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
             boxes[static_cast<size_t>(focusBox)]->handleKey(k);
     } else {
         // Event is SDL_KEYUP.
-        if (not boxes.empty()) {
+        if (!boxes.empty()) {
             // Find a box which handles this key.
             auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
                                          [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
             if (keyedBox != boxes.end())
                 // A box's key was released.
                 (*keyedBox)->handleKey(k);
-            if (not(focusBox > -1 and boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
+            if (not(focusBox > -1 && boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
                 // Key is not used by currently focused box.
                 switch (k.keysym.sym) {
                 case SDLK_LEFT:
@@ -517,8 +513,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
 }
 
 void Player::handleTextInput(const SDL_TextInputEvent &t) {
-    if (focusBox > -1)
-        boxes[static_cast<size_t>(focusBox)]->handleTextInput(t);
+    if (focusBox > -1) boxes[static_cast<size_t>(focusBox)]->handleTextInput(t);
 }
 
 void Player::handleClick(const SDL_MouseButtonEvent &b) {
@@ -530,14 +525,13 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
         if (clickedTown != fcbls.end())
             focus(static_cast<int>(std::distance(fcbls.begin(), clickedTown)), Focusable::town);
     }
-    if (not boxes.empty()) {
+    if (!boxes.empty()) {
         auto clickedBox = std::find_if(boxes.begin(), boxes.end(), [&b](const std::unique_ptr<TextBox> &t) {
-            return t->getCanFocus() and t->clickCaptured(b);
+            return t->getCanFocus() && t->clickCaptured(b);
         });
         if (clickedBox != boxes.end()) {
             int cI = static_cast<int>(std::distance(boxes.begin(), clickedBox));
-            if (cI != focusBox)
-                focus(cI, Focusable::box);
+            if (cI != focusBox) focus(cI, Focusable::box);
             (*clickedBox)->handleClick(b);
         } else
             focus(-1, Focusable::box);
@@ -566,7 +560,7 @@ void Player::handleEvent(const SDL_Event &e) {
 void Player::update(unsigned int e) {
     // Update the UI to reflect current state.
     auto t = traveler.get();
-    bool target = t and t->getTarget().lock();
+    bool target = t && t->getTarget().lock();
     switch (state) {
     case traveling:
         if (target) {
@@ -578,10 +572,10 @@ void Player::update(unsigned int e) {
         traveler->updateTradeButtons(boxes, offerButtonIndex, requestButtonIndex);
         break;
     case fighting:
-        if (not traveler->alive()) {
+        if (!traveler->alive()) {
             setState(dying);
             break;
-        } else if (not target) {
+        } else if (!target) {
             setState(logging);
             break;
         } else if (traveler->fightWon()) {
@@ -596,14 +590,10 @@ void Player::update(unsigned int e) {
     int scrollX = 0, scrollY = 0, sS = Settings::getScroll();
     if (show) {
         const SDL_Rect &mR = game.getMapRect();
-        if (traveler->getPX() < int(mR.w * kShowPlayerPadding))
-            scrollX = -sS;
-        if (traveler->getPY() < int(mR.h * kShowPlayerPadding))
-            scrollY = -sS;
-        if (traveler->getPX() > int(mR.w * (1 - kShowPlayerPadding)))
-            scrollX = sS;
-        if (traveler->getPY() > int(mR.h * (1 - kShowPlayerPadding)))
-            scrollY = sS;
+        if (traveler->getPX() < int(mR.w * kShowPlayerPadding)) scrollX = -sS;
+        if (traveler->getPY() < int(mR.h * kShowPlayerPadding)) scrollY = -sS;
+        if (traveler->getPX() > int(mR.w * (1 - kShowPlayerPadding))) scrollX = sS;
+        if (traveler->getPY() > int(mR.h * (1 - kShowPlayerPadding))) scrollY = sS;
     }
     if (not(scrollKeys.empty())) {
         auto upIt = scrollKeys.find(SDLK_UP), dnIt = scrollKeys.find(SDLK_DOWN), lfIt = scrollKeys.find(SDLK_LEFT),
@@ -613,18 +603,13 @@ void Player::update(unsigned int e) {
         scrollY -= (upIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
         scrollY += (dnIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
     }
-    if (scrollX or scrollY)
-        game.moveView(scrollX, scrollY);
-    if (traveler.get() and not pause)
-        traveler->update(e);
+    if (scrollX || scrollY) game.moveView(scrollX, scrollY);
+    if (traveler.get() && !pause) traveler->update(e);
 }
 
 void Player::updatePortionBox() { boxes[portionBoxIndex]->setText(0, traveler->portionString()); }
 
 void Player::draw(SDL_Renderer *s) {
-    if (traveler.get())
-        traveler->draw(s);
-    for (auto &b : boxes) {
-        b->draw(s);
-    }
+    if (traveler.get()) traveler->draw(s);
+    for (auto &b : boxes) { b->draw(s); }
 }
