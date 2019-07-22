@@ -58,8 +58,9 @@ class Settings {
     static int tradeRadius;
     static int tradeFontSize;
     static double scale;
-    static int dayLength;
-    static unsigned int businessRunTime;
+    static int dayLength; // length of a day in milliseconds
+    static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
+    static int businessRunTime; // time between business cycles in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static double townProfit;
     static int minPriceDivisor;
@@ -108,7 +109,8 @@ class Settings {
     static int getTradeFontSize() { return tradeFontSize; }
     static double getScale() { return scale; }
     static int getDayLength() { return dayLength; }
-    static unsigned int getBusinessRunTime() { return businessRunTime; }
+    static unsigned int getBusinessHeadStart() { return businessHeadStart; }
+    static int getBusinessRunTime() { return businessRunTime; }
     static double getConsumptionSpaceFactor() { return consumptionSpaceFactor; }
     static double getInputSpaceFactor() { return inputSpaceFactor; }
     static double getOutputSpaceFactor() { return outputSpaceFactor; }

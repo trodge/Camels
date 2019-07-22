@@ -49,6 +49,7 @@ int Settings::tradeRadius;
 int Settings::tradeFontSize;
 double Settings::scale;
 int Settings::dayLength;
+unsigned int Settings::businessHeadStart;
 unsigned int Settings::businessRunTime;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
 double Settings::townProfit;
@@ -119,7 +120,8 @@ void Settings::load(const fs::path &p) {
     tradeRadius = tree.get("ui.tradeRadius", current.h * 5 / 1080);
     tradeFontSize = tree.get("ui.tradeFontSize", current.h * 12 / 1080);
     dayLength = tree.get("time.dayLength", 5000);
-    businessRunTime = static_cast<unsigned int>(tree.get("time.businessRunTime", 1500));
+    businessHeadStart = static_cast<unsigned int>(tree.get("time.businessHeadStart", 15000u));
+    businessRunTime = tree.get("time.businessRunTime", 1500);
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
     inputSpaceFactor = tree.get("goods.inputSpaceFactor", 0.054);
     outputSpaceFactor = tree.get("goods.outputSpaceFactor", 0.054);
@@ -175,6 +177,7 @@ void Settings::save(const fs::path &p) {
     tree.put("ui.townFontSize", townFontSize);
     tree.put("ui.tradeFontSize", tradeFontSize);
     tree.put("time.dayLength", dayLength);
+    tree.put("time.businessHeadStart", businessHeadStart);
     tree.put("time.businessRunTime", businessRunTime);
     tree.put("goods.consumptionSpaceFactor", consumptionSpaceFactor);
     tree.put("goods.inputSpaceFactor", inputSpaceFactor);
