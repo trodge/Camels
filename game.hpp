@@ -32,8 +32,10 @@
 
 #include "business.hpp"
 #include "nation.hpp"
+#include "town.hpp"
 #include "player.hpp"
-#include "selectbutton.hpp"
+#include "textbox.hpp"
+#include "loadbar.hpp"
 #include "town.hpp"
 #include "traveler.hpp"
 
@@ -79,6 +81,7 @@ class Game {
     unsigned int lastTime = 0, currentTime;
     std::vector<Nation> nations;
     std::vector<Town> towns;
+    std::vector<Route> routes;
     std::vector<sdl::SurfacePtr> goodImages;
     GameData gameData;
     std::vector<std::shared_ptr<Traveler>> aITravelers;

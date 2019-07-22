@@ -135,7 +135,8 @@ void Town::draw(SDL_Renderer *s) {
 
 void Town::update(unsigned int e) {
     businessCounter += e;
-    if (businessCounter > static_cast<int>(Settings::getBusinessRunTime())) {
+    int bsnsRnTm = Settings::getBusinessRunTime();
+    if (businessCounter > bsnsRnTm) {
         for (auto &g : goods)
             g.consume(Settings::getBusinessRunTime());
         std::vector<int> conflicts(goods.size(), 0);
@@ -164,7 +165,7 @@ void Town::update(unsigned int e) {
             // Run businesses on town's goods.
             b.run(goods);
         }
-        businessCounter -= Settings::getBusinessRunTime();
+        businessCounter -= bsnsRnTm;
     }
 }
 
@@ -183,14 +184,6 @@ void Town::generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Tra
 }
 
 double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }
-
-void Town::loadNeighbors(std::vector<Town> &ts, const std::vector<unsigned int> &nIds) {
-    // Load neighbors from vector of neighbor ids.
-    neighbors.reserve(nIds.size());
-    for (auto &nI : nIds)
-        if (nI <= ts.size())
-            neighbors.push_back(&ts[nI - 1]);
-}
 
 void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy) {
     // Find nearest towns that can be traveled to directly from this one on map surface.
@@ -254,7 +247,7 @@ void Town::connectRoutes() {
     // Ensure that routes go both directions.
     auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
     for (auto &n : neighbors) {
-        auto &nNs = n->neighbors;
+        auto &nNs = n->neighbors; // neighbor's neighbors
         auto it = std::lower_bound(nNs.begin(), nNs.end(), n, closer);
         if (it == nNs.end() || *it != this)
             nNs.insert(it, this);

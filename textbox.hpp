@@ -29,7 +29,7 @@
 #include "draw.hpp"
 #include "printer.hpp"
 
-class TextBox : public Drawable {
+class TextBox {
 protected:
     SDL_Rect rect;
     bool fixedSize, canFocus = false;

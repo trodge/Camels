@@ -453,30 +453,33 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
                              static_cast<unsigned long>(sqlite3_column_int(quer.get(), 7)),
                              static_cast<unsigned int>(sqlite3_column_int(quer.get(), 8)), frequencyFactors,
                              Settings::getTownFontSize(), printer));
+        // Let town run for some business cyles before game starts.
+        towns.back().update(Settings::getBusinessHeadStart());
         ldBr.progress(1. / tC);
         ldBr.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
-
     place();
-    ldBr.progress(-1);
-    ldBr.setText(0, "Finalizing towns...");
-    std::vector<unsigned int> neighborIds;
+    // Load routes.
+    quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM routes");
+    sqlite3_step(quer.get());
+    unsigned int routeCount = sqlite3_column_int(quer.get(), 0);
+    routes.reserve(routeCount);
+    double rC = routeCount;
     quer = sql::makeQuery(cn, "SELECT from_id, to_id FROM routes");
-    unsigned int tnId = 1;
-    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
-        if (tnId != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0))) {
-            SDL_RenderCopy(screen.get(), frzTx, nullptr, nullptr);
-            // Town ids don't match, flush vector and increment.
-            towns[tnId - 1].loadNeighbors(towns, neighborIds);
-            neighborIds.clear();
-            towns[tnId - 1].update(Settings::getBusinessRunTime());
-            ++tnId;
-            ldBr.progress(1. / tC);
-            ldBr.draw(screen.get());
-            SDL_RenderPresent(screen.get());
-        }
-        neighborIds.push_back(static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1)));
+    while (sqlite3_step(quer.get()) != SQLITE_DONE)
+        routes.push_back(Route(&towns[sqlite3_column_int(quer.get(), 0) + 1], &towns[sqlite3_column_int(quer.get(), 1)]));
+    ldBr.progress(-1);
+    ldBr.setText(0, "Connecting routes...");
+    for (auto &rt : routes) {
+        SDL_RenderCopy(screen.get(), frzTx, nullptr, nullptr);
+        // Town ids don't match, flush vector and increment.
+        auto &rtTwns = rt.getTowns();
+        rtTwns[0]->addNeighbor(rtTwns[1]);
+        rtTwns[1]->addNeighbor(rtTwns[0]);
+        ldBr.progress(1. / rC);
+        ldBr.draw(screen.get());
+        SDL_RenderPresent(screen.get());
     }
 
     // Load neighbors of final town.
@@ -624,11 +627,11 @@ void Game::draw() {
     for (auto &t : towns)
         t.drawRoutes(screen.get());
     for (auto &t : towns)
-        t.drawDot(screen.get());
+        t.draw(screen.get());
     for (auto &t : aITravelers)
         t->draw(screen.get());
     for (auto &t : towns)
-        t.drawText(screen.get());
+        t.getBox()->draw(screen.get());
     player->draw(screen.get());
     SDL_RenderPresent(screen.get());
 }

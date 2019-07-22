@@ -25,6 +25,9 @@
 #include <vector>
 
 #include "game.hpp"
+#include "textbox.hpp"
+#include "menubutton.hpp"
+#include "scrollbox.hpp"
 #include "selectbutton.hpp"
 #include "traveler.hpp"
 

@@ -40,7 +40,7 @@ struct GameData;
 class Nation;
 class Traveler;
 
-class Town : public Drawable {
+class Town {
     unsigned int id;
     std::unique_ptr<TextBox> box;
     const Nation *nation = nullptr;
@@ -94,7 +94,7 @@ class Town : public Drawable {
     void put(Good &g);
     void generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Traveler>> &ts);
     double dist(const Town *t) const;
-    void loadNeighbors(std::vector<Town> &ts, const std::vector<unsigned int> &nIds);
+    void addNeighbor(Town *t) { neighbors.push_back(t); }
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);
     void connectRoutes();
     void saveNeighbors(std::string &i) const;
@@ -106,9 +106,11 @@ class Town : public Drawable {
     flatbuffers::Offset<Save::Town> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
-class Route : public Drawable {
+class Route {
     std::array<Town *, 2> towns;
 public:
+    Route(Town *fT, Town *tT) : towns({fT, tT}) {}
+    const std::array<Town *, 2> &getTowns() { return towns; }
     void draw(SDL_Renderer *s);
 };
 
