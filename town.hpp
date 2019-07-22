@@ -97,7 +97,6 @@ class Town {
     void addNeighbor(Town *t) { neighbors.push_back(t); }
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);
     void connectRoutes();
-    void saveNeighbors(std::string &i) const;
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d);
     void resetGoods();
     void saveFrequencies(std::string &u) const;
@@ -109,9 +108,12 @@ class Town {
 class Route {
     std::array<Town *, 2> towns;
 public:
-    Route(Town *fT, Town *tT) : towns({fT, tT}) {}
+    Route(Town *fT, Town *tT);
+    Route(const Save::Route *rt, std::vector<Town> &ts);
     const std::array<Town *, 2> &getTowns() { return towns; }
     void draw(SDL_Renderer *s);
+    void saveData(std::string &i) const;
+    flatbuffers::Offset<Save::Route> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 #endif // TOWN_H

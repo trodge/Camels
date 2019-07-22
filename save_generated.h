@@ -28,6 +28,8 @@ struct Business;
 
 struct Town;
 
+struct Route;
+
 struct Game;
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PerishCounter FLATBUFFERS_FINAL_CLASS {
@@ -1021,8 +1023,7 @@ struct Town FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_TOWNTYPE = 18,
     VT_BUSINESSES = 20,
     VT_GOODS = 22,
-    VT_NEIGHBORS = 24,
-    VT_BUSINESSCOUNTER = 26
+    VT_BUSINESSCOUNTER = 24
   };
   uint32_t id() const {
     return GetField<uint32_t>(VT_ID, 0);
@@ -1054,9 +1055,6 @@ struct Town FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<Good>> *goods() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_GOODS);
   }
-  const flatbuffers::Vector<uint32_t> *neighbors() const {
-    return GetPointer<const flatbuffers::Vector<uint32_t> *>(VT_NEIGHBORS);
-  }
   int32_t businessCounter() const {
     return GetField<int32_t>(VT_BUSINESSCOUNTER, 0);
   }
@@ -1078,8 +1076,6 @@ struct Town FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_GOODS) &&
            verifier.VerifyVector(goods()) &&
            verifier.VerifyVectorOfTables(goods()) &&
-           VerifyOffset(verifier, VT_NEIGHBORS) &&
-           verifier.VerifyVector(neighbors()) &&
            VerifyField<int32_t>(verifier, VT_BUSINESSCOUNTER) &&
            verifier.EndTable();
   }
@@ -1118,9 +1114,6 @@ struct TownBuilder {
   void add_goods(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods) {
     fbb_.AddOffset(Town::VT_GOODS, goods);
   }
-  void add_neighbors(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> neighbors) {
-    fbb_.AddOffset(Town::VT_NEIGHBORS, neighbors);
-  }
   void add_businessCounter(int32_t businessCounter) {
     fbb_.AddElement<int32_t>(Town::VT_BUSINESSCOUNTER, businessCounter, 0);
   }
@@ -1148,14 +1141,12 @@ inline flatbuffers::Offset<Town> CreateTown(
     uint32_t townType = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Business>>> businesses = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods = 0,
-    flatbuffers::Offset<flatbuffers::Vector<uint32_t>> neighbors = 0,
     int32_t businessCounter = 0) {
   TownBuilder builder_(_fbb);
   builder_.add_population(population);
   builder_.add_latitude(latitude);
   builder_.add_longitude(longitude);
   builder_.add_businessCounter(businessCounter);
-  builder_.add_neighbors(neighbors);
   builder_.add_goods(goods);
   builder_.add_businesses(businesses);
   builder_.add_townType(townType);
@@ -1178,12 +1169,10 @@ inline flatbuffers::Offset<Town> CreateTownDirect(
     uint32_t townType = 0,
     const std::vector<flatbuffers::Offset<Business>> *businesses = nullptr,
     const std::vector<flatbuffers::Offset<Good>> *goods = nullptr,
-    const std::vector<uint32_t> *neighbors = nullptr,
     int32_t businessCounter = 0) {
   auto names__ = names ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*names) : 0;
   auto businesses__ = businesses ? _fbb.CreateVector<flatbuffers::Offset<Business>>(*businesses) : 0;
   auto goods__ = goods ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*goods) : 0;
-  auto neighbors__ = neighbors ? _fbb.CreateVector<uint32_t>(*neighbors) : 0;
   return Save::CreateTown(
       _fbb,
       id,
@@ -1196,18 +1185,71 @@ inline flatbuffers::Offset<Town> CreateTownDirect(
       townType,
       businesses__,
       goods__,
-      neighbors__,
       businessCounter);
+}
+
+struct Route FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TOWNS = 4
+  };
+  const flatbuffers::Vector<uint32_t> *towns() const {
+    return GetPointer<const flatbuffers::Vector<uint32_t> *>(VT_TOWNS);
+  }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_TOWNS) &&
+           verifier.VerifyVector(towns()) &&
+           verifier.EndTable();
+  }
+};
+
+struct RouteBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_towns(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> towns) {
+    fbb_.AddOffset(Route::VT_TOWNS, towns);
+  }
+  explicit RouteBuilder(flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  RouteBuilder &operator=(const RouteBuilder &);
+  flatbuffers::Offset<Route> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = flatbuffers::Offset<Route>(end);
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<Route> CreateRoute(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    flatbuffers::Offset<flatbuffers::Vector<uint32_t>> towns = 0) {
+  RouteBuilder builder_(_fbb);
+  builder_.add_towns(towns);
+  return builder_.Finish();
+}
+
+inline flatbuffers::Offset<Route> CreateRouteDirect(
+    flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint32_t> *towns = nullptr) {
+  auto towns__ = towns ? _fbb.CreateVector<uint32_t>(*towns) : 0;
+  return Save::CreateRoute(
+      _fbb,
+      towns__);
 }
 
 struct Game FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_TOWNS = 4,
-    VT_PLAYERTRAVELER = 6,
-    VT_AITRAVELERS = 8
+    VT_ROUTES = 6,
+    VT_PLAYERTRAVELER = 8,
+    VT_AITRAVELERS = 10
   };
   const flatbuffers::Vector<flatbuffers::Offset<Town>> *towns() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Town>> *>(VT_TOWNS);
+  }
+  const flatbuffers::Vector<flatbuffers::Offset<Route>> *routes() const {
+    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Route>> *>(VT_ROUTES);
   }
   const Traveler *playerTraveler() const {
     return GetPointer<const Traveler *>(VT_PLAYERTRAVELER);
@@ -1220,6 +1262,9 @@ struct Game FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_TOWNS) &&
            verifier.VerifyVector(towns()) &&
            verifier.VerifyVectorOfTables(towns()) &&
+           VerifyOffset(verifier, VT_ROUTES) &&
+           verifier.VerifyVector(routes()) &&
+           verifier.VerifyVectorOfTables(routes()) &&
            VerifyOffset(verifier, VT_PLAYERTRAVELER) &&
            verifier.VerifyTable(playerTraveler()) &&
            VerifyOffset(verifier, VT_AITRAVELERS) &&
@@ -1234,6 +1279,9 @@ struct GameBuilder {
   flatbuffers::uoffset_t start_;
   void add_towns(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Town>>> towns) {
     fbb_.AddOffset(Game::VT_TOWNS, towns);
+  }
+  void add_routes(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Route>>> routes) {
+    fbb_.AddOffset(Game::VT_ROUTES, routes);
   }
   void add_playerTraveler(flatbuffers::Offset<Traveler> playerTraveler) {
     fbb_.AddOffset(Game::VT_PLAYERTRAVELER, playerTraveler);
@@ -1256,11 +1304,13 @@ struct GameBuilder {
 inline flatbuffers::Offset<Game> CreateGame(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Town>>> towns = 0,
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Route>>> routes = 0,
     flatbuffers::Offset<Traveler> playerTraveler = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Traveler>>> aITravelers = 0) {
   GameBuilder builder_(_fbb);
   builder_.add_aITravelers(aITravelers);
   builder_.add_playerTraveler(playerTraveler);
+  builder_.add_routes(routes);
   builder_.add_towns(towns);
   return builder_.Finish();
 }
@@ -1268,13 +1318,16 @@ inline flatbuffers::Offset<Game> CreateGame(
 inline flatbuffers::Offset<Game> CreateGameDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const std::vector<flatbuffers::Offset<Town>> *towns = nullptr,
+    const std::vector<flatbuffers::Offset<Route>> *routes = nullptr,
     flatbuffers::Offset<Traveler> playerTraveler = 0,
     const std::vector<flatbuffers::Offset<Traveler>> *aITravelers = nullptr) {
   auto towns__ = towns ? _fbb.CreateVector<flatbuffers::Offset<Town>>(*towns) : 0;
+  auto routes__ = routes ? _fbb.CreateVector<flatbuffers::Offset<Route>>(*routes) : 0;
   auto aITravelers__ = aITravelers ? _fbb.CreateVector<flatbuffers::Offset<Traveler>>(*aITravelers) : 0;
   return Save::CreateGame(
       _fbb,
       towns__,
+      routes__,
       playerTraveler,
       aITravelers__);
 }

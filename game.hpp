@@ -103,13 +103,13 @@ class Game {
     void saveGame();
     void loadGame(const fs::path &p);
     void saveData();
-    void saveRoutes();
+    void generateRoutes();
     const SDL_Rect &getMapRect() const { return mapRect; }
     const std::vector<Nation> &getNations() { return nations; }
     const std::vector<Town> &getTowns() { return towns; }
+    std::vector<TextBox *> getTownBoxes() const;
     const GameData &getData() const { return gameData; }
     Printer &getPrinter() { return printer; }
-    void fillFocusableTowns(std::vector<TextBox *> &fcbls);
     std::shared_ptr<Traveler> createPlayerTraveler(size_t nId, std::string n);
     void pickTown(std::shared_ptr<Traveler> t, size_t tId);
 };

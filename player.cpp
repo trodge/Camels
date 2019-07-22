@@ -66,11 +66,13 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox
                 ts[fT].getBox()->changeBorder(-kTownDBS);
             i = -1;
         }
-        fcbls = std::vector<TextBox *>(neighbors.begin(), neighbors.end());
+        fcbls.reserve(neighbors.size());
+        for (auto &ng : neighbors)
+            fcbls.push_back(ng->getBox());
         break;
     case town:
         i = focusTown;
-        game.fillFocusableTowns(fcbls);
+        fcbls = game.getTownBoxes();
         s = static_cast<int>(fcbls.size());
         d = kTownDBS;
         break;
@@ -516,8 +518,7 @@ void Player::handleTextInput(const SDL_TextInputEvent &t) {
 
 void Player::handleClick(const SDL_MouseButtonEvent &b) {
     if (state == traveling) {
-        std::vector<TextBox *> fcbls;
-        game.fillFocusableTowns(fcbls);
+        std::vector<TextBox *> fcbls = game.getTownBoxes();
         auto clickedTown =
             std::find_if(fcbls.begin(), fcbls.end(), [&b](const TextBox *t) { return t->clickCaptured(b); });
         if (clickedTown != fcbls.end())

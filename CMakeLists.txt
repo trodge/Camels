@@ -4,7 +4,8 @@ set(SRCS main.cpp game.cpp player.cpp nation.cpp town.cpp business.cpp traveler.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+# add -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC for bounds-checking
 if (CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX "${CMAKE_CXX_FLAGS} -Wextra -Wpedantic -Wconversion -Og -g")
 endif (CMAKE_COMPILER_IS_GNUCXX)

@@ -31,7 +31,7 @@
 class Printer {
     unsigned int nationId;
     SDL_Color foreground, background, highlight;
-    int highlightLine;
+    int highlightLine = -1;
     struct FontSize {
         bool operator <(unsigned int sz) { return size < sz; }
         std::array<sdl::FontPtr, kFontCount> fonts;

@@ -103,12 +103,16 @@ table Town {
     townType:uint;
     businesses:[Business];
     goods:[Good];
-    neighbors:[uint];
     businessCounter:int;
+}
+
+table Route {
+    towns:[uint];
 }
 
 table Game {
     towns:[Town];
+    routes:[Route];
     playerTraveler:Traveler;
     aITravelers:[Traveler];
 }

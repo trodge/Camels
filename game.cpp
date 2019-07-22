@@ -468,7 +468,7 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     double rC = routeCount;
     quer = sql::makeQuery(cn, "SELECT from_id, to_id FROM routes");
     while (sqlite3_step(quer.get()) != SQLITE_DONE)
-        routes.push_back(Route(&towns[sqlite3_column_int(quer.get(), 0) + 1], &towns[sqlite3_column_int(quer.get(), 1)]));
+        routes.push_back(Route(&towns[sqlite3_column_int(quer.get(), 0) - 1u], &towns[sqlite3_column_int(quer.get(), 1) - 1u]));
     ldBr.progress(-1);
     ldBr.setText(0, "Connecting routes...");
     for (auto &rt : routes) {
@@ -481,9 +481,6 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
         ldBr.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
-
-    // Load neighbors of final town.
-    towns[tnId - 1].loadNeighbors(towns, neighborIds);
 }
 
 void Game::newGame() {
@@ -544,7 +541,9 @@ void Game::loadGame(const fs::path &p) {
         file.read(buffer, length);
         auto game = Save::GetGame(buffer);
         auto lTowns = game->towns();
-        towns.reserve(lTowns->size());
+        size_t townCount = lTowns->size();
+        towns.reserve(townCount);
+        double tC = townCount;
         LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
                         {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
                         Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
@@ -556,17 +555,23 @@ void Game::loadGame(const fs::path &p) {
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
             SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
             towns.push_back(Town(*lTI, nations, Settings::getTownFontSize(), printer));
-            loadBar.progress(1. / lTowns->size());
+            loadBar.progress(1. / tC);
             loadBar.draw(screen.get());
             SDL_RenderPresent(screen.get());
         }
+        auto lRoutes = game->routes();
+        size_t routeCount = lRoutes->size();
+        routes.reserve(routeCount);
+        double rC = routeCount;
         loadBar.progress(-1);
-        loadBar.setText(0, "Finalizing towns...");
-        for (flatbuffers::uoffset_t i = 0; i < towns.size(); ++i) {
+        loadBar.setText(0, "Connecting routes...");
+        for (auto lRI = lRoutes->begin(); lRI != lRoutes->end(); ++lRI) {
             SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-            std::vector<unsigned int> neighborIds(lTowns->Get(i)->neighbors()->begin(), lTowns->Get(i)->neighbors()->end());
-            towns[i].loadNeighbors(towns, neighborIds);
-            loadBar.progress(1. / static_cast<double>(towns.size()));
+            routes.push_back(Route(*lRI, towns));
+            auto &rtTns = routes.back().getTowns();
+            rtTns[0]->addNeighbor(rtTns[1]);
+            rtTns[1]->addNeighbor(rtTns[0]);
+            loadBar.progress(1. / rC);
             loadBar.draw(screen.get());
             SDL_RenderPresent(screen.get());
         }
@@ -624,40 +629,40 @@ void Game::update() {
 void Game::draw() {
     // Draw UI and game elements.
     SDL_RenderCopy(screen.get(), mapTexture.get(), nullptr, nullptr);
-    for (auto &t : towns)
-        t.drawRoutes(screen.get());
-    for (auto &t : towns)
-        t.draw(screen.get());
-    for (auto &t : aITravelers)
-        t->draw(screen.get());
-    for (auto &t : towns)
-        t.getBox()->draw(screen.get());
+    for (auto &rt : routes)
+        rt.draw(screen.get());
+    for (auto &tn : towns)
+        tn.draw(screen.get());
+    for (auto &tv : aITravelers)
+        tv->draw(screen.get());
+    for (auto &tn : towns)
+        tn.getBox()->draw(screen.get());
     player->draw(screen.get());
     SDL_RenderPresent(screen.get());
 }
 
-void Game::saveRoutes() {
+void Game::generateRoutes() {
     // Recalculate routes between towns and save new routes to database.
     LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
                     {"Finding routes..."}, {0, 255, 0, 255}, Settings::getUIForeground(), Settings::getBigBoxRadius(),
                     Settings::getBigBoxBorder(), Settings::getLoadBarFontSize(), printer);
+    // Have each town find its nearest neighbors.
     for (auto &t : towns) {
         t.findNeighbors(towns, mapSurface.get(), mapRect.x, mapRect.y);
         loadBar.progress(1. / static_cast<double>(towns.size()));
         loadBar.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
+    // Link every route both ways.
     for (auto &t : towns)
         t.connectRoutes();
-    std::string inserts = "INSERT OR IGNORE INTO routes VALUES";
+    // Re-fill routes.
+    routes.clear();
     for (auto &t : towns)
-        t.saveNeighbors(inserts);
-    inserts.pop_back();
-    sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READWRITE);
-    ;
-    sql::StmtPtr comm;
-    comm = sql::makeQuery(conn.get(), inserts.c_str());
-    sqlite3_step(comm.get());
+        for (auto &n : t.getNeighbors())
+            if (t.getId() < n->getId())
+                // Only fill routes one way.
+                routes.push_back(Route(&t, n));
 }
 
 void Game::saveData() {
@@ -674,6 +679,13 @@ void Game::saveData() {
     comm = sql::makeQuery(conn.get(), updates.c_str());
     if (sqlite3_step(comm.get()) != SQLITE_DONE)
         std::cout << "Error updating demand slopes: " << sqlite3_errmsg(conn.get()) << std::endl << updates << std::endl;
+    updates = "INSERT OR IGNORE INTO routes VALUES";
+    for (auto &r : routes)
+        r.saveData(updates);
+    updates.pop_back();
+    comm = sql::makeQuery(conn.get(), updates.c_str());
+    if (sqlite3_step(comm.get()) != SQLITE_DONE)
+        std::cout << "Error inserting routes: " << sqlite3_errmsg(conn.get()) << std::endl << updates << std::endl;
     if (sqlite3_close(conn.get()) != SQLITE_OK)
         std::cout << sqlite3_errmsg(conn.get()) << std::endl;
 }
@@ -685,9 +697,11 @@ void Game::saveGame() {
     flatbuffers::FlatBufferBuilder builder(1024);
     auto sTowns = builder.CreateVector<flatbuffers::Offset<Save::Town>>(
         towns.size(), [this, &builder](size_t i) { return towns[i].save(builder); });
+    auto sRoutes = builder.CreateVector<flatbuffers::Offset<Save::Route>>(
+        routes.size(), [this, &builder](size_t i) { return routes[i].save(builder); });
     auto sAITravelers = builder.CreateVector<flatbuffers::Offset<Save::Traveler>>(
         aITravelers.size(), [this, &builder](size_t i) { return aITravelers[i]->save(builder); });
-    auto game = Save::CreateGame(builder, sTowns, player->getTraveler()->save(builder), sAITravelers);
+    auto game = Save::CreateGame(builder, sTowns, sRoutes, player->getTraveler()->save(builder), sAITravelers);
     builder.Finish(game);
     fs::path path("save");
     path /= player->getTraveler()->getName();
@@ -697,10 +711,12 @@ void Game::saveGame() {
         file.write((const char *)builder.GetBufferPointer(), builder.GetSize());
 }
 
-void Game::fillFocusableTowns(std::vector<TextBox *> &fcbls) {
-    // Fill the focusables vector with towns.
-    for (auto &t : towns)
-        fcbls.push_back(t.getBox());
+std::vector<TextBox *> Game::getTownBoxes() const {
+    std::vector<TextBox *> townBoxes;
+    townBoxes.reserve(towns.size());
+    for (auto &tn : towns)
+        townBoxes.push_back(tn.getBox());
+    return townBoxes;
 }
 
 std::shared_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) {

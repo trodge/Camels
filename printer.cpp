@@ -105,7 +105,7 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
         else
             // Center text horizontally
             dR.x = rt.w / 2 - dR.w / 2;
-        if (i == size_t(highlightLine)) {
+        if (i == static_cast<size_t>(highlightLine)) {
             SDL_Rect hlR = {b, dR.y, rt.w - 2 * b, dR.h};
             SDL_SetRenderDrawColor(swRdr.get(), highlight.r, highlight.g, highlight.b, highlight.a);
             SDL_RenderFillRect(swRdr.get(), &hlR);

@@ -165,3 +165,13 @@ void TextBox::handleTextInput(const SDL_TextInputEvent &tx) {
         setText();
     }
 }
+
+void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
+    // Move parameter boxes into pager's boxes giving them a new page. Sets page to first page.
+    size_t boxCount = boxes.size();
+    indices.push_back(boxCount);
+    boxes.reserve(boxCount);
+    std::move(bxs.begin(), bxs.end(), std::back_inserter(boxes));
+    bxs.clear();
+}
+

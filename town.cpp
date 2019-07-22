@@ -188,8 +188,7 @@ double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }
 void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy) {
     // Find nearest towns that can be traveled to directly from this one on map surface.
     neighbors.clear();
-    size_t max = 5;
-    neighbors.reserve(max);
+    neighbors.reserve(kMaxNeighbors);
     auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
     for (auto &t : ts) {
         int dS = distSq(t.dpx, t.dpy);
@@ -236,11 +235,9 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
             }
         }
     }
-    // take only the closest neighbors
-    if (max > neighbors.size())
-        max = neighbors.size();
-    neighbors =
-        std::vector<Town *>(neighbors.begin(), neighbors.begin() + static_cast<std::vector<Town *>::difference_type>(max));
+    // Take only the closest towns.
+    if (neighbors.size() > kMaxNeighbors)
+        neighbors = std::vector<Town *>(neighbors.begin(), neighbors.begin() + kMaxNeighbors);
 }
 
 void Town::connectRoutes() {
@@ -251,16 +248,6 @@ void Town::connectRoutes() {
         auto it = std::lower_bound(nNs.begin(), nNs.end(), n, closer);
         if (it == nNs.end() || *it != this)
             nNs.insert(it, this);
-    }
-}
-
-void Town::saveNeighbors(std::string &i) const {
-    for (auto &n : neighbors) {
-        i.append(" (");
-        i.append(std::to_string(id));
-        i.append(", ");
-        i.append(std::to_string(n->id));
-        i.append("),");
     }
 }
 
@@ -338,14 +325,34 @@ flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) co
         businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
     auto sGoods =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
-    auto sNeighbors = b.CreateVector<unsigned int>(neighbors.size(), [this](size_t i) { return neighbors[i]->getId(); });
     return Save::CreateTown(b, id, sNames, nation->getId(), longitude, latitude, coastal, population, townType, sBusinesses,
-                            sGoods, sNeighbors, businessCounter);
+                            sGoods, businessCounter);
 }
 
+Route::Route(Town *fT, Town *tT) : towns({fT, tT}) {}
+
+Route::Route(const Save::Route *rt, std::vector<Town> &ts) {
+    auto lTowns = rt->towns();
+    for (size_t i = 0; i < 2; ++i)
+        towns[1] = &ts[lTowns->Get(1)];
+}
 
 void Route::draw(SDL_Renderer *s) {
     const SDL_Color &col = Settings::getRouteColor();
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
     SDL_RenderDrawLine(s, towns[0]->getDPX(), towns[0]->getDPY(), towns[1]->getDPX(), towns[1]->getDPY());
+}
+
+void Route::saveData(std::string& i) const {
+    i.append(" (");
+    i.append(std::to_string(towns[0]->getId()));
+    i.append(", ");
+    i.append(std::to_string(towns[1]->getId()));
+    i.append("),");
+}
+
+
+flatbuffers::Offset<Save::Route> Route::save(flatbuffers::FlatBufferBuilder &b) const {
+    auto sTowns = b.CreateVector<unsigned int>(towns.size(), [this](size_t i) { return towns[i]->getId(); });
+    return Save::CreateRoute(b, sTowns);
 }

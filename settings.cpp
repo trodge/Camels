@@ -50,7 +50,7 @@ int Settings::tradeFontSize;
 double Settings::scale;
 int Settings::dayLength;
 unsigned int Settings::businessHeadStart;
-unsigned int Settings::businessRunTime;
+int Settings::businessRunTime;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
 double Settings::townProfit;
 int Settings::minPriceDivisor;

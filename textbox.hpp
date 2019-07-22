@@ -106,14 +106,11 @@ public:
 };
 
 class Pager {
-    std::vector<std::unique_ptr<TextBox>> &boxes; // boxes this pager works on
-    std::vector<size_t> indices;                  // indices of page breaks in boxes
-    std::vector<size_t>::iterator page;           // iterator to index of current page
-    std::vector<std::unique_ptr<TextBox>> hidden; // boxes not shown on current page
+    std::vector<std::unique_ptr<TextBox>> boxes; // boxes this pager manages
+    std::vector<size_t> indices;                  // indices to page breaks in boxes
+    std::vector<size_t>::iterator pageIt;           // iterator to current page
 public:
-    Pager(std::vector<std::unique_ptr<TextBox>> &bxs);
-    void addIndex(size_t idx) { indices.push_back(idx); }
-    void hideBoxes();
+    void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void nextPage();
 };
 
