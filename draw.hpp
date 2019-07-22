@@ -108,12 +108,6 @@ inline TexturePtr makeTextureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *
 inline FontPtr openFont(const char *file, int ptsize) { return makeResource(TTF_OpenFont, file, ptsize); }
 } // namespace sdl
 
-class Drawable {
-public:
-    virtual ~Drawable() {}
-    virtual void draw(SDL_Renderer *s) = 0;
-};
-
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
 void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl);
 void addCircleSymmetryPoints(std::vector<SDL_Point> ps, int cx, int cy, int x, int y);
