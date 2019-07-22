@@ -29,7 +29,7 @@
 #include "focusable.hpp"
 
 class TextBox : public Focusable {
-  protected:
+protected:
     SDL_Rect rect;
     bool fixedSize;
     std::vector<std::string> text;
@@ -52,17 +52,17 @@ class TextBox : public Focusable {
     TextBox(Printer &pr) : printer(pr) {}
     void setBorder(int b);
 
-  public:
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr);
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            bool iN, int b, int r, int fS, Printer &pr);
-    TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN, int b,
-            int r, int fS, Printer &pr);
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
+public:
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
+            unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr);
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
+            unsigned int i, bool iN, int b, int r, int fS, Printer &pr);
+    TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
             int b, int r, int fS, Printer &pr);
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-            int fS, Printer &pr);
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
+            unsigned int i, int b, int r, int fS, Printer &pr);
+    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b,
+            int r, int fS, Printer &pr);
     virtual ~TextBox() {}
     virtual void setText();
     void setText(const std::vector<std::string> &tx) {
@@ -109,6 +109,18 @@ class TextBox : public Focusable {
         changeBorder(-2);
     }
     virtual int getHighlightLine() const { return -1; }
+};
+
+class Pager {
+    std::vector<std::unique_ptr<TextBox>> &boxes; // boxes this pager works on
+    std::vector<size_t> indices;                  // indices of page breaks in boxes
+    std::vector<size_t>::iterator page;           // iterator to index of current page
+    std::vector<std::unique_ptr<TextBox>> hidden; // boxes not shown on current page
+public:
+    Pager(std::vector<std::unique_ptr<TextBox>> &bxs);
+    void addIndex(size_t idx) { indices.push_back(idx); }
+    void hideBoxes();
+    void nextPage();
 };
 
 #endif // TEXTBOX_H

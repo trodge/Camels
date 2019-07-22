@@ -41,14 +41,6 @@ void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
-void Player::Pager::hideBoxes() {
-    // Hide boxes that are not on the current page in the hidden vector.
-    for (auto hideIt = boxes.begin() + *page;
-         hideIt != boxes.end() && page != indices.end() && hideIt != boxes.begin() + *(page + 1u); ++hideIt)
-         // Loop over boxes between page indices.
-        hidden.push_back(std::move(*hideIt));
-}
-
 void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls) {
     std::vector<Town *> neighbors;
     switch (g) {

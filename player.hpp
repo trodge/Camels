@@ -33,17 +33,6 @@ class Game;
 class Player {
     std::shared_ptr<Traveler> traveler;
     std::vector<std::unique_ptr<TextBox>> boxes, storedBoxes;
-    class Pager {
-        std::vector<std::unique_ptr<TextBox>> &boxes;
-        std::vector<size_t> indices;                  // indices of page breaks in boxes
-        std::vector<size_t>::iterator page;           // iterator to index of current page
-        std::vector<std::unique_ptr<TextBox>> hidden; // boxes not shown on current page
-    public:
-        Pager(std::vector<std::unique_ptr<TextBox>> &bxs) : boxes(bxs) {}
-        void addIndex(size_t idx) { indices.push_back(idx); }
-        void hideBoxes();
-        void nextPage();
-    };
     int focusBox = -1; // index of box currently focused, -1 if no focus
     Game &game;
     Printer &printer;
