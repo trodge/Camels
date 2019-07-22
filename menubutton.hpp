@@ -46,17 +46,13 @@ class MenuButton : virtual public TextBox {
                int fS, Printer &pr, const std::function<void()> &oC)
         : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, nullptr, pr, oC) {}
     virtual ~MenuButton() {}
+    void changeBorder(int dBS);
     void setKey(const SDL_Keycode &k) { key = k; }
     SDL_Keycode getKey() const { return key; }
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;
     virtual void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &) {}
     virtual void handleClick(const SDL_MouseButtonEvent &b);
-    void focus() { changeBorder(2); }
-    void unFocus() {
-        invColors = clicked;
-        changeBorder(-2);
-    }
 };
 
 #endif // MENUBUTTON_H

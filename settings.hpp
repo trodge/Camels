@@ -18,7 +18,7 @@
  */
 
 #ifndef SETTINGS_H
-#define SETTINGS_HS
+#define SETTINGS_H
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/property_tree/ptree.hpp>

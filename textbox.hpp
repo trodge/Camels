@@ -26,12 +26,13 @@
 
 #include <SDL2/SDL.h>
 
-#include "focusable.hpp"
+#include "draw.hpp"
+#include "printer.hpp"
 
-class TextBox : public Focusable {
+class TextBox : public Drawable {
 protected:
     SDL_Rect rect;
-    bool fixedSize;
+    bool fixedSize, canFocus = false;
     std::vector<std::string> text;
     size_t lines;
     SDL_Color foreground;
@@ -64,6 +65,16 @@ public:
     TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b,
             int r, int fS, Printer &pr);
     virtual ~TextBox() {}
+    virtual SDL_Keycode getKey() const { return SDLK_UNKNOWN; }
+    const SDL_Rect &getRect() const { return rect; }
+    bool getCanFocus() const { return canFocus; }
+    const std::vector<std::string> &getText() const { return text; }
+    const std::string &getText(size_t i) { return text[i]; }
+    virtual const std::string &getItem() const { return text.back(); }
+    bool getClicked() const { return clicked; }
+    unsigned int getId() const { return id; }
+    int getDivisor() const { return fontSize; }
+    virtual int getHighlightLine() const { return -1; }
     virtual void setText();
     void setText(const std::vector<std::string> &tx) {
         text = tx;
@@ -79,36 +90,19 @@ public:
     }
     virtual void addItem(const std::string &i) { addText(i); }
     void toggleLock() { canFocus = !canFocus; }
-    void changeBorder(int db) { setBorder(border + db); }
+    virtual void changeBorder(int dBS) { setBorder(border + dBS); }
     void setInvColors(bool i);
     void setClicked(bool c);
     virtual void setKey(const SDL_Keycode &) {}
     virtual void setHighlightLine(int) {}
-    virtual SDL_Keycode getKey() const { return SDLK_UNKNOWN; }
-    const SDL_Rect &getRect() const { return rect; }
     void place(int x, int y, std::vector<SDL_Rect> &drawn);
     void move(int dx, int dy);
     virtual void draw(SDL_Renderer *s);
-    const std::vector<std::string> &getText() const { return text; }
-    const std::string &getText(size_t i) { return text[i]; }
-    virtual const std::string &getItem() const { return text.back(); }
-    bool getClicked() const { return clicked; }
-    unsigned int getId() const { return id; }
-    int getDivisor() const { return fontSize; }
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;
     bool clickCaptured(const SDL_MouseButtonEvent &b) const;
     virtual void handleKey(const SDL_KeyboardEvent &k);
     virtual void handleTextInput(const SDL_TextInputEvent &t);
     virtual void handleClick(const SDL_MouseButtonEvent &) {}
-    virtual void focus() {
-        SDL_StartTextInput();
-        changeBorder(2);
-    }
-    virtual void unFocus() {
-        SDL_StopTextInput();
-        changeBorder(-2);
-    }
-    virtual int getHighlightLine() const { return -1; }
 };
 
 class Pager {

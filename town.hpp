@@ -40,7 +40,7 @@ struct GameData;
 class Nation;
 class Traveler;
 
-class Town : public Focusable {
+class Town : public Drawable {
     unsigned int id;
     std::unique_ptr<TextBox> box;
     const Nation *nation = nullptr;
@@ -67,6 +67,7 @@ class Town : public Focusable {
     Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr);
     bool operator==(const Town &other) const;
     unsigned int getId() const { return id; }
+    TextBox *getBox() const { return box.get(); }
     std::string getName() const { return box->getText()[0]; }
     const Nation *getNation() const { return nation; }
     double getLongitude() const { return longitude; }
@@ -78,18 +79,16 @@ class Town : public Focusable {
     const Good &getGood(size_t i) const { return goods[i]; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<std::shared_ptr<Traveler>> &getTravelers() const { return travelers; }
+    int getDPX() const { return dpx; }
+    int getDPY() const { return dpy; }
     void addTraveler(std::shared_ptr<Traveler> t) { travelers.push_back(t); }
     void removeTraveler(const std::shared_ptr<Traveler> t);
     void clearTravelers() { travelers.clear(); }
-    void focus() { box->changeBorder(1); }
-    void unFocus() { box->changeBorder(-1); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
     void toggleMaxGoods() { maxGoods = !maxGoods; }
     void placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s);
     void placeText(std::vector<SDL_Rect> &drawn) { box->place(dpx, dpy, drawn); }
-    void drawRoutes(SDL_Renderer *s);
-    void drawDot(SDL_Renderer *s);
-    void drawText(SDL_Renderer *s) { box->draw(s); }
+    void draw(SDL_Renderer *s);
     void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
@@ -105,6 +104,12 @@ class Town : public Focusable {
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d);
     void saveDemand(std::string &u) const;
     flatbuffers::Offset<Save::Town> save(flatbuffers::FlatBufferBuilder &b) const;
+};
+
+class Route : public Drawable {
+    std::array<Town *, 2> towns;
+public:
+    void draw(SDL_Renderer *s);
 };
 
 #endif // TOWN_H

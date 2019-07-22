@@ -60,7 +60,6 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
       latitude(t->latitude()), coastal(t->coastal()), population(static_cast<unsigned long>(t->population())),
       townType(t->townType()), businessCounter(t->businessCounter()) {
     // Load a town from the given flatbuffers save object.
-    canFocus = true;
     SDL_Rect rt = {0, 0, 0, 0};
     auto lNames = t->names();
     std::vector<std::string> names;
@@ -124,15 +123,7 @@ void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
     drawn.push_back(r);
 }
 
-void Town::drawRoutes(SDL_Renderer *s) {
-    const SDL_Color &col = Settings::getRouteColor();
-    SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
-    for (auto &n : neighbors) {
-        SDL_RenderDrawLine(s, dpx, dpy, n->dpx, n->dpy);
-    }
-}
-
-void Town::drawDot(SDL_Renderer *s) {
+void Town::draw(SDL_Renderer *s) {
     const SDL_Rect &bR = box->getRect();
     SDL_Rect lR = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
     const SDL_Color &fg = nation->getForeground();
@@ -357,4 +348,11 @@ flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) co
     auto sNeighbors = b.CreateVector<unsigned int>(neighbors.size(), [this](size_t i) { return neighbors[i]->getId(); });
     return Save::CreateTown(b, id, sNames, nation->getId(), longitude, latitude, coastal, population, townType, sBusinesses,
                             sGoods, sNeighbors, businessCounter);
+}
+
+
+void Route::draw(SDL_Renderer *s) {
+    const SDL_Color &col = Settings::getRouteColor();
+    SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
+    SDL_RenderDrawLine(s, towns[0]->getDPX(), towns[0]->getDPY(), towns[1]->getDPX(), towns[1]->getDPY());
 }

@@ -41,74 +41,80 @@ void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
-void Player::prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls) {
+void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls) {
     std::vector<Town *> neighbors;
     switch (g) {
-    case Focusable::box:
+    case box:
         i = focusBox;
         s = static_cast<int>(boxes.size());
+        d = kBoxDBS;
         for (auto &b : boxes) fcbls.push_back(b.get());
         break;
-    case Focusable::neighbor:
+    case neighbor:
         neighbors = traveler->getTown()->getNeighbors();
         i = static_cast<int>(
             std::find_if(neighbors.begin(), neighbors.end(),
                          [this](Town *t) { return t->getId() == static_cast<unsigned int>(focusTown + 1); }) -
             neighbors.begin());
         s = static_cast<int>(neighbors.size());
+        d = kTownDBS;
         if (i == s) {
-            if (focusTown > -1 && static_cast<size_t>(focusTown) < game.getTowns().size())
-                game.unFocusTown(static_cast<size_t>(focusTown));
+            // Currently focused town is last neighbor.
+            auto &ts = game.getTowns();
+            size_t fT = focusTown;
+            if (fT < ts.size())
+                ts[fT].getBox()->changeBorder(-kTownDBS);
             i = -1;
         }
-        fcbls = std::vector<Focusable *>(neighbors.begin(), neighbors.end());
+        fcbls = std::vector<TextBox *>(neighbors.begin(), neighbors.end());
         break;
-    case Focusable::town:
+    case town:
         i = focusTown;
         game.fillFocusableTowns(fcbls);
         s = static_cast<int>(fcbls.size());
+        d = kTownDBS;
         break;
     }
 }
 
-void Player::finishFocus(int f, Focusable::FocusGroup g, const std::vector<Focusable *> &fcbls) {
+void Player::finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls) {
     switch (g) {
-    case Focusable::box:
+    case box:
         focusBox = f;
         break;
-    case Focusable::neighbor:
+    case neighbor:
         if (f > -1)
             focusTown = static_cast<int>(fcbls[static_cast<size_t>(f)]->getId() - 1);
         else
             focusTown = -1;
         break;
-    case Focusable::town:
+    case town:
         focusTown = f;
         break;
     }
 }
 
-void Player::focus(int f, Focusable::FocusGroup g) {
+void Player::focus(int f, FocusGroup g) {
     // Focus item f from group g.
-    int i, s;
-    std::vector<Focusable *> fcbls;
-    prepFocus(g, i, s, fcbls);
-    if (i > -1 && i < s) fcbls[static_cast<size_t>(i)]->unFocus();
-    if (f > -1 && f < s) fcbls[static_cast<size_t>(f)]->focus();
+    int i, s, d;
+    std::vector<TextBox *> fcbls;
+    prepFocus(g, i, s, d, fcbls);
+    if (i > -1 && i < s) fcbls[static_cast<size_t>(i)]->changeBorder(-d);
+    if (f > -1 && f < s) fcbls[static_cast<size_t>(f)]->changeBorder(d);
     finishFocus(f, g, fcbls);
 }
 
-void Player::focusPrev(Focusable::FocusGroup g) {
+void Player::focusPrev(FocusGroup g) {
     // Focus previous item from group g.
-    int i, s;
-    std::vector<Focusable *> fcbls;
-    prepFocus(g, i, s, fcbls);
+    int i, s, d;
+    std::vector<TextBox *> fcbls;
+    prepFocus(g, i, s, d, fcbls);
     if (i == -1) {
         i = s;
         while (i--)
             if (fcbls[static_cast<size_t>(i)]->getCanFocus()) break;
     } else {
-        fcbls[static_cast<size_t>(i)]->unFocus();
+        fcbls[static_cast<size_t>(i)]->changeBorder(-d);;
         int j = i;
         while (--i != j)
             if (i < 0)
@@ -117,16 +123,16 @@ void Player::focusPrev(Focusable::FocusGroup g) {
                 break;
     }
     if (i > -1) {
-        fcbls[static_cast<size_t>(i)]->focus();
+        fcbls[static_cast<size_t>(i)]->changeBorder(d);
         finishFocus(i, g, fcbls);
     }
 }
 
-void Player::focusNext(Focusable::FocusGroup g) {
+void Player::focusNext(FocusGroup g) {
     // Focus next item from group g.
-    int i, s;
-    std::vector<Focusable *> fcbls;
-    prepFocus(g, i, s, fcbls);
+    int i, s, d;
+    std::vector<TextBox *> fcbls;
+    prepFocus(g, i, s, d, fcbls);
     if (i == -1) {
         // Nothing was focused, find first focusable item.
         while (++i < s)
@@ -134,7 +140,7 @@ void Player::focusNext(Focusable::FocusGroup g) {
         // No focusable item was found in group.
         return;
     } else {
-        fcbls[static_cast<size_t>(i)]->unFocus();
+        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
         int j = i;
         while (++i != j)
             // Loop until we come back to the same item.
@@ -143,7 +149,7 @@ void Player::focusNext(Focusable::FocusGroup g) {
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
     }
-    fcbls[static_cast<size_t>(i)]->focus();
+    fcbls[static_cast<size_t>(i)]->changeBorder(d);
     finishFocus(i, g, fcbls);
 }
 
@@ -364,7 +370,7 @@ void Player::setState(UIState s) {
                                                   traveler->getNation()->getBackground(), bBB, bBR, fFS, printer));
         break;
     }
-    focus(0, Focusable::box);
+    focus(0, box);
     state = s;
 }
 
@@ -373,7 +379,7 @@ void Player::toggleState(UIState s) {
     if (s == quitting && state == loading) s = loading;
     if (s == quitting || s == loading) {
         // Store or restore UI state.
-        focus(-1, Focusable::box);
+        focus(-1, box);
         std::swap(boxes, storedBoxes);
         std::swap(pause, storedPause);
         std::swap(state, storedState);
@@ -412,7 +418,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                                          [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
             if (keyedBox != boxes.end()) {
                 // A box's key was pressed.
-                focus(static_cast<int>(std::distance(boxes.begin(), keyedBox)), Focusable::box);
+                focus(static_cast<int>(std::distance(boxes.begin(), keyedBox)), box);
                 (*keyedBox)->handleKey(k);
             }
         }
@@ -431,25 +437,25 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             break;
                         case SDLK_n:
                             if (mod & KMOD_SHIFT)
-                                focusPrev(Focusable::neighbor);
+                                focusPrev(neighbor);
                             else
-                                focusNext(Focusable::neighbor);
+                                focusNext(neighbor);
                             break;
                         }
                         break;
                     case trading:
                         switch (k.keysym.sym) {
                         case SDLK_LEFT:
-                            focusPrev(Focusable::box);
+                            focusPrev(box);
                             break;
                         case SDLK_RIGHT:
-                            focusNext(Focusable::box);
+                            focusNext(box);
                             break;
                         case SDLK_UP:
-                            for (int i = 0; i < 7; ++i) focusPrev(Focusable::box);
+                            for (int i = 0; i < 7; ++i) focusPrev(box);
                             break;
                         case SDLK_DOWN:
-                            for (int i = 0; i < 7; ++i) focusNext(Focusable::box);
+                            for (int i = 0; i < 7; ++i) focusNext(box);
                             break;
                         case SDLK_COMMA:
                             traveler->changePortion(-0.1);
@@ -472,9 +478,9 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                 break;
             case SDLK_TAB:
                 if (mod & KMOD_SHIFT)
-                    focusPrev(Focusable::box);
+                    focusPrev(box);
                 else
-                    focusNext(Focusable::box);
+                    focusNext(box);
                 break;
             }
         } else
@@ -510,12 +516,12 @@ void Player::handleTextInput(const SDL_TextInputEvent &t) {
 
 void Player::handleClick(const SDL_MouseButtonEvent &b) {
     if (state == traveling) {
-        std::vector<Focusable *> fcbls;
+        std::vector<TextBox *> fcbls;
         game.fillFocusableTowns(fcbls);
         auto clickedTown =
-            std::find_if(fcbls.begin(), fcbls.end(), [&b](const Focusable *t) { return t->clickCaptured(b); });
+            std::find_if(fcbls.begin(), fcbls.end(), [&b](const TextBox *t) { return t->clickCaptured(b); });
         if (clickedTown != fcbls.end())
-            focus(static_cast<int>(std::distance(fcbls.begin(), clickedTown)), Focusable::town);
+            focus(static_cast<int>(std::distance(fcbls.begin(), clickedTown)), town);
     }
     if (!boxes.empty()) {
         auto clickedBox = std::find_if(boxes.begin(), boxes.end(), [&b](const std::unique_ptr<TextBox> &t) {
@@ -523,10 +529,10 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
         });
         if (clickedBox != boxes.end()) {
             int cI = static_cast<int>(std::distance(boxes.begin(), clickedBox));
-            if (cI != focusBox) focus(cI, Focusable::box);
+            if (cI != focusBox) focus(cI, box);
             (*clickedBox)->handleClick(b);
         } else
-            focus(-1, Focusable::box);
+            focus(-1, box);
     }
 }
 

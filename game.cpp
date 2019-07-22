@@ -694,10 +694,10 @@ void Game::saveGame() {
         file.write((const char *)builder.GetBufferPointer(), builder.GetSize());
 }
 
-void Game::fillFocusableTowns(std::vector<Focusable *> &fcbls) {
+void Game::fillFocusableTowns(std::vector<TextBox *> &fcbls) {
     // Fill the focusables vector with towns.
     for (auto &t : towns)
-        fcbls.push_back(&t);
+        fcbls.push_back(t.getBox());
 }
 
 std::shared_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) {

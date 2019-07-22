@@ -20,7 +20,6 @@
 #ifndef SELECTBUTTON_H
 #define SELECTBUTTON_H
 
-#include "focusable.hpp"
 #include "menubutton.hpp"
 #include "scrollbox.hpp"
 

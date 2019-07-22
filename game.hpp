@@ -106,8 +106,7 @@ class Game {
     const std::vector<Town> &getTowns() { return towns; }
     const GameData &getData() const { return gameData; }
     Printer &getPrinter() { return printer; }
-    void unFocusTown(size_t i) { towns[i].unFocus(); }
-    void fillFocusableTowns(std::vector<Focusable *> &fcbls);
+    void fillFocusableTowns(std::vector<TextBox *> &fcbls);
     std::shared_ptr<Traveler> createPlayerTraveler(size_t nId, std::string n);
     void pickTown(std::shared_ptr<Traveler> t, size_t tId);
 };

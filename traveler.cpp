@@ -382,7 +382,8 @@ void Traveler::refreshStorageButtons(std::vector<std::unique_ptr<TextBox>>& bs, 
     // Delete and re-create storage buttons to reflect changes.
     bs.erase(bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(sBI), bs.end());
     createStorageButtons(bs, fB, sBI, pr);
-    if (fB > -1 && static_cast<size_t>(fB) < bs.size()) bs[static_cast<size_t>(fB)]->focus();
+    // Change border on the focused box.
+    if (fB > -1 && static_cast<size_t>(fB) < bs.size()) bs[static_cast<size_t>(fB)]->changeBorder(kBoxDBS);
 }
 
 void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>>& bs, const int& fB, size_t sBI, Printer& pr) {
@@ -557,7 +558,7 @@ void Traveler::equip(unsigned int pI) {
 void Traveler::refreshEquipButtons(std::vector<std::unique_ptr<TextBox>>& bs, const int& fB, size_t eBI, Printer& pr) {
     bs.erase(bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(eBI), bs.end());
     createEquipButtons(bs, fB, eBI, pr);
-    if (fB > -1 && static_cast<size_t>(fB) < bs.size()) bs[static_cast<size_t>(fB)]->focus();
+    if (fB > -1 && static_cast<size_t>(fB) < bs.size()) bs[static_cast<size_t>(fB)]->changeBorder(kBoxDBS);
 }
 
 void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>>& bs, const int& fB, size_t eBI, Printer& pr) {
@@ -858,7 +859,7 @@ void Traveler::loot(Traveler& t) {
 void Traveler::refreshLootButtons(std::vector<std::unique_ptr<TextBox>>& bs, const int& fB, size_t lBI, Printer& pr) {
     bs.erase(bs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(lBI), bs.end());
     createLootButtons(bs, fB, lBI, pr);
-    if (fB > -1 && static_cast<size_t>(fB) < bs.size()) bs[static_cast<size_t>(fB)]->focus();
+    if (fB > -1 && static_cast<size_t>(fB) < bs.size()) bs[static_cast<size_t>(fB)]->changeBorder(kBoxDBS);
 }
 
 void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>>& bs, const int& fB, size_t lBI, Printer& pr) {

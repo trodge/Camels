@@ -73,11 +73,12 @@ class Player {
     };
     std::array<ButtonInfo, 7> travelButtonsInfo;
     std::array<ButtonInfo, 7> stopButtonsInfo;
-    void prepFocus(Focusable::FocusGroup g, int &i, int &s, std::vector<Focusable *> &fcbls);
-    void finishFocus(int f, Focusable::FocusGroup g, const std::vector<Focusable *> &fcbls);
-    void focus(int f, Focusable::FocusGroup g);
-    void focusPrev(Focusable::FocusGroup g);
-    void focusNext(Focusable::FocusGroup g);
+    enum FocusGroup { box, neighbor, town };
+    void prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls);
+    void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);
+    void focus(int f, FocusGroup g);
+    void focusPrev(FocusGroup g);
+    void focusNext(FocusGroup g);
     void updatePortionBox();
     void createStorageView(const Town *t);
     void setState(UIState s);
