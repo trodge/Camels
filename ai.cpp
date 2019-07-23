@@ -329,7 +329,7 @@ void AI::setNearby(const Town *t, const Town *tT, unsigned int i) {
     if (i)
         // Town t is within i steps of town tT.
         for (auto &n : t->getNeighbors())
-            if (n != tT and
+            if (n != tT &&
                 std::find_if(nearby.begin(), nearby.end(), [n](TownInfo t) { return t.town == n; }) == nearby.end()) {
                 // Neighbor n is not the current town and not already in nearby towns.
                 nearby.push_back({n, 0, 0});
