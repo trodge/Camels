@@ -24,8 +24,8 @@ void Printer::setSize(unsigned int sz) {
     if (fontSizeIt == fontSizes.end() || fontSizeIt->size != sz) {
         fontSizeIt = fontSizes.insert(
             fontSizeIt, {{sdl::openFont("DejaVuSerif.ttf", sz), sdl::openFont("DejaVuSans.ttf", sz),
-                          sdl::openFont("NotoSerifDevanagari-Regular.ttf", sz),
-                          sdl::openFont("wqy-microhei-lite.ttc", sz), sdl::openFont("NotoSerifBengali-Regular.ttf", sz)},
+                          sdl::openFont("NotoSerifDevanagari-Regular.ttf", sz), sdl::openFont("wqy-microhei-lite.ttc", sz),
+                          sdl::openFont("NotoSerifBengali-Regular.ttf", sz)},
                          sz});
     }
 }
@@ -54,7 +54,8 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
         else
             tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), t.c_str(), foreground));
         tWs.push_back(tSs.back()->w);
-        if (tWs.back() > mW) mW = tWs.back();
+        if (tWs.back() > mW)
+            mW = tWs.back();
         tHs.push_back(TTF_FontHeight(fI->get()));
         mH += tHs.back();
         switch (nationId) {
@@ -75,14 +76,18 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
             fI += 1;
         }
     }
-    if (!rt.w) rt.w = mW + 2 * b;
-    if (!rt.h) rt.h = mH + 2 * b;
+    if (!rt.w)
+        rt.w = mW + 2 * b;
+    if (!rt.h)
+        rt.h = mH + 2 * b;
 
     sdl::SurfacePtr p(sdl::makeSurface(rt.w, rt.h));
     sdl::RendererPtr swRdr(sdl::makeSoftwareRenderer(p.get()));
     // Draw border.
     SDL_Rect dR = {0, 0, rt.w, rt.h};
-    if (true) { drawRoundedRectangle(swRdr.get(), r, &dR, foreground); }
+    if (true) {
+        drawRoundedRectangle(swRdr.get(), r, &dR, foreground);
+    }
     dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
     drawRoundedRectangle(swRdr.get(), r, &dR, background);
     if (img) {
