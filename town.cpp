@@ -261,7 +261,7 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
                 std::string rBN = rB->getText()[0];
                 for (auto &ip : b.getInputs()) {
                     std::string ipN = goods[ip.getId()].getName();
-                    if (rBN.substr(0, rBN.find(' ')) == ipN.substr(0, ipN.find(' ')) || 
+                    if (rBN.substr(0, rBN.find(' ')) == ipN.substr(0, ipN.find(' ')) ||
                         std::find(mMs.begin(), mMs.end(), ipN) != mMs.end()) {
                         inputMatch = true;
                         break;
@@ -343,14 +343,13 @@ void Route::draw(SDL_Renderer *s) {
     SDL_RenderDrawLine(s, towns[0]->getDPX(), towns[0]->getDPY(), towns[1]->getDPX(), towns[1]->getDPY());
 }
 
-void Route::saveData(std::string& i) const {
+void Route::saveData(std::string &i) const {
     i.append(" (");
     i.append(std::to_string(towns[0]->getId()));
     i.append(", ");
     i.append(std::to_string(towns[1]->getId()));
     i.append("),");
 }
-
 
 flatbuffers::Offset<Save::Route> Route::save(flatbuffers::FlatBufferBuilder &b) const {
     auto sTowns = b.CreateVector<unsigned int>(towns.size(), [this](size_t i) { return towns[i]->getId(); });

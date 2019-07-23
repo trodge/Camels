@@ -107,7 +107,8 @@ class Town {
 
 class Route {
     std::array<Town *, 2> towns;
-public:
+
+  public:
     Route(Town *fT, Town *tT);
     Route(const Save::Route *rt, std::vector<Town> &ts);
     const std::array<Town *, 2> &getTowns() { return towns; }
