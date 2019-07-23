@@ -31,24 +31,24 @@
 
 class TextBox {
 protected:
-    SDL_Rect rect;
-    bool fixedSize, canFocus = false;
+    SDL_Rect rect = {0, 0, 0, 0};
+    bool fixedSize = false, canFocus = false;
     std::vector<std::string> text;
-    size_t lines;
-    SDL_Color foreground;
-    SDL_Color background;
-    unsigned int id;
-    bool isNation;
-    int border;
-    int radius; // radius of rounded corner circles
+    size_t lines = 0;
+    SDL_Color foreground = {0, 0, 0, 0};
+    SDL_Color background = {0, 0, 0, 0};
+    unsigned int id = 0;
+    bool isNation = false;
+    int border = 0;
+    int radius = 0; // radius of rounded corner circles
     bool invColors = false;
     bool clicked = false;
-    int fontSize;
+    int fontSize = -1;
     int lineHeight = -1;
     sdl::SurfacePtr surface;
     sdl::TexturePtr texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface
-    SDL_Surface *image;
+    SDL_Surface *image = nullptr;
     Printer &printer;
     TextBox(Printer &pr) : printer(pr) {}
     void setBorder(int b);
