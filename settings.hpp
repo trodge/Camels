@@ -58,9 +58,9 @@ class Settings {
     static int tradeRadius;
     static int tradeFontSize;
     static double scale;
-    static int dayLength; // length of a day in milliseconds
+    static int dayLength;                  // length of a day in milliseconds
     static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
-    static int businessRunTime; // time between business cycles in milliseconds
+    static int businessRunTime;            // time between business cycles in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static double townProfit;
     static int minPriceDivisor;
