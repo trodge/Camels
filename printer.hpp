@@ -28,7 +28,6 @@
 #include "constants.hpp"
 #include "draw.hpp"
 
-
 struct Image {
     SDL_Surface *surface;
     SDL_Rect rect;
@@ -45,9 +44,7 @@ class Printer {
     };
     std::vector<FontSize> fontSizes;
     std::vector<FontSize>::iterator fontSizeIt;
-    enum Alignment {
-        left, right, center
-    };
+    enum Alignment { left, right, center };
 
   public:
     void setSize(unsigned int s);

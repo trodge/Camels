@@ -29,8 +29,6 @@
 #include "draw.hpp"
 #include "printer.hpp"
 
-
-
 class TextBox {
   protected:
     SDL_Rect rect = {0, 0, 0, 0};
@@ -109,8 +107,8 @@ class TextBox {
 
 class Pager {
     std::vector<std::unique_ptr<TextBox>> boxes; // boxes this pager manages
-    std::vector<size_t> indices;          // indices to page breaks in boxes
-    std::vector<size_t>::iterator pageIt; // index of beginning indices of current page
+    std::vector<size_t> indices;                 // indices to page breaks in boxes
+    std::vector<size_t>::iterator pageIt;        // index of beginning indices of current page
   public:
     void addItem(std::unique_ptr<TextBox> &&itm) { boxes.push_back(std::move(itm)); }
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
@@ -120,7 +118,3 @@ class Pager {
 };
 
 #endif // TEXTBOX_H
-
-
-
-

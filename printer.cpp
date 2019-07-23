@@ -36,7 +36,8 @@ int Printer::getFontWidth(const std::string &tx) {
     return w;
 }
 
-sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs) {
+sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r,
+                               const std::vector<Image> &imgs) {
     // Create a new SDL_Surface with the given text printed on it. Nation ID used to determine fonts.
     size_t numLines = tx.size();
     std::vector<int> tWs, tHs;      // Widths and heights for each line of text.

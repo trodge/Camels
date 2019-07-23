@@ -225,7 +225,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL
     std::vector<std::string> tx = {getFullName(mtr)};
     // Find image in game data.
     SDL_Surface *img = oMtr.getImage();
-    std::vector<Image> imgs(1u, {img, {2 * b, 2 * b, img->w, img->h}}); 
+    std::vector<Image> imgs(1u, {img, {2 * b, 2 * b, img->w, img->h}});
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());
