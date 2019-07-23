@@ -21,8 +21,8 @@
 
 TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
                  unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr)
-    : rect(rt), fixedSize(rt.w && rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b),
-      radius(r), fontSize(fS), image(img), printer(pr) {
+    : rect(rt), fixedSize(rt.w && rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
+      fontSize(fS), image(img), printer(pr) {
     setText(tx);
 }
 
@@ -167,11 +167,34 @@ void TextBox::handleTextInput(const SDL_TextInputEvent &tx) {
 }
 
 void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
-    // Move parameter boxes into pager's boxes giving them a new page. Sets page to first page.
+    // Move parameter boxes and pagers into member vectors giving them a new page. Sets page to that page.
     size_t boxCount = boxes.size();
     indices.push_back(boxCount);
+    pageIt = indices.end() - 1;
+    boxCount += bxs.size();
     boxes.reserve(boxCount);
     std::move(bxs.begin(), bxs.end(), std::back_inserter(boxes));
     bxs.clear();
 }
 
+void Pager::advancePage() {
+    // Advance to next page. Prevent advancing past last page.
+    if (pageIt != indices.end() - 1)
+        ++pageIt;
+}
+
+void Pager::recedePage() {
+    // Recede to previous page. Prevent receding past first page.
+    if (pageIt != indices.begin() + 1)
+        --pageIt;
+}
+
+void Pager::draw(SDL_Renderer *s) {
+    // Draw all boxes on the current page.
+    if (!indices.size())
+        return;
+    auto nextPageIt = pageIt + 1;
+    auto stopIt = nextPageIt == indices.end() ? boxes.end() : boxes.begin() + *nextPageIt;
+    for (auto bxIt = boxes.begin() + *pageIt; bxIt != stopIt; ++bxIt)
+        (*bxIt)->draw(s);
+}
