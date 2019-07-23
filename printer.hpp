@@ -28,6 +28,12 @@
 #include "constants.hpp"
 #include "draw.hpp"
 
+
+struct Image {
+    SDL_Surface *surface;
+    SDL_Rect rect;
+};
+
 class Printer {
     unsigned int nationId;
     SDL_Color foreground, background, highlight;
@@ -39,6 +45,9 @@ class Printer {
     };
     std::vector<FontSize> fontSizes;
     std::vector<FontSize>::iterator fontSizeIt;
+    enum Alignment {
+        left, right, center
+    };
 
   public:
     void setSize(unsigned int s);
@@ -51,9 +60,9 @@ class Printer {
     void setNationId(unsigned int n) { nationId = n; }
     int getFontHeight() { return TTF_FontHeight(fontSizeIt->fonts.front().get()); }
     int getFontWidth(const std::string &tx);
-    sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img);
+    sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs);
     sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
-        return print(tx, rt, b, r, nullptr);
+        return print(tx, rt, b, r, std::vector<Image>());
     }
 };
 

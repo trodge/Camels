@@ -36,7 +36,7 @@ int Printer::getFontWidth(const std::string &tx) {
     return w;
 }
 
-sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, SDL_Surface *img) {
+sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs) {
     // Create a new SDL_Surface with the given text printed on it. Nation ID used to determine fonts.
     size_t numLines = tx.size();
     std::vector<int> tWs, tHs;      // Widths and heights for each line of text.
@@ -90,13 +90,14 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     }
     dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
     drawRoundedRectangle(swRdr.get(), r, &dR, background);
-    if (img) {
-        // Center image vertically and place on left side of text
-        dR.w = rt.h - 2 * b;
-        dR.h = rt.h - 2 * b;
-        dR.x = 2 * b;
-        dR.y = rt.h / 2 - dR.h / 2;
-        SDL_BlitSurface(img, nullptr, p.get(), &dR);
+    Alignment justify = center;
+    for (auto &img : imgs) {
+        // Blit image onto its rectangle on printing surface.
+        dR = img.rect;
+        if (dR.x + dR.w / 2 < rt.w / 2)
+            // Found an image on the left side, justify text right
+            justify = right;
+        SDL_BlitSurface(img.surface, nullptr, p.get(), &dR);
     }
     // Center text vertically.
     dR.y = rt.h / 2 - mH / 2;
@@ -104,12 +105,17 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
         // Blit rendered text lines onto one surface.
         dR.w = tWs[i];
         dR.h = tHs[i];
-        if (img)
-            // Justify text right
+        switch (justify) {
+        case left:
+            dR.x = 2 * b;
+            break;
+        case right:
             dR.x = rt.w - dR.w - 2 * b;
-        else
-            // Center text horizontally
+            break;
+        case center:
             dR.x = rt.w / 2 - dR.w / 2;
+            break;
+        }
         if (i == static_cast<size_t>(highlightLine)) {
             SDL_Rect hlR = {b, dR.y, rt.w - 2 * b, dR.h};
             SDL_SetRenderDrawColor(swRdr.get(), highlight.r, highlight.g, highlight.b, highlight.a);

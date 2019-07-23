@@ -38,6 +38,7 @@ class Player {
     std::vector<std::unique_ptr<TextBox>> boxes;
     std::vector<Pager> pagers;
     int focusBox = -1; // index of box currently focused, -1 if no focus
+    int focusPage = -1; // index of page containing focusBox, if any
     Game &game;
     Printer &printer;
     SDL_Rect screenRect;

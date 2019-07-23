@@ -20,15 +20,15 @@
 #include "textbox.hpp"
 
 TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
-                 unsigned int i, bool iN, int b, int r, int fS, SDL_Surface *img, Printer &pr)
+                 unsigned int i, bool iN, int b, int r, int fS, const std::vector<Image> &imgs, Printer &pr)
     : rect(rt), fixedSize(rt.w && rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
-      fontSize(fS), image(img), printer(pr) {
+      fontSize(fS), images(imgs), printer(pr) {
     setText(tx);
 }
 
 TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
                  unsigned int i, bool iN, int b, int r, int fS, Printer &pr)
-    : TextBox(rt, tx, fg, bg, i, iN, b, r, fS, nullptr, pr) {}
+    : TextBox(rt, tx, fg, bg, i, iN, b, r, fS, std::vector<Image>(), pr) {}
 
 TextBox::TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
                  int b, int r, int fS, Printer &pr)
@@ -68,7 +68,7 @@ void TextBox::setText() {
         text = std::vector<std::string>(text.begin(),
                                         text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
     }
-    surface = printer.print(text, rect, border, radius, image);
+    surface = printer.print(text, rect, border, radius, images);
     updateTexture = true;
 
     if (!fixedSize) {

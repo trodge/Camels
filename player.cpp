@@ -281,6 +281,7 @@ void Player::setState(UIState s) {
     case trading:
     case storing:
     case managing:
+        pagers.resize(2);
     case equipping:
     case hiring:
     case attacking:
@@ -328,7 +329,6 @@ void Player::setState(UIState s) {
             traveler->createStorageButtons(boxes, focusBox, storageButtonIndex, printer);
             break;
         case managing:
-            pagers.resize(2);
             traveler->createManageButtons(pagers, printer);
             break;
         case equipping:
@@ -391,22 +391,22 @@ void Player::setState(UIState s) {
 
 void Player::handleKey(const SDL_KeyboardEvent &k) {
     SDL_Keymod mod = SDL_GetModState();
-    if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT) && (mod & KMOD_ALT))
-        modMultiplier = 10000;
-    else if ((mod & KMOD_CTRL) && (mod & KMOD_ALT))
+    if (mod & (KMOD_CTRL | KMOD_SHIFT | KMOD_ALT))
+        modMultiplier = 10000.;
+    else if (mod & (KMOD_CTRL | KMOD_ALT))
         modMultiplier = 0.001;
-    else if ((mod & KMOD_SHIFT) && (mod & KMOD_ALT))
+    else if (mod & (KMOD_SHIFT | KMOD_ALT))
         modMultiplier = 0.01;
-    else if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT))
-        modMultiplier = 1000;
+    else if (mod & (KMOD_CTRL | KMOD_SHIFT))
+        modMultiplier = 1000.;
     else if (mod & KMOD_ALT)
         modMultiplier = 0.1;
     else if (mod & KMOD_SHIFT)
-        modMultiplier = 10;
+        modMultiplier = 10.;
     else if (mod & KMOD_CTRL)
-        modMultiplier = 100;
+        modMultiplier = 100.;
     else
-        modMultiplier = 1;
+        modMultiplier = 1.;
     if (k.state == SDL_PRESSED) {
         // Event is SDL_KEYDOWN
         if (!boxes.empty()) {
@@ -440,6 +440,8 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                         }
                         break;
                     case trading:
+                    case storing:
+                    case managing:
                         switch (k.keysym.sym) {
                         case SDLK_LEFT:
                             focusPrev(box);
