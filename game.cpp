@@ -305,7 +305,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> inputs;
     bIt = businesses.begin();
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
-        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) || 
+        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) ||
             bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {
             // Business ids or modes don't match, flush vector and increment
             bIt->setInputs(inputs);
@@ -323,7 +323,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> outputs;
     bIt = businesses.begin();
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
-        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) || 
+        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) ||
             bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {
             // Business ids or modes don't match, flush vector and increment
             bIt->setOutputs(outputs);
@@ -468,7 +468,8 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     double rC = routeCount;
     quer = sql::makeQuery(cn, "SELECT from_id, to_id FROM routes");
     while (sqlite3_step(quer.get()) != SQLITE_DONE)
-        routes.push_back(Route(&towns[sqlite3_column_int(quer.get(), 0) - 1u], &towns[sqlite3_column_int(quer.get(), 1) - 1u]));
+        routes.push_back(
+            Route(&towns[sqlite3_column_int(quer.get(), 0) - 1u], &towns[sqlite3_column_int(quer.get(), 1) - 1u]));
     ldBr.progress(-1);
     ldBr.setText(0, "Connecting routes...");
     for (auto &rt : routes) {

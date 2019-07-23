@@ -31,11 +31,10 @@
 #include <sqlite3.h>
 
 #include "business.hpp"
+#include "loadbar.hpp"
 #include "nation.hpp"
-#include "town.hpp"
 #include "player.hpp"
 #include "textbox.hpp"
-#include "loadbar.hpp"
 #include "town.hpp"
 #include "traveler.hpp"
 
