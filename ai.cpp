@@ -243,7 +243,7 @@ void AI::autoAttack() {
         auto &gs = traveler.getGoods();
         able.erase(std::remove_if(able.begin(), able.end(),
                                   [this, ourEquipScore, &gs](const std::shared_ptr<Traveler> a) {
-                                      return decisionCriteria[4] < Settings::getCriteriaMax() / 3 or
+                                      return decisionCriteria[4] < Settings::getCriteriaMax() / 3 || 
                                              lootScore(a->getGoods()) * ourEquipScore * decisionCriteria[4] /
                                                      equipScore(a->getEquipment(), a->getStats()) <
                                                  Settings::getAIAttackThreshold();

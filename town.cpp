@@ -261,7 +261,7 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
                 std::string rBN = rB->getText()[0];
                 for (auto &ip : b.getInputs()) {
                     std::string ipN = goods[ip.getId()].getName();
-                    if (rBN.substr(0, rBN.find(' ')) == ipN.substr(0, ipN.find(' ')) or
+                    if (rBN.substr(0, rBN.find(' ')) == ipN.substr(0, ipN.find(' ')) || 
                         std::find(mMs.begin(), mMs.end(), ipN) != mMs.end()) {
                         inputMatch = true;
                         break;

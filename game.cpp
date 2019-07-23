@@ -305,7 +305,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> inputs;
     bIt = businesses.begin();
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
-        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) or
+        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) || 
             bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {
             // Business ids or modes don't match, flush vector and increment
             bIt->setInputs(inputs);
@@ -323,7 +323,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> outputs;
     bIt = businesses.begin();
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
-        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) or
+        if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) || 
             bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {
             // Business ids or modes don't match, flush vector and increment
             bIt->setOutputs(outputs);
@@ -613,7 +613,7 @@ void Game::update() {
     currentTime = SDL_GetTicks();
     unsigned int elapsed = currentTime - lastTime;
     lastTime = currentTime;
-    if (not(player->getPause())) {
+    if (!(player->getPause())) {
         for (auto &t : towns)
             t.update(elapsed);
         for (auto &t : aITravelers) {

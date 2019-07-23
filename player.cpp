@@ -389,9 +389,9 @@ void Player::toggleState(UIState s) {
             // Stored boxes have been restored, no need to create new boxes.
             return;
     }
-    if (state == s && not(s == quitting || s == loading))
+    if (state == s && !(s == quitting || s == loading))
         setState(traveling);
-    else if (not(state == fighting || state == dying) || s == quitting)
+    else if (!(state == fighting || state == dying) || s == quitting)
         setState(s);
 }
 
@@ -424,7 +424,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                 (*keyedBox)->handleKey(k);
             }
         }
-        if (not(focusBox > -1 && boxes[static_cast<size_t>(focusBox)]->keyCaptured(k))) {
+        if (!(focusBox > -1 && boxes[static_cast<size_t>(focusBox)]->keyCaptured(k))) {
             if (state != quitting) {
                 if (traveler) {
                     switch (state) {
@@ -496,7 +496,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
             if (keyedBox != boxes.end())
                 // A box's key was released.
                 (*keyedBox)->handleKey(k);
-            if (not(focusBox > -1 && boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
+            if (!(focusBox > -1 && boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
                 // Key is not used by currently focused box.
                 switch (k.keysym.sym) {
                 case SDLK_LEFT:
@@ -594,7 +594,7 @@ void Player::update(unsigned int e) {
         if (traveler->getPX() > int(mR.w * (1 - kShowPlayerPadding))) scrollX = sS;
         if (traveler->getPY() > int(mR.h * (1 - kShowPlayerPadding))) scrollY = sS;
     }
-    if (not(scrollKeys.empty())) {
+    if (!(scrollKeys.empty())) {
         auto upIt = scrollKeys.find(SDLK_UP), dnIt = scrollKeys.find(SDLK_DOWN), lfIt = scrollKeys.find(SDLK_LEFT),
              rtIt = scrollKeys.find(SDLK_RIGHT);
         scrollX -= (lfIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);

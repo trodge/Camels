@@ -191,7 +191,7 @@ void Traveler::clearTrade() {
 }
 
 void Traveler::makeTrade() {
-    if (not(offer.empty() || request.empty())) {
+    if (!(offer.empty() || request.empty())) {
         std::string logEntry = name + " trades ";
         for (auto gI = offer.begin(); gI != offer.end(); ++gI) {
             if (gI != offer.begin()) {
@@ -627,7 +627,7 @@ std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
         // are already fighting or are this traveler.
         able.erase(std::remove_if(able.begin(), able.end(),
                                   [this](std::shared_ptr<Traveler> t) {
-                                      return t->toTown == t->fromTown || distSq(t->px, t->py) > Settings::getAttackDistSq() or
+                                      return t->toTown == t->fromTown || distSq(t->px, t->py) > Settings::getAttackDistSq() || 
                                              t->target.lock() || !t->alive() || t == shared_from_this();
                                   }),
                    able.end());
