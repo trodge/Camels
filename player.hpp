@@ -25,24 +25,25 @@
 #include <vector>
 
 #include "game.hpp"
-#include "textbox.hpp"
 #include "menubutton.hpp"
 #include "scrollbox.hpp"
 #include "selectbutton.hpp"
+#include "textbox.hpp"
 #include "traveler.hpp"
 
 class Game;
 
 class Player {
     std::shared_ptr<Traveler> traveler;
-    std::vector<std::unique_ptr<TextBox>> boxes, storedBoxes;
+    std::vector<std::unique_ptr<TextBox>> boxes;
+    std::vector<Pager> pagers;
     int focusBox = -1; // index of box currently focused, -1 if no focus
     Game &game;
     Printer &printer;
     SDL_Rect screenRect;
-    bool stop = false, show = false, pause = false, storedPause = true;
+    bool stop = false, show = false, pause = false;
     std::unordered_set<SDL_Keycode> scrollKeys;
-    double modMultiplier;
+    double modMultiplier = 1.;
     int focusTown = -1;                          // index of town currently focused, -1 if no focus
     size_t offerButtonIndex, requestButtonIndex; // index of first offer and request button for updating trade buttons
     size_t portionBoxIndex;                      // index of box for setting portion
@@ -85,12 +86,11 @@ class Player {
     void updatePortionBox();
     void createStorageView(const Town *t);
     void setState(UIState s);
-    void toggleState(UIState s);
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);
 
-public:
+  public:
     Player(Game &g);
     bool getStop() const { return stop; }
     bool getPause() const { return pause; }
@@ -100,7 +100,8 @@ public:
     void start() { setState(starting); }
     void loadTraveler(const Save::Traveler *t, std::vector<Town> &ts);
     void place(int ox, int oy, double s) {
-        if (traveler.get()) traveler->place(ox, oy, s);
+        if (traveler.get())
+            traveler->place(ox, oy, s);
     }
     void handleEvent(const SDL_Event &e);
     void update(unsigned int e);
