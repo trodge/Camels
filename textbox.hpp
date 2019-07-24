@@ -26,17 +26,19 @@
 
 #include <SDL2/SDL.h>
 
+#include "settings.hpp"
 #include "draw.hpp"
 #include "printer.hpp"
 
+
 class TextBox {
   protected:
-    SDL_Rect rect = {0, 0, 0, 0};
+    SDL_Rect rect{0, 0, 0, 0};
     bool fixedSize = false, canFocus = false;
     std::vector<std::string> text;
     size_t lines = 0;
-    SDL_Color foreground = {0, 0, 0, 0};
-    SDL_Color background = {0, 0, 0, 0};
+    SDL_Color foreground{0, 0, 0, 0};
+    SDL_Color background{0, 0, 0, 0};
     unsigned int id = 0;
     bool isNation = false;
     int border = 0;
@@ -54,16 +56,7 @@ class TextBox {
     void setBorder(int b);
 
   public:
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            bool iN, int b, int r, int fS, const std::vector<Image> &imgs, Printer &pr);
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            bool iN, int b, int r, int fS, Printer &pr);
-    TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN, int b,
-            int r, int fS, Printer &pr);
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i,
-            int b, int r, int fS, Printer &pr);
-    TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-            int fS, Printer &pr);
+    TextBox(const BoxInfo &bI);
     virtual ~TextBox() {}
     virtual SDL_Keycode getKey() const { return SDLK_UNKNOWN; }
     const SDL_Rect &getRect() const { return rect; }
@@ -110,10 +103,12 @@ class Pager {
     std::vector<size_t> indices;                 // indices to page breaks in boxes
     std::vector<size_t>::iterator pageIt;        // index of beginning indices of current page
   public:
-    void addItem(std::unique_ptr<TextBox> &&itm) { boxes.push_back(std::move(itm)); }
+    TextBox *getBox(size_t idx) { return boxes[idx].get(); }
+    void addBox(std::unique_ptr<TextBox> &&bx) { boxes.push_back(std::move(bx)); }
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void advancePage();
     void recedePage();
+    TextBox *getClickedBox(const SDL_MouseButtonEvent &b);
     void draw(SDL_Renderer *s);
 };
 

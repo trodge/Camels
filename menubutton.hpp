@@ -29,22 +29,13 @@ class MenuButton : virtual public TextBox {
 
   protected:
     SDL_Keycode key = SDLK_UNKNOWN;
-    std::function<void()> onClick;
-    MenuButton(Printer &pr, std::function<void()> oC) : TextBox(pr), onClick(oC) {}
+    std::function<void(MenuButton *)> onClick;
+    MenuButton(Printer &pr, std::function<void(MenuButton *)> oC) : TextBox(pr), onClick(oC) {}
 
   public:
-    MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-               unsigned int i, bool iN, int b, int r, int fS, const std::vector<Image> &imgs, Printer &pr,
-               const std::function<void()> &oC);
-    MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-               unsigned int i, bool iN, int b, int r, int fS, Printer &pr, const std::function<void()> &oC);
-    MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-               int fS, const std::vector<Image> &imgs, Printer &pr, const std::function<void()> &oC);
-    MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-               int fS, Printer &pr, const std::function<void()> &oC);
+    MenuButton(const BoxInfo &bI);
     virtual ~MenuButton() {}
     void changeBorder(int dBS);
-    void setKey(const SDL_Keycode &k) { key = k; }
     SDL_Keycode getKey() const { return key; }
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;
     virtual void handleKey(const SDL_KeyboardEvent &k);

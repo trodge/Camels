@@ -19,28 +19,11 @@
 
 #include "textbox.hpp"
 
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
-                 unsigned int i, bool iN, int b, int r, int fS, const std::vector<Image> &imgs, Printer &pr)
-    : rect(rt), fixedSize(rt.w && rt.h), text(tx), foreground(fg), background(bg), id(i), isNation(iN), border(b), radius(r),
-      fontSize(fS), images(imgs), printer(pr) {
-    setText(tx);
+TextBox::TextBox(const BoxInfo &bI)
+    : rect(bI.rect), fixedSize(rect.w && rect.h), text(bI.text), foreground(bI.foreground), background(bI.background), id(bI.id),
+      isNation(bI.isNation), border(bI.border), radius(bI.radius), fontSize(bI.fontSize), images(bI.images), printer(bI.printer) {
+    setText();
 }
-
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
-                 unsigned int i, bool iN, int b, int r, int fS, Printer &pr)
-    : TextBox(rt, tx, fg, bg, i, iN, b, r, fS, std::vector<Image>(), pr) {}
-
-TextBox::TextBox(const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, unsigned int i, bool iN,
-                 int b, int r, int fS, Printer &pr)
-    : TextBox({0, 0, 0, 0}, tx, fg, bg, i, iN, b, r, fS, pr) {}
-
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg,
-                 unsigned int i, int b, int r, int fS, Printer &pr)
-    : TextBox(rt, tx, fg, bg, i, false, b, r, fS, pr) {}
-
-TextBox::TextBox(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Color &fg, const SDL_Color &bg, int b,
-                 int r, int fS, Printer &pr)
-    : TextBox(rt, tx, fg, bg, 0u, b, r, fS, pr) {}
 
 void TextBox::setText() {
     // Renders the text using the printer. Call any time text changes.
@@ -189,12 +172,15 @@ void Pager::recedePage() {
         --pageIt;
 }
 
+TextBox *Pager::getClickedBox(const SDL_MouseButtonEvent &b) {
+}
+
+
 void Pager::draw(SDL_Renderer *s) {
-    // Draw all boxes on the current page.
-    if (!indices.size())
-        return;
-    auto nextPageIt = pageIt + 1;
-    auto stopIt = nextPageIt == indices.end() ? boxes.end() : boxes.begin() + *nextPageIt;
-    for (auto bxIt = boxes.begin() + *pageIt; bxIt != stopIt; ++bxIt)
+    // Draw all boxes on the current page, or all boxes if there are no pages.
+    size_t pageCount = indices.size();
+    auto startIt = boxes.begin() + (pageCount ? *pageIt : 0u);
+    auto stopIt = pageCount > 1u && pageIt != indices.end() - 1 ? boxes.begin() + *(pageIt + 1) : boxes.end();
+    for (auto bxIt = startIt; bxIt != stopIt; ++bxIt)
         (*bxIt)->draw(s);
 }

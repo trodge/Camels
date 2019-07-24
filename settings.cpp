@@ -140,6 +140,15 @@ void Settings::load(const fs::path &p) {
     aIAttackThreshold = tree.get("ai.attackThreshold", 13500);
 }
 
+BoxInfo Settings::bigBox(const SDL_Rect &rt, const std::vector<std::string> &tx, Printer &pr,
+                             SDL_Keycode ky, std::function<void()> oC) {
+    return {rt, tx, uIForeground, uIBackground, {}, 0u, false, bigBoxBorder, bigBoxRadius, bigBoxFontSize, {}, pr, ky, oC};
+}
+
+BoxInfo Settings::bigBox(const SDL_Rect &rt, const std::vector<std::string> &tx, Printer &pr) {
+    return bigBox(rt, tx, pr, SDLK_UNKNOWN, nullptr);
+}
+
 void saveRect(const std::string &n, const SDL_Rect &r, pt::ptree *t) {
     t->put(n + "_x", r.x);
     t->put(n + "_y", r.y);

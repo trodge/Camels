@@ -19,24 +19,10 @@
 
 #include "menubutton.hpp"
 
-MenuButton::MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-                       unsigned int i, bool iN, int b, int r, int fS, const std::vector<Image> &imgs, Printer &pr,
-                       const std::function<void()> &oC)
-    : TextBox(rt, t, fg, bg, i, iN, b, r, fS, imgs, pr), onClick(oC) {
+MenuButton::MenuButton(const BoxInfo &bI)
+    : TextBox(bI), key(bI.key), onClick(bI.onClick) {
     canFocus = true;
 }
-
-MenuButton::MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-                       unsigned int i, bool iN, int b, int r, int fS, Printer &pr, const std::function<void()> &oC)
-    : MenuButton(rt, t, fg, bg, i, iN, b, r, fS, std::vector<Image>(), pr, oC) {}
-
-MenuButton::MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-                       int b, int r, int fS, const std::vector<Image> &imgs, Printer &pr, const std::function<void()> &oC)
-    : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, imgs, pr, oC) {}
-
-MenuButton::MenuButton(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg,
-                       int b, int r, int fS, Printer &pr, const std::function<void()> &oC)
-    : MenuButton(rt, t, fg, bg, 0, false, b, r, fS, std::vector<Image>(), pr, oC) {}
 
 void MenuButton::changeBorder(int dBS) {
     if (dBS < 0)
@@ -61,7 +47,7 @@ void MenuButton::activate(Uint8 state) {
         setInvColors(!clicked);
     else if (invColors != clicked) {
         clicked = invColors;
-        onClick();
+        onClick(this);
     }
 }
 

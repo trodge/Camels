@@ -20,186 +20,58 @@
 #include "player.hpp"
 
 Player::Player(Game &g)
-    : game(g), printer(g.getPrinter()), screenRect(Settings::getScreenRect()),
-      travelButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
-                          {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "(S)tore", SDLK_s},
-                          {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "(M)anage", SDLK_m},
-                          {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "(E)quip", SDLK_e},
-                          {hiring, {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0}, "(H)ire", SDLK_h},
-                          {attacking, {screenRect.w * 7 / 9, screenRect.h * 14 / 15, 0, 0}, "(A)ttack", SDLK_a},
-                          {logging, {screenRect.w * 8 / 9, screenRect.h * 14 / 15, 0, 0}, "(L)og", SDLK_l}}}),
-      stopButtonsInfo({{{trading, {screenRect.w * 2 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (T)rading", SDLK_t},
-                        {storing, {screenRect.w / 3, screenRect.h * 14 / 15, 0, 0}, "Stop (S)toring", SDLK_s},
-                        {managing, {screenRect.w * 4 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (M)anaging", SDLK_m},
-                        {equipping, {screenRect.w * 5 / 9, screenRect.h * 14 / 15, 0, 0}, "Stop (E)quipping", SDLK_e},
-                        {hiring, {screenRect.w * 2 / 3, screenRect.h * 14 / 15, 0, 0}, "Stop (H)iring", SDLK_h},
-                        {attacking, {screenRect.w * 7 / 9, screenRect.h * 14 / 15, 0, 0}, "Cancel (A)ttack", SDLK_a},
-                        {logging, {screenRect.w * 8 / 9, screenRect.h * 14 / 15, 0, 0}, "Close (L)og", SDLK_l}}}) {}
+    : game(g), printer(g.getPrinter()) {
+        SDL_Rect sR = Settings::getScreenRect();
+      uiStates = {{UiState::starting, 
+        {1u, {Settings::bigBox({sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}, printer),
+              Settings::bigBox({sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, printer, SDLK_n, [this](MenuButton *) {
+                        game.newGame();
+                        setState(UiState::beginning);
+                    }),
+              Settings::bigBox({sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L}oad Game"}, printer, SDLK_l, [this](MenuButton *btn) {
+                        btn->setClicked(false);
+                        storedState = state;
+                        setState(UiState::loading);
+                    })
+             }
+        }},
+        {UiState::beginning,
+            {1u, {Settings::bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""}, printer)}}
+    };
+    /*
+      {trading, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
+                          {storing, {sR.w / 3, sR.h * 14 / 15, 0, 0}, "(S)tore", SDLK_s},
+                          {managing, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, "(M)anage", SDLK_m},
+                          {equipping, {sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, "(E)quip", SDLK_e},
+                          {hiring, {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, "(H)ire", SDLK_h},
+                          {attacking, {sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, "(A)ttack", SDLK_a},
+                          {logging, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, "(L)og", SDLK_l}}}),
+      stopButtonsInfo({{{trading, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, "Stop (T)rading", SDLK_t},
+                        {storing, {sR.w / 3, sR.h * 14 / 15, 0, 0}, "Stop (S)toring", SDLK_s},
+                        {managing, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, "Stop (M)anaging", SDLK_m},
+                        {equipping, {sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, "Stop (E)quipping", SDLK_e},
+                        {hiring, {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, "Stop (H)iring", SDLK_h},
+                        {attacking, {sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, "Cancel (A)ttack", SDLK_a},
+                        {logging, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, "Close (L)og", SDLK_l}}})*/ 
+
+}
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
     traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
-void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls) {
-    std::vector<Town *> neighbors;
-    switch (g) {
-    case box:
-        i = focusBox;
-        s = static_cast<int>(boxes.size());
-        d = kBoxDBS;
-        for (auto &b : boxes)
-            fcbls.push_back(b.get());
-        break;
-    case neighbor:
-        neighbors = traveler->getTown()->getNeighbors();
-        i = static_cast<int>(
-            std::find_if(neighbors.begin(), neighbors.end(),
-                         [this](Town *t) { return t->getId() == static_cast<unsigned int>(focusTown + 1); }) -
-            neighbors.begin());
-        s = static_cast<int>(neighbors.size());
-        d = kTownDBS;
-        if (i == s) {
-            // Currently focused town is last neighbor.
-            auto &ts = game.getTowns();
-            size_t fT = focusTown;
-            if (fT < ts.size())
-                ts[fT].getBox()->changeBorder(-kTownDBS);
-            i = -1;
-        }
-        fcbls.reserve(neighbors.size());
-        for (auto &ng : neighbors)
-            fcbls.push_back(ng->getBox());
-        break;
-    case town:
-        i = focusTown;
-        fcbls = game.getTownBoxes();
-        s = static_cast<int>(fcbls.size());
-        d = kTownDBS;
-        break;
-    }
-}
-
-void Player::finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls) {
-    switch (g) {
-    case box:
-        focusBox = f;
-        break;
-    case neighbor:
-        if (f > -1)
-            focusTown = static_cast<int>(fcbls[static_cast<size_t>(f)]->getId() - 1);
-        else
-            focusTown = -1;
-        break;
-    case town:
-        focusTown = f;
-        break;
-    }
-}
-
-void Player::focus(int f, FocusGroup g) {
-    // Focus item f from group g.
-    int i, s, d;
-    std::vector<TextBox *> fcbls;
-    prepFocus(g, i, s, d, fcbls);
-    if (i > -1 && i < s)
-        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
-    if (f > -1 && f < s)
-        fcbls[static_cast<size_t>(f)]->changeBorder(d);
-    finishFocus(f, g, fcbls);
-}
-
-void Player::focusPrev(FocusGroup g) {
-    // Focus previous item from group g.
-    int i, s, d;
-    std::vector<TextBox *> fcbls;
-    prepFocus(g, i, s, d, fcbls);
-    if (i == -1) {
-        i = s;
-        while (i--)
-            if (fcbls[static_cast<size_t>(i)]->getCanFocus())
-                break;
-    } else {
-        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
-        ;
-        int j = i;
-        while (--i != j)
-            if (i < 0)
-                i = s;
-            else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
-                break;
-    }
-    if (i > -1) {
-        fcbls[static_cast<size_t>(i)]->changeBorder(d);
-        finishFocus(i, g, fcbls);
-    }
-}
-
-void Player::focusNext(FocusGroup g) {
-    // Focus next item from group g.
-    int i, s, d;
-    std::vector<TextBox *> fcbls;
-    prepFocus(g, i, s, d, fcbls);
-    if (i == -1) {
-        // Nothing was focused, find first focusable item.
-        while (++i < s)
-            if (fcbls[static_cast<size_t>(i)]->getCanFocus())
-                break;
-        // No focusable item was found in group.
-        return;
-    } else {
-        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
-        int j = i;
-        while (++i != j)
-            // Loop until we come back to the same item.
-            if (i >= s)
-                i = -1;
-            else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
-                break;
-    }
-    fcbls[static_cast<size_t>(i)]->changeBorder(d);
-    finishFocus(i, g, fcbls);
-}
-
-void Player::setState(UIState s) {
+void Player::setState(UiState::State s) {
     // Change the UI state to s.
-    boxes.clear();
     pagers.clear();
-    focusBox = -1;
-    const SDL_Color &uIFgr = Settings::getUIForeground(), &uIBgr = Settings::getUIBackground();
-    int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
-        sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize(),
-        fFS = Settings::getFightFontSize();
-    SDL_Rect rt;
-    std::vector<std::string> tx(1);
-    std::function<void()> f;
     fs::path path;
     std::vector<std::string> saves;
-    std::array<ButtonInfo, 7>::iterator sBtnIIt;
     switch (s) {
-    case starting:
-        rt = {screenRect.w / 2, screenRect.h / 15, 0, 0};
-        tx.back() = "Camels && Silk";
-        boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
-        rt = {screenRect.w / 7, screenRect.h / 3, 0, 0};
-        tx.back() = "(N)ew Game";
-        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] {
-            game.newGame();
-            setState(beginning);
-        }));
-        boxes.back()->setKey(SDLK_n);
-        rt = {screenRect.w / 7, screenRect.h * 2 / 3, 0, 0};
-        tx.back() = "(L)oad Game";
-        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] {
-            boxes.back()->setClicked(false);
-            storedState = state;
-            setState(loading);
-        }));
-        boxes.back()->setKey(SDLK_l);
+    case UiState::starting:
         break;
-    case beginning:
-        rt = {screenRect.w / 2, screenRect.h / 7, 0, 0};
-        tx = {"Name", ""};
+    case UiState::beginning:
+        rt = ;
+        tx = {};
         boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
         boxes.back()->toggleLock();
         for (auto &n : game.getNations()) {
@@ -385,7 +257,7 @@ void Player::setState(UIState s) {
                                                   traveler->getNation()->getBackground(), bBB, bBR, fFS, printer));
         break;
     }
-    focus(0, box);
+    focusBox = pagers[0].getBox(0);
     state = s;
 }
 
@@ -531,13 +403,16 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
         auto clickedBox = std::find_if(boxes.begin(), boxes.end(), [&b](const std::unique_ptr<TextBox> &t) {
             return t->getCanFocus() && t->clickCaptured(b);
         });
-        if (clickedBox != boxes.end()) {
-            int cI = static_cast<int>(std::distance(boxes.begin(), clickedBox));
+        if (clickedBox == boxes.end()) {
+            // None of the boxes was clicked, check pagers.
+            focus(-1, box);
+        } else {
+            // One of the boxes was clicked.
+            int cI = static_cast<int>(clickedBox - boxes.begin());
             if (cI != focusBox)
                 focus(cI, box);
             (*clickedBox)->handleClick(b);
-        } else
-            focus(-1, box);
+        }
     }
 }
 

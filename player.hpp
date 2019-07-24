@@ -22,37 +22,21 @@
 #include <functional>
 #include <memory>
 #include <unordered_set>
+#include <unordered_map>
 #include <vector>
 
 #include "game.hpp"
+#include "settings.hpp"
+#include "textbox.hpp"
 #include "menubutton.hpp"
 #include "scrollbox.hpp"
 #include "selectbutton.hpp"
-#include "textbox.hpp"
 #include "traveler.hpp"
 
 class Game;
 
-class Player {
-    std::shared_ptr<Traveler> traveler;
-    std::vector<std::unique_ptr<TextBox>> boxes;
-    std::vector<Pager> pagers;
-    int focusBox = -1;  // index of box currently focused, -1 if no focus
-    int focusPage = -1; // index of page containing focusBox, if any
-    Game &game;
-    Printer &printer;
-    SDL_Rect screenRect;
-    bool stop = false, show = false, pause = false;
-    std::unordered_set<SDL_Keycode> scrollKeys;
-    double modMultiplier = 1.;
-    int focusTown = -1;                          // index of town currently focused, -1 if no focus
-    size_t offerButtonIndex, requestButtonIndex; // index of first offer and request button for updating trade buttons
-    size_t portionBoxIndex;                      // index of box for setting portion
-    size_t setPortionButtonIndex;                // index of button for setting portion
-    size_t storageButtonIndex;                   // index of first storage button
-    size_t equipButtonIndex;                     // index of first equip button
-    size_t lootButtonIndex;                      // index of first loot button
-    enum UIState {
+struct UiState {
+    enum State {
         starting,
         beginning,
         quitting,
@@ -69,24 +53,31 @@ class Player {
         logging,
         dying
     };
-    UIState state = starting, storedState = starting;
-    struct ButtonInfo {
-        UIState state;
-        SDL_Rect rect;
-        std::string text;
-        SDL_Keycode key;
-    };
-    std::array<ButtonInfo, 7> travelButtonsInfo;
-    std::array<ButtonInfo, 7> stopButtonsInfo;
+    size_t pagerCount; // number of pagers this state uses
+    std::vector<BoxInfo> boxesInfo; // info for boxes to create for this state
+};
+
+class Player {
+    std::shared_ptr<Traveler> traveler;
+    std::vector<Pager> pagers;
+    TextBox *focusBox = nullptr; // TextBox we are currently focusing.
+    Game &game;
+    Printer &printer;
+    bool stop = false, show = false, pause = false;
+    std::unordered_set<SDL_Keycode> scrollKeys;
+    double modMultiplier = 1.;
+    Town *focusTown = nullptr;                   // town currently focused
+    size_t offerButtonIndex, requestButtonIndex; // index of first offer and request button for updating trade buttons
+    size_t portionBoxIndex;                      // index of box for setting portion
+    size_t setPortionButtonIndex;                // index of button for setting portion
+    size_t storageButtonIndex;                   // index of first storage button
+    size_t equipButtonIndex;                     // index of first equip button
+    size_t lootButtonIndex;                      // index of first loot button
+    UiState::State state = UiState::starting, storedState = UiState::starting;
+    std::unordered_map<UiState::State, UiState> uiStates;
     enum FocusGroup { box, neighbor, town };
-    void prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls);
-    void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);
-    void focus(int f, FocusGroup g);
-    void focusPrev(FocusGroup g);
-    void focusNext(FocusGroup g);
     void updatePortionBox();
     void createStorageView(const Town *t);
-    void setState(UIState s);
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);
@@ -98,8 +89,8 @@ class Player {
     bool getShow() const { return show; }
     const Traveler *getTraveler() const { return traveler.get(); }
     bool hasTraveler() const { return traveler.get(); }
-    void start() { setState(starting); }
     void loadTraveler(const Save::Traveler *t, std::vector<Town> &ts);
+    void setState(UiState::State s);
     void place(int ox, int oy, double s) {
         if (traveler.get())
             traveler->place(ox, oy, s);
