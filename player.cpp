@@ -19,49 +19,97 @@
 
 #include "player.hpp"
 
-
-Player::Player(Game &g)
-    : game(g), printer(g.getPrinter()) {
-        SDL_Rect sR = Settings::getScreenRect();
-        SDL_Color uiFgr = Settings::getUIForeground(), uiBgr = Settings::getUIBackground(), uiHgl = Settings::getUIHighlight();
-        int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
+Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
+    SDL_Rect sR = Settings::getScreenRect();
+    SDL_Color uiFgr = Settings::getUIForeground(), uiBgr = Settings::getUIBackground(), uiHgl = Settings::getUIHighlight();
+    int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
         sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize();
-      uiStates = {{UiState::starting, {1u, {{{sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer},
-             {{sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer, SDLK_n,
-             [this](MenuButton *) {
-                        game.newGame();
-                        setState(UiState::beginning);
-                    }
-            },
-            {{sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L}oad Game"}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer, SDLK_l,
-            [this](MenuButton *btn) {
-                        btn->setClicked(false);
-                        storedState = state;
-                        setState(UiState::loading);
-                    }
-             }
-        }}},
-        {UiState::beginning, {1u, {{{sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer}}}}
+    auto bigBox = [&uiFgr, &uiBgr, &uiHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
+        return BoxInfo{rt, tx, uiFgr, uiBgr, uiHgl, 0u, false, bBB, bBR, bBFS, {}};
     };
-    for (auto &n : game.getNations()) {
-    // Create a button for each nation to start in that nation.
-        uiStates.at(UiState::beginning).boxesInfo.push_back({{sR.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6,
-            sR.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7, 0, 0}, n.getNames(), n.getForeground(), n.getBackground(),
-            {}, n.getId(), true, bBB, bBR, bBFS, {}, printer, SDLK_UNKNOWN, [this, n](MenuButton *) {
-                                                        unsigned int nId = n.getId(); // nation id
-                                                        std::string name = pagers[0u].getBox(0u)->getText(1u);
-                                                        if (name.empty())
-                                                            name = n.randomName();
-                                                        // Create traveler object for player
-                                                        traveler = game.createPlayerTraveler(nId, name);
-                                                        show = true;
-                                                        focusBox = nullptr;
-                                                        setState(UiState::traveling);
-                                                    }
-        });
-    boxes.push_back(std::make_unique<MenuButton>(rt, n.getNames(), n.getForeground(), n.getBackground(), n.getId(),
-                                                    true, 3, bBR, bBFS, printer, ));
-    }
+    auto bigButton = [&uiFgr, &uiBgr, &uiHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
+                                                        SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
+        return BoxInfo{rt, tx, uiFgr, uiBgr, uiHgl, 0u, false, bBB, bBR, bBFS, {}, ky, fn};
+    };
+    auto bigSelectButton = [&uiFgr, &uiBgr, &uiHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
+                                                        SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
+        return BoxInfo{rt, tx, uiFgr, uiBgr, uiHgl, 0u, false, bBB, bBR, bBFS, {}, ky, fn};
+    };
+    uiStates = {{UiState::starting,
+                 {1u,
+                  {bigBox({sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}),
+                   bigButton({sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, SDLK_n,
+                       [this](MenuButton *) {
+                           game.newGame();
+                           setState(UiState::beginning);
+                       }),
+                   bigButton({sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L}oad Game"}, SDLK_l,
+                       [this](MenuButton *btn) {
+                           btn->setClicked(false);
+                           storedState = state;
+                           setState(UiState::loading);
+                       })}}},
+                {UiState::beginning, {1u, {bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})}}},
+                {UiState::quitting, {1u, {bigButton({sR.w / 2, sR.h / 4, 0, 0}, {"Continue"}, SDLK_ESCAPE, [this](MenuButton *) {
+                                         pause = storedPause;
+                                         setState(storedState);
+                                     }),
+                    traveler ? bigButton({sR.w / 2, sR.h * 3 / 4, 0, 0}, {"Save and Quit"}, SDLK_q, [this](MenuButton *) {
+                                        game.saveGame();
+                                        stop = true;
+                                    })
+                             : bigButton({sR.w / 2, sR.h * 3 / 4, 0, 0}, {"Quit"}, SDLK_q, [this](MenuButton *) {
+                                        stop = true;
+                                    })
+                }}},
+                {UiState::loading, {1u, {bigButton({sR.w / 7, sR.h / 7, 0, 0}, {"(B)ack"}, SDLK_b, [this](MenuButton *) { setState(storedState); })
+                }}}
+                
+    };
+    auto &nts = game.getNations();
+    auto &bxsIn = uiStates.at(UiState::beginning).boxesInfo;
+    for (auto &n : nts)
+        // Create a button for each nation to start in that nation.
+        bxsIn.push_back({{sR.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6,
+                          sR.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7, 0, 0},
+                         n.getNames(),
+                         n.getForeground(),
+                         n.getBackground(),
+                         {},
+                         n.getId(),
+                         true,
+                         bBB,
+                         bBR,
+                         bBFS,
+                         {},
+                         SDLK_UNKNOWN,
+                         [this, n](MenuButton *) {
+                             unsigned int nId = n.getId(); // nation id
+                             std::string name = pagers[0u].getBox(0u)->getText(1u);
+                             if (name.empty())
+                                 name = n.randomName();
+                             // Create traveler object for player
+                             traveler = game.createPlayerTraveler(nId, name);
+                             show = true;
+                             focusBox = nullptr;
+                             setState(UiState::traveling);
+                         }});
+        
+    fs::path path{"save"};
+    std::vector<std::string> saves;
+    for (auto &file : fs::directory_iterator{path})
+        saves.push_back(file.path().stem().string());
+    /*
+        rt = {sR.w / 2, sR.h / 15, 0, 0};
+        tx.back() = "Load";
+        boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
+        rt = {sR.w / 5, sR.h / 7, sR.w * 3 / 5, sR.h * 5 / 7};
+        boxes.push_back(std::make_unique<SelectButton>(
+            rt, saves, uIFgr, uIBgr, Settings::getUIHighlight(), bBB, bBR, bBFS, printer, [this, path] {
+                game.loadGame((path / boxes.back()->getItem()).replace_extension("sav"));
+                show = true;
+                setState(traveling);
+            }));*/
     /*
       {trading, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
                           {storing, {sR.w / 3, sR.h * 14 / 15, 0, 0}, "(S)tore", SDLK_s},
@@ -76,8 +124,7 @@ Player::Player(Game &g)
                         {equipping, {sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, "Stop (E)quipping", SDLK_e},
                         {hiring, {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, "Stop (H)iring", SDLK_h},
                         {attacking, {sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, "Cancel (A)ttack", SDLK_a},
-                        {logging, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, "Close (L)og", SDLK_l}}})*/ 
-
+                        {logging, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, "Close (L)og", SDLK_l}}})*/
 }
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
@@ -106,46 +153,12 @@ void Player::setState(UiState::State s) {
     case UiState::starting:
         break;
     case UiState::beginning:
+        // Allow typing in name box.
         pagers[0u].toggleLock(0u);
-
         break;
     case quitting:
-        rt = {screenRect.w / 2, screenRect.h / 4, 0, 0};
-        tx.back() = "Continue";
-        boxes.push_back(
-            std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] { setState(storedState); }));
-        rt = {screenRect.w / 2, screenRect.h * 3 / 4, 0, 0};
-        if (traveler) {
-            tx.back() = "Save and Quit";
-            f = [this] {
-                game.saveGame();
-                stop = true;
-            };
-        } else {
-            tx.back() = "Quit";
-            f = [this] { stop = true; };
-        }
-        boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, f));
         break;
     case loading:
-        rt = {screenRect.w / 7, screenRect.h / 7, 0, 0};
-        tx.back() = "(B)ack";
-        boxes.push_back(
-            std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer, [this] { setState(storedState); }));
-        boxes.back()->setKey(SDLK_b);
-        path = "save";
-        for (auto &file : fs::directory_iterator(path))
-            saves.push_back(file.path().stem().string());
-        rt = {screenRect.w / 2, screenRect.h / 15, 0, 0};
-        tx.back() = "Load";
-        boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
-        rt = {screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7};
-        boxes.push_back(std::make_unique<SelectButton>(
-            rt, saves, uIFgr, uIBgr, Settings::getUIHighlight(), bBB, bBR, bBFS, printer, [this, path] {
-                game.loadGame((path / boxes.back()->getItem()).replace_extension("sav"));
-                show = true;
-                setState(traveling);
-            }));
         break;
     case traveling:
         // Create go button.
@@ -518,3 +531,4 @@ void Player::draw(SDL_Renderer *s) {
     for (auto &pg : pagers)
         pg.draw(s);
 }
+

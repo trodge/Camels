@@ -23,7 +23,7 @@
 #include "draw.hpp"
 #include "textbox.hpp"
 
-class LoadBar {
+class LoadBar : public TextBox {
     double complete = 0;
     SDL_Rect completeRect, insideRect, outsideRect;
     int outsideBorder;

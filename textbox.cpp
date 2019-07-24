@@ -20,8 +20,9 @@
 #include "textbox.hpp"
 
 TextBox::TextBox(const BoxInfo &bI, Printer &pr)
-    : rect(bI.rect), fixedSize(rect.w && rect.h), text(bI.text), foreground(bI.foreground), background(bI.background), id(bI.id),
-      isNation(bI.isNation), border(bI.border), radius(bI.radius), fontSize(bI.fontSize), images(bI.images), printer(pr) {
+    : rect(bI.rect), fixedSize(rect.w && rect.h), text(bI.text), foreground(bI.foreground), background(bI.background),
+      id(bI.id), isNation(bI.isNation), border(bI.border), radius(bI.radius), fontSize(bI.fontSize), images(bI.images),
+      printer(pr) {
     setText();
 }
 
@@ -70,7 +71,7 @@ void TextBox::setBorder(int b) {
     setText();
 }
 
-void TextBox::toggleLock() { 
+void TextBox::toggleLock() {
     canFocus = !canFocus;
     if (canFocus)
         SDL_StartTextInput();
@@ -180,9 +181,7 @@ void Pager::recedePage() {
         --pageIt;
 }
 
-TextBox *Pager::getClickedBox(const SDL_MouseButtonEvent &b) {
-}
-
+TextBox *Pager::getClickedBox(const SDL_MouseButtonEvent &b) {}
 
 void Pager::draw(SDL_Renderer *s) {
     // Draw all boxes on the current page, or all boxes if there are no pages.

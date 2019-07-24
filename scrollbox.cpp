@@ -19,8 +19,7 @@
 
 #include "scrollbox.hpp"
 
-ScrollBox::ScrollBox(const BoxInfo &bI, Printer &pr)
-    : TextBox(bI, pr), highlight(bI.highlight), items(bI.text) {
+ScrollBox::ScrollBox(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), highlight(bI.highlight), items(bI.text) {
     canFocus = true;
 }
 

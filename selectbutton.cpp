@@ -19,8 +19,7 @@
 
 #include "selectbutton.hpp"
 
-SelectButton::SelectButton(const BoxInfo &bI, Printer &pr)
-    : TextBox(bI, pr), ScrollBox(bI, pr), MenuButton(bI, pr) {
+SelectButton::SelectButton(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), ScrollBox(bI, pr), MenuButton(bI, pr) {
     canFocus = true;
 }
 

@@ -20,9 +20,8 @@
 #include "loadbar.hpp"
 
 LoadBar::LoadBar(const BoxInfo &bI, Printer &pr)
-    : TextBox({rt.x + rt.w / 2, rt.y + rt.h / 2, 0, 0}, t, fg, bg, 0, r, fS, pr),
-      completeRect({rt.x + b, rt.y + b, 0, rt.h - 2 * b}), insideRect({rt.x + b, rt.y + b, rt.w - 2 * b, rt.h - 2 * b}),
-      outsideRect(rt), outsideBorder(b) {}
+    : TextBox{bI, pr}, completeRect({bI.outsideRect.x + bI.border, bI.outsideRect.y + bI.border, 0, bI.outsideRect.h - 2 * bI.border}),
+      insideRect({bI.outsideRect.x + bI.border, bI.outsideRect.y + bI.border, bI.outsideRect.w - 2 * bI.border, bI.outsideRect.h - 2 * bI.border}), outsideRect(bI.outsideRect), outsideBorder(bI.border) {}
 
 void LoadBar::progress(double c) {
     if (complete + c < 1)

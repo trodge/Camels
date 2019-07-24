@@ -26,9 +26,9 @@
 
 #include <SDL2/SDL.h>
 
-#include "settings.hpp"
 #include "draw.hpp"
 #include "printer.hpp"
+#include "settings.hpp"
 
 class MenuButton;
 
@@ -43,8 +43,8 @@ struct BoxInfo {
     SDL_Keycode key = SDLK_UNKNOWN;
     std::function<void(MenuButton *)> onClick = nullptr;
     bool scrolls = false;
+    SDL_Rect outsideRect{0, 0, 0, 0};
 };
-
 
 class TextBox {
   protected:

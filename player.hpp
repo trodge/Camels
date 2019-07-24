@@ -21,19 +21,22 @@
 #define PLAYER_H
 #include <functional>
 #include <memory>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "game.hpp"
-#include "settings.hpp"
-#include "textbox.hpp"
 #include "menubutton.hpp"
 #include "scrollbox.hpp"
 #include "selectbutton.hpp"
+#include "settings.hpp"
+#include "textbox.hpp"
 #include "traveler.hpp"
 
 class Game;
+
+class MenuButton;
 
 struct UiState {
     enum State {
@@ -53,7 +56,7 @@ struct UiState {
         logging,
         dying
     };
-    size_t pagerCount; // number of pagers this state uses
+    size_t pagerCount;              // number of pagers this state uses
     std::vector<BoxInfo> boxesInfo; // info for boxes to create for this state
 };
 
@@ -63,7 +66,7 @@ class Player {
     TextBox *focusBox = nullptr; // TextBox we are currently focusing.
     Game &game;
     Printer &printer;
-    bool stop = false, show = false, pause = false;
+    bool stop = false, show = false, pause = false, storedPause = false;
     std::unordered_set<SDL_Keycode> scrollKeys;
     double modMultiplier = 1.;
     Town *focusTown = nullptr;                   // town currently focused
