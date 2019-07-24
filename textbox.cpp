@@ -19,9 +19,9 @@
 
 #include "textbox.hpp"
 
-TextBox::TextBox(const BoxInfo &bI)
+TextBox::TextBox(const BoxInfo &bI, Printer &pr)
     : rect(bI.rect), fixedSize(rect.w && rect.h), text(bI.text), foreground(bI.foreground), background(bI.background), id(bI.id),
-      isNation(bI.isNation), border(bI.border), radius(bI.radius), fontSize(bI.fontSize), images(bI.images), printer(bI.printer) {
+      isNation(bI.isNation), border(bI.border), radius(bI.radius), fontSize(bI.fontSize), images(bI.images), printer(pr) {
     setText();
 }
 
@@ -68,6 +68,14 @@ void TextBox::setBorder(int b) {
     rect.h += (b - border) * 2;
     border = b;
     setText();
+}
+
+void TextBox::toggleLock() { 
+    canFocus = !canFocus;
+    if (canFocus)
+        SDL_StartTextInput();
+    else
+        SDL_StopTextInput();
 }
 
 void TextBox::setInvColors(bool i) {

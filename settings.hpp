@@ -30,24 +30,6 @@ namespace pt = boost::property_tree;
 
 #include <SDL2/SDL.h>
 
-class MenuButton;
-
-class Printer;
-
-struct BoxInfo {
-    SDL_Rect rect{0, 0, 0, 0};
-    std::vector<std::string> text;
-    SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
-    unsigned int id = 0u;
-    bool isNation = false;
-    int border = 0, radius = 0, fontSize = 0;
-    std::vector<Image> images;
-    Printer &printer; 
-    SDL_Keycode key = SDLK_UNKNOWN;
-    std::function<void(MenuButton *)> onClick = nullptr;
-    bool scrolls = false;
-};
-
 class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapRect;
@@ -147,9 +129,6 @@ class Settings {
     static double getAIAttackThreshold() { return aIAttackThreshold; }
     static std::mt19937 &getRng() { return rng; }
     static void save(const fs::path &p);
-    static BoxInfo bigBox(const SDL_Rect &rt, const std::vector<std::string> &tx, Printer &pr,
-                             SDL_Keycode ky, std::function<void(MenuButton *)> oC);
-    static BoxInfo bigBox(const SDL_Rect &rt, const std::vector<std::string> &tx, Printer &pr);
 };
 
 #endif // SETTINGS_H

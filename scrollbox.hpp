@@ -28,10 +28,9 @@ class ScrollBox : virtual public TextBox {
     size_t scroll = 0;
     SDL_Color highlight = {0, 0, 0, 0};
     std::vector<std::string> items;
-    ScrollBox(const std::vector<std::string> &is, SDL_Color hl, Printer &pr) : TextBox(pr), highlight(hl), items(is) {}
 
   public:
-    ScrollBox(const BoxInfo &bI);
+    ScrollBox(const BoxInfo &bI, Printer &pr);
     virtual ~ScrollBox() {}
     void setText();
     void setText(const std::vector<std::string> &t) {

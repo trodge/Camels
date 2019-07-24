@@ -19,25 +19,49 @@
 
 #include "player.hpp"
 
+
 Player::Player(Game &g)
     : game(g), printer(g.getPrinter()) {
         SDL_Rect sR = Settings::getScreenRect();
-      uiStates = {{UiState::starting, 
-        {1u, {Settings::bigBox({sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}, printer),
-              Settings::bigBox({sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, printer, SDLK_n, [this](MenuButton *) {
+        SDL_Color uiFgr = Settings::getUIForeground(), uiBgr = Settings::getUIBackground(), uiHgl = Settings::getUIHighlight();
+        int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
+        sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize();
+      uiStates = {{UiState::starting, {1u, {{{sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer},
+             {{sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer, SDLK_n,
+             [this](MenuButton *) {
                         game.newGame();
                         setState(UiState::beginning);
-                    }),
-              Settings::bigBox({sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L}oad Game"}, printer, SDLK_l, [this](MenuButton *btn) {
+                    }
+            },
+            {{sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L}oad Game"}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer, SDLK_l,
+            [this](MenuButton *btn) {
                         btn->setClicked(false);
                         storedState = state;
                         setState(UiState::loading);
-                    })
+                    }
              }
-        }},
-        {UiState::beginning,
-            {1u, {Settings::bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""}, printer)}}
+        }}},
+        {UiState::beginning, {1u, {{{sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""}, uiFgr, uiBgr, {}, 0u, false, bBB, bBR, bBFS, {}, printer}}}}
     };
+    for (auto &n : game.getNations()) {
+    // Create a button for each nation to start in that nation.
+        uiStates.at(UiState::beginning).boxesInfo.push_back({{sR.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6,
+            sR.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7, 0, 0}, n.getNames(), n.getForeground(), n.getBackground(),
+            {}, n.getId(), true, bBB, bBR, bBFS, {}, printer, SDLK_UNKNOWN, [this, n](MenuButton *) {
+                                                        unsigned int nId = n.getId(); // nation id
+                                                        std::string name = pagers[0u].getBox(0u)->getText(1u);
+                                                        if (name.empty())
+                                                            name = n.randomName();
+                                                        // Create traveler object for player
+                                                        traveler = game.createPlayerTraveler(nId, name);
+                                                        show = true;
+                                                        focusBox = nullptr;
+                                                        setState(UiState::traveling);
+                                                    }
+        });
+    boxes.push_back(std::make_unique<MenuButton>(rt, n.getNames(), n.getForeground(), n.getBackground(), n.getId(),
+                                                    true, 3, bBR, bBFS, printer, ));
+    }
     /*
       {trading, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, "(T)rade", SDLK_t},
                           {storing, {sR.w / 3, sR.h * 14 / 15, 0, 0}, "(S)tore", SDLK_s},
@@ -63,34 +87,27 @@ void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
 
 void Player::setState(UiState::State s) {
     // Change the UI state to s.
+    UiState state = uiStates.at(s);
     pagers.clear();
+    pagers.resize(state.pagerCount);
     fs::path path;
     std::vector<std::string> saves;
+    // Create boxes for new state.
+    for (auto &bI : state.boxesInfo)
+        if (bI.onClick && bI.scrolls)
+            pagers[0].addBox(std::make_unique<SelectButton>(bI));
+        else if (bI.onClick)
+            pagers[0].addBox(std::make_unique<MenuButton>(bI));
+        else if (bI.scrolls)
+            pagers[0].addBox(std::make_unique<ScrollBox>(bI));
+        else
+            pagers[0].addBox(std::make_unique<TextBox>(bI));
     switch (s) {
     case UiState::starting:
         break;
     case UiState::beginning:
-        rt = ;
-        tx = {};
-        boxes.push_back(std::make_unique<TextBox>(rt, tx, uIFgr, uIBgr, bBB, bBR, bBFS, printer));
-        boxes.back()->toggleLock();
-        for (auto &n : game.getNations()) {
-            // Create a button for each nation to start in that nation.
-            rt = {screenRect.w * (static_cast<int>(n.getId() - 1) % 3 * 2 + 1) / 6,
-                  screenRect.h * (static_cast<int>(n.getId() - 1) / 3 + 2) / 7, 0, 0};
-            boxes.push_back(std::make_unique<MenuButton>(rt, n.getNames(), n.getForeground(), n.getBackground(), n.getId(),
-                                                         true, 3, bBR, bBFS, printer, [this, n] {
-                                                             focusBox = -1;
-                                                             unsigned int nId = n.getId(); // nation id
-                                                             std::string name = boxes.front()->getText(1);
-                                                             if (name.empty())
-                                                                 name = n.randomName();
-                                                             // Create traveler object for player
-                                                             traveler = game.createPlayerTraveler(nId, name);
-                                                             show = true;
-                                                             setState(traveling);
-                                                         }));
-        }
+        pagers[0u].toggleLock(0u);
+
         break;
     case quitting:
         rt = {screenRect.w / 2, screenRect.h / 4, 0, 0};

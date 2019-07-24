@@ -25,7 +25,7 @@
 
 class SelectButton : public ScrollBox, public MenuButton {
   public:
-    SelectButton(const BoxInfo &bI);
+    SelectButton(const BoxInfo &bI, Printer &pr);
     const std::string &getItem() const {
         if (highlightLine > -1)
             return items[static_cast<size_t>(highlightLine)];

@@ -30,6 +30,21 @@
 #include "draw.hpp"
 #include "printer.hpp"
 
+class MenuButton;
+
+struct BoxInfo {
+    SDL_Rect rect{0, 0, 0, 0};
+    std::vector<std::string> text;
+    SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
+    unsigned int id = 0u;
+    bool isNation = false;
+    int border = 0, radius = 0, fontSize = 0;
+    std::vector<Image> images;
+    SDL_Keycode key = SDLK_UNKNOWN;
+    std::function<void(MenuButton *)> onClick = nullptr;
+    bool scrolls = false;
+};
+
 
 class TextBox {
   protected:
@@ -56,13 +71,13 @@ class TextBox {
     void setBorder(int b);
 
   public:
-    TextBox(const BoxInfo &bI);
+    TextBox(const BoxInfo &bI, Printer &pr);
     virtual ~TextBox() {}
     virtual SDL_Keycode getKey() const { return SDLK_UNKNOWN; }
     const SDL_Rect &getRect() const { return rect; }
     bool getCanFocus() const { return canFocus; }
     const std::vector<std::string> &getText() const { return text; }
-    const std::string &getText(size_t i) { return text[i]; }
+    const std::string &getText(size_t i) const { return text[i]; }
     virtual const std::string &getItem() const { return text.back(); }
     bool getClicked() const { return clicked; }
     unsigned int getId() const { return id; }
@@ -82,7 +97,7 @@ class TextBox {
         setText();
     }
     virtual void addItem(const std::string &i) { addText(i); }
-    void toggleLock() { canFocus = !canFocus; }
+    void toggleLock();
     virtual void changeBorder(int dBS) { setBorder(border + dBS); }
     void setInvColors(bool i);
     void setClicked(bool c);
@@ -108,6 +123,7 @@ class Pager {
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void advancePage();
     void recedePage();
+    void toggleLock(size_t idx) { boxes[idx]->toggleLock(); }
     TextBox *getClickedBox(const SDL_MouseButtonEvent &b);
     void draw(SDL_Renderer *s);
 };

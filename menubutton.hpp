@@ -33,7 +33,7 @@ class MenuButton : virtual public TextBox {
     MenuButton(Printer &pr, std::function<void(MenuButton *)> oC) : TextBox(pr), onClick(oC) {}
 
   public:
-    MenuButton(const BoxInfo &bI);
+    MenuButton(const BoxInfo &bI, Printer &pr);
     virtual ~MenuButton() {}
     void changeBorder(int dBS);
     SDL_Keycode getKey() const { return key; }

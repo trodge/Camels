@@ -23,14 +23,13 @@
 #include "draw.hpp"
 #include "textbox.hpp"
 
-class LoadBar : public TextBox {
+class LoadBar {
     double complete = 0;
     SDL_Rect completeRect, insideRect, outsideRect;
     int outsideBorder;
 
   public:
-    LoadBar(const SDL_Rect &rt, const std::vector<std::string> &t, const SDL_Color &fg, const SDL_Color &bg, int b, int r,
-            int fS, Printer &pr);
+    LoadBar(const BoxInfo &bI, Printer &pr);
     void progress(double c);
     void draw(SDL_Renderer *s);
 };

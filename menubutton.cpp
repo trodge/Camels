@@ -19,8 +19,8 @@
 
 #include "menubutton.hpp"
 
-MenuButton::MenuButton(const BoxInfo &bI)
-    : TextBox(bI), key(bI.key), onClick(bI.onClick) {
+MenuButton::MenuButton(const BoxInfo &bI, Printer &pr)
+    : TextBox(bI, pr), key(bI.key), onClick(bI.onClick) {
     canFocus = true;
 }
 
