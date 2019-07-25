@@ -26,7 +26,7 @@ Game::Game()
                              SDL_WINDOW_BORDERLESS)),
       screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)) {
     player = std::make_unique<Player>(*this);
-    player->start();
+    player->setState(UiState::starting);
     std::cout << "Creating Game" << std::endl;
     if (!window.get())
         std::cout << "Window creation failed, SDL Error:" << SDL_GetError() << std::endl;
@@ -491,9 +491,16 @@ void Game::newGame() {
     loadData(conn.get());
 
     // Load towns from sqlite database.
-    LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                    {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
-                    Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
+    LoadBar loadBar(
+        BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
+                .text = {"Loading towns..."},
+                .foreground = Settings::getLoadBarColor(),
+                .background = Settings::getUIForeground(),
+                .border = Settings::getBigBoxBorder(),
+                .radius = Settings::getBigBoxRadius(),
+                .fontSize = Settings::getLoadBarFontSize(),
+                .outsideRect = {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}},
+        printer);
     // Create a texture for keeping the current screen frozen behind load bar.
     sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
     SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
@@ -545,9 +552,16 @@ void Game::loadGame(const fs::path &p) {
         size_t townCount = lTowns->size();
         towns.reserve(townCount);
         double tC = townCount;
-        LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                        {"Loading towns..."}, Settings::getLoadBarColor(), Settings::getUIForeground(),
-                        Settings::getBigBoxBorder(), Settings::getBigBoxRadius(), Settings::getLoadBarFontSize(), printer);
+        LoadBar loadBar(
+            BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
+                    .text = {"Loading towns..."},
+                    .foreground = Settings::getLoadBarColor(),
+                    .background = Settings::getUIForeground(),
+                    .border = Settings::getBigBoxBorder(),
+                    .radius = Settings::getBigBoxRadius(),
+                    .fontSize = Settings::getLoadBarFontSize(),
+                    .outsideRect = {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}},
+            printer);
         sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
         SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels,
                              freezeSurface->pitch);
@@ -644,9 +658,16 @@ void Game::draw() {
 
 void Game::generateRoutes() {
     // Recalculate routes between towns and save new routes to database.
-    LoadBar loadBar({screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15},
-                    {"Finding routes..."}, {0, 255, 0, 255}, Settings::getUIForeground(), Settings::getBigBoxRadius(),
-                    Settings::getBigBoxBorder(), Settings::getLoadBarFontSize(), printer);
+    LoadBar loadBar(
+        BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
+                .text = {"Finding routes..."},
+                .foreground = Settings::getLoadBarColor(),
+                .background = Settings::getUIForeground(),
+                .border = Settings::getBigBoxBorder(),
+                .radius = Settings::getBigBoxRadius(),
+                .fontSize = Settings::getLoadBarFontSize(),
+                .outsideRect = {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}},
+        printer);
     // Have each town find its nearest neighbors.
     for (auto &t : towns) {
         t.findNeighbors(towns, mapSurface.get(), mapRect.x, mapRect.y);

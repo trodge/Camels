@@ -62,12 +62,12 @@ void TextBox::setText() {
     }
 }
 
-void TextBox::setBorder(int b) {
-    rect.x += (border - b);
-    rect.y += (border - b);
-    rect.w += (b - border) * 2;
-    rect.h += (b - border) * 2;
-    border = b;
+void TextBox::setBorder(int bd) {
+    rect.x += (border - bd);
+    rect.y += (border - bd);
+    rect.w += (bd - border) * 2;
+    rect.h += (bd - border) * 2;
+    border = bd;
     setText();
 }
 
@@ -77,6 +77,11 @@ void TextBox::toggleLock() {
         SDL_StartTextInput();
     else
         SDL_StopTextInput();
+}
+
+void TextBox::toggleFocus(bool iTn) {
+    isFocus = not isFocus;
+    changeBorder((isFocus ? 1 : -1) * (iTn ? kTownDB : kBoxDB));
 }
 
 void TextBox::setInvColors(bool i) {
@@ -128,7 +133,7 @@ bool TextBox::keyCaptured(const SDL_KeyboardEvent &k) const {
     case SDLK_TAB:
         return false;
     default:
-        return true;
+        return isFocus;
     }
 }
 

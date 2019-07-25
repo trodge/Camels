@@ -49,7 +49,7 @@ struct BoxInfo {
 class TextBox {
   protected:
     SDL_Rect rect{0, 0, 0, 0};
-    bool fixedSize = false, canFocus = false;
+    bool fixedSize = false, canFocus = false, isFocus = false;
     std::vector<std::string> text;
     size_t lines = 0;
     SDL_Color foreground{0, 0, 0, 0};
@@ -68,12 +68,11 @@ class TextBox {
     std::vector<Image> images;
     Printer &printer;
     TextBox(Printer &pr) : printer(pr) {}
-    void setBorder(int b);
+    void setBorder(int bd);
 
   public:
     TextBox(const BoxInfo &bI, Printer &pr);
     virtual ~TextBox() {}
-    virtual SDL_Keycode getKey() const { return SDLK_UNKNOWN; }
     const SDL_Rect &getRect() const { return rect; }
     bool getCanFocus() const { return canFocus; }
     const std::vector<std::string> &getText() const { return text; }
@@ -98,7 +97,8 @@ class TextBox {
     }
     virtual void addItem(const std::string &i) { addText(i); }
     void toggleLock();
-    virtual void changeBorder(int dBS) { setBorder(border + dBS); }
+    void toggleFocus(bool iTn);
+    virtual void changeBorder(int dBd) { setBorder(border + dBd); }
     void setInvColors(bool i);
     void setClicked(bool c);
     virtual void setKey(const SDL_Keycode &) {}

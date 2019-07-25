@@ -21,7 +21,7 @@
 
 Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
     SDL_Rect sR = Settings::getScreenRect();
-    SDL_Color uiFgr = Settings::getUIForeground(), uiBgr = Settings::getUIBackground(), uiHgl = Settings::getUIHighlight();
+    SDL_Color uiFgr = Settings::getUIForeground(), uiBgr = Settings::getUIBackground(), uiHgl = Settings::getUIHighlight(), ;
     int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
         sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize();
     auto bigBox = [&uiFgr, &uiBgr, &uiHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
@@ -140,6 +140,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
          {{smallButton({sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, {"Cancel (A)ttack"}, SDLK_a,
                        [this](MenuButton *) { setState(UiState::traveling); })},
           [this] {
+              pause = true;
               traveler->createAttackButton(
                   pagers[0u], [this] { setState(UiState::fighting); }, printer);
           }}},
@@ -164,7 +165,36 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                                       nullptr,
                                                       true},
                                               printer));
-          }}}};
+          }}},
+        {UiState::fighting, {{}, [this] { traveler->createFightBoxes(pagers[0u], pause, printer); }}},
+        {UiState::looting,
+         {{smallButton({sR.w / 15, sR.h * 14 / 15, 0, 0}, {"(D)one Looting"}, SDLK_d,
+                       [this](MenuButton *) {
+                           traveler->loseTarget();
+                           setState(UiState::traveling);
+                       }),
+           smallButton({sR.w * 4 / 15, sR.h * 14 / 15, 0, 0}, {"(L)oot All"}, SDLK_l,
+                       [this, &tgt = *traveler->getTarget().lock()](MenuButton *) {
+                           traveler->loot(tgt);
+                           traveler->loseTarget();
+                           setState(UiState::traveling);
+                       })},
+          [this] { traveler->createLootButtons(pagers, focusBox, printer); },
+          3u}},
+        {UiState::dying, {{}, [this, &sR, bBB, bBR, bBFS] {
+                              pagers[0u].addBox(
+                                  std::make_unique<TextBox>(BoxInfo{{sR.w / 2, sR.h / 2, 0, 0},
+                                                                    {traveler->getLogText().back(), "You have died."},
+                                                                    traveler->getNation()->getForeground(),
+                                                                    traveler->getNation()->getBackground(),
+                                                                    traveler->getNation()->getHighlight(),
+                                                                    0u,
+                                                                    false,
+                                                                    bBB,
+                                                                    bBR,
+                                                                    bBFS,
+                                                                    {}}));
+                          }}}};
     auto &nations = game.getNations();
     auto &nationBoxes = uiStates.at(UiState::beginning).boxesInfo;
     for (auto &nt : nations)
@@ -211,7 +241,7 @@ void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
-void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls) {
+void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls) {
     std::vector<Town *> neighbors;
     switch (g) {
     case box:
@@ -222,7 +252,6 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox
             fcbls.insert(fcbls.end(), bxs.begin(), bxs.end());
         }
         s = static_cast<int>(fcbls.size());
-        d = kBoxDBS;
         break;
     case neighbor:
         neighbors = traveler->getTown()->getNeighbors();
@@ -231,13 +260,12 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox
                          [this](Town *t) { return t->getId() == static_cast<unsigned int>(focusTown + 1); }) -
             neighbors.begin());
         s = static_cast<int>(neighbors.size());
-        d = kTownDBS;
         if (i == s) {
             // Currently focused town is last neighbor.
             auto &ts = game.getTowns();
             size_t fT = focusTown;
             if (fT < ts.size())
-                ts[fT].getBox()->changeBorder(-kTownDBS);
+                ts[fT].getBox()->changeBorder(-kTownDB);
             i = -1;
         }
         fcbls.reserve(neighbors.size());
@@ -248,7 +276,6 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox
         i = focusTown;
         fcbls = game.getTownBoxes();
         s = static_cast<int>(fcbls.size());
-        d = kTownDBS;
         break;
     }
 }
@@ -272,13 +299,13 @@ void Player::finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbl
 
 void Player::focus(int f, FocusGroup g) {
     // Focus item f from group g.
-    int i, s, d;
+    int i, s;
     std::vector<TextBox *> fcbls;
-    prepFocus(g, i, s, d, fcbls);
+    prepFocus(g, i, s, fcbls);
     if (i > -1 && i < s)
-        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
+        fcbls[static_cast<size_t>(i)]->toggleFocus(g != FocusGroup::box);
     if (f > -1 && f < s)
-        fcbls[static_cast<size_t>(f)]->changeBorder(d);
+        fcbls[static_cast<size_t>(f)]->toggleFocus(g != FocusGroup::box);
     finishFocus(f, g, fcbls);
 }
 
@@ -335,82 +362,24 @@ void Player::focusNext(FocusGroup g) {
 
 void Player::setState(UiState::State s) {
     // Change the UI state to s.
-    UiState state = uiStates.at(s);
+    UiState uiState = uiStates.at(s);
     pagers.clear();
-    pagers.resize(state.pagerCount);
+    pagers.resize(uiState.pagerCount);
     fs::path path;
     std::vector<std::string> saves;
     // Create boxes for new state.
-    for (auto &bI : state.boxesInfo)
+    for (auto &bI : uiState.boxesInfo)
         if (bI.onClick && bI.scrolls)
-            pagers[0].addBox(std::make_unique<SelectButton>(bI));
+            pagers[0].addBox(std::make_unique<SelectButton>(bI, printer));
         else if (bI.onClick)
-            pagers[0].addBox(std::make_unique<MenuButton>(bI));
+            pagers[0].addBox(std::make_unique<MenuButton>(bI, printer));
         else if (bI.scrolls)
-            pagers[0].addBox(std::make_unique<ScrollBox>(bI));
+            pagers[0].addBox(std::make_unique<ScrollBox>(bI, printer));
         else
-            pagers[0].addBox(std::make_unique<TextBox>(bI));
-    switch (s) {
-    case trading:
-        break;
-    case storing:
-        storageButtonIndex = boxes.size();
-
-        break;
-    case managing:
-        traveler->createManageButtons(pagers, printer);
-        break;
-    case equipping:
-        equipButtonIndex = boxes.size();
-        traveler->createEquipButtons(boxes, focusBox, equipButtonIndex, printer);
-        break;
-    case hiring:
-        break;
-    case attacking:
-        traveler->createAttackButton(
-            boxes, [this] { setState(fighting); }, printer);
-        pause = true;
-        break;
-    case logging:
-
-        break;
-    default:
-        break;
-    }
-    break;
-case fighting:
-    traveler->createFightBoxes(boxes, pause, printer);
-    break;
-case looting:
-    rt = {screenRect.w / 15, screenRect.h * 14 / 15, 0, 0};
-    tx.back() = "(D)one Looting";
-    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer, [this] {
-        traveler->loseTarget();
-        setState(traveling);
-    }));
-    boxes.back()->setKey(SDLK_d);
-    rt.x += screenRect.w / 5;
-    tx.back() = "(L)oot All";
-    boxes.push_back(std::make_unique<MenuButton>(rt, tx, uIFgr, uIBgr, sBB, sBR, sBFS, printer,
-                                                 [this, &tgt = *traveler->getTarget().lock()] {
-                                                     traveler->loot(tgt);
-                                                     traveler->loseTarget();
-                                                     setState(traveling);
-                                                 }));
-    boxes.back()->setKey(SDLK_l);
-    lootButtonIndex = boxes.size();
-    traveler->createLootButtons(boxes, focusBox, lootButtonIndex, printer);
-    pause = true;
-    break;
-case dying:
-    rt = {screenRect.w / 2, screenRect.h / 2, 0, 0};
-    tx = {traveler->getLogText().back(), "You have died."};
-    boxes.push_back(std::make_unique<TextBox>(rt, tx, traveler->getNation()->getForeground(),
-                                              traveler->getNation()->getBackground(), bBB, bBR, fFS, printer));
-    break;
-}
-focusBox = pagers[0].getBox(0);
-state = s;
+            pagers[0].addBox(std::make_unique<TextBox>(bI, printer));
+    if (uiState.onChange)
+        uiState.onChange();
+    state = s;
 }
 
 void Player::handleKey(const SDL_KeyboardEvent &k) {
@@ -431,22 +400,26 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
         modMultiplier = 100.;
     else
         modMultiplier = 1.;
+
+    int keyedIndex = -1, indexOffset = 0;
+    for (auto &pgr : pagers) {
+        keyedIndex = pgr.getKeyedIndex(k);
+        if (keyedIndex > -1) {
+            // Something on this page was keyed.
+            focus(keyedIndex + indexOffset, FocusGroup::box);
+            pgr.getVisible(keyedIndex)->handleKey(k);
+            break;
+        }
+        indexOffset += pgr.visibleCount();
+    }
     if (k.state == SDL_PRESSED) {
         // Event is SDL_KEYDOWN
-        if (!boxes.empty()) {
-            auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
-                                         [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
-            if (keyedBox != boxes.end()) {
-                // A box's key was pressed.
-                focus(static_cast<int>(std::distance(boxes.begin(), keyedBox)), box);
-                (*keyedBox)->handleKey(k);
-            }
-        }
-        if (focusBox < 0 || !boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)) {
-            if (state != quitting) {
+        if (keyedIndex < 0) {
+            // No box captured the key press.
+            if (state != UiState::quitting) {
                 if (traveler) {
                     switch (state) {
-                    case traveling:
+                    case UiState::traveling:
                         switch (k.keysym.sym) {
                         case SDLK_LEFT:
                         case SDLK_RIGHT:
@@ -463,9 +436,9 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             break;
                         }
                         break;
-                    case trading:
-                    case storing:
-                    case managing:
+                    case UiState::trading:
+                    case UiState::storing:
+                    case UiState::managing:
                         switch (k.keysym.sym) {
                         case SDLK_LEFT:
                             focusPrev(box);
@@ -495,16 +468,16 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                         break;
                     }
                 }
-            }
-            switch (k.keysym.sym) {
-            case SDLK_ESCAPE:
-                if (state == quitting)
-                    setState(storedState);
-                else {
+                // Keyboard shortcuts for all non-quitting states
+                switch (k.keysym.sym) {
+                case SDLK_ESCAPE:
                     storedState = state;
-                    setState(quitting);
+                    setState(UiState::quitting);
+                    break;
                 }
-                break;
+            }
+            // Keyboard shortcuts for all states.
+            switch (k.keysym.sym) {
             case SDLK_TAB:
                 if (mod & KMOD_SHIFT)
                     focusPrev(box);
@@ -512,59 +485,54 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                     focusNext(box);
                 break;
             }
-        } else
-            boxes[static_cast<size_t>(focusBox)]->handleKey(k);
+        }
     } else {
         // Event is SDL_KEYUP.
-        if (!boxes.empty()) {
-            // Find a box which handles this key.
-            auto keyedBox = std::find_if(boxes.begin(), boxes.end(),
-                                         [&k](const std::unique_ptr<TextBox> &t) { return k.keysym.sym == t->getKey(); });
-            if (keyedBox != boxes.end())
-                // A box's key was released.
-                (*keyedBox)->handleKey(k);
-            if (!(focusBox > -1 && boxes[static_cast<size_t>(focusBox)]->keyCaptured(k)))
-                // Key is not used by currently focused box.
-                switch (k.keysym.sym) {
-                case SDLK_LEFT:
-                case SDLK_RIGHT:
-                case SDLK_UP:
-                case SDLK_DOWN:
-                    scrollKeys.erase(k.keysym.sym);
-                    break;
-                }
-            else
-                boxes[static_cast<size_t>(focusBox)]->handleKey(k);
-        }
+        if (keyedIndex < 0)
+            // Key is not used by any box.
+            switch (k.keysym.sym) {
+            case SDLK_LEFT:
+            case SDLK_RIGHT:
+            case SDLK_UP:
+            case SDLK_DOWN:
+                scrollKeys.erase(k.keysym.sym);
+                break;
+            }
     }
 }
 
 void Player::handleTextInput(const SDL_TextInputEvent &t) {
-    if (focusBox > -1)
-        boxes[static_cast<size_t>(focusBox)]->handleTextInput(t);
+    if (focusBox > -1) {
+        int indexOffset = 0;
+        for (auto &pgr : pagers) {
+            int vC = pgr.visibleCount();
+            if (focusBox - indexOffset < vC) {
+                // Focus box is in this pager.
+                pgr.getVisible(focusBox - indexOffset)->handleTextInput(t);
+                break;
+            }
+            indexOffset += vC;
+        }
+    }
 }
 
 void Player::handleClick(const SDL_MouseButtonEvent &b) {
-    if (state == traveling) {
+    if (state == UiState::traveling) {
         std::vector<TextBox *> fcbls = game.getTownBoxes();
         auto clickedTown = std::find_if(fcbls.begin(), fcbls.end(), [&b](const TextBox *t) { return t->clickCaptured(b); });
         if (clickedTown != fcbls.end())
             focus(static_cast<int>(std::distance(fcbls.begin(), clickedTown)), town);
     }
-    if (!boxes.empty()) {
-        auto clickedBox = std::find_if(boxes.begin(), boxes.end(), [&b](const std::unique_ptr<TextBox> &t) {
-            return t->getCanFocus() && t->clickCaptured(b);
-        });
-        if (clickedBox == boxes.end()) {
-            // None of the boxes was clicked, check pagers.
-            focus(-1, box);
-        } else {
-            // One of the boxes was clicked.
-            int cI = static_cast<int>(clickedBox - boxes.begin());
-            if (cI != focusBox)
-                focus(cI, box);
-            (*clickedBox)->handleClick(b);
+    int clickedIndex = -1, indexOffset = 0;
+    for (auto &pgr : pagers) {
+        clickedIndex = pgr.getClickedIndex(b);
+        if (clickedIndex > -1) {
+            // Something on this page was clicked.
+            focus(clickedIndex + indexOffset, FocusGroup::box);
+            pgr.getVisible(clickedIndex)->handleClick(b);
+            break;
         }
+        indexOffset += pgr.visibleCount();
     }
 }
 
@@ -592,27 +560,27 @@ void Player::update(unsigned int e) {
     auto t = traveler.get();
     bool target = t && t->getTarget().lock();
     switch (state) {
-    case traveling:
+    case UiState::traveling:
         if (target) {
             pause = true;
-            setState(fighting);
+            setState(UiState::fighting);
         }
         break;
-    case trading:
-        traveler->updateTradeButtons(boxes, offerButtonIndex, requestButtonIndex);
+    case UiState::trading:
+        traveler->updateTradeButtons(pagers);
         break;
-    case fighting:
+    case UiState::fighting:
         if (!traveler->alive()) {
-            setState(dying);
+            setState(UiState::dying);
             break;
         } else if (!target) {
-            setState(logging);
+            setState(UiState::logging);
             break;
         } else if (traveler->fightWon()) {
-            setState(looting);
+            setState(UiState::looting);
             break;
         }
-        traveler->updateFightBoxes(boxes);
+        traveler->updateFightBoxes(pagers[0u]);
         break;
     default:
         break;
@@ -643,13 +611,11 @@ void Player::update(unsigned int e) {
         traveler->update(e);
 }
 
-void Player::updatePortionBox() { boxes[portionBoxIndex]->setText(0, traveler->portionString()); }
+void Player::updatePortionBox() { pagers[0u].getVisible(kPortionBoxIndex)->setText(0, traveler->portionString()); }
 
 void Player::draw(SDL_Renderer *s) {
     if (traveler.get())
         traveler->draw(s);
-    for (auto &bx : boxes)
-        bx->draw(s);
-    for (auto &pg : pagers)
-        pg.draw(s);
+    for (auto &pgr : pagers)
+        pgr.draw(s);
 }

@@ -55,10 +55,17 @@ void Pager::recedePage() {
     setVisible();
 }
 
+int Pager::getKeyedIndex(const SDL_KeyboardEvent &k) {
+    // Return the index relative to current page of keyed box, or -1 if no box was keyed on current page.
+    auto keyedIt =
+        std::find_if(visible.start, visible.stop, [&k](const std::unique_ptr<TextBox> &bx) { return bx->keyCaptured(k); });
+    return keyedIt == visible.stop ? -1 : keyedIt - visible.start;
+}
+
 int Pager::getClickedIndex(const SDL_MouseButtonEvent &b) {
     // Return the index relative to current page of clicked box, or -1 if no box was clicked on current page.
     auto clickedIt =
-        std::find_if(visible.start, visible.stop, [&b](std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
+        std::find_if(visible.start, visible.stop, [&b](const std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
     return clickedIt == visible.stop ? -1 : clickedIt - visible.start;
 }
 

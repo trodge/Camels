@@ -89,12 +89,9 @@ class Good {
     void create(const std::unordered_map<unsigned int, double> &mAs);
     void create(double a);
     void consume(unsigned int e);
-    std::unique_ptr<MenuButton> button(bool aS, const Material &mtr, const SDL_Rect &rt, const SDL_Color &fgr,
-                                       const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
-                                       const std::function<void()> &fn) const;
-    std::unique_ptr<MenuButton> button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr, const SDL_Color &bgr, int b, int r,
-                                       int fS, Printer &pr, const std::function<void()> &fn) const {
-        return button(aS, materials.front(), rt, fgr, bgr, b, r, fS, pr, fn);
+    std::unique_ptr<MenuButton> button(bool aS, const Material &mtr, BoxInfo bI, Printer &pr) const;
+    std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const {
+        return button(aS, materials.front(), bI, pr);
     }
     void adjustDemand(std::string rBN, double d);
     void saveDemand(unsigned long p, std::string &u) const;

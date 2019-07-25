@@ -146,27 +146,26 @@ void Business::run(std::vector<Good> &gds) {
     }
 }
 
-std::unique_ptr<MenuButton> Business::button(bool aS, const SDL_Rect &rt, const SDL_Color &fgr, const SDL_Color &bgr, int b,
-                                             int r, int fS, Printer &pr, const std::function<void()> &fn) const {
-    std::vector<std::string> tx = {name};
+std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) const {
+    bI.text = {name};
     std::string unitText; // Units of input and output post-fix.
     if (aS) {
         std::string areaText = std::to_string(area);
         dropTrail(areaText, 2u);
-        tx.push_back("Area: " + areaText + " uncia");
+        bI.text.push_back("Area: " + areaText + " uncia");
         unitText = " per annum";
     } else
         unitText = " per uncia anum";
-    tx.push_back("Requirements");
+    bI.text.push_back("Requirements");
     for (auto &rq : requirements)
-        tx.push_back(rq.businessText());
-    tx.push_back("Inputs");
+        bI.text.push_back(rq.businessText());
+    bI.text.push_back("Inputs");
     for (auto &ip : inputs)
-        tx.push_back(ip.businessText() + unitText);
-    tx.push_back("Outputs");
+        bI.text.push_back(ip.businessText() + unitText);
+    bI.text.push_back("Outputs");
     for (auto &op : outputs)
-        tx.push_back(op.businessText() + unitText);
-    return std::make_unique<MenuButton>(rt, tx, fgr, bgr, b, r, fS, pr, fn);
+        bI.text.push_back(op.businessText() + unitText);
+    return std::make_unique<MenuButton>(bI, pr);
 }
 
 void Business::saveFrequency(unsigned long p, std::string &u) const {

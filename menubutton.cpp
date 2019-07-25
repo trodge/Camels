@@ -35,9 +35,9 @@ bool MenuButton::keyCaptured(const SDL_KeyboardEvent &k) const {
     case SDLK_SPACE:
     case SDLK_RETURN:
     case SDLK_KP_ENTER:
-        return true;
+        return isFocus;
     default:
-        return false;
+        return k.keysym.sym == key;
     }
 }
 

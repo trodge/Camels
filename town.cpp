@@ -22,7 +22,15 @@
 Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
            unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS,
            Printer &pr)
-    : id(i), box(std::make_unique<TextBox>(nms, nt->getForeground(), nt->getBackground(), nt->getId(), true, 1, 1, fS, pr)),
+    : id(i), box(std::make_unique<TextBox>(BoxInfo{.text = nms,
+                                                   .foreground = nt->getForeground(),
+                                                   .background = nt->getBackground(),
+                                                   .id = nt->getId(),
+                                                   .isNation = true,
+                                                   .border = 1,
+                                                   .radius = 1,
+                                                   .fontSize = fS},
+                                           pr)),
       nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT) {
     // Create new town based on parameters.
     // Copy businesses from nations, scaling with frequencies.
@@ -65,8 +73,15 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
     std::vector<std::string> names;
     names.push_back(lNames->Get(0)->str());
     names.push_back(lNames->Get(1)->str());
-    box = std::make_unique<TextBox>(rt, names, nation->getForeground(), nation->getBackground(), nation->getId(), true, 1, 1,
-                                    fS, pr);
+    box = std::make_unique<TextBox>(BoxInfo{.text = names,
+                                            .foreground = nation->getForeground(),
+                                            .background = nation->getBackground(),
+                                            .id = nation->getId(),
+                                            .isNation = true,
+                                            .border = 1,
+                                            .radius = 1,
+                                            .fontSize = fS},
+                                    pr);
     auto lBusinesses = t->businesses();
     for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI)
         businesses.push_back(Business(*lBI));

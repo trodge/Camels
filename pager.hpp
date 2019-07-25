@@ -48,6 +48,7 @@ class Pager {
     void advancePage();
     void recedePage();
     void toggleLock(size_t idx) { boxes[idx]->toggleLock(); }
+    int getKeyedIndex(const SDL_KeyboardEvent &k);
     int getClickedIndex(const SDL_MouseButtonEvent &b);
     void draw(SDL_Renderer *s);
 };

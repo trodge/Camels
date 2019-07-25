@@ -218,23 +218,21 @@ void Good::consume(unsigned int e) {
     }
 }
 
-std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, const SDL_Rect &rt, const SDL_Color &fgr,
-                                         const SDL_Color &bgr, int b, int r, int fS, Printer &pr,
-                                         const std::function<void()> &fn) const {
+std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo bI, Printer &pr) const {
     auto &oMtr = getMaterial(mtr);
-    std::vector<std::string> tx = {getFullName(mtr)};
+    bI.text = {getFullName(mtr)};
     // Find image in game data.
     SDL_Surface *img = oMtr.getImage();
-    std::vector<Image> imgs(1u, {img, {2 * b, 2 * b, img->w, img->h}});
+    std::vector<Image> imgs(1u, {img, {2 * bI.border, 2 * bI.border, img->w, img->h}});
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());
         dropTrail(amountText, split ? 3u : 0u);
-        tx.push_back(std::move(amountText));
-        return std::make_unique<MenuButton>(rt, tx, fgr, bgr, id, false, b, r, fS, imgs, pr, fn);
+        bI.text.push_back(std::move(amountText));
+        return std::make_unique<MenuButton>(bI, pr);
     }
     // Button does not show amount.
-    return std::make_unique<MenuButton>(rt, tx, fgr, bgr, id, false, b, r, fS, imgs, pr, fn);
+    return std::make_unique<MenuButton>(bI, pr);
 }
 
 void Good::adjustDemand(std::string rBN, double d) {

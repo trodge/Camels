@@ -76,7 +76,7 @@ class Player {
     UiState::State state = UiState::starting, storedState = UiState::starting;
     std::unordered_map<UiState::State, UiState> uiStates;
     enum FocusGroup { box, neighbor, town };
-    void prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls);
+    void prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls);
     void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);
     void focus(int f, FocusGroup g);
     void focusPrev(FocusGroup g);
