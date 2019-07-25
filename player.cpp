@@ -159,10 +159,12 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox
     switch (g) {
     case box:
         i = focusBox;
-        s = std::accumulate();
+        s = std::accumulate(pagers.begin(), pagers.end(), 0u, [](size_t a, size_t b) { return a + b; });
         d = kBoxDBS;
-        for (auto &b : boxes)
+        for (auto &pg : pagers) {
+            auto &bxs =
             fcbls.push_back(b.get());
+        }
         break;
     case neighbor:
         neighbors = traveler->getTown()->getNeighbors();
