@@ -29,6 +29,7 @@
 
 #include "game.hpp"
 #include "menubutton.hpp"
+#include "pager.hpp"
 #include "scrollbox.hpp"
 #include "selectbutton.hpp"
 #include "settings.hpp"
@@ -57,9 +58,9 @@ struct UiState {
         looting,
         dying
     };
-    std::vector<BoxInfo> boxesInfo; // info for boxes to create for this state
+    std::vector<BoxInfo> boxesInfo;           // info for boxes to create for this state
     std::function<void()> onChange = nullptr; // function to run when this UiState is switched to
-    size_t pagerCount = 1u;              // number of pagers this state uses
+    size_t pagerCount = 1u;                   // number of pagers this state uses
 };
 
 class Player {
@@ -69,15 +70,9 @@ class Player {
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false;
     std::unordered_set<SDL_Keycode> scrollKeys;
-    double modMultiplier = 1.;                   // multiplier for values which depend on keymod state
-    int focusBox = -1;                           // index of box we are focusing across all pagers
-    int focusTown = -1;                          // index of town currently focused
-    size_t offerButtonIndex, requestButtonIndex; // index of first offer and request button for updating trade buttons
-    size_t portionBoxIndex;                      // index of box for setting portion
-    size_t setPortionButtonIndex;                // index of button for setting portion
-    size_t storageButtonIndex;                   // index of first storage button
-    size_t equipButtonIndex;                     // index of first equip button
-    size_t lootButtonIndex;                      // index of first loot button
+    double modMultiplier = 1.; // multiplier for values which depend on keymod state
+    int focusBox = -1;         // index of box we are focusing across all pagers
+    int focusTown = -1;        // index of town currently focused
     UiState::State state = UiState::starting, storedState = UiState::starting;
     std::unordered_map<UiState::State, UiState> uiStates;
     enum FocusGroup { box, neighbor, town };

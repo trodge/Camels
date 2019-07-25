@@ -253,23 +253,21 @@ void Traveler::divideExcess(double ec) {
     }
 }
 
-void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bxs, size_t &oBI, size_t &rBI, Printer &pr) {
-    // Create offer and request buttons for the player. Store request button index in parameter
-
+void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
+    // Create offer and request buttons for the player on given pagers.
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
-    std::function<void()> fn = [this, &bxs, &oBI, &rBI] {
-        updateTradeButtons(bxs, oBI, rBI);
-    }; // function to call when buttons are clicked
+    std::function<void()> fn = [this, &pgrs] { updateTradeButtons(pgrs); }; // function to call when buttons are clicked
     // Create the offer buttons for the player.
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor,
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 14 / 15,
         dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
         dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
     SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
                    sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
-    for (auto &g : getGoods()) {
+    std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on next page
+    for (auto &g : goods) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
                 bxs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, fn));
@@ -277,14 +275,21 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bxs, si
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
                     rt.y += dy;
+                    if (rt.y + rt.h >= bottom) {
+                        // Flush current page upon reaching bottom.
+                        rt.y = top;
+                        pgrs[1u].addPage(bxs);
+                    }
                 }
             }
     }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[1u].addPage(bxs);
     left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
     right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
     rt.y = top;
-    rBI = bxs.size();
     for (auto &g : toTown->getGoods()) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
@@ -293,80 +298,85 @@ void Traveler::createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bxs, si
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
                     rt.y += dy;
+                    if (rt.y + rt.h >= bottom) {
+                        // Flush current page upon reaching bottom.
+                        rt.y = top;
+                        pgrs[2u].addPage(bxs);
+                    }
                 }
             }
     }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[2u].addPage(bxs);
 }
 
-void Traveler::updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bxs, size_t oBI, size_t rBI) {
+void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     // Update the values shown on offer and request boxes and set offer and request.
     std::string bN;
     offer.clear();
     request.clear();
     double offerValue = 0.;
-    auto rBBIt = bxs.begin() + static_cast<std::vector<std::unique_ptr<TextBox>>::difference_type>(
-                                   rBI); // iterator to first request button
-    // Loop through all boxes after cancel button and before first request button.
-    for (auto bIt = bxs.begin() + oBI; bIt != rBBIt; ++bIt) {
-        auto &g = goods[(*bIt)->getId()]; // good corresponding to bIt
-        auto &gMs = g.getMaterials();     // g's materials
-        bN = (*bIt)->getText()[0];        // name of material and good on button
-        auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
+    // Loop through all offer buttons.
+    std::vector<TextBox *> bxs = pgrs[1u].getAll();
+    for (auto bx : bxs) {
+        auto &g = goods[bx->getId()]; // good corresponding to bIt
+        auto &gMs = g.getMaterials(); // g's materials
+        bN = bx->getText()[0];        // name of material and good on button
+        auto mIt = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
             const std::string &mN = m.getName(); // material name
             // Find material such that first word of material name matches first word on button.
             return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
-        });
-        if (mI != gMs.end()) {
-            // mI is iterator to the material on bIt
-            mI->updateButton(g.getSplit(), bIt->get());
-            if ((*bIt)->getClicked()) {
-                // Button was clicked, so add corresponding good to offer.
-                double amount = mI->getAmount() * portion;
-                if (!g.getSplit())
-                    amount = floor(amount);
-                auto &tM = toTown->getGood(g.getId()).getMaterial(*mI);
-                double p = tM.getPrice(amount);
-                if (p > 0.) {
-                    offerValue += p;
-                    offer.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
-                    offer.back().addMaterial(Material(mI->getId(), mI->getName(), amount));
-                } else
-                    // Good is worthless in this town, don't allow it to be offered.
-                    (*bIt)->setClicked(false);
-            }
+        }); // iterator to the material on bx
+        mIt->updateButton(g.getSplit(), bx);
+        if (bx->getClicked()) {
+            // Button was clicked, so add corresponding good to offer.
+            double amount = mIt->getAmount() * portion;
+            if (!g.getSplit())
+                amount = floor(amount);
+            auto &tM = toTown->getGood(g.getId()).getMaterial(*mIt);
+            double p = tM.getPrice(amount);
+            if (p > 0.) {
+                offerValue += p;
+                offer.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
+                offer.back().addMaterial(Material(mIt->getId(), mIt->getName(), amount));
+            } else
+                // Good is worthless in this town, don't allow it to be offered.
+                bx->setClicked(false);
         }
     }
-    unsigned int requestCount = std::accumulate(
-        rBBIt, bxs.end(), 0u, [](unsigned int c, const std::unique_ptr<TextBox> &rB) { return c + rB->getClicked(); });
-    double excess = 0; // excess value of offer over value needed for request
+    bxs = pgrs[2u].getAll();
+    unsigned int requestCount =
+        std::accumulate(bxs.begin(), bxs.end(), 0u, [](unsigned int c, const std::unique_ptr<TextBox> &rB) {
+            return c + rB->getClicked();
+        }); // count of clicked request buttons.
+    request.reserve(requestCount);
+    double excess = 0.; // excess value of offer over value needed for request
     // Loop through request buttons.
-    for (auto bIt = rBBIt; bIt != bxs.end(); ++bIt) {
-        auto &g = toTown->getGood((*bIt)->getId()); // good in town corresponding to bIt
+    for (auto bx : bxs) {
+        auto &g = toTown->getGood(bx->getId()); // good in town corresponding to bIt
         auto &gMs = g.getMaterials();
-        bN = (*bIt)->getText()[0];
-        auto mI = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
+        bN = bx->getText()[0];
+        auto mIt = std::find_if(gMs.begin(), gMs.end(), [bN](const Material &m) {
             const std::string &mN = m.getName();
             // Find material such that first word of name matches first word on button.
             return mN.substr(0, mN.find(' ')) == bN.substr(0, bN.find(' '));
-        });
-        if (mI != gMs.end()) {
-            // mI is iterator to the material on bIt.
-            if (offer.size()) {
-                mI->updateButton(g.getSplit(), offerValue, std::max(1u, requestCount), bIt->get());
-                if ((*bIt)->getClicked() && offerValue > 0.) {
-                    double mE = 0; // excess quantity of this material
-                    double amount = mI->getQuantity(offerValue / requestCount * Settings::getTownProfit(), mE);
-                    if (!g.getSplit())
-                        // Remove extra portion of goods that don't split.
-                        mE += modf(amount, &amount);
-                    // Convert material excess to value and add to overall excess.
-                    excess += mI->getPrice(mE);
-                    request.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
-                    request.back().addMaterial(Material(mI->getId(), mI->getName(), amount));
-                }
-            } else
-                mI->updateButton(g.getSplit(), bIt->get());
-        }
+        }); // iterator to the material on bx
+        if (offer.size()) {
+            mIt->updateButton(g.getSplit(), offerValue, std::max(1u, requestCount), bx);
+            if (bx->getClicked() && offerValue > 0.) {
+                double mE = 0; // excess quantity of this material
+                double amount = mIt->getQuantity(offerValue / requestCount * Settings::getTownProfit(), mE);
+                if (!g.getSplit())
+                    // Remove extra portion of goods that don't split.
+                    mE += modf(amount, &amount);
+                // Convert material excess to value and add to overall excess.
+                excess += mIt->getPrice(mE);
+                request.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
+                request.back().addMaterial(Material(mIt->getId(), mIt->getName(), amount));
+            }
+        } else
+            mIt->updateButton(g.getSplit(), bx);
     }
     if (offer.size())
         divideExcess(excess);
@@ -402,65 +412,96 @@ void Traveler::withdraw(Good &g) {
     goods[gId].put(g);
 }
 
-void Traveler::refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t sBI, Printer &pr) {
-    // Delete and re-create storage buttons to reflect changes.
-    bxs.erase(bxs.begin() + sBI, bxs.end());
-    createStorageButtons(bxs, fB, sBI, pr);
-    // Change border on the focused box.
-    if (fB > -1 && static_cast<size_t>(fB) < bxs.size())
-        bxs[static_cast<size_t>(fB)]->changeBorder(kBoxDBS);
+void Traveler::refreshFocusBox(std::vector<Pager> &pgrs, int &fB) {
+    // Change border on the focused box if it was just recreated.
+    if (fB < 0)
+        return;
+    int focusBox = fB;
+    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) {
+        int visibleCount = pgrIt->visibleCount();
+        if (focusBox < visibleCount) {
+            pgrIt->getVisible(focusBox)->changeBorder(kBoxDBS);
+            break;
+        } else
+            focusBox -= visibleCount;
+    }
 }
 
-void Traveler::createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t sBI, Printer &pr) {
+void Traveler::refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+    // Delete and re-create storage buttons to reflect changes.
+    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt)
+        *pgrIt = Pager{};
+    createStorageButtons(pgrs, fB, pr);
+    refreshFocusBox(pgrs, fB);
+}
+
+void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for depositing and withdrawing goods to and from the current town.
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     // Create buttons for depositing goods.
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor,
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 14 / 15,
         dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
         dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
     SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
                    sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
+    std::vector<std::unique_ptr<TextBox>> bxs;
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if (((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1))) {
-                bxs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, [this, &g, &m, &bxs, &fB, sBI, &pr] {
+                // Good has enough amount to create button.
+                bxs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, [this, &g, &m, &pgrs, &fB, &pr] {
                     Good dG(g.getId(), g.getAmount() * portion);
                     dG.addMaterial(Material(m.getId(), m.getAmount()));
                     deposit(dG);
-                    refreshStorageButtons(bxs, fB, sBI, pr);
+                    refreshStorageButtons(pgrs, fB, pr);
                 }));
-
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
                     rt.y += dy;
+                    if (rt.y + rt.h >= bottom) {
+                        // Flush current page upon reaching bottom.
+                        rt.y = top;
+                        pgrs[1u].addPage(bxs);
+                    }
                 }
             }
         }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[1u].addPage(bxs);
     left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
     right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
     rt.y = top;
     auto &storage = properties[toTown->getId() - 1].storage;
-    for (auto &g : storage) {
+    for (auto &g : storage)
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1)) {
-                bxs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &g, &m, &bxs, &fB, sBI, &pr] {
+                // Good has enough amount to create button.
+                bxs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &g, &m, &pgrs, &fB, &pr] {
                     Good dG(g.getId(), g.getAmount() * portion);
                     dG.addMaterial(Material(m.getId(), m.getAmount()));
                     withdraw(dG);
-                    refreshStorageButtons(bxs, fB, sBI, pr);
+                    refreshStorageButtons(pgrs, fB, pr);
                 }));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
                     rt.y += dy;
+                    if (rt.y + rt.h >= bottom) {
+                        // Flush current page upon reaching bottom.
+                        rt.y = top;
+                        pgrs[2u].addPage(bxs);
+                    }
                 }
             }
-    }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[2u].addPage(bxs);
 }
 
 void Traveler::build(const Business &bsn, double a) {
@@ -499,14 +540,13 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
     // Create buttons for demolishing businesses.
     std::vector<Business> &oBsns = properties[toTown->getId() - 1].businesses;
     int left = sR.w / kBusinessButtonXDivisor, right = sR.w / 2, top = sR.h / kBusinessButtonYDivisor,
-        bottom = sR.h - sR.h * 2 / kBusinessButtonYDivisor,
-        dx = sR.w * kBusinessButtonSpaceMultiplier / kBusinessButtonXDivisor,
+        bottom = sR.h * 14 / 15, dx = sR.w * kBusinessButtonSpaceMultiplier / kBusinessButtonXDivisor,
         dy = sR.h * kBusinessButtonSpaceMultiplier / kBusinessButtonYDivisor;
     SDL_Rect rt = {left, top, sR.w * kBusinessButtonSizeMultiplier / kBusinessButtonXDivisor,
                    sR.h * kBusinessButtonSizeMultiplier / kBusinessButtonYDivisor};
-    std::vector<std::unique_ptr<TextBox>> boxes;
+    std::vector<std::unique_ptr<TextBox>> bxs;
     for (auto &bsn : oBsns) {
-        boxes.push_back(bsn.button(true, rt, fgr, bgr, tB, tR, tFS, pr, [] {
+        bxs.push_back(bsn.button(true, rt, fgr, bgr, tB, tR, tFS, pr, [] {
 
         }));
 
@@ -517,19 +557,21 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
             rt.y += dy;
             if (rt.y + rt.h >= bottom) {
                 // Reached bottom of page, flush vector.
-                pgrs[0].addPage(boxes);
-                rt.x = left;
+                pgrs[1u].addPage(bxs);
                 rt.y = top;
             }
         }
     }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[1u].addPage(bxs);
     const std::vector<Business> &tBsns = toTown->getBusinesses();
     left = sR.w / 2 + sR.w / kBusinessButtonXDivisor;
     right = sR.w - sR.w / kBusinessButtonXDivisor;
     rt.x = left;
     rt.y = top;
     for (auto &bsn : tBsns) {
-        boxes.push_back(bsn.button(true, rt, tFgr, tBgr, tB, tR, tFS, pr, [] {
+        bxs.push_back(bsn.button(true, rt, tFgr, tBgr, tB, tR, tFS, pr, [] {
 
         }));
         rt.x += dx;
@@ -539,12 +581,14 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
             rt.y += dy;
             if (rt.y + rt.h >= bottom) {
                 // Reached bottom of page, flush vector.
-                pgrs[1].addPage(boxes);
-                rt.x = left;
+                pgrs[2u].addPage(bxs);
                 rt.y = top;
             }
         }
     }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[2u].addPage(bxs);
 }
 
 void Traveler::unequip(unsigned int pI) {
@@ -601,14 +645,15 @@ void Traveler::equip(unsigned int pI) {
     }
 }
 
-void Traveler::refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t eBI, Printer &pr) {
-    bxs.erase(bxs.begin() + eBI, bxs.end());
-    createEquipButtons(bxs, fB, eBI, pr);
-    if (fB > -1 && static_cast<size_t>(fB) < bxs.size())
-        bxs[static_cast<size_t>(fB)]->changeBorder(kBoxDBS);
+void Traveler::refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+    // Delete and re-create storage buttons to reflect changes.
+    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt)
+        *pgrIt = Pager{};
+    createEquipButtons(pgrs, fB, pr);
+    refreshFocusBox(pgrs, fB);
 }
 
-void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t eBI, Printer &pr) {
+void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for equipping equippables.
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
@@ -636,10 +681,10 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bxs, co
     // Create buttons for equipping equipment.
     for (auto &eP : equippable) {
         for (auto &e : eP) {
-            bxs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr, [this, e, &bxs, &fB, eBI, &pr]() mutable {
+            pgrs[1u].addBox(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr, [this, e, &pgrs, &fB, &pr]() mutable {
                 equip(e);
                 // Refresh buttons.
-                refreshEquipButtons(bxs, fB, eBI, pr);
+                refreshEquipButtons(pgrs, fB, pr);
             }));
             rt.y += dy;
         }
@@ -649,17 +694,17 @@ void Traveler::createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bxs, co
     // Create buttons for unequipping equipment.
     rt.y = top;
     left = sR.w * 218 / kGoodButtonXDivisor;
-    for (auto &e : getEquipment()) {
+    for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
         rt.x = left + static_cast<int>(pI) * dx;
-        bxs.push_back(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr, [this, pI, ss, &bxs, &fB, eBI, &pr] {
+        pgrs[2u].addBox(e.button(false, rt, fgr, bgr, eB, eR, eFS, pr, [this, pI, ss, &pgrs, &fB, &pr] {
             unequip(pI);
             // Equip fists.
             for (auto &s : ss)
                 equip(s.partId);
             // Refresh buttons.
-            refreshEquipButtons(bxs, fB, eBI, pr);
+            refreshEquipButtons(pgrs, fB, pr);
         }));
     }
 }
@@ -702,8 +747,7 @@ void Traveler::attack(std::shared_ptr<Traveler> t) {
         t->choice = FightChoice::none;
 }
 
-void Traveler::createAttackButton(std::vector<std::unique_ptr<TextBox>> &bxs, const std::function<void()> &sSF,
-                                  Printer &pr) {
+void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr) {
     // Put attackable traveler names in names vector.
     const SDL_Rect &sR = Settings::getScreenRect();
     int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), fFS = Settings::getFightFontSize();
@@ -714,15 +758,28 @@ void Traveler::createAttackButton(std::vector<std::unique_ptr<TextBox>> &bxs, co
     std::transform(able.begin(), able.end(), std::back_inserter(names),
                    [](const std::shared_ptr<Traveler> t) { return t->getName(); });
     // Create attack button.
-    SDL_Rect rt = {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2};
-    bxs.push_back(std::make_unique<SelectButton>(rt, names, fgr, bgr, hl, bBB, bBR, fFS, pr, [this, &bxs, able, &sSF] {
-        int i = bxs.back()->getHighlightLine();
-        if (i > -1) {
-            attack(able[static_cast<size_t>(i)]);
-            sSF();
-        } else
-            bxs.back()->setClicked(false);
-    }));
+    pgr.addBox(std::make_unique<SelectButton>(BoxInfo{{sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2},
+                                                      names,
+                                                      fgr,
+                                                      bgr,
+                                                      hl,
+                                                      0u,
+                                                      false,
+                                                      bBB,
+                                                      bBR,
+                                                      fFS,
+                                                      {},
+                                                      SDLK_f,
+                                                      [this, able, sSF](MenuButton *btn) {
+                                                          int i = btn->getHighlightLine();
+                                                          if (i > -1) {
+                                                              attack(able[static_cast<size_t>(i)]);
+                                                              sSF();
+                                                          } else
+                                                              btn->setClicked(false);
+                                                      },
+                                                      true},
+                                              pr));
 }
 
 void Traveler::loseTarget() {
@@ -845,34 +902,40 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &t) {
     }
 }
 
-void Traveler::createFightBoxes(std::vector<std::unique_ptr<TextBox>> &bxs, bool &p, Printer &pr) {
+void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
     // Create buttons and text boxes for combat.
     const SDL_Rect &sR = Settings::getScreenRect();
-    SDL_Rect rt = {sR.w / 2, sR.h / 4, 0, 0};
     auto tgt = target.lock();
-    std::vector<std::string> tx = {"Fighting " + tgt->getName() + "..."};
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &hl = nation->getHighlight();
+    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &hgl = nation->getHighlight(),
+                    &tFgr = tgt->nation->getForeground(), &tBgr = tgt->nation->getBackground(),
+                    &tHgl = tgt->nation->getHighlight();
     int b = Settings::getBigBoxBorder(), r = Settings::getBigBoxRadius(), fS = Settings::getFightFontSize();
-    bxs.push_back(std::make_unique<TextBox>(rt, tx, fgr, bgr, b, r, fS, pr));
-    rt = {sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2};
-    tx = {};
-    bxs.push_back(std::make_unique<TextBox>(rt, tx, fgr, bgr, b, r, fS, pr));
-    rt = {sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2};
-    tx = {};
-    bxs.push_back(
-        std::make_unique<TextBox>(rt, tx, tgt->nation->getForeground(), tgt->nation->getBackground(), b, r, fS, pr));
-    rt = {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3};
-    tx = {"Fight", "Run", "Yield"};
-    bxs.push_back(std::make_unique<SelectButton>(rt, tx, fgr, bgr, hl, b, r, fS, pr, [this, &bxs, &p] {
-        int choice = bxs[kFightChoiceIndex]->getHighlightLine();
-        if (choice > -1) {
-            choose(static_cast<FightChoice>(choice));
-            p = false;
-        }
-    }));
+    auto ourBox = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
+        return BoxInfo{rt, tx, fgr, bgr, hgl, 0u, false, b, r, fS, {}};
+    };
+    auto theirBox = [&tFgr, &tBgr, &tHgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
+        return BoxInfo{rt, tx, tFgr, tBgr, tHgl, 0u, false, b, r, fS, {}};
+    };
+    auto selectButton = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
+                                                     std::function<void(MenuButton *)> fn) {
+        return BoxInfo{rt, tx, fgr, bgr, hgl, 0u, false, b, r, fS, {}, ky, fn, true};
+    };
+    pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + tgt->getName() + "..."}), pr));
+    pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));
+    pgr.addBox(std::make_unique<TextBox>(theirBox({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));
+    pgr.addBox(std::make_unique<SelectButton>(selectButton({sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3},
+                                                           {"Fight", "Run", "Yield"}, SDLK_c,
+                                                           [this, &p](MenuButton *btn) {
+                                                               int choice = btn->getHighlightLine();
+                                                               if (choice > -1) {
+                                                                   choose(static_cast<FightChoice>(choice));
+                                                                   p = false;
+                                                               }
+                                                           }),
+                                              pr));
 }
 
-void Traveler::updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bxs) {
+void Traveler::updateFightBoxes(Pager &pgr) {
     // Update TextBox objects for fight user interface.
     std::vector<std::string> choiceText = bxs[0]->getText();
     switch (choice) {
@@ -889,6 +952,7 @@ void Traveler::updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bxs) {
         choiceText[0] = "Yielding...";
         break;
     }
+    std::vector<TextBox *> bxs = pgr.getVisible();
     bxs[0]->setText(choiceText);
     std::vector<std::string> statusText(7);
     statusText[0] = name + "'s Status";
@@ -916,41 +980,50 @@ void Traveler::loot(Traveler &t) {
         loot(g, t);
 }
 
-void Traveler::refreshLootButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t lBI, Printer &pr) {
-    bxs.erase(bxs.begin() + lBI, bxs.end());
-    createLootButtons(bxs, fB, lBI, pr);
-    if (fB > -1 && static_cast<size_t>(fB) < bxs.size())
-        bxs[static_cast<size_t>(fB)]->changeBorder(kBoxDBS);
+void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt)
+        *pgrIt = Pager{};
+    createLootButtons(pgrs, fB, pr);
+    refreshFocusBox(pgrs, fB);
 }
 
-void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t lBI, Printer &pr) {
+void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     const SDL_Rect &sR = Settings::getScreenRect();
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     auto &tgt = *target.lock();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &tFgr = tgt.nation->getForeground(),
                     &tBgr = tgt.nation->getBackground();
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2;
-    int top = sR.h / kGoodButtonYDivisor;
-    int dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonYDivisor, bottom = sR.h * 14 / 15,
+        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
         dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
     SDL_Rect rt = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
                    sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor};
+    std::vector<std::unique_ptr<TextBox>> bxs;
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1)) {
-                bxs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, [this, &g, &m, &tgt, &bxs, &fB, lBI, &pr] {
+                bxs.push_back(g.button(true, m, rt, fgr, bgr, tB, tR, tFS, pr, [this, &g, &m, &tgt, &pgrs, &fB, &pr] {
                     Good lG(g.getId(), m.getAmount());
                     lG.addMaterial(Material(m.getId(), m.getAmount()));
                     tgt.loot(lG, *this);
-                    refreshLootButtons(bxs, fB, lBI, pr);
+                    refreshLootButtons(pgrs, fB, pr);
                 }));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
                     rt.y += dy;
+                    if (rt.y + rt.h >= bottom) {
+                        // Flush current page upon reaching bottom.
+                        rt.y = top;
+                        pgrs[1u].addPage(bxs);
+                    }
                 }
             }
         }
+
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[1u].addPage(bxs);
     left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
     right = sR.w - sR.w / kGoodButtonXDivisor;
     rt.x = left;
@@ -958,19 +1031,27 @@ void Traveler::createLootButtons(std::vector<std::unique_ptr<TextBox>> &bxs, con
     for (auto &g : tgt.goods)
         for (auto &m : g.getMaterials()) {
             if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1)) {
-                bxs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &g, &m, &tgt, &bxs, &fB, lBI, &pr] {
+                bxs.push_back(g.button(true, m, rt, tFgr, tBgr, tB, tR, tFS, pr, [this, &g, &m, &tgt, &pgrs, &fB, &pr] {
                     Good lG(g.getId(), m.getAmount());
                     lG.addMaterial(Material(m.getId(), m.getAmount()));
                     loot(lG, tgt);
-                    refreshLootButtons(bxs, fB, lBI, pr);
+                    refreshLootButtons(pgrs, fB, pr);
                 }));
                 rt.x += dx;
                 if (rt.x + rt.w >= right) {
                     rt.x = left;
                     rt.y += dy;
+                    if (rt.y + rt.h >= bottom) {
+                        // Flush current page upon reaching bottom.
+                        rt.y = top;
+                        pgrs[2u].addPage(bxs);
+                    }
                 }
             }
         }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgrs[2u].addPage(bxs);
 }
 
 void Traveler::startAI() {
@@ -1058,19 +1139,21 @@ void Traveler::update(unsigned int e) {
     }
 }
 
-void Traveler::adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bxs, size_t i, double d) {
+void Traveler::adjustAreas(Pager &pgr, double mM) {
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bxs.begin() + i; rBI != bxs.end(); ++rBI)
-        requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
-    toTown->adjustAreas(requestButtons, d);
+    std::vector<TextBox *> bxs = pgr.getAll();
+    for (auto rBI = bxs.begin(); rBI != bxs.end(); ++rBI)
+        requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
+    toTown->adjustAreas(requestButtons, mM);
 }
 
-void Traveler::adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bxs, size_t i, double d) {
+void Traveler::adjustDemand(Pager &pgr, double mM) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
-    for (auto rBI = bxs.begin() + i; rBI != bxs.end(); ++rBI)
-        requestButtons.push_back(dynamic_cast<MenuButton *>(rBI->get()));
-    toTown->adjustDemand(requestButtons, d);
+    std::vector<TextBox *> bxs = pgr.getAll();
+    for (auto rBI = bxs.begin(); rBI != bxs.end(); ++rBI)
+        requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
+    toTown->adjustDemand(requestButtons, mM);
 }
 
 void Traveler::resetTown() { toTown->resetGoods(); }

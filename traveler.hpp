@@ -34,9 +34,12 @@
 
 #include "ai.hpp"
 #include "good.hpp"
+#include "menubutton.hpp"
 #include "nation.hpp"
+#include "pager.hpp"
 #include "scrollbox.hpp"
 #include "selectbutton.hpp"
+#include "textbox.hpp"
 #include "town.hpp"
 
 struct CombatOdd {
@@ -94,15 +97,16 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     double pathDist(const Town *t) const;
     void deposit(Good &g);
     void withdraw(Good &g);
-    void refreshStorageButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t sBI, Printer &pr);
+    void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
+    void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
-    void refreshEquipButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t eBI, Printer &pr);
+    void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
     void runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d);
     void takeHit(const CombatHit &cH, Traveler &t);
-    void refreshLootButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t lBI, Printer &pr);
+    void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
 
   public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
@@ -144,30 +148,30 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void requestGood(const Good &g) { request.push_back(g); }
     void divideExcess(double ec);
     void makeTrade();
-    void createTradeButtons(std::vector<std::unique_ptr<TextBox>> &bxs, size_t &oBI, size_t &rBI, Printer &pr);
-    void updateTradeButtons(std::vector<std::unique_ptr<TextBox>> &bxs, size_t oBI, size_t rBI);
-    void createStorageButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t sBI, Printer &pr);
+    void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
+    void updateTradeButtons(std::vector<Pager> &pgrs);
+    void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void createManageButtons(std::vector<Pager> &pgrs, Printer &pr);
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
-    void createEquipButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t eBI, Printer &pr);
+    void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<std::shared_ptr<Traveler>> attackable() const;
     void attack(std::shared_ptr<Traveler> t);
-    void createAttackButton(std::vector<std::unique_ptr<TextBox>> &bxs, const std::function<void()> &sSF, Printer &pr);
+    void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
     void choose(FightChoice c) { choice = c; }
     void loseTarget();
-    void createFightBoxes(std::vector<std::unique_ptr<TextBox>> &bxs, bool &p, Printer &pr);
-    void updateFightBoxes(std::vector<std::unique_ptr<TextBox>> &bxs);
+    void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
+    void updateFightBoxes(Pager &pgr);
     void loot(Good &g, Traveler &t);
     void loot(Traveler &t);
-    void createLootButtons(std::vector<std::unique_ptr<TextBox>> &bxs, const int &fB, size_t lBI, Printer &pr);
+    void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void startAI();
     void startAI(const Traveler &p);
     void runAI(unsigned int e);
     void update(unsigned int e);
-    void adjustAreas(const std::vector<std::unique_ptr<TextBox>> &bxs, size_t i, double d);
-    void adjustDemand(const std::vector<std::unique_ptr<TextBox>> &bxs, size_t i, double d);
+    void adjustAreas(Pager &pgr, double mM);
+    void adjustDemand(Pager &pgr, double mM);
     void resetTown();
     void toggleMaxGoods();
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;

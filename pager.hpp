@@ -37,10 +37,12 @@ class Pager {
     std::vector<size_t>::iterator pageIt;        // index of beginning indices of current page
     BoxRange visible;
     void setVisible();
+
   public:
-    TextBox *getBox(size_t idx);
-    std::vector<TextBox *> getBoxes();
-    int visibleCount();
+    TextBox *getVisible(size_t idx);
+    std::vector<TextBox *> getVisible();
+    std::vector<TextBox *> getAll();
+    int visibleCount() const;
     void addBox(std::unique_ptr<TextBox> &&bx) { boxes.push_back(std::move(bx)); }
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void advancePage();

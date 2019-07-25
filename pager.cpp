@@ -7,7 +7,12 @@ void Pager::setVisible() {
                pageCount > 1u && pageIt != indices.end() - 1 ? boxes.begin() + *(pageIt + 1) : boxes.end()};
 }
 
-std::vector<TextBox *> Pager::getBoxes() {
+TextBox *Pager::getVisible(size_t idx) {
+    // Get pointer to box with given index currently visible on this pager.
+    return (visible.start + idx)->get();
+}
+
+std::vector<TextBox *> Pager::getVisible() {
     // Get vector of pointers to all boxes currently visible on this pager.
     std::vector<TextBox *> bxs;
     std::transform(visible.start, visible.stop, std::back_inserter(bxs),
@@ -15,7 +20,14 @@ std::vector<TextBox *> Pager::getBoxes() {
     return bxs;
 }
 
-int Pager::visibleCount() { return visible.stop - visible.start; }
+std::vector<TextBox *> Pager::getAll() {
+    std::vector<TextBox *> bxs;
+    std::transform(boxes.begin(), boxes.end(), std::back_inserter(bxs),
+                   [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
+    return bxs;
+}
+
+int Pager::visibleCount() const { return visible.stop - visible.start; }
 
 void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
     // Move parameter boxes and pagers into member vectors giving them a new page. Sets page to that page.
@@ -31,13 +43,15 @@ void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
 
 void Pager::advancePage() {
     // Advance to next page. Prevent advancing past last page.
-    if (pageIt != indices.end() - 1) ++pageIt;
+    if (pageIt != indices.end() - 1)
+        ++pageIt;
     setVisible();
 }
 
 void Pager::recedePage() {
     // Recede to previous page. Prevent receding past first page.
-    if (pageIt != indices.begin() + 1) --pageIt;
+    if (pageIt != indices.begin() + 1)
+        --pageIt;
     setVisible();
 }
 
@@ -50,5 +64,6 @@ int Pager::getClickedIndex(const SDL_MouseButtonEvent &b) {
 
 void Pager::draw(SDL_Renderer *s) {
     // Draw all boxes on the current page, or all boxes if there are no pages.
-    for (auto bxIt = visible.start; bxIt != visible.stop; ++bxIt) (*bxIt)->draw(s);
+    for (auto bxIt = visible.start; bxIt != visible.stop; ++bxIt)
+        (*bxIt)->draw(s);
 }
