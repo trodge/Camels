@@ -49,8 +49,7 @@ void TextBox::setText() {
     if (rect.h && lines > size_t(rect.h / lineHeight)) {
         // Truncate lines of text if they won'tx fit in box of fixed size.
         lines = static_cast<size_t>(rect.h / lineHeight);
-        text = std::vector<std::string>(text.begin(),
-                                        text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
+        text = std::vector<std::string>(text.begin(), text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
     }
     surface = printer.print(text, rect, border, radius, images);
     updateTexture = true;
@@ -101,8 +100,7 @@ void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
                 c = true;
                 break;
             }
-        if (c)
-            r.y -= r.h / 2;
+        if (c) r.y -= r.h / 2;
     }
     rect = r;
     drawn.push_back(r);
@@ -140,11 +138,9 @@ bool TextBox::clickCaptured(const SDL_MouseButtonEvent &b) const {
 }
 
 void TextBox::handleKey(const SDL_KeyboardEvent &k) {
-    if (k.state == SDL_PRESSED)
-        switch (k.keysym.sym) {
+    if (k.state == SDL_PRESSED) switch (k.keysym.sym) {
         case SDLK_BACKSPACE:
-            if (!text.empty() && !text.back().empty())
-                text.back().pop_back();
+            if (!text.empty() && !text.back().empty()) text.back().pop_back();
             setText();
         default:
             return;
@@ -156,38 +152,4 @@ void TextBox::handleTextInput(const SDL_TextInputEvent &tx) {
         text.back().append(tx.text);
         setText();
     }
-}
-
-void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
-    // Move parameter boxes and pagers into member vectors giving them a new page. Sets page to that page.
-    size_t boxCount = boxes.size();
-    indices.push_back(boxCount);
-    pageIt = indices.end() - 1;
-    boxCount += bxs.size();
-    boxes.reserve(boxCount);
-    std::move(bxs.begin(), bxs.end(), std::back_inserter(boxes));
-    bxs.clear();
-}
-
-void Pager::advancePage() {
-    // Advance to next page. Prevent advancing past last page.
-    if (pageIt != indices.end() - 1)
-        ++pageIt;
-}
-
-void Pager::recedePage() {
-    // Recede to previous page. Prevent receding past first page.
-    if (pageIt != indices.begin() + 1)
-        --pageIt;
-}
-
-TextBox *Pager::getClickedBox(const SDL_MouseButtonEvent &b) {}
-
-void Pager::draw(SDL_Renderer *s) {
-    // Draw all boxes on the current page, or all boxes if there are no pages.
-    size_t pageCount = indices.size();
-    auto startIt = boxes.begin() + (pageCount ? *pageIt : 0u);
-    auto stopIt = pageCount > 1u && pageIt != indices.end() - 1 ? boxes.begin() + *(pageIt + 1) : boxes.end();
-    for (auto bxIt = startIt; bxIt != stopIt; ++bxIt)
-        (*bxIt)->draw(s);
 }

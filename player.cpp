@@ -39,13 +39,12 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
         return BoxInfo{rt, tx, uiFgr, uiBgr, uiHgl, 0u, false, sBB, sBR, sBFS, {}};
     };
     auto smallButton = [&uiFgr, &uiBgr, &uiHgl, sBB, sBR, sBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
-                                                              SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
+                                                                SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
         return BoxInfo{rt, tx, uiFgr, uiBgr, uiHgl, 0u, false, sBB, sBR, sBFS, {}, ky, fn};
     };
     uiStates = {
         {UiState::starting,
-         {1u,
-          {bigBox({sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}),
+         {{bigBox({sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}),
            bigButton({sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, SDLK_n,
                      [this](MenuButton *) {
                          game.newGame();
@@ -57,10 +56,12 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                          storedState = state;
                          setState(UiState::loading);
                      })}}},
-        {UiState::beginning, {1u, {bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})}}},
+        {UiState::beginning, {{bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})}}, [this] {
+            // Allow typing in name box.
+            pagers[0u].toggleLock(0u);
+        }},
         {UiState::quitting,
-         {1u,
-          {bigButton({sR.w / 2, sR.h / 4, 0, 0}, {"Continue"}, SDLK_ESCAPE,
+         {{bigButton({sR.w / 2, sR.h / 4, 0, 0}, {"Continue"}, SDLK_ESCAPE,
                      [this](MenuButton *) {
                          pause = storedPause;
                          setState(storedState);
@@ -72,30 +73,43 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                 }) :
                       bigButton({sR.w / 2, sR.h * 3 / 4, 0, 0}, {"Quit"}, SDLK_q, [this](MenuButton *) { stop = true; })}}},
         {UiState::loading,
-         {1u, {bigButton({sR.w / 7, sR.h / 7, 0, 0}, {"(B)ack"}, SDLK_b, [this](MenuButton *) { setState(storedState); })}}},
-        {
-            UiState::traveling, {1u, {smallButton({sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"(T)rade"}, SDLK_t,
-            [this](MenuButton *) {
-                setState(UiState::trading);
-            }),
-            smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {})}}
-        }};
-        
-    /*
-      {trading, , , SDLK_t},
-                          {storing, , "(S)tore", SDLK_s},
-                          {managing, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, "(M)anage", SDLK_m},
-                          {equipping, {sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, "(E)quip", SDLK_e},
-                          {hiring, {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, "(H)ire", SDLK_h},
-                          {attacking, {sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, "(A)ttack", SDLK_a},
-                          {logging, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, "(L)og", SDLK_l}}}),
-      stopButtonsInfo({{{trading, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, "Stop (T)rading", SDLK_t},
-                        {storing, {sR.w / 3, sR.h * 14 / 15, 0, 0}, "Stop (S)toring", SDLK_s},
-                        {managing, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, "Stop (M)anaging", SDLK_m},
-                        {equipping, {sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, "Stop (E)quipping", SDLK_e},
-                        {hiring, {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, "Stop (H)iring", SDLK_h},
-                        {attacking, {sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, "Cancel (A)ttack", SDLK_a},
-                        {logging, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, "Close (L)og", SDLK_l}}})*/
+         {{bigButton({sR.w / 7, sR.h / 7, 0, 0}, {"(B)ack"}, SDLK_b, [this](MenuButton *) { setState(storedState); })}}},
+        {UiState::traveling,
+         {{smallButton({sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"(T)rade"}, SDLK_t,
+                       [this](MenuButton *) { setState(UiState::trading); }),
+           smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {"(S)tore"}, SDLK_s,
+                       [this](MenuButton *) { setState(UiState::trading); }),
+           smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(M)anage"}, SDLK_m,
+                       [this](MenuButton *) { setState(UiState::managing); }),
+           smallButton({sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"(E)quip"}, SDLK_e,
+                       [this](MenuButton *) { setState(UiState::equipping); }),
+           smallButton({sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"(H)ire"}, SDLK_h,
+                       [this](MenuButton *) { setState(UiState::hiring); }),
+           smallButton({sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, {"(A)ttack"}, SDLK_a,
+                       [this](MenuButton *) { setState(UiState::attacking); }),
+           smallButton({sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, {"(L)og"}, SDLK_l,
+                       [this](MenuButton *) { setState(UiState::logging); })}}},
+        {UiState::trading,
+         {{smallButton({sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (T)rading"}, SDLK_t,
+                       [this](MenuButton *) { setState(UiState::traveling); })}}},
+        {UiState::storing,
+         {{smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {"Stop (S)toring"}, SDLK_s,
+                       [this](MenuButton *) { setState(UiState::traveling); })}}},
+        {UiState::managing,
+         {{smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (M)anaging"}, SDLK_m,
+                       [this](MenuButton *) { setState(UiState::traveling); })}}},
+        {UiState::equipping,
+         {{smallButton({sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (E)quipping"}, SDLK_e,
+                       [this](MenuButton *) { setState(UiState::traveling); })}}},
+        {UiState::hiring,
+         {{smallButton({sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"Stop (H)iring"}, SDLK_h,
+                       [this](MenuButton *) { setState(UiState::traveling); })}}},
+        {UiState::attacking,
+         {{smallButton({sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, {"Cancel (A)ttack"}, SDLK_a,
+                       [this](MenuButton *) { setState(UiState::traveling); })}}},
+        {UiState::logging, {{smallButton({sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, {"Close (L)og"}, SDLK_l, [this](MenuButton *) {
+             setState(UiState::traveling);
+         })}}}};
     auto &nations = game.getNations();
     auto &nationBoxes = uiStates.at(UiState::beginning).boxesInfo;
     for (auto &nt : nations)
@@ -120,10 +134,9 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                    // Create traveler object for player
                                    traveler = game.createPlayerTraveler(nId, name);
                                    show = true;
-                                   focusBox = nullptr;
+                                   focusPager = -1;
                                    setState(UiState::traveling);
                                }});
-
     fs::path path{"save"};
     std::vector<std::string> saves;
     for (auto &file : fs::directory_iterator{path}) saves.push_back(file.path().stem().string());
@@ -139,6 +152,126 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
     traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
+}
+
+void Player::prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls) {
+    std::vector<Town *> neighbors;
+    switch (g) {
+    case box:
+        i = focusBox;
+        s = std::accumulate();
+        d = kBoxDBS;
+        for (auto &b : boxes)
+            fcbls.push_back(b.get());
+        break;
+    case neighbor:
+        neighbors = traveler->getTown()->getNeighbors();
+        i = static_cast<int>(
+            std::find_if(neighbors.begin(), neighbors.end(),
+                         [this](Town *t) { return t->getId() == static_cast<unsigned int>(focusTown + 1); }) -
+            neighbors.begin());
+        s = static_cast<int>(neighbors.size());
+        d = kTownDBS;
+        if (i == s) {
+            // Currently focused town is last neighbor.
+            auto &ts = game.getTowns();
+            size_t fT = focusTown;
+            if (fT < ts.size())
+                ts[fT].getBox()->changeBorder(-kTownDBS);
+            i = -1;
+        }
+        fcbls.reserve(neighbors.size());
+        for (auto &ng : neighbors)
+            fcbls.push_back(ng->getBox());
+        break;
+    case town:
+        i = focusTown;
+        fcbls = game.getTownBoxes();
+        s = static_cast<int>(fcbls.size());
+        d = kTownDBS;
+        break;
+    }
+}
+
+void Player::finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls) {
+    switch (g) {
+    case box:
+        focusPager = f;
+        break;
+    case neighbor:
+        if (f > -1)
+            focusTown = static_cast<int>(fcbls[static_cast<size_t>(f)]->getId() - 1);
+        else
+            focusTown = -1;
+        break;
+    case town:
+        focusTown = f;
+        break;
+    }
+}
+
+void Player::focus(int f, FocusGroup g) {
+    // Focus item f from group g.
+    int i, s, d;
+    std::vector<TextBox *> fcbls;
+    prepFocus(g, i, s, d, fcbls);
+    if (i > -1 && i < s)
+        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
+    if (f > -1 && f < s)
+        fcbls[static_cast<size_t>(f)]->changeBorder(d);
+    finishFocus(f, g, fcbls);
+}
+
+void Player::focusPrev(FocusGroup g) {
+    // Focus previous item from group g.
+    int i, s, d;
+    std::vector<TextBox *> fcbls;
+    prepFocus(g, i, s, d, fcbls);
+    if (i == -1) {
+        i = s;
+        while (i--)
+            if (fcbls[static_cast<size_t>(i)]->getCanFocus())
+                break;
+    } else {
+        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
+        ;
+        int j = i;
+        while (--i != j)
+            if (i < 0)
+                i = s;
+            else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
+                break;
+    }
+    if (i > -1) {
+        fcbls[static_cast<size_t>(i)]->changeBorder(d);
+        finishFocus(i, g, fcbls);
+    }
+}
+
+void Player::focusNext(FocusGroup g) {
+    // Focus next item from group g.
+    int i, s, d;
+    std::vector<TextBox *> fcbls;
+    prepFocus(g, i, s, d, fcbls);
+    if (i == -1) {
+        // Nothing was focused, find first focusable item.
+        while (++i < s)
+            if (fcbls[static_cast<size_t>(i)]->getCanFocus())
+                break;
+        // No focusable item was found in group.
+        return;
+    } else {
+        fcbls[static_cast<size_t>(i)]->changeBorder(-d);
+        int j = i;
+        while (++i != j)
+            // Loop until we come back to the same item.
+            if (i >= s)
+                i = -1;
+            else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
+                break;
+    }
+    fcbls[static_cast<size_t>(i)]->changeBorder(d);
+    finishFocus(i, g, fcbls);
 }
 
 void Player::setState(UiState::State s) {
@@ -162,8 +295,6 @@ void Player::setState(UiState::State s) {
     case UiState::starting:
         break;
     case UiState::beginning:
-        // Allow typing in name box.
-        pagers[0u].toggleLock(0u);
         break;
     case quitting:
         break;

@@ -113,19 +113,4 @@ class TextBox {
     virtual void handleClick(const SDL_MouseButtonEvent &) {}
 };
 
-class Pager {
-    std::vector<std::unique_ptr<TextBox>> boxes; // boxes this pager manages
-    std::vector<size_t> indices;                 // indices to page breaks in boxes
-    std::vector<size_t>::iterator pageIt;        // index of beginning indices of current page
-  public:
-    TextBox *getBox(size_t idx) { return boxes[idx].get(); }
-    void addBox(std::unique_ptr<TextBox> &&bx) { boxes.push_back(std::move(bx)); }
-    void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
-    void advancePage();
-    void recedePage();
-    void toggleLock(size_t idx) { boxes[idx]->toggleLock(); }
-    TextBox *getClickedBox(const SDL_MouseButtonEvent &b);
-    void draw(SDL_Renderer *s);
-};
-
 #endif // TEXTBOX_H

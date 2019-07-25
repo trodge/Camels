@@ -21,6 +21,7 @@
 #define PLAYER_H
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -51,25 +52,26 @@ struct UiState {
         equipping,
         hiring,
         attacking,
+        logging,
         fighting,
         looting,
-        logging,
         dying
     };
-    size_t pagerCount;              // number of pagers this state uses
     std::vector<BoxInfo> boxesInfo; // info for boxes to create for this state
+    std::function<void()> onChange = nullptr; // function to run when this UiState is switched to
+    size_t pagerCount = 1u;              // number of pagers this state uses
 };
 
 class Player {
     std::shared_ptr<Traveler> traveler;
     std::vector<Pager> pagers;
-    TextBox *focusBox = nullptr; // TextBox we are currently focusing.
     Game &game;
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false;
     std::unordered_set<SDL_Keycode> scrollKeys;
-    double modMultiplier = 1.;
-    Town *focusTown = nullptr;                   // town currently focused
+    double modMultiplier = 1.;                   // multiplier for values which depend on keymod state
+    int focusBox = -1;                           // index of box we are focusing across all pagers
+    int focusTown = -1;                          // index of town currently focused
     size_t offerButtonIndex, requestButtonIndex; // index of first offer and request button for updating trade buttons
     size_t portionBoxIndex;                      // index of box for setting portion
     size_t setPortionButtonIndex;                // index of button for setting portion
@@ -79,6 +81,11 @@ class Player {
     UiState::State state = UiState::starting, storedState = UiState::starting;
     std::unordered_map<UiState::State, UiState> uiStates;
     enum FocusGroup { box, neighbor, town };
+    void prepFocus(FocusGroup g, int &i, int &s, int &d, std::vector<TextBox *> &fcbls);
+    void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);
+    void focus(int f, FocusGroup g);
+    void focusPrev(FocusGroup g);
+    void focusNext(FocusGroup g);
     void updatePortionBox();
     void createStorageView(const Town *t);
     void handleKey(const SDL_KeyboardEvent &k);
