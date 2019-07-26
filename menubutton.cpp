@@ -23,13 +23,6 @@ MenuButton::MenuButton(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), key(bI
     canFocus = true;
 }
 
-void MenuButton::changeBorder(int dBS) {
-    if (dBS < 0)
-        // Button is being unfocused.
-        invColors = clicked;
-    setBorder(border + dBS);
-}
-
 bool MenuButton::keyCaptured(const SDL_KeyboardEvent &k) const {
     switch (k.keysym.sym) {
     case SDLK_SPACE:

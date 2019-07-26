@@ -81,7 +81,13 @@ void TextBox::toggleLock() {
 
 void TextBox::toggleFocus(bool iTn) {
     isFocus = not isFocus;
-    changeBorder((isFocus ? 1 : -1) * (iTn ? kTownDB : kBoxDB));
+    int dB = iTn ? kTownDB : kBoxDB;
+    if (isFocus)
+        changeBorder(dB);
+    else {
+        setInvColors(clicked);
+        changeBorder(-dB);
+    }
 }
 
 void TextBox::setInvColors(bool i) {

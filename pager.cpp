@@ -29,6 +29,11 @@ std::vector<TextBox *> Pager::getAll() {
 
 int Pager::visibleCount() const { return visible.stop - visible.start; }
 
+void Pager::addBox(std::unique_ptr<TextBox> &&bx) {
+    boxes.push_back(std::move(bx));
+    setVisible();
+}
+
 void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
     // Move parameter boxes and pagers into member vectors giving them a new page. Sets page to that page.
     size_t boxCount = boxes.size();

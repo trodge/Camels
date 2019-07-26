@@ -34,7 +34,6 @@ class MenuButton : virtual public TextBox {
   public:
     MenuButton(const BoxInfo &bI, Printer &pr);
     virtual ~MenuButton() {}
-    void changeBorder(int dBS);
     SDL_Keycode getKey() const { return key; }
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;
     virtual void handleKey(const SDL_KeyboardEvent &k);

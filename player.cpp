@@ -50,7 +50,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                          game.newGame();
                          setState(UIState::beginning);
                      }),
-           bigButton({sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L}oad Game"}, SDLK_l,
+           bigButton({sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L)oad Game"}, SDLK_l,
                      [this](MenuButton *) { setState(UIState::loading); })}}},
         {UIState::beginning,
          {{bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})},

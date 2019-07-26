@@ -43,7 +43,7 @@ class Pager {
     std::vector<TextBox *> getVisible();
     std::vector<TextBox *> getAll();
     int visibleCount() const;
-    void addBox(std::unique_ptr<TextBox> &&bx) { boxes.push_back(std::move(bx)); }
+    void addBox(std::unique_ptr<TextBox> &&bx);
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void advancePage();
     void recedePage();
