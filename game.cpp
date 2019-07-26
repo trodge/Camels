@@ -487,7 +487,6 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
 void Game::newGame() {
     // Load data for a new game from sqlite database.
     sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READONLY);
-    ;
     loadData(conn.get());
 
     // Load towns from sqlite database.

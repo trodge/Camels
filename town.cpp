@@ -305,8 +305,10 @@ void Town::resetGoods() {
     for (auto &b : businesses)
         for (auto &ip : b.getInputs())
             if (ip == b.getOutputs().back())
+                // Input good is also output, create full amount.
                 goods[ip.getId()].create(ip.getAmount());
             else
+                // Create only enough for one cycle.
                 goods[ip.getId()].create(ip.getAmount() * Settings::getBusinessRunTime() /
                                          static_cast<double>(Settings::getDayLength() * kDaysPerYear));
 }

@@ -68,7 +68,6 @@ class Material {
 
   public:
     Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img);
-    Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI);
     Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img);
     Material(unsigned int i, const std::string &n, double c, double dS, double dI);
     Material(unsigned int i, const std::string &n, double a, SDL_Surface *img);

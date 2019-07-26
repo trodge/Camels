@@ -81,7 +81,6 @@ class Player {
     void focus(int f, FocusGroup g);
     void focusPrev(FocusGroup g);
     void focusNext(FocusGroup g);
-    void updatePortionBox();
     void createStorageView(const Town *t);
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);

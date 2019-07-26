@@ -46,8 +46,33 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
         {UIState::starting,
          {{bigBox({sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}),
            bigButton({sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, SDLK_n,
-                     [this](MenuButton *) {
+                     [this, sR, bBB, bBR, bBFS](MenuButton *) {
                          game.newGame();
+                         auto &nations = game.getNations();
+                         auto &beginningBoxes = uIStates.at(UIState::beginning).boxesInfo;
+                         for (auto &nt : nations)
+                             // Create a button for each nation to start in that nation.
+                             beginningBoxes.push_back({.rect = {sR.w * (static_cast<int>(nt.getId() - 1) % 3 * 2 + 1) / 6,
+                                                                sR.h * (static_cast<int>(nt.getId() - 1) / 3 + 2) / 7, 0, 0},
+                                                       .text = nt.getNames(),
+                                                       .foreground = nt.getForeground(),
+                                                       .background = nt.getBackground(),
+                                                       .id = nt.getId(),
+                                                       .isNation = true,
+                                                       .border = bBB,
+                                                       .radius = bBR,
+                                                       .fontSize = bBFS,
+                                                       .onClick = [this, nt](MenuButton *) {
+                                                           unsigned int nId = nt.getId(); // nation id
+                                                           std::string name = pagers[0u].getVisible(0u)->getText(1u);
+                                                           if (name.empty())
+                                                               name = nt.randomName();
+                                                           // Create traveler object for player
+                                                           traveler = game.createPlayerTraveler(nId, name);
+                                                           show = true;
+                                                           focusBox = -1;
+                                                           setState(UIState::traveling);
+                                                       }});
                          setState(UIState::beginning);
                      }),
            bigButton({sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L)oad Game"}, SDLK_l,
@@ -88,7 +113,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
            smallButton({sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"(T)rade"}, SDLK_t,
                        [this](MenuButton *) { setState(UIState::trading); }),
            smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {"(S)tore"}, SDLK_s,
-                       [this](MenuButton *) { setState(UIState::trading); }),
+                       [this](MenuButton *) { setState(UIState::storing); }),
            smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(M)anage"}, SDLK_m,
                        [this](MenuButton *) { setState(UIState::managing); }),
            smallButton({sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"(E)quip"}, SDLK_e,
@@ -103,26 +128,43 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
         {UIState::trading,
          {{smallButton({sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (T)rading"}, SDLK_t,
                        [this](MenuButton *) { setState(UIState::traveling); }),
+           smallBox({sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
+           smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                       [this](MenuButton *btn) {
+                           double p;
+                           TextBox *portionBox = pagers[0u].getVisible(kPortionBoxIndex);
+                           std::stringstream{portionBox->getText(0u)} >> p;
+                           traveler->setPortion(p);
+                           traveler->updatePortionBox(portionBox);
+                           btn->setClicked(false);
+                       }),
            smallButton({sR.w * 2 / 9, sR.h * 13 / 15, 0, 0}, {"(C)omplete Trade"}, SDLK_c,
                        [this](MenuButton *) {
                            traveler->makeTrade();
                            setState(UIState::trading);
-                       }),
-           smallBox({sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {}),
-           smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
-                       [this](MenuButton *btn) {
-                           double p;
-                           std::stringstream{pagers[0].getVisible(kPortionBoxIndex)->getText(0u)} >> p;
-                           traveler->setPortion(p);
-                           updatePortionBox();
-                           btn->setClicked(false);
                        })},
-          [this] { traveler->createTradeButtons(pagers, printer); },
+          [this] { 
+              traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
+              traveler->createTradeButtons(pagers, printer); 
+            },
           3u}},
         {UIState::storing,
          {{smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {"Stop (S)toring"}, SDLK_s,
-                       [this](MenuButton *) { setState(UIState::traveling); })},
-          [this] { traveler->createStorageButtons(pagers, focusBox, printer); },
+                       [this](MenuButton *) { setState(UIState::traveling); }),
+           smallBox({sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
+           smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                       [this](MenuButton *btn) {
+                           double p;
+                           TextBox *portionBox = pagers[0u].getVisible(kPortionBoxIndex);
+                           std::stringstream{portionBox->getText(0u)} >> p;
+                           traveler->setPortion(p);
+                           traveler->updatePortionBox(portionBox);
+                           btn->setClicked(false);
+                       })},
+          [this] {
+              traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
+              traveler->createStorageButtons(pagers, focusBox, printer);
+            },
           3u}},
         {UIState::managing,
          {{smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (M)anaging"}, SDLK_m,
@@ -182,45 +224,19 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                        })},
           [this] { traveler->createLootButtons(pagers, focusBox, printer); },
           3u}},
-        {UIState::dying, {{}, [this, &sR, bBB, bBR, bBFS] {
-                              pagers[0u].addBox(
-                                  std::make_unique<TextBox>(BoxInfo{.rect = {sR.w / 2, sR.h / 2, 0, 0},
-                                                                    .text = {traveler->getLogText().back(), "You have died."},
-                                                                    .foreground = traveler->getNation()->getForeground(),
-                                                                    .background = traveler->getNation()->getBackground(),
-                                                                    .highlight = traveler->getNation()->getHighlight(),
-                                                                    .border = bBB,
-                                                                    .radius = bBR,
-                                                                    .fontSize = bBFS}, printer));
-                          }}}};
-    auto &nations = game.getNations();
-    auto &nationBoxes = uIStates.at(UIState::beginning).boxesInfo;
-    for (auto &nt : nations)
-        // Create a button for each nation to start in that nation.
-        nationBoxes.push_back({{sR.w * (static_cast<int>(nt.getId() - 1) % 3 * 2 + 1) / 6,
-                                sR.h * (static_cast<int>(nt.getId() - 1) / 3 + 2) / 7, 0, 0},
-                               nt.getNames(),
-                               nt.getForeground(),
-                               nt.getBackground(),
-                               {},
-                               nt.getId(),
-                               true,
-                               bBB,
-                               bBR,
-                               bBFS,
-                               {},
-                               SDLK_UNKNOWN,
-                               [this, nt](MenuButton *) {
-                                   unsigned int nId = nt.getId(); // nation id
-                                   std::string name = pagers[0u].getVisible(0u)->getText(1u);
-                                   if (name.empty())
-                                       name = nt.randomName();
-                                   // Create traveler object for player
-                                   traveler = game.createPlayerTraveler(nId, name);
-                                   show = true;
-                                   focusBox = -1;
-                                   setState(UIState::traveling);
-                               }});
+        {UIState::dying,
+         {{}, [this, &sR, bBB, bBR, bBFS] {
+              pagers[0u].addBox(std::make_unique<TextBox>(BoxInfo{.rect = {sR.w / 2, sR.h / 2, 0, 0},
+                                                                  .text = {traveler->getLogText().back(), "You have died."},
+                                                                  .foreground = traveler->getNation()->getForeground(),
+                                                                  .background = traveler->getNation()->getBackground(),
+                                                                  .highlight = traveler->getNation()->getHighlight(),
+                                                                  .border = bBB,
+                                                                  .radius = bBR,
+                                                                  .fontSize = bBFS},
+                                                          printer));
+          }}}};
+
     fs::path path{"save"};
     std::vector<std::string> saves;
     for (auto &file : fs::directory_iterator{path})
@@ -301,6 +317,8 @@ void Player::focus(int f, FocusGroup g) {
     std::vector<TextBox *> fcbls;
     bool isTown = g != FocusGroup::box;
     prepFocus(g, i, s, fcbls);
+    if (i == f)
+        return;
     if (i > -1 && i < s)
         fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
     if (f > -1 && f < s)
@@ -310,7 +328,7 @@ void Player::focus(int f, FocusGroup g) {
 
 void Player::focusPrev(FocusGroup g) {
     // Focus previous item from group g.
-    int i, s, d;
+    int i, s;
     std::vector<TextBox *> fcbls;
     bool isTown = g != FocusGroup::box;
     prepFocus(g, i, s, fcbls);
@@ -319,6 +337,9 @@ void Player::focusPrev(FocusGroup g) {
         while (i--)
             if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
+        if (i < 0)
+            // No focusable item found in group.
+            return;
     } else {
         fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
         int j = i;
@@ -328,15 +349,13 @@ void Player::focusPrev(FocusGroup g) {
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
     }
-    if (i > -1) {
-        fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
-        finishFocus(i, g, fcbls);
-    }
+    fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
+    finishFocus(i, g, fcbls);
 }
 
 void Player::focusNext(FocusGroup g) {
     // Focus next item from group g.
-    int i, s, d;
+    int i, s;
     std::vector<TextBox *> fcbls;
     bool isTown = g != FocusGroup::box;
     prepFocus(g, i, s, fcbls);
@@ -345,14 +364,17 @@ void Player::focusNext(FocusGroup g) {
         while (++i < s)
             if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
-        // No focusable item was found in group.
-        return;
+        if (i == s) {
+            i = -1;
+            // No focusable item was found in group.
+            return;
+        }
     } else {
         fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
         int j = i;
         while (++i != j)
             // Loop until we come back to the same item.
-            if (i >= s)
+            if (i == s)
                 i = -1;
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
@@ -366,6 +388,7 @@ void Player::setState(UIState::State s) {
     UIState newState = uIStates.at(s);
     pagers.clear();
     pagers.resize(newState.pagerCount);
+    focusBox = -1;
     fs::path path;
     std::vector<std::string> saves;
     // Create boxes for new state.
@@ -380,6 +403,7 @@ void Player::setState(UIState::State s) {
             pagers[0].addBox(std::make_unique<TextBox>(bI, printer));
     if (newState.onChange)
         newState.onChange();
+    focusNext(FocusGroup::box);
     state = s;
 }
 
@@ -407,7 +431,6 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
         keyedIndex = pgr.getKeyedIndex(k);
         if (keyedIndex > -1) {
             // Something on this page was keyed.
-            focus(keyedIndex + indexOffset, FocusGroup::box);
             pgr.getVisible(keyedIndex)->handleKey(k);
             break;
         }
@@ -415,7 +438,10 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
     }
     if (k.state == SDL_PRESSED) {
         // Event is SDL_KEYDOWN
-        if (keyedIndex < 0) {
+        if (keyedIndex > -1)
+            // A box was keyed down.
+            focus(keyedIndex + indexOffset, FocusGroup::box);
+        else {
             // No box captured the key press.
             if (state != UIState::quitting) {
                 if (traveler) {
@@ -457,11 +483,11 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             break;
                         case SDLK_COMMA:
                             traveler->changePortion(-0.1);
-                            updatePortionBox();
+                            traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
                             break;
                         case SDLK_PERIOD:
                             traveler->changePortion(0.1);
-                            updatePortionBox();
+                            traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
                             break;
                         }
                         break;
@@ -529,7 +555,8 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
         clickedIndex = pgr.getClickedIndex(b);
         if (clickedIndex > -1) {
             // Something on this page was clicked.
-            focus(clickedIndex + indexOffset, FocusGroup::box);
+            if (b.state == SDL_PRESSED)
+                focus(clickedIndex + indexOffset, FocusGroup::box);
             pgr.getVisible(clickedIndex)->handleClick(b);
             break;
         }
@@ -611,8 +638,6 @@ void Player::update(unsigned int e) {
     if (traveler.get() && !pause)
         traveler->update(e);
 }
-
-void Player::updatePortionBox() { pagers[0u].getVisible(kPortionBoxIndex)->setText(0, traveler->portionString()); }
 
 void Player::draw(SDL_Renderer *s) {
     if (traveler.get())

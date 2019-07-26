@@ -57,8 +57,9 @@ class Good {
     const std::string &getName() const { return name; }
     std::string getFullName(const Material &m) const;
     const std::vector<Material> &getMaterials() const { return materials; }
-    const Material &getMaterial(const Material &m) const;
     const Material &getMaterial(size_t i) const { return materials[i]; }
+    const Material &getMaterial(const Material &m) const;
+    const Material &getMaterial(const std::string &mNm) const;
     const Material &getMaterial() const { return materials.front(); }
     double getCarry() const { return carry; }
     double getPerish() const { return perish; }

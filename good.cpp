@@ -54,6 +54,14 @@ const Material &Good::getMaterial(const Material &m) const {
     return *std::lower_bound(materials.begin(), materials.end(), m);
 }
 
+const Material &Good::getMaterial(const std::string &mNm) const {
+    // Return material such that first word of material name matches first word of parameter.
+    return *std::find_if(materials.begin(), materials.end(), [mNm](const Material &m) {
+        const std::string &mN = m.getName(); // material name
+        return mN.substr(0, mN.find(' ')) == mNm.substr(0, mNm.find(' '));
+    }); // iterator to the material on bx
+}
+
 double Good::getConsumption() const {
     double c = 0;
     for (auto &m : materials)
@@ -221,9 +229,10 @@ void Good::consume(unsigned int e) {
 std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo bI, Printer &pr) const {
     auto &oMtr = getMaterial(mtr);
     bI.text = {getFullName(mtr)};
+    bI.id = id;
     // Find image in game data.
     SDL_Surface *img = oMtr.getImage();
-    std::vector<Image> imgs(1u, {img, {2 * bI.border, 2 * bI.border, img->w, img->h}});
+    bI.images = {{img, {2 * bI.border, 2 * bI.border, img->w, img->h}}};
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());

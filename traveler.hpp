@@ -120,7 +120,6 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     const std::vector<Good> &getRequest() const { return request; }
     const Good &getGood(unsigned int i) const { return goods[i]; }
     double getPortion() const { return portion; }
-    std::string portionString() const;
     const std::array<unsigned int, 5> &getStats() const { return stats; }
     double getSpeed() const { return stats[1] + stats[2] + stats[3]; }
     unsigned int getPart(size_t i) const { return parts[i]; }
@@ -143,6 +142,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void pickTown(const Town *t);
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
+    void updatePortionBox(TextBox *bx) const;
     void clearTrade();
     void offerGood(const Good &g) { offer.push_back(g); };
     void requestGood(const Good &g) { request.push_back(g); }
