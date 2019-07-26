@@ -96,7 +96,7 @@ class TextBox {
     }
     virtual void addItem(const std::string &i) { addText(i); }
     void toggleLock();
-    void toggleFocus(bool iTn);
+    virtual void toggleFocus(bool iTn);
     void changeBorder(int dBd) { setBorder(border + dBd); }
     void setInvColors(bool i);
     void setClicked(bool c);

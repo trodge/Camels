@@ -438,10 +438,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
     }
     if (k.state == SDL_PRESSED) {
         // Event is SDL_KEYDOWN
-        if (keyedIndex > -1)
-            // A box was keyed down.
-            focus(keyedIndex + indexOffset, FocusGroup::box);
-        else {
+        if (keyedIndex < 0) {
             // No box captured the key press.
             if (state != UIState::quitting) {
                 if (traveler) {
@@ -512,7 +509,9 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                     focusNext(box);
                 break;
             }
-        }
+        } else
+            // A box was keyed down.
+            focus(keyedIndex + indexOffset, FocusGroup::box);
     } else {
         // Event is SDL_KEYUP.
         if (keyedIndex < 0)
@@ -554,14 +553,15 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
     for (auto &pgr : pagers) {
         clickedIndex = pgr.getClickedIndex(b);
         if (clickedIndex > -1) {
-            // Something on this page was clicked.
-            if (b.state == SDL_PRESSED)
-                focus(clickedIndex + indexOffset, FocusGroup::box);
             pgr.getVisible(clickedIndex)->handleClick(b);
             break;
         }
         indexOffset += pgr.visibleCount();
     }
+    if (clickedIndex < 0)
+        focus(-1, FocusGroup::box);
+    else
+        focus(clickedIndex + indexOffset, FocusGroup::box);
 }
 
 void Player::handleEvent(const SDL_Event &e) {
