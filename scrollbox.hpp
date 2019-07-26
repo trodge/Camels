@@ -26,7 +26,7 @@ class ScrollBox : virtual public TextBox {
   protected:
     int highlightLine = -1;
     size_t scroll = 0;
-    SDL_Color highlight = {0, 0, 0, 0};
+    SDL_Color highlight{0, 0, 0, 0};
     std::vector<std::string> items;
 
   public:

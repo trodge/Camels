@@ -26,7 +26,7 @@ Game::Game()
                              SDL_WINDOW_BORDERLESS)),
       screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)) {
     player = std::make_unique<Player>(*this);
-    player->setState(UiState::starting);
+    player->setState(UIState::starting);
     std::cout << "Creating Game" << std::endl;
     if (!window.get())
         std::cout << "Window creation failed, SDL Error:" << SDL_GetError() << std::endl;
@@ -495,7 +495,7 @@ void Game::newGame() {
         BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
                 .text = {"Loading towns..."},
                 .foreground = Settings::getLoadBarColor(),
-                .background = Settings::getUIForeground(),
+                .background = Settings::getUiForeground(),
                 .border = Settings::getBigBoxBorder(),
                 .radius = Settings::getBigBoxRadius(),
                 .fontSize = Settings::getLoadBarFontSize(),
@@ -556,7 +556,7 @@ void Game::loadGame(const fs::path &p) {
             BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
                     .text = {"Loading towns..."},
                     .foreground = Settings::getLoadBarColor(),
-                    .background = Settings::getUIForeground(),
+                    .background = Settings::getUiForeground(),
                     .border = Settings::getBigBoxBorder(),
                     .radius = Settings::getBigBoxRadius(),
                     .fontSize = Settings::getLoadBarFontSize(),
@@ -662,7 +662,7 @@ void Game::generateRoutes() {
         BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
                 .text = {"Finding routes..."},
                 .foreground = Settings::getLoadBarColor(),
-                .background = Settings::getUIForeground(),
+                .background = Settings::getUiForeground(),
                 .border = Settings::getBigBoxBorder(),
                 .radius = Settings::getBigBoxRadius(),
                 .fontSize = Settings::getLoadBarFontSize(),

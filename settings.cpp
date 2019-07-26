@@ -132,12 +132,12 @@ void Settings::load(const fs::path &p) {
     statMax = static_cast<unsigned int>(tree.get("travelers.statMax", 15));
     attackDistSq = tree.get("travelers.attackDistSq", 9000);
     escapeChance = tree.get("travelers.escapeChance", 0.5);
-    aIDecisionTime = tree.get("ai.decisionTime", 12000);
-    criteriaMax = tree.get("ai.criteriaMax", 9);
-    aITownRange = static_cast<unsigned int>(tree.get("ai.townRange", 9));
-    limitFactorMin = tree.get("ai.limitFactorMin", 0.1);
-    limitFactorMax = tree.get("ai.limitFactorMax", 0.9);
-    aIAttackThreshold = tree.get("ai.attackThreshold", 13500);
+    aIDecisionTime = tree.get("aI.decisionTime", 12000);
+    criteriaMax = tree.get("aI.criteriaMax", 9);
+    aITownRange = static_cast<unsigned int>(tree.get("aI.townRange", 9));
+    limitFactorMin = tree.get("aI.limitFactorMin", 0.1);
+    limitFactorMax = tree.get("aI.limitFactorMax", 0.9);
+    aIAttackThreshold = tree.get("aI.attackThreshold", 13500);
 }
 
 void saveRect(const std::string &n, const SDL_Rect &r, pt::ptree *t) {
@@ -189,11 +189,11 @@ void Settings::save(const fs::path &p) {
     tree.put("travelers.statMax", statMax);
     tree.put("travelers.attackDistSq", attackDistSq);
     tree.put("travelers.escapeChance", escapeChance);
-    tree.put("ai.decisionTime", aIDecisionTime);
-    tree.put("ai.criteriaMax", criteriaMax);
-    tree.put("ai.townRange", aITownRange);
-    tree.put("ai.limitFactorMin", limitFactorMin);
-    tree.put("ai.limitFactorMax", limitFactorMax);
-    tree.put("ai.attackThreshold", aIAttackThreshold);
+    tree.put("aI.decisionTime", aIDecisionTime);
+    tree.put("aI.criteriaMax", criteriaMax);
+    tree.put("aI.townRange", aITownRange);
+    tree.put("aI.limitFactorMin", limitFactorMin);
+    tree.put("aI.limitFactorMax", limitFactorMax);
+    tree.put("aI.attackThreshold", aIAttackThreshold);
     pt::write_ini(p.string(), tree);
 }

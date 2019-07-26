@@ -67,7 +67,6 @@ class TextBox {
     bool updateTexture = false; // whether the texture needs updating to match the surface
     std::vector<Image> images;
     Printer &printer;
-    TextBox(Printer &pr) : printer(pr) {}
     void setBorder(int bd);
 
   public:

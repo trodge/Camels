@@ -90,7 +90,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::weak_ptr<Traveler> target; // pointer to enemy if currently fighting
     double fightTime;               // time left to fight this round
     FightChoice choice;
-    std::unique_ptr<AI> ai;
+    std::unique_ptr<AI> aI;
     const GameData &gameData;
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;

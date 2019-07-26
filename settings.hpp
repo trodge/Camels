@@ -81,9 +81,9 @@ class Settings {
     static void load(const fs::path &p);
     static SDL_Rect getScreenRect() { return screenRect; }
     static SDL_Rect getMapRect() { return mapRect; }
-    static SDL_Color getUIForeground() { return uIForeground; }
-    static SDL_Color getUIBackground() { return uIBackground; }
-    static SDL_Color getUIHighlight() { return uIHighlight; }
+    static SDL_Color getUiForeground() { return uIForeground; }
+    static SDL_Color getUiBackground() { return uIBackground; }
+    static SDL_Color getUiHighlight() { return uIHighlight; }
     static SDL_Color getLoadBarColor() { return loadBarColor; }
     static SDL_Color getRouteColor() { return routeColor; }
     static SDL_Color getWaterColor() { return waterColor; }

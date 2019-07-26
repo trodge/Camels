@@ -30,7 +30,6 @@ class MenuButton : virtual public TextBox {
   protected:
     SDL_Keycode key = SDLK_UNKNOWN;
     std::function<void(MenuButton *)> onClick;
-    MenuButton(Printer &pr, std::function<void(MenuButton *)> oC) : TextBox(pr), onClick(oC) {}
 
   public:
     MenuButton(const BoxInfo &bI, Printer &pr);
