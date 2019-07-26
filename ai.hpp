@@ -69,7 +69,7 @@ class AI {
     void autoEquip();
     void autoAttack();
 
-  public:
+public:
     AI(Traveler &tvl);
     AI(Traveler &tvl, const AI &p);
     AI(Traveler &tvl, const Save::AI *a);

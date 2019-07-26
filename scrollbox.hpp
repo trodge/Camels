@@ -23,13 +23,13 @@
 #include "textbox.hpp"
 
 class ScrollBox : virtual public TextBox {
-  protected:
+protected:
     int highlightLine = -1;
     size_t scroll = 0;
     SDL_Color highlight{0, 0, 0, 0};
     std::vector<std::string> items;
 
-  public:
+public:
     ScrollBox(const BoxInfo &bI, Printer &pr);
     virtual ~ScrollBox() {}
     void setText();

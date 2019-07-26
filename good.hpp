@@ -39,7 +39,7 @@ class Good {
     unsigned int shoots;
     void removeExcess();
 
-  public:
+public:
     Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s);
     Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s);
     Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m);
@@ -77,8 +77,7 @@ class Good {
     void setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs);
     void setMax() { max = std::abs(getConsumption()) * Settings::getConsumptionSpaceFactor(); }
     void setMax(double m) {
-        if (m > max)
-            max = m;
+        if (m > max) max = m;
     }
     void setImage(size_t i, SDL_Surface *img) { materials[i].setImage(img); }
     void setConsumptions(const std::vector<std::array<double, 3>> &cs);

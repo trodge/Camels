@@ -43,8 +43,8 @@ AI::AI(Traveler &tvl, const Save::AI *a) : traveler(tvl), decisionCounter(a->dec
         decisionCriteria[i] = lDecisionCriteria->Get(i);
     auto lMaterialInfo = a->materialInfo();
     for (auto mII = lMaterialInfo->begin(); mII != lMaterialInfo->end(); ++mII)
-        materialInfo.push_back(
-            {(*mII)->limitFactor(), (*mII)->minPrice(), (*mII)->maxPrice(), (*mII)->value(), (*mII)->buy(), (*mII)->sell()});
+        materialInfo.push_back({(*mII)->limitFactor(), (*mII)->minPrice(), (*mII)->maxPrice(), (*mII)->value(),
+                                (*mII)->buy(), (*mII)->sell()});
 }
 
 void AI::randomizeLimitFactors() {
@@ -52,8 +52,8 @@ void AI::randomizeLimitFactors() {
     // material.
     auto &gs = traveler.getGoods();
     // Total count of materials across all goods, including labor.
-    size_t mC =
-        std::accumulate(gs.begin(), gs.end(), 0u, [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
+    size_t mC = std::accumulate(gs.begin(), gs.end(), 0u,
+                                [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
     materialInfo = std::vector<MaterialInfo>(mC);
     static std::uniform_real_distribution<double> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
     auto mII = materialInfo.begin();
@@ -69,8 +69,7 @@ void AI::randomizeLimitFactors() {
 void AI::randomizeCriteria() {
     // Randomize AI decision criteria.
     static std::uniform_real_distribution<double> rDis(1, Settings::getCriteriaMax());
-    for (auto &c : decisionCriteria)
-        c = rDis(Settings::getRng());
+    for (auto &c : decisionCriteria) c = rDis(Settings::getRng());
     // Randomize decision counter.
     static std::uniform_int_distribution<int> iDis(0, Settings::getAIDecisionTime());
     decisionCounter = iDis(Settings::getRng());
@@ -83,8 +82,7 @@ double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) con
     for (auto &s : e.getMaterial().getCombatStats()) {
         attackScore += s.attack * sts[s.statId];
         attackScore *= s.speed * sts[s.statId];
-        for (auto &d : s.defense)
-            defenseScore += d * sts[s.statId];
+        for (auto &d : s.defense) defenseScore += d * sts[s.statId];
     }
     return attackScore * decisionCriteria[2] + defenseScore * decisionCriteria[3];
 }
@@ -92,9 +90,7 @@ double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) con
 double AI::equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const {
     // Scores parameter equipment based on this traveler's criteria.
     double score = 1.;
-    for (auto &e : eqpmt) {
-        score += equipScore(e, sts);
-    }
+    for (auto &e : eqpmt) { score += equipScore(e, sts); }
     return score;
 }
 
@@ -139,15 +135,13 @@ void AI::autoTrade() {
                     if (carry < 0 && weight > carry * amount)
                         // This good is needed to carry existing goods, reduce amount.
                         amount = weight / carry;
-                    if (amount <= 0)
-                        continue;
+                    if (amount <= 0) continue;
                     score = mI->getSellScore(tM.getPrice(), mII->sell); // score based on minimum sell price
                     if ((overWeight && carry * amount > offerWeight) || (score > bestScore)) {
                         // Either we are over weight and good is heavier than previous offer
                         // or this good scores better.
                         bestScore = score;
-                        if (!gI->getSplit())
-                            amount = floor(amount);
+                        if (!gI->getSplit()) amount = floor(amount);
                         bestGood = std::make_unique<Good>(gI->getId(), gI->getName(), amount, gI->getMeasure());
                         bestGood->addMaterial(Material(mI->getId(), mI->getName(), amount));
                         offerValue = tM.getPrice(amount);
@@ -159,8 +153,7 @@ void AI::autoTrade() {
         }
     }
     // If no good found, stop trading.
-    if (!bestGood)
-        return;
+    if (!bestGood) return;
     // Add best good to offer if found.
     traveler.offerGood(*bestGood);
     bestGood = nullptr;
@@ -209,10 +202,8 @@ void AI::autoTrade() {
             }
         }
     }
-    if (!bestGood)
-        return;
-    if (excess > 0.)
-        traveler.divideExcess(excess);
+    if (!bestGood) return;
+    if (excess > 0.) traveler.divideExcess(excess);
     traveler.requestGood(*bestGood);
     // Make the trade.
     traveler.makeTrade();
@@ -292,8 +283,7 @@ void AI::autoLoot() {
     // Automatically loot based on scores and decision criteria.
     auto &gs = traveler.getGoods();
     auto tgt = traveler.getTarget().lock();
-    if (!tgt)
-        return;
+    if (!tgt) return;
     auto &tGs = tgt->getGoods();
     double lootGoal = lootScore(tGs);
     if (tgt->alive())
@@ -321,8 +311,7 @@ void AI::autoLoot() {
                 ++mII;
             }
         }
-        if (!bestGood || weight + bestGood->getCarry() * bestGood->getAmount() > 0.)
-            break;
+        if (!bestGood || weight + bestGood->getCarry() * bestGood->getAmount() > 0.) break;
         looted += bestScore * gs[bestGood->getId()].getCarry();
         // Loot the current best good from target.
         traveler.loot(*bestGood, *tgt);
@@ -340,8 +329,7 @@ void AI::setNearby(const Town *t, const Town *tT, unsigned int i) {
     if (i)
         // Town t is within i steps of town tT.
         for (auto &n : t->getNeighbors())
-            if (n != tT &&
-                std::find_if(nearby.begin(), nearby.end(), [n](TownInfo t) { return t.town == n; }) == nearby.end()) {
+            if (n != tT && std::find_if(nearby.begin(), nearby.end(), [n](TownInfo t) { return t.town == n; }) == nearby.end()) {
                 // Neighbor n is not the current town and not already in nearby towns.
                 nearby.push_back({n, 0, 0});
                 setNearby(n, tT, i - 1);
@@ -393,13 +381,11 @@ void AI::setLimits() {
                 double price = nM.getPrice();
                 if (hasMaterial && price > 0.) {
                     double sellScore = gM.getSellScore(price, mII->sell);
-                    if (sellScore > n.sellScore)
-                        n.sellScore = sellScore;
+                    if (sellScore > n.sellScore) n.sellScore = sellScore;
                 } else {
                     // Currently only scores buying materials not already owned.
                     double buyScore = gM.getBuyScore(price, mII->buy);
-                    if (buyScore > n.buyScore)
-                        n.buyScore = buyScore;
+                    if (buyScore > n.buyScore) n.buyScore = buyScore;
                 }
             }
             ++mII;

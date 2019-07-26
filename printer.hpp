@@ -46,7 +46,7 @@ class Printer {
     std::vector<FontSize>::iterator fontSizeIt;
     enum Alignment { left, right, center };
 
-  public:
+public:
     void setSize(unsigned int s);
     void setColors(const SDL_Color &fg, const SDL_Color &bg) {
         foreground = fg;

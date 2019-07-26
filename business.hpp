@@ -44,7 +44,7 @@ class Business {
     double frequency = 0.;          // area of business per unit of population
     double reclaimFactor = 0.7;     // portion of requirements that can be reclaimed
 
-  public:
+public:
     Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM);
     Business(const Save::Business *b);
     bool operator==(const Business &other) const;

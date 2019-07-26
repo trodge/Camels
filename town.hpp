@@ -60,10 +60,10 @@ class Town {
     double dist(int x, int y) const;
     void setMax();
 
-  public:
+public:
     Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
-         long unsigned int ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS,
-         Printer &pr);
+         long unsigned int ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs,
+         int fS, Printer &pr);
     Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr);
     bool operator==(const Town &other) const;
     unsigned int getId() const { return id; }
@@ -108,7 +108,7 @@ class Town {
 class Route {
     std::array<Town *, 2> towns;
 
-  public:
+public:
     Route(Town *fT, Town *tT);
     Route(const Save::Route *rt, std::vector<Town> &ts);
     const std::array<Town *, 2> &getTowns() { return towns; }

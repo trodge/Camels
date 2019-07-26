@@ -24,11 +24,10 @@
 #include "scrollbox.hpp"
 
 class SelectButton : public ScrollBox, public MenuButton {
-  public:
+public:
     SelectButton(const BoxInfo &bI, Printer &pr);
     const std::string &getItem() const {
-        if (highlightLine > -1)
-            return items[static_cast<size_t>(highlightLine)];
+        if (highlightLine > -1) return items[static_cast<size_t>(highlightLine)];
         return items.back();
     }
     bool keyCaptured(const SDL_KeyboardEvent &k) const;

@@ -66,7 +66,7 @@ class Material {
     SDL_Surface *image = nullptr;
     void updateButton(std::string &aT, bool gS, TextBox *b) const;
 
-  public:
+public:
     Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img);
     Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img);
     Material(unsigned int i, const std::string &n, double c, double dS, double dI);
@@ -95,13 +95,11 @@ class Material {
     double getQuantum(double c) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
     double getBuyScore(double p, double b) const {
-        if (p != 0.)
-            return b / p;
+        if (p != 0.) return b / p;
         return 0;
     } // score selling at price p
     double getSellScore(double p, double s) const {
-        if (s != 0.)
-            return p / s;
+        if (s != 0.) return p / s;
         return 0;
     } // score buying at price p
     SDL_Surface *getImage() const { return image; }

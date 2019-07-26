@@ -35,6 +35,5 @@ void SelectButton::handleKey(const SDL_KeyboardEvent &k) {
 void SelectButton::handleClick(const SDL_MouseButtonEvent &b) {
     ScrollBox::handleClick(b);
     MenuButton::handleClick(b);
-    if (highlightLine == -1)
-        setInvColors(false);
+    if (highlightLine == -1) setInvColors(false);
 }

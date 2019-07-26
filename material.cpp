@@ -22,14 +22,15 @@
 Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img)
     : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
       minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
-      
+
 Material::Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img)
     : Material(i, n, 0., c, dS, dI, img) {}
-    
+
 Material::Material(unsigned int i, const std::string &n, double c, double dS, double dI)
     : Material(i, n, c, dS, dI, nullptr) {}
-    
-Material::Material(unsigned int i, const std::string &n, double a, SDL_Surface *img) : Material(i, n, a, 0., 0., 0., img) {}
+
+Material::Material(unsigned int i, const std::string &n, double a, SDL_Surface *img)
+    : Material(i, n, a, 0., 0., 0., img) {}
 
 Material::Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, nullptr) {}
 
@@ -60,24 +61,21 @@ Material::Material(const Save::Material *m)
 double Material::getPrice(double q) const {
     // Get the price offered when selling the given quantity
     double p = (demandIntercept - demandSlope * (amount + q / 2)) * q;
-    if (p < minPrice * q)
-        p = minPrice * q;
+    if (p < minPrice * q) p = minPrice * q;
     return p;
 }
 
 double Material::getPrice() const {
     // Get the current price of this material
     double p = demandIntercept - demandSlope * amount;
-    if (p < minPrice)
-        p = minPrice;
+    if (p < minPrice) p = minPrice;
     return p;
 }
 
 double Material::getCost(double q) const {
     // Get the cost to buy the given quantity
     double c = (demandIntercept - demandSlope * (amount - q / 2)) * q;
-    if (c < minPrice * q)
-        c = minPrice * q;
+    if (c < minPrice * q) c = minPrice * q;
     return c;
 }
 
@@ -86,18 +84,15 @@ double Material::getQuantity(double p, double &e) const {
      * Second parameter holds excess quantity after amount is used up. */
     double q;
     if (demandSlope != 0.)
-        q = amount -
-            (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
-                                    demandSlope * p * 2)) /
-                demandSlope;
+        q = amount - (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
+                                             demandSlope * p * 2)) /
+                         demandSlope;
     else if (demandIntercept != 0.)
         q = p / demandIntercept;
     else
         q = 0;
-    if (q < 0)
-        return 0;
-    if (amount > q)
-        return q;
+    if (q < 0) return 0;
+    if (amount > q) return q;
     // There's not enough good to sell in the town.
     e = q - amount;
     return amount;
@@ -107,16 +102,14 @@ double Material::getQuantity(double p) const {
     // Get quantity of this material corresponding to price. Ignore material availability.
     double q;
     if (demandSlope != 0.)
-        q = amount -
-            (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
-                                    demandSlope * p * 2)) /
-                demandSlope;
+        q = amount - (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
+                                             demandSlope * p * 2)) /
+                         demandSlope;
     else if (demandIntercept != 0.)
         q = p / demandIntercept;
     else
         q = 0;
-    if (q < 0)
-        return 0;
+    if (q < 0) return 0;
     return q;
 }
 
@@ -124,16 +117,14 @@ double Material::getQuantum(double c) const {
     // Get quantum of this material needed to match given cost.
     double q;
     if (demandSlope != 0.)
-        q = amount -
-            (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) -
-                                    demandSlope * c * 2)) /
-                demandSlope;
+        q = amount - (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) -
+                                             demandSlope * c * 2)) /
+                         demandSlope;
     else if (demandIntercept != 0.)
         q = c / demandIntercept;
     else
         q = 0;
-    if (q < 0)
-        return 0;
+    if (q < 0) return 0;
     return q;
 }
 
@@ -209,8 +200,7 @@ void Material::put(Material &m) {
 void Material::create(double a) {
     // Newly create the given amount of this material.
     amount += a;
-    if (a > 0)
-        perishCounters.push_front({0, a});
+    if (a > 0) perishCounters.push_front({0, a});
 }
 
 double Material::perish(unsigned int e, double p) {
@@ -224,8 +214,7 @@ double Material::perish(unsigned int e, double p) {
     // Erase expired perish counters.
     perishCounters.erase(expired, perishCounters.end());
     // Add elapsed time to remaining counters.
-    for (auto &pC : perishCounters)
-        pC.time += e;
+    for (auto &pC : perishCounters) pC.time += e;
     // If too much perished, reduce total by overage.
     if (amount > a) {
         amount -= a;
@@ -240,8 +229,7 @@ double Material::perish(unsigned int e, double p) {
 double Material::consume(unsigned int e) {
     lastAmount = amount;
     double c = consumption * e / kDaysPerYear / Settings::getDayLength();
-    if (c > amount)
-        c = amount;
+    if (c > amount) c = amount;
     if (c > 0.)
         use(c);
     else if (c < 0.)
@@ -277,14 +265,12 @@ void Material::updateButton(bool gS, double oV, unsigned int rC, TextBox *b) con
 
 void Material::adjustDemand(double d) {
     demandSlope += d * demandIntercept;
-    if (demandSlope < 0)
-        demandSlope = 0;
+    if (demandSlope < 0) demandSlope = 0;
 }
 
 void Material::fixDemand(double m) {
     // Check if price goes too low when good is at maximum.
-    if (demandIntercept - demandSlope * m < minPrice)
-        demandSlope = (demandIntercept - minPrice) / m;
+    if (demandIntercept - demandSlope * m < minPrice) demandSlope = (demandIntercept - minPrice) / m;
 }
 
 void Material::saveDemand(unsigned long p, std::string &u) const {
@@ -300,20 +286,17 @@ flatbuffers::Offset<Save::Material> Material::save(flatbuffers::FlatBufferBuilde
         b.CreateVectorOfStructs<Save::PerishCounter>(perishCounters.size(), [this](size_t i, Save::PerishCounter *pC) {
             *pC = Save::PerishCounter(perishCounters[i].time, perishCounters[i].amount);
         });
-    auto sCombatStats =
-        b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
-            *cS = Save::CombatStat(combatStats[i].statId, combatStats[i].partId, combatStats[i].attack, combatStats[i].type,
-                                   combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
-                                   combatStats[i].defense[2]);
-        });
-    return Save::CreateMaterial(b, id, sName, amount, consumption, demandSlope, demandIntercept, sPerishCounters,
-                                sCombatStats);
+    auto sCombatStats = b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
+        *cS = Save::CombatStat(combatStats[i].statId, combatStats[i].partId, combatStats[i].attack, combatStats[i].type,
+                               combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
+                               combatStats[i].defense[2]);
+    });
+    return Save::CreateMaterial(b, id, sName, amount, consumption, demandSlope, demandIntercept, sPerishCounters, sCombatStats);
 }
 
 void dropTrail(std::string &tx, unsigned int dK) {
     // Trim decimal places beyond dK from string t.
     size_t dP; // position to drop
     dP = tx.find('.') + dK;
-    if (dP < tx.size())
-        tx.erase(dP);
+    if (dP < tx.size()) tx.erase(dP);
 }

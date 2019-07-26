@@ -44,8 +44,7 @@ Good::Good(const Save::Good *g)
     : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()),
       carry(g->carry()), measure(g->measure()->str()), split(!measure.empty()), shoots(g->shoots()) {
     auto lMaterials = g->materials();
-    for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI)
-        materials.push_back(Material(*lMI));
+    for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI) materials.push_back(Material(*lMI));
 }
 
 std::string Good::getFullName(const Material &m) const { return id == m.getId() ? name : m.getName() + " " + name; }
@@ -64,8 +63,7 @@ const Material &Good::getMaterial(const std::string &mNm) const {
 
 double Good::getConsumption() const {
     double c = 0;
-    for (auto &m : materials)
-        c += m.getConsumption();
+    for (auto &m : materials) c += m.getConsumption();
     return c;
 }
 
@@ -98,8 +96,7 @@ std::string Good::logText() const {
         lTx += " of";
     }
     lTx += " ";
-    if (id != materials.front().getId())
-        lTx += materials.front().getName() + " ";
+    if (id != materials.front().getId()) lTx += materials.front().getName() + " ";
     lTx += name;
     if (!split && amount != 1. && name != "sheep")
         // Pluralize.
@@ -109,8 +106,7 @@ std::string Good::logText() const {
 
 void Good::setAmount(double a) {
     // Set amount to given amount proportionally distributed among materials, if present.
-    for (auto &m : materials)
-        m.setAmount(a * m.getAmount() / amount);
+    for (auto &m : materials) m.setAmount(a * m.getAmount() / amount);
     amount = a;
 }
 
@@ -121,29 +117,24 @@ void Good::addMaterial(const Good &g) { materials.push_back(Material(g.id, g.nam
 void Good::setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs) {
     for (auto &m : materials) {
         auto it = cSs.find(m.getId());
-        if (it == cSs.end())
-            continue;
+        if (it == cSs.end()) continue;
         m.setCombatStats(it->second);
     }
 }
 
 void Good::setConsumptions(const std::vector<std::array<double, 3>> &cs) {
     // Takes a vector of consumption rates, demand slopes, and demand intercepts for each material of this good.
-    for (size_t i = 0; i < cs.size(); ++i)
-        materials[i].setConsumption(cs[i]);
+    for (size_t i = 0; i < cs.size(); ++i) materials[i].setConsumption(cs[i]);
 }
 
 void Good::scaleConsumptions(unsigned long p) {
-    for (auto &m : materials)
-        m.scaleConsumption(p);
+    for (auto &m : materials) m.scaleConsumption(p);
 }
 
 void Good::removeExcess() {
     // Removes materials in excess of max
     if (max > 0 && amount > max) {
-        for (auto &m : materials) {
-            m.use((amount - max) * m.getAmount() / amount);
-        }
+        for (auto &m : materials) { m.use((amount - max) * m.getAmount() / amount); }
         amount = max;
     }
 }
@@ -165,12 +156,10 @@ void Good::take(Good &g) {
 void Good::use(double a) {
     // Uses up the given amount of this good. Each material is used proportionally.
     if (a > 0. && amount >= a) {
-        for (auto &m : materials)
-            m.use(a * m.getAmount() / amount);
+        for (auto &m : materials) m.use(a * m.getAmount() / amount);
         amount -= a;
     } else if (a > 0.) {
-        for (auto &m : materials)
-            m.use(m.getAmount());
+        for (auto &m : materials) m.use(m.getAmount());
         amount = 0.;
     }
 }
@@ -192,8 +181,7 @@ void Good::create(const std::unordered_map<unsigned int, double> &mAs) {
     double a = 0;
     for (auto &m : materials) {
         auto it = mAs.find(m.getId());
-        if (it == mAs.end())
-            continue;
+        if (it == mAs.end()) continue;
         double mA = it->second;
         m.create(mA);
         a += mA;
@@ -206,8 +194,7 @@ void Good::create(double a) {
     // Newly creates the given amount of this good's self named material
     Material m(id);
     auto it = std::lower_bound(materials.begin(), materials.end(), m);
-    if (it == materials.end() || *it != m)
-        return;
+    if (it == materials.end() || *it != m) return;
     it->create(a);
     amount += a;
     removeExcess();
@@ -217,10 +204,8 @@ void Good::consume(unsigned int e) {
     // Remove consumed goods and perished goods over elapsed time.
     for (auto &m : materials) {
         amount -= m.consume(e);
-        if (perish != 0.)
-            amount -= m.perish(e, perish);
-        if (amount < 0)
-            amount = 0;
+        if (perish != 0.) amount -= m.perish(e, perish);
+        if (amount < 0) amount = 0;
         // Keep demand slopes from being too low or too high
         m.fixDemand(max);
     }
@@ -232,7 +217,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo b
     bI.id = id;
     // Find image in game data.
     SDL_Surface *img = oMtr.getImage();
-    bI.images = {{img, {2 * bI.border, 2 * bI.border, img->w, img->h}}};
+    if (img) bI.images = {{img, {2 * bI.border, 2 * bI.border, img->w, img->h}}};
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());
@@ -247,9 +232,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo b
 void Good::adjustDemand(std::string rBN, double d) {
     for (auto &m : materials) {
         std::string mN = m.getName();
-        if (rBN == mN.substr(0u, mN.find(' '))) {
-            m.adjustDemand(d);
-        }
+        if (rBN == mN.substr(0u, mN.find(' '))) { m.adjustDemand(d); }
     }
 }
 

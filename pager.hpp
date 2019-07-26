@@ -38,7 +38,7 @@ class Pager {
     BoxRange visible;
     void setVisible();
 
-  public:
+public:
     TextBox *getVisible(size_t idx);
     std::vector<TextBox *> getVisible();
     std::vector<TextBox *> getAll();

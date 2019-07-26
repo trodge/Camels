@@ -28,7 +28,7 @@ class LoadBar : public TextBox {
     SDL_Rect completeRect, insideRect, outsideRect;
     int outsideBorder;
 
-  public:
+public:
     LoadBar(const BoxInfo &bI, Printer &pr);
     void progress(double c);
     void draw(SDL_Renderer *s);

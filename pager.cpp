@@ -48,15 +48,13 @@ void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
 
 void Pager::advancePage() {
     // Advance to next page. Prevent advancing past last page.
-    if (pageIt != indices.end() - 1)
-        ++pageIt;
+    if (pageIt != indices.end() - 1) ++pageIt;
     setVisible();
 }
 
 void Pager::recedePage() {
     // Recede to previous page. Prevent receding past first page.
-    if (pageIt != indices.begin() + 1)
-        --pageIt;
+    if (pageIt != indices.begin() + 1) --pageIt;
     setVisible();
 }
 
@@ -69,13 +67,12 @@ int Pager::getKeyedIndex(const SDL_KeyboardEvent &k) {
 
 int Pager::getClickedIndex(const SDL_MouseButtonEvent &b) {
     // Return the index relative to current page of clicked box, or -1 if no box was clicked on current page.
-    auto clickedIt =
-        std::find_if(visible.start, visible.stop, [&b](const std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
+    auto clickedIt = std::find_if(visible.start, visible.stop,
+                                  [&b](const std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
     return clickedIt == visible.stop ? -1 : clickedIt - visible.start;
 }
 
 void Pager::draw(SDL_Renderer *s) {
     // Draw all boxes on the current page, or all boxes if there are no pages.
-    for (auto bxIt = visible.start; bxIt != visible.stop; ++bxIt)
-        (*bxIt)->draw(s);
+    for (auto bxIt = visible.start; bxIt != visible.stop; ++bxIt) (*bxIt)->draw(s);
 }

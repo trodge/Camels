@@ -41,7 +41,7 @@ class Nation {
     std::vector<Good> goods;
     std::vector<Business> businesses;
 
-  public:
+public:
     Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr,
            const SDL_Color &bgr, const std::string &rlg, const std::vector<Good> &gds, const std::vector<Business> &bsns);
     bool operator==(const Nation &other) const;

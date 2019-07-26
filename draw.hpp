@@ -58,9 +58,7 @@ struct Deleter {
 
 template <typename Creator, typename... Arguments> auto makeResource(Creator c, Arguments &&... args) {
     auto r = c(std::forward<Arguments>(args)...);
-    if (!r) {
-        throw std::system_error(errno, std::generic_category());
-    }
+    if (!r) { throw std::system_error(errno, std::generic_category()); }
     return std::unique_ptr<std::decay_t<decltype(*r)>, Deleter>(r);
 }
 
@@ -78,7 +76,9 @@ inline RendererPtr makeRenderer(SDL_Window *window, int index, Uint32 flags) {
     return makeResource(SDL_CreateRenderer, window, index, flags);
 }
 
-inline RendererPtr makeSoftwareRenderer(SDL_Surface *surface) { return makeResource(SDL_CreateSoftwareRenderer, surface); }
+inline RendererPtr makeSoftwareRenderer(SDL_Surface *surface) {
+    return makeResource(SDL_CreateSoftwareRenderer, surface);
+}
 
 inline SurfacePtr makeSurface(int width, int height) {
     return makeResource(SDL_CreateRGBSurface, 0u, width, height, 32, rmask, gmask, bmask, amask);
@@ -99,9 +99,8 @@ inline TexturePtr makeTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *su
 }
 
 inline TexturePtr makeTextureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
-    SurfacePtr c(
-        makeSurfaceWithFormatFrom(static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel,
-                                  rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
+    SurfacePtr c(makeSurfaceWithFormatFrom(static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel,
+                                           rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
     return makeTextureFromSurface(rdr, c.get());
 }
 

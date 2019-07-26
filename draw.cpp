@@ -32,18 +32,15 @@ void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col)
     // Fill partial circle in top-left corner.
     for (int x = -r; x <= 0; ++x)
         for (int y = -r; y <= 0; ++y)
-            if ((x * x) + (y * y) <= r * r)
-                ps.push_back({rect->x + r + x, rect->y + r + y});
+            if ((x * x) + (y * y) <= r * r) ps.push_back({rect->x + r + x, rect->y + r + y});
     // Fill partial circle in top-right corner.
     for (int x = 0; x <= r; ++x)
         for (int y = -r; y <= 0; ++y)
-            if ((x * x) + (y * y) <= r * r)
-                ps.push_back({rect->x + rect->w - 1 - r + x, rect->y + r + y});
+            if ((x * x) + (y * y) <= r * r) ps.push_back({rect->x + rect->w - 1 - r + x, rect->y + r + y});
     // Fill partial circle in bottom-left corner.
     for (int x = -r; x <= 0; ++x)
         for (int y = 0; y <= r; ++y)
-            if ((x * x) + (y * y) <= r * r)
-                ps.push_back({rect->x + r + x, rect->y + rect->h - 1 - r + y});
+            if ((x * x) + (y * y) <= r * r) ps.push_back({rect->x + r + x, rect->y + rect->h - 1 - r + y});
     // Fill partial circle in bottom-right corner.
     for (int x = 0; x <= r; ++x)
         for (int y = 0; y <= r; ++y)
@@ -60,8 +57,7 @@ void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl) 
         ps.reserve(static_cast<size_t>(kPi * r * r + 1.));
         for (int x = -r; x <= r; ++x)
             for (int y = -r; y <= r; ++y)
-                if ((x * x) + (y * y) <= r * r)
-                    ps.push_back({cx + x, cy + y});
+                if ((x * x) + (y * y) <= r * r) ps.push_back({cx + x, cy + y});
     } else {
         ps.reserve(static_cast<size_t>(kPi * r * 2. + 1.));
         int x = 0;

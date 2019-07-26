@@ -49,8 +49,7 @@ void TextBox::setText() {
     if (rect.h && lines > size_t(rect.h / lineHeight)) {
         // Truncate lines of text if they won'tx fit in box of fixed size.
         lines = static_cast<size_t>(rect.h / lineHeight);
-        text = std::vector<std::string>(text.begin(),
-                                        text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
+        text = std::vector<std::string>(text.begin(), text.begin() + static_cast<std::vector<std::string>::difference_type>(lines));
     }
     surface = printer.print(text, rect, border, radius, images);
     updateTexture = true;
@@ -112,8 +111,7 @@ void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
                 c = true;
                 break;
             }
-        if (c)
-            r.y -= r.h / 2;
+        if (c) r.y -= r.h / 2;
     }
     rect = r;
     drawn.push_back(r);
@@ -151,11 +149,9 @@ bool TextBox::clickCaptured(const SDL_MouseButtonEvent &b) const {
 }
 
 void TextBox::handleKey(const SDL_KeyboardEvent &k) {
-    if (k.state == SDL_PRESSED)
-        switch (k.keysym.sym) {
+    if (k.state == SDL_PRESSED) switch (k.keysym.sym) {
         case SDLK_BACKSPACE:
-            if (!text.empty() && !text.back().empty())
-                text.back().pop_back();
+            if (!text.empty() && !text.back().empty()) text.back().pop_back();
             setText();
         default:
             return;

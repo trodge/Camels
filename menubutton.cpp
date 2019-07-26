@@ -24,8 +24,7 @@ MenuButton::MenuButton(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), key(bI
 }
 
 void MenuButton::toggleFocus(bool iTn) {
-    if (isFocus)
-        setInvColors(clicked);
+    if (isFocus) setInvColors(clicked);
     TextBox::toggleFocus(iTn);
 }
 

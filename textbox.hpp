@@ -47,7 +47,7 @@ struct BoxInfo {
 };
 
 class TextBox {
-  protected:
+protected:
     SDL_Rect rect{0, 0, 0, 0};
     bool fixedSize = false, canFocus = false, isFocus = false;
     std::vector<std::string> text;
@@ -69,7 +69,7 @@ class TextBox {
     Printer &printer;
     void setBorder(int bd);
 
-  public:
+public:
     TextBox(const BoxInfo &bI, Printer &pr);
     virtual ~TextBox() {}
     const SDL_Rect &getRect() const { return rect; }

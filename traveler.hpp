@@ -108,7 +108,7 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     void takeHit(const CombatHit &cH, Traveler &t);
     void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
 
-  public:
+public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
     Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD);
     std::string getName() const { return name; }

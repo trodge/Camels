@@ -86,7 +86,7 @@ class Player {
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);
 
-  public:
+public:
     Player(Game &g);
     bool getStop() const { return stop; }
     bool getPause() const { return pause; }
@@ -96,8 +96,7 @@ class Player {
     void loadTraveler(const Save::Traveler *t, std::vector<Town> &ts);
     void setState(UIState::State s);
     void place(int ox, int oy, double s) {
-        if (traveler.get())
-            traveler->place(ox, oy, s);
+        if (traveler.get()) traveler->place(ox, oy, s);
     }
     void handleEvent(const SDL_Event &e);
     void update(unsigned int e);

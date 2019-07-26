@@ -77,7 +77,7 @@ class Settings {
     static double aIAttackThreshold;
     static std::mt19937 rng;
 
-  public:
+public:
     static void load(const fs::path &p);
     static SDL_Rect getScreenRect() { return screenRect; }
     static SDL_Rect getMapRect() { return mapRect; }

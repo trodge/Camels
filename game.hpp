@@ -92,7 +92,7 @@ class Game {
     void update();
     void draw();
 
-  public:
+public:
     Game();
     ~Game();
     void run();

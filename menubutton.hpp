@@ -27,11 +27,11 @@
 class MenuButton : virtual public TextBox {
     void activate(Uint8 state);
 
-  protected:
+protected:
     SDL_Keycode key = SDLK_UNKNOWN;
     std::function<void(MenuButton *)> onClick;
 
-  public:
+public:
     MenuButton(const BoxInfo &bI, Printer &pr);
     virtual ~MenuButton() {}
     void toggleFocus(bool iTn);

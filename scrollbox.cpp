@@ -46,31 +46,26 @@ void ScrollBox::addItem(const std::string &i) {
     }
     items.push_back(entry);
     setText();
-    if (!overflow.empty())
-        addItem(overflow);
+    if (!overflow.empty()) addItem(overflow);
 }
 
 void ScrollBox::setHighlightLine(int h) {
     // Set highlight line to h, count from last line if negative
-    if (!lines)
-        return;
-    while (h < 0)
-        h += static_cast<int>(items.size());
+    if (!lines) return;
+    while (h < 0) h += static_cast<int>(items.size());
     highlightLine = h;
     if (h) {
         if (static_cast<size_t>(h) >= scroll + lines) {
             scroll = static_cast<size_t>(h) - lines + 1;
-            if (scroll + lines > items.size())
-                scroll = items.size() - lines;
+            if (scroll + lines > items.size()) scroll = items.size() - lines;
         } else if (static_cast<size_t>(h) <= scroll)
             scroll = static_cast<size_t>(h) - 1;
     } else
         scroll = 0;
     clicked = false;
     invColors = false;
-    setText(
-        std::vector<std::string>(items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll),
-                                 items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
+    setText(std::vector<std::string>(items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll),
+                                     items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
 }
 
 bool ScrollBox::keyCaptured(const SDL_KeyboardEvent &k) const {
@@ -84,15 +79,12 @@ bool ScrollBox::keyCaptured(const SDL_KeyboardEvent &k) const {
 }
 
 void ScrollBox::handleKey(const SDL_KeyboardEvent &k) {
-    if (k.state == SDL_PRESSED)
-        switch (k.keysym.sym) {
+    if (k.state == SDL_PRESSED) switch (k.keysym.sym) {
         case SDLK_UP:
-            if (highlightLine > 0)
-                setHighlightLine(highlightLine - 1);
+            if (highlightLine > 0) setHighlightLine(highlightLine - 1);
             break;
         case SDLK_DOWN:
-            if (highlightLine < int(items.size() - 1))
-                setHighlightLine(highlightLine + 1);
+            if (highlightLine < int(items.size() - 1)) setHighlightLine(highlightLine + 1);
             break;
         default:
             break;
@@ -102,8 +94,6 @@ void ScrollBox::handleKey(const SDL_KeyboardEvent &k) {
 void ScrollBox::handleClick(const SDL_MouseButtonEvent &b) {
     int y = b.y - rect.y - rect.h / 2 + static_cast<int>(lines) * static_cast<int>(lineHeight) / 2;
     int h = -1;
-    if (y >= 0)
-        h = y / static_cast<int>(lineHeight) + static_cast<int>(scroll);
-    if (h != highlightLine && h > -1 && size_t(h) < items.size())
-        setHighlightLine(h);
+    if (y >= 0) h = y / static_cast<int>(lineHeight) + static_cast<int>(scroll);
+    if (h != highlightLine && h > -1 && size_t(h) < items.size()) setHighlightLine(h);
 }

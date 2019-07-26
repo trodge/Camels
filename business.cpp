@@ -27,29 +27,25 @@ Business::Business(const Save::Business *b)
       requireCoast(b->requireCoast()), keepMaterial(b->keepMaterial()), frequency(b->frequency()),
       reclaimFactor(b->reclaimFactor()) {
     auto lRequirements = b->requirements();
-    for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII)
-        requirements.push_back(Good(*lII));
+    for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII) requirements.push_back(Good(*lII));
     auto lReclaimables = b->reclaimables();
-    for (auto lOI = lReclaimables->begin(); lOI != lReclaimables->end(); ++lOI)
-        reclaimables.push_back(Good(*lOI));
+    for (auto lOI = lReclaimables->begin(); lOI != lReclaimables->end(); ++lOI) reclaimables.push_back(Good(*lOI));
     auto lInputs = b->inputs();
-    for (auto lII = lInputs->begin(); lII != lInputs->end(); ++lII)
-        inputs.push_back(Good(*lII));
+    for (auto lII = lInputs->begin(); lII != lInputs->end(); ++lII) inputs.push_back(Good(*lII));
     auto lOutputs = b->outputs();
-    for (auto lOI = lOutputs->begin(); lOI != lOutputs->end(); ++lOI)
-        outputs.push_back(Good(*lOI));
+    for (auto lOI = lOutputs->begin(); lOI != lOutputs->end(); ++lOI) outputs.push_back(Good(*lOI));
 }
 
 bool Business::operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
 
-bool Business::operator<(const Business &other) const { return (id < other.id || (id == other.id && mode < other.mode)); }
+bool Business::operator<(const Business &other) const {
+    return (id < other.id || (id == other.id && mode < other.mode));
+}
 
 void Business::setArea(double a) {
     if (a > 0. && area > 0.) {
-        for (auto &ip : inputs)
-            ip.setAmount(ip.getAmount() * a / area);
-        for (auto &op : outputs)
-            op.setAmount(op.getAmount() * a / area);
+        for (auto &ip : inputs) ip.setAmount(ip.getAmount() * a / area);
+        for (auto &op : outputs) op.setAmount(op.getAmount() * a / area);
         area = a;
     }
 }
@@ -92,11 +88,9 @@ void Business::addConflicts(std::vector<int> &cs, std::vector<Good> &gds) {
     bool space = false;
     for (auto &op : outputs) {
         unsigned int oId = op.getId();
-        if (gds[oId].getAmount() < gds[oId].getMax())
-            space = true;
+        if (gds[oId].getAmount() < gds[oId].getMax()) space = true;
     }
-    if (!space)
-        factor = 0;
+    if (!space) factor = 0;
     for (auto &ip : inputs) {
         unsigned int iId = ip.getId();
         double mF = gds[iId].getAmount() / ip.getAmount();
@@ -108,19 +102,16 @@ void Business::addConflicts(std::vector<int> &cs, std::vector<Good> &gds) {
             ++cs[iId];
         }
     }
-    if (factor < 0)
-        std::cout << "Negative factor for " << name << std::endl;
+    if (factor < 0) std::cout << "Negative factor for " << name << std::endl;
 }
 
 void Business::handleConflicts(std::vector<int> &cs) {
     int gc = 0;
     for (auto &ip : inputs) {
         int c = cs[static_cast<size_t>(ip.getId())];
-        if (c > gc)
-            gc = c;
+        if (c > gc) gc = c;
     }
-    if (gc)
-        factor /= gc;
+    if (gc) factor /= gc;
 }
 
 void Business::run(std::vector<Good> &gds) {
@@ -133,16 +124,14 @@ void Business::run(std::vector<Good> &gds) {
                 std::unordered_map<unsigned int, double> materialAmounts;
                 double lIA = lastInput.getAmount();
                 for (auto &m : lastInput.getMaterials()) {
-                    if (lIA > 0.)
-                        materialAmounts.emplace(m.getId(), op.getAmount() * factor * m.getAmount() / lIA);
+                    if (lIA > 0.) materialAmounts.emplace(m.getId(), op.getAmount() * factor * m.getAmount() / lIA);
                 }
                 gds[op.getId()].create(materialAmounts);
             } else {
                 gds[op.getId()].create(op.getAmount() * factor);
             }
         }
-        for (auto &ip : inputs)
-            gds[ip.getId()].use(ip.getAmount() * factor);
+        for (auto &ip : inputs) gds[ip.getId()].use(ip.getAmount() * factor);
     }
 }
 
@@ -157,14 +146,11 @@ std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) c
     } else
         unitText = " per uncia anum";
     bI.text.push_back("Requirements");
-    for (auto &rq : requirements)
-        bI.text.push_back(rq.businessText());
+    for (auto &rq : requirements) bI.text.push_back(rq.businessText());
     bI.text.push_back("Inputs");
-    for (auto &ip : inputs)
-        bI.text.push_back(ip.businessText() + unitText);
+    for (auto &ip : inputs) bI.text.push_back(ip.businessText() + unitText);
     bI.text.push_back("Outputs");
-    for (auto &op : outputs)
-        bI.text.push_back(op.businessText() + unitText);
+    for (auto &op : outputs) bI.text.push_back(op.businessText() + unitText);
     return std::make_unique<MenuButton>(bI, pr);
 }
 
@@ -187,8 +173,8 @@ flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilde
         reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
     auto sInputs =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
-    auto sOutputs =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
+    auto sOutputs = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
     return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements,
                                 sReclaimables, sInputs, sOutputs, frequency);
 }

@@ -19,9 +19,8 @@
 
 #include "town.hpp"
 
-Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
-           unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS,
-           Printer &pr)
+Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl, unsigned long ppl,
+           unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS, Printer &pr)
     : id(i), box(std::make_unique<TextBox>(BoxInfo{.text = nms,
                                                    .foreground = nt->getForeground(),
                                                    .background = nt->getBackground(),
@@ -42,8 +41,7 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
             double fF = 1.;
             auto tTBI = std::make_pair(townType, bsn.getId());
             auto fFI = fFs.lower_bound(tTBI);
-            if (fFI != fFs.end() && fFI->first == tTBI)
-                fF = fFI->second;
+            if (fFI != fFs.end() && fFI->first == tTBI) fF = fFI->second;
             businesses.push_back(Business(bsn));
             businesses.back().setArea(static_cast<double>(ppl) * fq * fF);
         }
@@ -83,17 +81,14 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
                                             .fontSize = fS},
                                     pr);
     auto lBusinesses = t->businesses();
-    for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI)
-        businesses.push_back(Business(*lBI));
+    for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI) businesses.push_back(Business(*lBI));
     auto lGoods = t->goods();
-    for (auto lGI = lGoods->begin(); lGI != lGoods->end(); ++lGI)
-        goods.push_back(Good(*lGI));
+    for (auto lGI = lGoods->begin(); lGI != lGoods->end(); ++lGI) goods.push_back(Good(*lGI));
     auto &nGs = nation->getGoods();
     // Copy image pointers from nation's goods.
     for (size_t i = 0; i < nGs.size(); ++i) {
         auto &nGMs = nGs[i].getMaterials();
-        for (size_t j = 0; j < nGMs.size(); ++j)
-            goods[i].setImage(j, nGMs[j].getImage());
+        for (size_t j = 0; j < nGMs.size(); ++j) goods[i].setImage(j, nGMs[j].getImage());
     }
     setMax();
 }
@@ -106,8 +101,7 @@ double Town::dist(int x, int y) const { return sqrt(distSq(x, y)); }
 
 void Town::setMax() {
     // Set maximum amounts for town goods.
-    for (auto &g : goods)
-        g.setMax();
+    for (auto &g : goods) g.setMax();
     // Set good maximums for businesses.
     for (auto &b : businesses) {
         auto &ips = b.getInputs();
@@ -119,15 +113,13 @@ void Town::setMax() {
             else
                 goods[ip.getId()].setMax(ip.getAmount() * Settings::getInputSpaceFactor());
         }
-        for (auto &op : ops)
-            goods[op.getId()].setMax(op.getAmount() * Settings::getOutputSpaceFactor());
+        for (auto &op : ops) goods[op.getId()].setMax(op.getAmount() * Settings::getOutputSpaceFactor());
     }
 }
 
 void Town::removeTraveler(const std::shared_ptr<Traveler> t) {
     auto it = std::find(travelers.begin(), travelers.end(), t);
-    if (it != travelers.end())
-        travelers.erase(it);
+    if (it != travelers.end()) travelers.erase(it);
 }
 
 void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
@@ -152,8 +144,7 @@ void Town::update(unsigned int e) {
     businessCounter += e;
     int bsnsRnTm = Settings::getBusinessRunTime();
     if (businessCounter > bsnsRnTm) {
-        for (auto &g : goods)
-            g.consume(Settings::getBusinessRunTime());
+        for (auto &g : goods) g.consume(Settings::getBusinessRunTime());
         std::vector<int> conflicts(goods.size(), 0);
         if (maxGoods) // When maxGoods is true, towns create as many goods as possible for testing purposes.
             for (auto &g : goods) {
@@ -191,11 +182,9 @@ void Town::put(Good &g) { goods[g.getId()].put(g); }
 void Town::generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Traveler>> &ts) {
     // Create a random number of travelers from this town, weighted down
     int n = travelersDis(Settings::getRng());
-    if (n < 0)
-        n = 0;
+    if (n < 0) n = 0;
     ts.reserve(ts.size() + static_cast<size_t>(n));
-    for (int i = 0; i < n; ++i)
-        ts.push_back(std::make_shared<Traveler>(nation->randomName(), this, gD));
+    for (int i = 0; i < n; ++i) ts.push_back(std::make_shared<Traveler>(nation->randomName(), this, gD));
 }
 
 double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }
@@ -240,14 +229,11 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
                     const SDL_Color &waterColor = Settings::getWaterColor();
                     Uint8 r, g, b;
                     SDL_GetRGB(getAt(mS, mx, my), mS->format, &r, &g, &b);
-                    if (r <= waterColor.r && g <= waterColor.g && b >= waterColor.b)
-                        ++water;
+                    if (r <= waterColor.r && g <= waterColor.g && b >= waterColor.b) ++water;
                 } else
                     ++water;
             }
-            if (water < 24) {
-                neighbors.insert(std::lower_bound(neighbors.begin(), neighbors.end(), &t, closer), &t);
-            }
+            if (water < 24) { neighbors.insert(std::lower_bound(neighbors.begin(), neighbors.end(), &t, closer), &t); }
         }
     }
     // Take only the closest towns.
@@ -261,8 +247,7 @@ void Town::connectRoutes() {
     for (auto &n : neighbors) {
         auto &nNs = n->neighbors; // neighbor's neighbors
         auto it = std::lower_bound(nNs.begin(), nNs.end(), n, closer);
-        if (it == nNs.end() || *it != this)
-            nNs.insert(it, this);
+        if (it == nNs.end() || *it != this) nNs.insert(it, this);
     }
 }
 
@@ -289,8 +274,7 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
                     }
                 }
             }
-            if (go)
-                break;
+            if (go) break;
         }
         if ((go) && b.getArea() > -d * static_cast<double>(population) / 5000) {
             b.setArea(b.getArea() + d * static_cast<double>(population) / 5000);
@@ -300,8 +284,7 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
 }
 
 void Town::resetGoods() {
-    for (auto &g : goods)
-        g.use();
+    for (auto &g : goods) g.use();
     for (auto &b : businesses)
         for (auto &ip : b.getInputs())
             if (ip == b.getOutputs().back())
@@ -314,9 +297,7 @@ void Town::resetGoods() {
 }
 
 void Town::saveFrequencies(std::string &u) const {
-    for (auto &b : businesses) {
-        b.saveFrequency(population, u);
-    }
+    for (auto &b : businesses) { b.saveFrequency(population, u); }
     u.append(" ELSE frequency END WHERE nation_id = ");
     u.append(std::to_string(nation->getId()));
 }
@@ -330,8 +311,7 @@ void Town::adjustDemand(const std::vector<MenuButton *> &rBs, double d) {
 }
 
 void Town::saveDemand(std::string &u) const {
-    for (auto &g : goods)
-        g.saveDemand(population, u);
+    for (auto &g : goods) g.saveDemand(population, u);
     u.append(" ELSE demand_slope END WHERE nation_id = ");
     u.append(std::to_string(nation->getId()));
 }
@@ -342,16 +322,15 @@ flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) co
         businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
     auto sGoods =
         b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
-    return Save::CreateTown(b, id, sNames, nation->getId(), longitude, latitude, coastal, population, townType, sBusinesses,
-                            sGoods, businessCounter);
+    return Save::CreateTown(b, id, sNames, nation->getId(), longitude, latitude, coastal, population, townType,
+                            sBusinesses, sGoods, businessCounter);
 }
 
 Route::Route(Town *fT, Town *tT) : towns({fT, tT}) {}
 
 Route::Route(const Save::Route *rt, std::vector<Town> &ts) {
     auto lTowns = rt->towns();
-    for (size_t i = 0; i < 2; ++i)
-        towns[1] = &ts[lTowns->Get(1)];
+    for (size_t i = 0; i < 2; ++i) towns[1] = &ts[lTowns->Get(1)];
 }
 
 void Route::draw(SDL_Renderer *s) {
