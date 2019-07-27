@@ -140,7 +140,7 @@ std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) c
     std::string unitText; // Units of input and output post-fix.
     if (aS) {
         std::string areaText = std::to_string(area);
-        dropTrail(areaText, 2u);
+        dropTrail(areaText, 2);
         bI.text.push_back("Area: " + areaText + " uncia");
         unitText = " per annum";
     } else

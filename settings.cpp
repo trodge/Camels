@@ -120,7 +120,7 @@ void Settings::load(const fs::path &p) {
     tradeRadius = tree.get("ui.tradeRadius", current.h * 5 / 1080);
     tradeFontSize = tree.get("ui.tradeFontSize", current.h * 12 / 1080);
     dayLength = tree.get("time.dayLength", 5000);
-    businessHeadStart = static_cast<unsigned int>(tree.get("time.businessHeadStart", 15000u));
+    businessHeadStart = static_cast<unsigned int>(tree.get("time.businessHeadStart", 15000));
     businessRunTime = tree.get("time.businessRunTime", 1500);
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
     inputSpaceFactor = tree.get("goods.inputSpaceFactor", 0.054);

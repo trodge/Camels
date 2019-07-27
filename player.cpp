@@ -25,22 +25,22 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
     int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
         sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize();
     auto bigBox = [&uIFgr, &uIBgr, &uIHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0u, false, bBB, bBR, bBFS, {}};
+        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, bBB, bBR, bBFS, {}};
     };
     auto bigButton = [&uIFgr, &uIBgr, &uIHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
                                                               SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0u, false, bBB, bBR, bBFS, {}, ky, fn};
+        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, bBB, bBR, bBFS, {}, ky, fn};
     };
     auto bigSelectButton = [&uIFgr, &uIBgr, &uIHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
                                                                     SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0u, false, bBB, bBR, bBFS, {}, ky, fn};
+        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, bBB, bBR, bBFS, {}, ky, fn};
     };
     auto smallBox = [&uIFgr, &uIBgr, &uIHgl, sBB, sBR, sBFS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0u, false, sBB, sBR, sBFS, {}};
+        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, sBB, sBR, sBFS, {}};
     };
     auto smallButton = [&uIFgr, &uIBgr, &uIHgl, sBB, sBR, sBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
                                                                 SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0u, false, sBB, sBR, sBFS, {}, ky, fn};
+        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, sBB, sBR, sBFS, {}, ky, fn};
     };
     uIStates = {
         {UIState::starting,
@@ -64,7 +64,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                                        .fontSize = bBFS,
                                                        .onClick = [this, nt](MenuButton *) {
                                                            unsigned int nId = nt.getId(); // nation id
-                                                           std::string name = pagers[0u].getVisible(0u)->getText(1u);
+                                                           std::string name = pagers[0].getVisible(0)->getText(1);
                                                            if (name.empty()) name = nt.randomName();
                                                            // Create traveler object for player
                                                            traveler = game.createPlayerTraveler(nId, name);
@@ -80,7 +80,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
          {{bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})},
           [this] {
               // Allow typing in name box.
-              pagers[0u].toggleLock(0u);
+              pagers[0].toggleLock(0);
           }}},
         {UIState::quitting,
          {{bigButton({sR.w / 2, sR.h / 4, 0, 0}, {"Continue"}, SDLK_ESCAPE,
@@ -130,8 +130,8 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
            smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
                        [this](MenuButton *btn) {
                            double p;
-                           TextBox *portionBox = pagers[0u].getVisible(kPortionBoxIndex);
-                           std::stringstream{portionBox->getText(0u)} >> p;
+                           TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                           std::stringstream{portionBox->getText(0)} >> p;
                            traveler->setPortion(p);
                            traveler->updatePortionBox(portionBox);
                            btn->setClicked(false);
@@ -142,10 +142,10 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                            setState(UIState::trading);
                        })},
           [this] {
-              traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
+              traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
               traveler->createTradeButtons(pagers, printer);
           },
-          3u}},
+          3}},
         {UIState::storing,
          {{smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {"Stop (S)toring"}, SDLK_s,
                        [this](MenuButton *) { setState(UIState::traveling); }),
@@ -153,26 +153,26 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
            smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
                        [this](MenuButton *btn) {
                            double p;
-                           TextBox *portionBox = pagers[0u].getVisible(kPortionBoxIndex);
-                           std::stringstream{portionBox->getText(0u)} >> p;
+                           TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                           std::stringstream{portionBox->getText(0)} >> p;
                            traveler->setPortion(p);
                            traveler->updatePortionBox(portionBox);
                            btn->setClicked(false);
                        })},
           [this] {
-              traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
+              traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
               traveler->createStorageButtons(pagers, focusBox, printer);
           },
-          3u}},
+          3}},
         {UIState::managing,
          {{smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (M)anaging"}, SDLK_m,
                        [this](MenuButton *) { setState(UIState::traveling); })},
           [this] { traveler->createManageButtons(pagers, printer); },
-          3u}},
+          3}},
         {UIState::equipping,
          {{smallButton({sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (E)quipping"}, SDLK_e,
                        [this](MenuButton *) { setState(UIState::traveling); })},
-          [this] { traveler->createEquipButtons(pagers, focusBox, printer); }, 2u}},
+          [this] { traveler->createEquipButtons(pagers, focusBox, printer); }, 2}},
         {UIState::hiring,
          {{smallButton({sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"Stop (H)iring"}, SDLK_h,
                        [this](MenuButton *) { setState(UIState::traveling); })}}},
@@ -182,7 +182,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
           [this] {
               pause = true;
               traveler->createAttackButton(
-                  pagers[0u], [this] { setState(UIState::fighting); }, printer);
+                  pagers[0], [this] { setState(UIState::fighting); }, printer);
           }}},
         {UIState::logging,
          {{smallButton({sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, {"Close (L)og"}, SDLK_l,
@@ -194,7 +194,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                                                    traveler->getNation()->getForeground(),
                                                                    traveler->getNation()->getBackground(),
                                                                    traveler->getNation()->getHighlight(),
-                                                                   0u,
+                                                                   0,
                                                                    false,
                                                                    bBB,
                                                                    bBR,
@@ -205,7 +205,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                                                    true},
                                                            printer));
           }}},
-        {UIState::fighting, {{}, [this] { traveler->createFightBoxes(pagers[0u], pause, printer); }}},
+        {UIState::fighting, {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }}},
         {UIState::looting,
          {{smallButton({sR.w / 15, sR.h * 14 / 15, 0, 0}, {"(D)one Looting"}, SDLK_d,
                        [this](MenuButton *) {
@@ -220,9 +220,9 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                            setState(UIState::traveling);
                        })},
           [this] { traveler->createLootButtons(pagers, focusBox, printer); },
-          3u}},
+          3}},
         {UIState::dying, {{}, [this, &sR, bBB, bBR, bBFS] {
-                              pagers[0u].addBox(std::make_unique<TextBox>(
+                              pagers[0].addBox(std::make_unique<TextBox>(
                                   BoxInfo{.rect = {sR.w / 2, sR.h / 2, 0, 0},
                                           .text = {traveler->getLogText().back(), "You have died."},
                                           .foreground = traveler->getNation()->getForeground(),
@@ -475,11 +475,11 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             break;
                         case SDLK_COMMA:
                             traveler->changePortion(-0.1);
-                            traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
+                            traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
                             break;
                         case SDLK_PERIOD:
                             traveler->changePortion(0.1);
-                            traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
+                            traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
                             break;
                         case SDLK_LEFTBRACKET:
                             recedePage();
@@ -609,7 +609,7 @@ void Player::update(unsigned int e) {
             setState(UIState::looting);
             break;
         }
-        traveler->updateFightBoxes(pagers[0u]);
+        traveler->updateFightBoxes(pagers[0]);
         break;
     default:
         break;

@@ -60,7 +60,7 @@ struct UIState {
     };
     std::vector<BoxInfo> boxesInfo;           // info for boxes to create for this state
     std::function<void()> onChange = nullptr; // function to run when this UIState is switched to
-    size_t pagerCount = 1u;                   // number of pagers this state uses
+    size_t pagerCount = 1;                   // number of pagers this state uses
 };
 
 class Player {

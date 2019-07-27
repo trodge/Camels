@@ -182,7 +182,7 @@ void Traveler::updatePortionBox(TextBox *bx) const {
     size_t lNZI = portionString.find_last_not_of('0');
     size_t dI = portionString.find('.');
     portionString.erase(lNZI == dI ? dI + 2 : lNZI + 1, std::string::npos);
-    bx->setText(0u, portionString);
+    bx->setText(0, portionString);
 }
 
 void Traveler::clearTrade() {
@@ -265,14 +265,14 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
                     if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                         // Flush current page upon reaching bottom.
                         boxInfo.rect.y = top;
-                        pgrs[1u].addPage(bxs);
+                        pgrs[1].addPage(bxs);
                     }
                 }
             }
     }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[1u].addPage(bxs);
+        pgrs[1].addPage(bxs);
     left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
     right = sR.w - sR.w / kGoodButtonXDivisor;
     boxInfo.rect.x = left;
@@ -290,14 +290,14 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
                     if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                         // Flush current page upon reaching bottom.
                         boxInfo.rect.y = top;
-                        pgrs[2u].addPage(bxs);
+                        pgrs[2].addPage(bxs);
                     }
                 }
             }
     }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[2u].addPage(bxs);
+        pgrs[2].addPage(bxs);
 }
 
 void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
@@ -307,7 +307,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     request.clear();
     double offerValue = 0.;
     // Loop through all offer buttons.
-    std::vector<TextBox *> bxs = pgrs[1u].getAll();
+    std::vector<TextBox *> bxs = pgrs[1].getAll();
     for (auto bx : bxs) {
         auto &g = goods[bx->getId()]; // good corresponding to bIt
         bN = bx->getText()[0];        // name of material and good on button
@@ -328,8 +328,8 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
                 bx->setClicked(false);
         }
     }
-    bxs = pgrs[2u].getAll();
-    unsigned int requestCount = std::accumulate(bxs.begin(), bxs.end(), 0u, [](unsigned int c, const TextBox *rB) {
+    bxs = pgrs[2].getAll();
+    unsigned int requestCount = std::accumulate(bxs.begin(), bxs.end(), 0, [](unsigned int c, const TextBox *rB) {
         return c + rB->getClicked();
     }); // count of clicked request buttons.
     request.reserve(requestCount);
@@ -443,14 +443,14 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
                     if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                         // Flush current page upon reaching bottom.
                         boxInfo.rect.y = top;
-                        pgrs[1u].addPage(bxs);
+                        pgrs[1].addPage(bxs);
                     }
                 }
             }
         }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[1u].addPage(bxs);
+        pgrs[1].addPage(bxs);
     left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
     right = sR.w - sR.w / kGoodButtonXDivisor;
     boxInfo.rect.x = left;
@@ -476,13 +476,13 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
                     if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                         // Flush current page upon reaching bottom.
                         boxInfo.rect.y = top;
-                        pgrs[2u].addPage(bxs);
+                        pgrs[2].addPage(bxs);
                     }
                 }
             }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[2u].addPage(bxs);
+        pgrs[2].addPage(bxs);
 }
 
 void Traveler::build(const Business &bsn, double a) {
@@ -542,14 +542,14 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
             boxInfo.rect.y += dy;
             if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                 // Reached bottom of page, flush vector.
-                pgrs[1u].addPage(bxs);
+                pgrs[1].addPage(bxs);
                 boxInfo.rect.y = top;
             }
         }
     }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[1u].addPage(bxs);
+        pgrs[1].addPage(bxs);
     const std::vector<Business> &tBsns = toTown->getBusinesses();
     left = sR.w / 2 + sR.w / kBusinessButtonXDivisor;
     right = sR.w - sR.w / kBusinessButtonXDivisor;
@@ -566,14 +566,14 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
             boxInfo.rect.y += dy;
             if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                 // Reached bottom of page, flush vector.
-                pgrs[2u].addPage(bxs);
+                pgrs[2].addPage(bxs);
                 boxInfo.rect.y = top;
             }
         }
     }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[2u].addPage(bxs);
+        pgrs[2].addPage(bxs);
 }
 
 void Traveler::unequip(unsigned int pI) {
@@ -609,17 +609,17 @@ void Traveler::equip(unsigned int pI) {
     for (auto &e : equipment)
         for (auto &s : e.getMaterial().getCombatStats())
             if (s.partId == pI) return;
-    if (pI == 2u) {
+    if (pI == 2) {
         // Add left fist to equipment.
-        Good fist = Good(0u, "fist");
-        Material fM(2u, "left");
+        Good fist = Good(0, "fist");
+        Material fM(2, "left");
         fM.setCombatStats({{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}});
         fist.addMaterial(fM);
         equipment.push_back(fist);
-    } else if (pI == 3u) {
+    } else if (pI == 3) {
         // Add right fist to equipment.
-        Good fist = Good(0u, "fist");
-        Material fM(3u, "right");
+        Good fist = Good(0, "fist");
+        Material fM(3, "right");
         fM.setCombatStats({{1, 3, 1, 1, 0, {{1, 1, 1}}}, {2, 3, 0, 1, 1, {{1, 1, 1}}}});
         fist.addMaterial(fM);
         equipment.push_back(fist);
@@ -670,7 +670,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
                 // Refresh buttons.
                 refreshEquipButtons(pgrs, fB, pr);
             };
-            pgrs[1u].addBox(e.button(false, boxInfo, pr));
+            pgrs[1].addBox(e.button(false, boxInfo, pr));
             boxInfo.rect.y += dy;
         }
         boxInfo.rect.y = top;
@@ -690,7 +690,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
             // Refresh buttons.
             refreshEquipButtons(pgrs, fB, pr);
         };
-        pgrs[1u].addBox(e.button(false, boxInfo, pr));
+        pgrs[1].addBox(e.button(false, boxInfo, pr));
     }
 }
 
@@ -746,7 +746,7 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
                                                       fgr,
                                                       bgr,
                                                       hl,
-                                                      0u,
+                                                      0,
                                                       false,
                                                       bBB,
                                                       bBR,
@@ -780,12 +780,12 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
     for (auto &e : t.equipment)
         for (auto &s : e.getMaterial().getCombatStats())
             for (size_t i = 0; i < defense.size(); ++i) defense[i] += s.defense[i] * t.stats[s.statId];
-    CombatHit first = {std::numeric_limits<double>::max(), 0u, 0u, ""};
+    CombatHit first = {std::numeric_limits<double>::max(), 0, 0, ""};
     for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         if (ss.front().attack) {
             // e is a weapon
-            unsigned int attack = 0u, type = ss.front().type, speed = 0u;
+            unsigned int attack = 0, type = ss.front().type, speed = 0;
             for (auto &s : ss) {
                 attack += s.attack * stats[s.statId];
                 speed += s.speed * stats[s.statId];
@@ -890,14 +890,14 @@ void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
                     &tHgl = tgt->nation->getHighlight();
     int b = Settings::getBigBoxBorder(), r = Settings::getBigBoxRadius(), fS = Settings::getFightFontSize();
     auto ourBox = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, fgr, bgr, hgl, 0u, false, b, r, fS, {}};
+        return BoxInfo{rt, tx, fgr, bgr, hgl, 0, false, b, r, fS, {}};
     };
     auto theirBox = [&tFgr, &tBgr, &tHgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, tFgr, tBgr, tHgl, 0u, false, b, r, fS, {}};
+        return BoxInfo{rt, tx, tFgr, tBgr, tHgl, 0, false, b, r, fS, {}};
     };
     auto selectButton = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx,
                                                      SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, fgr, bgr, hgl, 0u, false, b, r, fS, {}, ky, fn, true};
+        return BoxInfo{rt, tx, fgr, bgr, hgl, 0, false, b, r, fS, {}, ky, fn, true};
     };
     pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + tgt->getName() + "..."}), pr));
     pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));
@@ -996,7 +996,7 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
                     if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                         // Flush current page upon reaching bottom.
                         boxInfo.rect.y = top;
-                        pgrs[1u].addPage(bxs);
+                        pgrs[1].addPage(bxs);
                     }
                 }
             }
@@ -1004,7 +1004,7 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
 
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[1u].addPage(bxs);
+        pgrs[1].addPage(bxs);
     left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
     right = sR.w - sR.w / kGoodButtonXDivisor;
     boxInfo.rect.x = left;
@@ -1028,14 +1028,14 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
                     if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
                         // Flush current page upon reaching bottom.
                         boxInfo.rect.y = top;
-                        pgrs[2u].addPage(bxs);
+                        pgrs[2].addPage(bxs);
                     }
                 }
             }
         }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        pgrs[2u].addPage(bxs);
+        pgrs[2].addPage(bxs);
 }
 
 void Traveler::startAI() {

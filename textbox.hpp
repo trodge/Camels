@@ -36,7 +36,7 @@ struct BoxInfo {
     SDL_Rect rect{0, 0, 0, 0};
     std::vector<std::string> text;
     SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
-    unsigned int id = 0u;
+    unsigned int id = 0;
     bool isNation = false;
     int border = 0, radius = 0, fontSize = 0;
     std::vector<Image> images;

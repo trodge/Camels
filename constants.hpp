@@ -27,13 +27,13 @@
 
 const double kPi = boost::math::constants::pi<double>();
 const double kShowPlayerPadding = 0.2; // Portion of screen to pad around player when map zooms to player
-const size_t kMaxTowns = 500u;         // Maximum number of towns allowed to be loaded
-const size_t kMaxNeighbors = 5u;       // Maximum number of neighbors for towns to find
+const size_t kMaxTowns = 500;         // Maximum number of towns allowed to be loaded
+const size_t kMaxNeighbors = 5;       // Maximum number of neighbors for towns to find
 const int kDaysPerYear = 365;
 const double kTravelerCarry = -16.;
-const size_t kFontCount = 5u;        // Number of fonts used to display text
-const size_t kPortionBoxIndex = 1u;  // Index of box representing current traveler portion
-const size_t kFightChoiceIndex = 3u; // Index of box representing choice when fighting
+const size_t kFontCount = 5;        // Number of fonts used to display text
+const size_t kPortionBoxIndex = 1;  // Index of box representing current traveler portion
+const size_t kFightChoiceIndex = 3; // Index of box representing choice when fighting
 const int kBoxDB = 2;
 const int kTownDB = 1;
 const int kGoodButtonSizeMultiplier = 29;

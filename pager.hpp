@@ -26,28 +26,27 @@
 #ifndef PAGER_H
 #define PAGER_H
 
-struct BoxRange {
-    std::vector<std::unique_ptr<TextBox>>::iterator start;
-    std::vector<std::unique_ptr<TextBox>>::iterator stop;
-};
-
 class Pager {
     std::vector<std::unique_ptr<TextBox>> boxes; // boxes this pager manages
     std::vector<size_t> indices;                 // indices to page breaks in boxes
     std::vector<size_t>::iterator pageIt;        // index of beginning indices of current page
-    BoxRange visible;
+    std::array<std::vector<std::unique_ptr<TextBox>>::iterator, 2> visible;
+    SDL_Rect bounds;
     void setVisible();
-
+    void setBounds();
 public:
     TextBox *getVisible(size_t idx);
     std::vector<TextBox *> getVisible();
     std::vector<TextBox *> getAll();
+    size_t pageCount() const { return indices.size(); }
     int visibleCount() const;
     void addBox(std::unique_ptr<TextBox> &&bx);
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void reset();
+    void setPage(size_t pg);
     void recedePage();
     void advancePage();
+    void addPageButtons(BoxInfo bI);
     void toggleLock(size_t idx) { boxes[idx]->toggleLock(); }
     int getKeyedIndex(const SDL_KeyboardEvent &k);
     int getClickedIndex(const SDL_MouseButtonEvent &b);

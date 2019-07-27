@@ -106,15 +106,15 @@ Uint32 getAt(SDL_Surface *s, int x, int y) {
         break;
     case 3:
         if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return static_cast<Uint32>(p[0] << 16u | p[1] << 8u | p[2]);
+            return static_cast<Uint32>(p[0] << 16 | p[1] << 8 | p[2]);
         else
-            return static_cast<Uint32>(p[0] | p[1] << 8u | p[2] << 16u);
+            return static_cast<Uint32>(p[0] | p[1] << 8 | p[2] << 16);
         break;
     case 4:
         return *reinterpret_cast<Uint32 *>(p);
         break;
     default:
-        return 0u;
+        return 0;
     }
 }
 

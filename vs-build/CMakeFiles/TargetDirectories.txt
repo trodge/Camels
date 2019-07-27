@@ -1,0 +1,3 @@
+C:/Users/Thomas/OneDrive/Code/Camels/vs-build/CMakeFiles/camels.dir
+C:/Users/Thomas/OneDrive/Code/Camels/vs-build/CMakeFiles/ALL_BUILD.dir
+C:/Users/Thomas/OneDrive/Code/Camels/vs-build/CMakeFiles/ZERO_CHECK.dir

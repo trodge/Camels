@@ -52,7 +52,7 @@ void AI::randomizeLimitFactors() {
     // material.
     auto &gs = traveler.getGoods();
     // Total count of materials across all goods, including labor.
-    size_t mC = std::accumulate(gs.begin(), gs.end(), 0u,
+    size_t mC = std::accumulate(gs.begin(), gs.end(), 0,
                                 [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
     materialInfo = std::vector<MaterialInfo>(mC);
     static std::uniform_real_distribution<double> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());

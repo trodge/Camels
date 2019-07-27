@@ -26,7 +26,7 @@ Good::Good(unsigned int i, const std::string &n, double p, double c, const std::
     : Good(i, n, 0., p, c, m, s) {}
 
 Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
-    : Good(i, n, a, p, c, m, 0u) {}
+    : Good(i, n, a, p, c, m, 0) {}
 
 Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0., p, c, m) {}
 
@@ -69,7 +69,7 @@ double Good::getConsumption() const {
 
 std::string Good::businessText() const {
     std::string bsnTx = std::to_string(amount);
-    dropTrail(bsnTx, split ? 3u : 0u);
+    dropTrail(bsnTx, split ? 3 : 0);
     if (split) {
         // Goods that split must be measured.
         bsnTx += " " + measure;
@@ -86,7 +86,7 @@ std::string Good::businessText() const {
 
 std::string Good::logText() const {
     std::string lTx = std::to_string(amount);
-    dropTrail(lTx, split ? 3u : 0u);
+    dropTrail(lTx, split ? 3 : 0);
     if (split) {
         // Goods that split must be measured.
         lTx += " " + measure;
@@ -221,7 +221,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo b
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());
-        dropTrail(amountText, split ? 3u : 0u);
+        dropTrail(amountText, split ? 3 : 0);
         bI.text.push_back(std::move(amountText));
         return std::make_unique<MenuButton>(bI, pr);
     }
@@ -232,7 +232,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo b
 void Good::adjustDemand(std::string rBN, double d) {
     for (auto &m : materials) {
         std::string mN = m.getName();
-        if (rBN == mN.substr(0u, mN.find(' '))) { m.adjustDemand(d); }
+        if (rBN == mN.substr(0, mN.find(' '))) { m.adjustDemand(d); }
     }
 }
 

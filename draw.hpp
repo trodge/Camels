@@ -81,7 +81,7 @@ inline RendererPtr makeSoftwareRenderer(SDL_Surface *surface) {
 }
 
 inline SurfacePtr makeSurface(int width, int height) {
-    return makeResource(SDL_CreateRGBSurface, 0u, width, height, 32, rmask, gmask, bmask, amask);
+    return makeResource(SDL_CreateRGBSurface, 0, width, height, 32, rmask, gmask, bmask, amask);
 }
 
 inline SurfacePtr makeSurfaceWithFormatFrom(void *pixels, int width, int height, int depth, int pitch, Uint32 format) {
