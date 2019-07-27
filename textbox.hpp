@@ -97,7 +97,6 @@ public:
     virtual void addItem(const std::string &i) { addText(i); }
     void toggleLock();
     void toggleFocus();
-    void changeBorder(int dBd) { setBorder(border + dBd); }
     void setInvColors(bool i);
     void setClicked(bool c);
     virtual void setKey(const SDL_Keycode &) {}

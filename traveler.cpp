@@ -388,13 +388,13 @@ void Traveler::withdraw(Good &g) {
 }
 
 void Traveler::refreshFocusBox(std::vector<Pager> &pgrs, int &fB) {
-    // Change border on the focused box if it was just recreated.
+    // Run toggle focus on the focused box if it was just recreated.
     if (fB < 0) return;
     int focusBox = fB;
     for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) {
         int visibleCount = pgrIt->visibleCount();
         if (focusBox < visibleCount) {
-            pgrIt->getVisible(focusBox)->changeBorder(kBoxDB);
+            pgrIt->getVisible(focusBox)->toggleFocus();
             break;
         } else
             focusBox -= visibleCount;

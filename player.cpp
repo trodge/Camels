@@ -172,7 +172,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
         {UIState::equipping,
          {{smallButton({sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (E)quipping"}, SDLK_e,
                        [this](MenuButton *) { setState(UIState::traveling); })},
-          [this] { traveler->createEquipButtons(pagers, focusBox, printer); }}},
+          [this] { traveler->createEquipButtons(pagers, focusBox, printer); }, 2u}},
         {UIState::hiring,
          {{smallButton({sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"Stop (H)iring"}, SDLK_h,
                        [this](MenuButton *) { setState(UIState::traveling); })}}},
@@ -274,7 +274,7 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcb
             // Currently focused town is last neighbor.
             auto &ts = game.getTowns();
             size_t fT = focusTown;
-            if (fT < ts.size()) ts[fT].getBox()->changeBorder(-kTownDB);
+            if (fT < ts.size()) ts[fT].getBox()->toggleFocus();
             i = -1;
         }
         fcbls.reserve(neighbors.size());
