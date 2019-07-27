@@ -193,8 +193,8 @@ void Material::use(double a) {
 
 void Material::put(Material &m) {
     amount += m.amount;
-    auto middle = perishCounters.insert(perishCounters.end(), m.perishCounters.begin(), m.perishCounters.end());
-    std::inplace_merge(perishCounters.begin(), middle, perishCounters.end());
+    auto middle = perishCounters.insert(end(perishCounters), begin(m.perishCounters), end(m.perishCounters));
+    std::inplace_merge(begin(perishCounters), middle, end(perishCounters));
 }
 
 void Material::create(double a) {
@@ -207,12 +207,12 @@ double Material::perish(unsigned int e, double p) {
     // Perish this material for e milliseconds with maximum shelf life p years. Find the first perish counter that will
     // expire.
     PerishCounter ePC = {int(p * Settings::getDayLength() * kDaysPerYear - e), 0};
-    auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), ePC);
+    auto expired = std::upper_bound(begin(perishCounters), end(perishCounters), ePC);
     // Remove expired amounts from amount and total them.
     double a =
-        std::accumulate(expired, perishCounters.end(), 0, [](double d, const PerishCounter &pC) { return d + pC.amount; });
+        std::accumulate(expired, end(perishCounters), 0, [](double d, const PerishCounter &pC) { return d + pC.amount; });
     // Erase expired perish counters.
-    perishCounters.erase(expired, perishCounters.end());
+    perishCounters.erase(expired, end(perishCounters));
     // Add elapsed time to remaining counters.
     for (auto &pC : perishCounters) pC.time += e;
     // If too much perished, reduce total by overage.

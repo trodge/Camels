@@ -259,16 +259,16 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcb
         for (auto &pg : pagers) {
             // Put all visible boxes from all pages in focusables vector.
             auto bxs = pg.getVisible();
-            fcbls.insert(fcbls.end(), bxs.begin(), bxs.end());
+            fcbls.insert(end(fcbls), begin(bxs), end(bxs));
         }
         s = static_cast<int>(fcbls.size());
         break;
     case neighbor:
         neighbors = traveler->getTown()->getNeighbors();
         i = static_cast<int>(
-            std::find_if(neighbors.begin(), neighbors.end(),
+            std::find_if(begin(neighbors), end(neighbors),
                          [this](Town *t) { return t->getId() == static_cast<unsigned int>(focusTown + 1); }) -
-            neighbors.begin());
+            begin(neighbors));
         s = static_cast<int>(neighbors.size());
         if (i == s) {
             // Currently focused town is last neighbor.
@@ -382,7 +382,7 @@ void Player::setState(UIState::State s) {
     UIState newState = uIStates.at(s);
     pagers.clear();
     pagers.resize(newState.pagerCount);
-    currentPager = pagers.begin();
+    currentPager = begin(pagers);
     focusBox = -1;
     fs::path path;
     std::vector<std::string> saves;
@@ -547,8 +547,8 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
     if (state == UIState::traveling) {
         std::vector<TextBox *> fcbls = game.getTownBoxes();
         auto clickedTown =
-            std::find_if(fcbls.begin(), fcbls.end(), [&b](const TextBox *t) { return t->clickCaptured(b); });
-        if (clickedTown != fcbls.end()) focus(static_cast<int>(std::distance(fcbls.begin(), clickedTown)), town);
+            std::find_if(begin(fcbls), end(fcbls), [&b](const TextBox *t) { return t->clickCaptured(b); });
+        if (clickedTown != end(fcbls)) focus(static_cast<int>(std::distance(begin(fcbls), clickedTown)), town);
     }
     int clickedIndex = -1, indexOffset = 0;
     for (auto &pgr : pagers) {
@@ -625,10 +625,10 @@ void Player::update(unsigned int e) {
     if (!(scrollKeys.empty())) {
         auto upIt = scrollKeys.find(SDLK_UP), dnIt = scrollKeys.find(SDLK_DOWN), lfIt = scrollKeys.find(SDLK_LEFT),
              rtIt = scrollKeys.find(SDLK_RIGHT);
-        scrollX -= (lfIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
-        scrollX += (rtIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
-        scrollY -= (upIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
-        scrollY += (dnIt != scrollKeys.end()) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
+        scrollX -= (lfIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
+        scrollX += (rtIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
+        scrollY -= (upIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
+        scrollY += (dnIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
     }
     if (scrollX || scrollY) game.moveView(scrollX, scrollY);
     if (traveler.get() && !pause) traveler->update(e);

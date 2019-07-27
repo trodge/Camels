@@ -41,7 +41,7 @@ void ScrollBox::addItem(const std::string &i) {
     printer.setSize(fontSize);
     std::string entry = i, overflow;
     while (printer.getFontWidth(entry) > rect.w) {
-        overflow.insert(overflow.begin(), entry.back());
+        overflow.insert(begin(overflow), entry.back());
         entry.pop_back();
     }
     items.push_back(entry);
@@ -64,8 +64,8 @@ void ScrollBox::setHighlightLine(int h) {
         scroll = 0;
     clicked = false;
     invColors = false;
-    setText(std::vector<std::string>(items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll),
-                                     items.begin() + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
+    setText(std::vector<std::string>(begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll),
+                                     begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
 }
 
 bool ScrollBox::keyCaptured(const SDL_KeyboardEvent &k) const {

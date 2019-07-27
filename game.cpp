@@ -272,7 +272,7 @@ void Game::loadData(sqlite3 *cn) {
     // Load requirements.
     quer = sql::makeQuery(cn, "SELECT business_id, good_id, amount FROM requirements");
     std::vector<Good> requirements;
-    auto bIt = businesses.begin();
+    auto bIt = begin(businesses);
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
         bId = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0));
         if (bIt->getId() != bId) {
@@ -287,13 +287,13 @@ void Game::loadData(sqlite3 *cn) {
     }
 
     // Set requirements for last business.
-    for (; bIt != businesses.end(); ++bIt)
+    for (; bIt != end(businesses); ++bIt)
         // Loop over modes.
         bIt->setRequirements(requirements);
     // Load inputs.
     quer = sql::makeQuery(cn, "SELECT business_id, mode, good_id, amount FROM inputs");
     std::vector<Good> inputs;
-    bIt = businesses.begin();
+    bIt = begin(businesses);
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
         if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) ||
             bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {
@@ -311,7 +311,7 @@ void Game::loadData(sqlite3 *cn) {
     // Load outputs.
     quer = sql::makeQuery(cn, "SELECT business_id, mode, good_id, amount FROM outputs");
     std::vector<Good> outputs;
-    bIt = businesses.begin();
+    bIt = begin(businesses);
     while (sqlite3_step(quer.get()) != SQLITE_DONE) {
         if (bIt->getId() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)) ||
             bIt->getMode() != static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))) {

@@ -62,7 +62,7 @@ void Business::takeRequirements(std::vector<Good> &gds, double a) {
         // Reduce transfered amount to amount determined by reclaim factor.
         tG.setAmount(tG.getAmount() * reclaimFactor);
         // Put into reclaimables.
-        auto rcbIt = std::lower_bound(reclaimables.begin(), reclaimables.end(), rq);
+        auto rcbIt = std::lower_bound(begin(reclaimables), end(reclaimables), rq);
         if (*rcbIt == rq)
             rcbIt->put(tG);
         else
@@ -73,7 +73,7 @@ void Business::takeRequirements(std::vector<Good> &gds, double a) {
 void Business::reclaim(std::vector<Good> &gds, double a) {
     // Return reclaimables for the given area to parameter.
     for (auto &rq : requirements) {
-        auto rcbIt = std::lower_bound(reclaimables.begin(), reclaimables.end(), rq);
+        auto rcbIt = std::lower_bound(begin(reclaimables), end(reclaimables), rq);
         // Construct a transfer good with materials proportional to those in reclaimables.
         Good tG(*rcbIt);
         tG.setAmount(rq.getAmount() * a);

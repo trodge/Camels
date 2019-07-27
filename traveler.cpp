@@ -74,7 +74,7 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
 void Traveler::addToTown() { fromTown->addTraveler(shared_from_this()); }
 
 double Traveler::netWeight() const {
-    return std::accumulate(goods.begin(), goods.end(), static_cast<double>(stats[0]) * kTravelerCarry,
+    return std::accumulate(begin(goods), end(goods), static_cast<double>(stats[0]) * kTravelerCarry,
                            [](double d, Good g) { return d + g.getCarry() * g.getAmount(); });
 }
 
@@ -100,7 +100,7 @@ std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
     open.insert(toTown);
     while (!open.empty()) {
         // find current town with lowest distance
-        Town *current = *open.begin();
+        Town *current = *begin(open);
         const std::vector<Town *> &neighbors = current->getNeighbors();
         if (current == t) {
             while (from.count(current)) {
@@ -109,7 +109,7 @@ std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
             }
             return path;
         }
-        open.erase(open.begin());
+        open.erase(begin(open));
         closed.insert(current);
         for (auto &n : neighbors) {
             // ignore town if already explored
@@ -193,11 +193,11 @@ void Traveler::clearTrade() {
 void Traveler::makeTrade() {
     if (!(offer.empty() || request.empty())) {
         std::string logEntry = name + " trades ";
-        for (auto gI = offer.begin(); gI != offer.end(); ++gI) {
-            if (gI != offer.begin()) {
+        for (auto gI = begin(offer); gI != end(offer); ++gI) {
+            if (gI != begin(offer)) {
                 // This is not the first good in offer.
                 if (offer.size() != 2) logEntry += ", ";
-                if (gI + 1 == offer.end())
+                if (gI + 1 == end(offer))
                     // This is the last good in offer.
                     logEntry += " and ";
             }
@@ -206,11 +206,11 @@ void Traveler::makeTrade() {
             logEntry += gI->logText();
         }
         logEntry += " for ";
-        for (auto gI = request.begin(); gI != request.end(); ++gI) {
-            if (gI != request.begin()) {
+        for (auto gI = begin(request); gI != end(request); ++gI) {
+            if (gI != begin(request)) {
                 // This is not the first good in request.
                 if (request.size() != 2) logEntry += ", ";
-                if (gI + 1 == request.end())
+                if (gI + 1 == end(request))
                     // This is the last good in request.
                     logEntry += " and ";
             }
@@ -329,7 +329,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
         }
     }
     bxs = pgrs[2].getAll();
-    unsigned int requestCount = std::accumulate(bxs.begin(), bxs.end(), 0, [](unsigned int c, const TextBox *rB) {
+    unsigned int requestCount = std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) {
         return c + rB->getClicked();
     }); // count of clicked request buttons.
     request.reserve(requestCount);
@@ -391,7 +391,7 @@ void Traveler::refreshFocusBox(std::vector<Pager> &pgrs, int &fB) {
     // Run toggle focus on the focused box if it was just recreated.
     if (fB < 0) return;
     int focusBox = fB;
-    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) {
+    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) {
         int visibleCount = pgrIt->visibleCount();
         if (focusBox < visibleCount) {
             pgrIt->getVisible(focusBox)->toggleFocus();
@@ -403,7 +403,7 @@ void Traveler::refreshFocusBox(std::vector<Pager> &pgrs, int &fB) {
 
 void Traveler::refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Delete and re-create storage buttons to reflect changes.
-    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) pgrIt->reset();
+    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
     createStorageButtons(pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
@@ -489,7 +489,7 @@ void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before
     // calling. Determine if business exists in property.
     auto &oBsns = properties[toTown->getId() - 1].businesses;
-    auto oBsnIt = std::lower_bound(oBsns.begin(), oBsns.end(), bsn);
+    auto oBsnIt = std::lower_bound(begin(oBsns), end(oBsns), bsn);
     if (*oBsnIt == bsn) {
         // Business already exists, grow it.
         oBsnIt->takeRequirements(goods, a);
@@ -505,7 +505,7 @@ void Traveler::build(const Business &bsn, double a) {
 void Traveler::demolish(const Business &bsn, double a) {
     // Demolish the given area of the given business. Check area before calling.
     auto &oBsns = properties[toTown->getId() - 1].businesses;
-    auto oBsnIt = std::lower_bound(oBsns.begin(), oBsns.end(), bsn);
+    auto oBsnIt = std::lower_bound(begin(oBsns), end(oBsns), bsn);
     oBsnIt->changeArea(-a);
     oBsnIt->reclaim(goods, a);
     if (oBsnIt->getArea() == 0.) oBsns.erase(oBsnIt);
@@ -580,13 +580,13 @@ void Traveler::unequip(unsigned int pI) {
     // Unequip all equipment using the given part id.
     auto unused = [pI](const Good &e) {
         auto &eSs = e.getMaterial().getCombatStats();
-        return std::find_if(eSs.begin(), eSs.end(), [pI](const CombatStat &s) { return s.partId == pI; }) == eSs.end();
+        return std::find_if(begin(eSs), end(eSs), [pI](const CombatStat &s) { return s.partId == pI; }) == end(eSs);
     };
-    auto uEI = std::partition(equipment.begin(), equipment.end(), unused);
+    auto uEI = std::partition(begin(equipment), end(equipment), unused);
     // Put equipment back in goods.
-    for (auto eI = uEI; eI != equipment.end(); ++eI)
+    for (auto eI = uEI; eI != end(equipment); ++eI)
         if (eI->getAmount() > 0.) goods[eI->getId()].put(*eI);
-    equipment.erase(uEI, equipment.end());
+    equipment.erase(uEI, end(equipment));
 }
 
 void Traveler::equip(Good &g) {
@@ -628,7 +628,7 @@ void Traveler::equip(unsigned int pI) {
 
 void Traveler::refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Delete and re-create storage buttons to reflect changes.
-    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) pgrIt->reset();
+    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
     createEquipButtons(pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
@@ -699,17 +699,17 @@ std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
     auto &forwardTravelers = fromTown->getTravelers(); // travelers traveling from the same town
     auto &backwardTravelers = toTown->getTravelers();  // travelers traveling from the destination town
     std::vector<std::shared_ptr<Traveler>> able;
-    able.insert(able.end(), forwardTravelers.begin(), forwardTravelers.end());
-    if (fromTown != toTown) able.insert(able.end(), backwardTravelers.begin(), backwardTravelers.end());
+    able.insert(end(able), begin(forwardTravelers), end(forwardTravelers));
+    if (fromTown != toTown) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
     if (!able.empty()) {
         // Eliminate travelers which are too far away or have reached town or
         // are already fighting or are this traveler.
-        able.erase(std::remove_if(able.begin(), able.end(),
+        able.erase(std::remove_if(begin(able), end(able),
                                   [this](std::shared_ptr<Traveler> t) {
                                       return t->toTown == t->fromTown || distSq(t->px, t->py) > Settings::getAttackDistSq() ||
                                              t->target.lock() || !t->alive() || t == shared_from_this();
                                   }),
-                   able.end());
+                   end(able));
     }
     return able;
 }
@@ -738,7 +738,7 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
     auto able = attackable();       // vector of attackable travelers
     std::vector<std::string> names; // vector of names of attackable travelers
     names.reserve(able.size());
-    std::transform(able.begin(), able.end(), std::back_inserter(names),
+    std::transform(begin(able), end(able), std::back_inserter(names),
                    [](const std::shared_ptr<Traveler> t) { return t->getName(); });
     // Create attack button.
     pgr.addBox(std::make_unique<SelectButton>(BoxInfo{{sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2},
@@ -806,8 +806,8 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
                 // Start status at part's current status.
                 first.status = t.parts[first.partId];
                 r = d(Settings::getRng());
-                auto sCI = cO.statusChances.begin();
-                while (r > 0 && sCI != cO.statusChances.end()) {
+                auto sCI = begin(cO.statusChances);
+                while (r > 0 && sCI != end(cO.statusChances)) {
                     // Find status such that part becomes more damaged.
                     if (sCI->first > first.status) {
                         // This part is less damaged than the current status.
@@ -957,7 +957,7 @@ void Traveler::loot(Traveler &t) {
 }
 
 void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) pgrIt->reset();
+    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
     createLootButtons(pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
@@ -1126,7 +1126,7 @@ void Traveler::update(unsigned int e) {
 void Traveler::adjustAreas(Pager &pgr, double mM) {
     std::vector<MenuButton *> requestButtons;
     std::vector<TextBox *> bxs = pgr.getAll();
-    for (auto rBI = bxs.begin(); rBI != bxs.end(); ++rBI) requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
+    for (auto rBI = begin(bxs); rBI != end(bxs); ++rBI) requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
     toTown->adjustAreas(requestButtons, mM);
 }
 
@@ -1134,7 +1134,7 @@ void Traveler::adjustDemand(Pager &pgr, double mM) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
     std::vector<TextBox *> bxs = pgr.getAll();
-    for (auto rBI = bxs.begin(); rBI != bxs.end(); ++rBI) requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
+    for (auto rBI = begin(bxs); rBI != end(bxs); ++rBI) requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
     toTown->adjustDemand(requestButtons, mM);
 }
 
@@ -1156,8 +1156,8 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
             properties[i].businesses.size(), [&property, &b](size_t j) { return property.businesses[j].save(b); });
         return Save::CreateProperty(b, sStorage, sBusinesses);
     });
-    auto sStats = b.CreateVector(std::vector<unsigned int>(stats.begin(), stats.end()));
-    auto sParts = b.CreateVector(std::vector<unsigned int>(parts.begin(), parts.end()));
+    auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
+    auto sParts = b.CreateVector(std::vector<unsigned int>(begin(parts), end(parts)));
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
     if (aI)

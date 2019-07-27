@@ -50,12 +50,12 @@ Good::Good(const Save::Good *g)
 std::string Good::getFullName(const Material &m) const { return id == m.getId() ? name : m.getName() + " " + name; }
 
 const Material &Good::getMaterial(const Material &m) const {
-    return *std::lower_bound(materials.begin(), materials.end(), m);
+    return *std::lower_bound(begin(materials), end(materials), m);
 }
 
 const Material &Good::getMaterial(const std::string &mNm) const {
     // Return material such that first word of material name matches first word of parameter.
-    return *std::find_if(materials.begin(), materials.end(), [mNm](const Material &m) {
+    return *std::find_if(begin(materials), end(materials), [mNm](const Material &m) {
         const std::string &mN = m.getName(); // material name
         return mN.substr(0, mN.find(' ')) == mNm.substr(0, mNm.find(' '));
     }); // iterator to the material on bx
@@ -117,7 +117,7 @@ void Good::addMaterial(const Good &g) { materials.push_back(Material(g.id, g.nam
 void Good::setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs) {
     for (auto &m : materials) {
         auto it = cSs.find(m.getId());
-        if (it == cSs.end()) continue;
+        if (it == end(cSs)) continue;
         m.setCombatStats(it->second);
     }
 }
@@ -143,8 +143,8 @@ void Good::take(Good &g) {
     // Takes the given good from this good. Stores perish counters for transfer in parameter.
     for (auto &gM : g.materials) {
         // Find parameter material in this good's materials.
-        auto it = std::lower_bound(materials.begin(), materials.end(), gM);
-        if (it == materials.end() || *it != gM)
+        auto it = std::lower_bound(begin(materials), end(materials), gM);
+        if (it == end(materials) || *it != gM)
             // Material was not found, so take its amount from overall transfer.
             g.amount -= gM.getAmount();
         else
@@ -167,8 +167,8 @@ void Good::use(double a) {
 void Good::put(Good &g) {
     // Puts the given good in this good. Transfers perish counters.
     for (auto &gM : g.materials) {
-        auto it = std::lower_bound(materials.begin(), materials.end(), gM);
-        if (it == materials.end() || *it != gM)
+        auto it = std::lower_bound(begin(materials), end(materials), gM);
+        if (it == end(materials) || *it != gM)
             g.amount += gM.getAmount();
         else
             it->put(gM);
@@ -181,7 +181,7 @@ void Good::create(const std::unordered_map<unsigned int, double> &mAs) {
     double a = 0;
     for (auto &m : materials) {
         auto it = mAs.find(m.getId());
-        if (it == mAs.end()) continue;
+        if (it == end(mAs)) continue;
         double mA = it->second;
         m.create(mA);
         a += mA;
@@ -193,8 +193,8 @@ void Good::create(const std::unordered_map<unsigned int, double> &mAs) {
 void Good::create(double a) {
     // Newly creates the given amount of this good's self named material
     Material m(id);
-    auto it = std::lower_bound(materials.begin(), materials.end(), m);
-    if (it == materials.end() || *it != m) return;
+    auto it = std::lower_bound(begin(materials), end(materials), m);
+    if (it == end(materials) || *it != m) return;
     it->create(a);
     amount += a;
     removeExcess();

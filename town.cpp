@@ -41,7 +41,7 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
             double fF = 1.;
             auto tTBI = std::make_pair(townType, bsn.getId());
             auto fFI = fFs.lower_bound(tTBI);
-            if (fFI != fFs.end() && fFI->first == tTBI) fF = fFI->second;
+            if (fFI != end(fFs) && fFI->first == tTBI) fF = fFI->second;
             businesses.push_back(Business(bsn));
             businesses.back().setArea(static_cast<double>(ppl) * fq * fF);
         }
@@ -118,8 +118,8 @@ void Town::setMax() {
 }
 
 void Town::removeTraveler(const std::shared_ptr<Traveler> t) {
-    auto it = std::find(travelers.begin(), travelers.end(), t);
-    if (it != travelers.end()) travelers.erase(it);
+    auto it = std::find(begin(travelers), end(travelers), t);
+    if (it != end(travelers)) travelers.erase(it);
 }
 
 void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
@@ -196,7 +196,7 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
     auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
     for (auto &t : ts) {
         int dS = distSq(t.dpx, t.dpy);
-        if (t.id != id && !std::binary_search(neighbors.begin(), neighbors.end(), &t, closer)) {
+        if (t.id != id && !std::binary_search(begin(neighbors), end(neighbors), &t, closer)) {
             // t is not this and not already a neighbor.
             // Determine how much water is between these two towns.
             int water = 0;
@@ -233,12 +233,12 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
                 } else
                     ++water;
             }
-            if (water < 24) { neighbors.insert(std::lower_bound(neighbors.begin(), neighbors.end(), &t, closer), &t); }
+            if (water < 24) { neighbors.insert(std::lower_bound(begin(neighbors), end(neighbors), &t, closer), &t); }
         }
     }
     // Take only the closest towns.
     if (neighbors.size() > kMaxNeighbors)
-        neighbors = std::vector<Town *>(neighbors.begin(), neighbors.begin() + kMaxNeighbors);
+        neighbors = std::vector<Town *>(begin(neighbors), begin(neighbors) + kMaxNeighbors);
 }
 
 void Town::connectRoutes() {
@@ -246,8 +246,8 @@ void Town::connectRoutes() {
     auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
     for (auto &n : neighbors) {
         auto &nNs = n->neighbors; // neighbor's neighbors
-        auto it = std::lower_bound(nNs.begin(), nNs.end(), n, closer);
-        if (it == nNs.end() || *it != this) nNs.insert(it, this);
+        auto it = std::lower_bound(begin(nNs), end(nNs), n, closer);
+        if (it == end(nNs) || *it != this) nNs.insert(it, this);
     }
 }
 
@@ -262,7 +262,7 @@ void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
                 for (auto &ip : b.getInputs()) {
                     std::string ipN = goods[ip.getId()].getName();
                     if (rBN.substr(0, rBN.find(' ')) == ipN.substr(0, ipN.find(' ')) ||
-                        std::find(mMs.begin(), mMs.end(), ipN) != mMs.end()) {
+                        std::find(begin(mMs), end(mMs), ipN) != end(mMs)) {
                         inputMatch = true;
                         break;
                     }

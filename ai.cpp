@@ -52,11 +52,11 @@ void AI::randomizeLimitFactors() {
     // material.
     auto &gs = traveler.getGoods();
     // Total count of materials across all goods, including labor.
-    size_t mC = std::accumulate(gs.begin(), gs.end(), 0,
+    size_t mC = std::accumulate(begin(gs), end(gs), 0,
                                 [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
     materialInfo = std::vector<MaterialInfo>(mC);
     static std::uniform_real_distribution<double> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
-    auto mII = materialInfo.begin();
+    auto mII = begin(materialInfo);
     for (size_t i = 0; i < gs.size(); ++i) {
         mC = gs[i].getMaterials().size();
         for (size_t j = 0; j < mC; ++j) {
@@ -98,7 +98,7 @@ double AI::lootScore(const std::vector<Good> &tGs) const {
     // Score for looting target parameter goods given our goods
     auto &gs = traveler.getGoods();
     double score = 0.;
-    auto mII = materialInfo.begin(); // material info iterator
+    auto mII = begin(materialInfo); // material info iterator
     for (size_t i = 1; i < gs.size(); ++i) {
         auto &gMs = gs[i].getMaterials();
         auto &tGMs = tGs[i].getMaterials();
@@ -121,14 +121,14 @@ void AI::autoTrade() {
     double bestScore = 0;
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
-    auto mII = materialInfo.begin(); // material info iterator
+    auto mII = begin(materialInfo); // material info iterator
     // Loop through goods excluding labor.
-    for (auto gI = gs.begin() + 1; gI != gs.end(); ++gI) {
+    for (auto gI = begin(gs) + 1; gI != end(gs); ++gI) {
         double carry = gI->getCarry();
         if (!overWeight || carry > 0.) {
             // Can carry given good.
             auto &gMs = gI->getMaterials();
-            for (auto mI = gMs.begin(); mI != gMs.end(); ++mI) {
+            for (auto mI = begin(gMs); mI != end(gMs); ++mI) {
                 auto &tM = tGs[gI->getId()].getMaterial(*mI);
                 amount = mI->getAmount();
                 if (amount > 0.) {
@@ -165,13 +165,13 @@ void AI::autoTrade() {
     double excess;
     amount = 0;
     // Find highest buy score.
-    mII = materialInfo.begin(); // material info iterator
+    mII = begin(materialInfo); // material info iterator
     // Loop through goods excluding labor.
-    for (auto gI = tGs.begin() + 1; gI != tGs.end(); ++gI) {
+    for (auto gI = begin(tGs) + 1; gI != end(tGs); ++gI) {
         double carry = gI->getCarry();
         if (!overWeight || carry < 0) {
             auto &gMs = gI->getMaterials();
-            for (auto mI = gMs.begin(); mI != gMs.end(); ++mI) {
+            for (auto mI = begin(gMs); mI != end(gMs); ++mI) {
                 auto &rM = gs[gI->getId()].getMaterial(*mI);
                 score = rM.getBuyScore(mI->getPrice(),
                                        mII->buy); // score based on maximum buy price
@@ -241,18 +241,18 @@ void AI::autoAttack() {
         double ourEquipScore = equipScore(traveler.getEquipment(), traveler.getStats());
         // Remove travelers who do not meet threshold for attacking.
         auto &gs = traveler.getGoods();
-        able.erase(std::remove_if(able.begin(), able.end(),
+        able.erase(std::remove_if(begin(able), end(able),
                                   [this, ourEquipScore, &gs](const std::shared_ptr<Traveler> a) {
                                       return decisionCriteria[4] < Settings::getCriteriaMax() / 3 ||
                                              lootScore(a->getGoods()) * ourEquipScore * decisionCriteria[4] /
                                                      equipScore(a->getEquipment(), a->getStats()) <
                                                  Settings::getAIAttackThreshold();
                                   }),
-                   able.end());
+                   end(able));
         if (!able.empty()) {
             // Attack the easiest target.
             auto easiest = std::min_element(
-                able.begin(), able.end(), [this](const std::shared_ptr<Traveler> a, const std::shared_ptr<Traveler> b) {
+                begin(able), end(able), [this](const std::shared_ptr<Traveler> a, const std::shared_ptr<Traveler> b) {
                     return equipScore(a->getEquipment(), a->getStats()) < equipScore(b->getEquipment(), b->getStats());
                 });
             traveler.attack(*easiest);
@@ -276,7 +276,7 @@ void AI::autoChoose() {
         scores[1] /= speedRatio;
         scores[2] *= speedRatio;
     }
-    traveler.choose(static_cast<FightChoice>(std::max_element(scores.begin(), scores.end()) - scores.begin()));
+    traveler.choose(static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores)));
 }
 
 void AI::autoLoot() {
@@ -295,7 +295,7 @@ void AI::autoLoot() {
         // Keep looting until amount looted matches goal or net weight is above 0.
         std::unique_ptr<Good> bestGood;
         double bestScore = 0;
-        auto mII = materialInfo.begin(); // material info iterator
+        auto mII = begin(materialInfo); // material info iterator
         for (size_t i = 0; i < gs.size(); ++i) {
             auto &gMs = gs[i].getMaterials(); // good materials
             auto &tG = tGs[i];                // target good
@@ -329,7 +329,7 @@ void AI::setNearby(const Town *t, const Town *tT, unsigned int i) {
     if (i)
         // Town t is within i steps of town tT.
         for (auto &n : t->getNeighbors())
-            if (n != tT && std::find_if(nearby.begin(), nearby.end(), [n](TownInfo t) { return t.town == n; }) == nearby.end()) {
+            if (n != tT && std::find_if(begin(nearby), end(nearby), [n](TownInfo t) { return t.town == n; }) == end(nearby)) {
                 // Neighbor n is not the current town and not already in nearby towns.
                 nearby.push_back({n, 0, 0});
                 setNearby(n, tT, i - 1);
@@ -346,7 +346,7 @@ void AI::setLimits() {
     }
     auto &gs = traveler.getGoods();
     size_t gC = gs.size();           // good count
-    auto mII = materialInfo.begin(); // material info iterator
+    auto mII = begin(materialInfo); // material info iterator
     // Find minimum and maximum price for each material of each good in nearby towns.
     for (size_t i = 0; i < gC; ++i) {
         // Loop through goods.
@@ -367,7 +367,7 @@ void AI::setLimits() {
                     prices.push_back(price);
             }
             if (!prices.empty()) {
-                auto mMP = std::minmax_element(prices.begin(), prices.end());
+                auto mMP = std::minmax_element(begin(prices), end(prices));
                 mII->minPrice = *mMP.first;
                 mII->maxPrice = *mMP.second;
                 mII->value = *mMP.first + mII->limitFactor * (*mMP.second - *mMP.first);
@@ -404,12 +404,12 @@ void AI::run(unsigned int e) {
             size_t nC = nearby.size();
             std::vector<double> townScores(nC); // scores for going to each town
             // Set scores based on buying and selling prices in each town.
-            std::transform(nearby.begin(), nearby.end(), townScores.begin(), [this](const TownInfo &tI) {
+            std::transform(begin(nearby), end(nearby), begin(townScores), [this](const TownInfo &tI) {
                 return tI.buyScore * decisionCriteria[0] + tI.sellScore * decisionCriteria[1];
             });
-            auto bestTownScore = std::max_element(townScores.begin(), townScores.end());
-            if (bestTownScore != townScores.end()) {
-                traveler.pickTown(nearby[static_cast<size_t>(bestTownScore - townScores.begin())].town);
+            auto bestTownScore = std::max_element(begin(townScores), end(townScores));
+            if (bestTownScore != end(townScores)) {
+                traveler.pickTown(nearby[static_cast<size_t>(bestTownScore - begin(townScores))].town);
                 const Town *toTown = traveler.getTown();
                 setNearby(toTown, toTown, Settings::getAITownRange());
                 setLimits();
@@ -420,7 +420,7 @@ void AI::run(unsigned int e) {
 }
 
 flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sDecisionCriteria = b.CreateVector(std::vector<double>(decisionCriteria.begin(), decisionCriteria.end()));
+    auto sDecisionCriteria = b.CreateVector(std::vector<double>(begin(decisionCriteria), end(decisionCriteria)));
     auto sMaterialInfo =
         b.CreateVectorOfStructs<Save::MaterialInfo>(materialInfo.size(), [this](size_t i, Save::MaterialInfo *mI) {
             *mI = Save::MaterialInfo(materialInfo[i].limitFactor, materialInfo[i].minPrice, materialInfo[i].maxPrice,
