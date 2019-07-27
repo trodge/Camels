@@ -66,6 +66,7 @@ struct UIState {
 class Player {
     std::shared_ptr<Traveler> traveler;
     std::vector<Pager> pagers;
+    std::vector<Pager>::iterator currentPager;
     Game &game;
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false;
@@ -81,7 +82,8 @@ class Player {
     void focus(int f, FocusGroup g);
     void focusPrev(FocusGroup g);
     void focusNext(FocusGroup g);
-    void createStorageView(const Town *t);
+    void recedePage();
+    void advancePage();
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);

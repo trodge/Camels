@@ -707,7 +707,7 @@ void Game::saveGame() {
     path /= player->getTraveler()->getName();
     path.replace_extension("sav");
     std::ofstream file(path.string(), std::ofstream::binary);
-    if (file.is_open()) file.write((const char *)builder.GetBufferPointer(), builder.GetSize());
+    if (file.is_open()) file.write(reinterpret_cast<const char*>(builder.GetBufferPointer()), builder.GetSize());
 }
 
 std::vector<TextBox *> Game::getTownBoxes() const {

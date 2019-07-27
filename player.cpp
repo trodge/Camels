@@ -309,11 +309,11 @@ void Player::focus(int f, FocusGroup g) {
     // Focus item f from group g.
     int i, s;
     std::vector<TextBox *> fcbls;
-    bool isTown = g != FocusGroup::box;
+    bool isBox = g == FocusGroup::box;
     prepFocus(g, i, s, fcbls);
     if (i == f) return;
-    if (i > -1 && i < s) fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
-    if (f > -1 && f < s) fcbls[static_cast<size_t>(f)]->toggleFocus(isTown);
+    if (i > -1 && i < s) fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
+    if (f > -1 && f < s) fcbls[static_cast<size_t>(f)]->toggleFocus(!isBox);
     finishFocus(f, g, fcbls);
 }
 
@@ -321,7 +321,7 @@ void Player::focusPrev(FocusGroup g) {
     // Focus previous item from group g.
     int i, s;
     std::vector<TextBox *> fcbls;
-    bool isTown = g != FocusGroup::box;
+    bool isBox = g == FocusGroup::box;
     prepFocus(g, i, s, fcbls);
     if (i == -1) {
         i = s;
@@ -331,7 +331,7 @@ void Player::focusPrev(FocusGroup g) {
             // No focusable item found in group.
             return;
     } else {
-        fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
+        fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
         int j = i;
         while (--i != j)
             if (i < 0)
@@ -339,7 +339,7 @@ void Player::focusPrev(FocusGroup g) {
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
     }
-    fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
+    fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
     finishFocus(i, g, fcbls);
 }
 
@@ -347,7 +347,7 @@ void Player::focusNext(FocusGroup g) {
     // Focus next item from group g.
     int i, s;
     std::vector<TextBox *> fcbls;
-    bool isTown = g != FocusGroup::box;
+    bool isBox = g == FocusGroup::box;
     prepFocus(g, i, s, fcbls);
     if (i == -1) {
         // Nothing was focused, find first focusable item.
@@ -359,7 +359,7 @@ void Player::focusNext(FocusGroup g) {
             return;
         }
     } else {
-        fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
+        fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
         int j = i;
         while (++i != j)
             // Loop until we come back to the same item.
@@ -368,8 +368,16 @@ void Player::focusNext(FocusGroup g) {
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
     }
-    fcbls[static_cast<size_t>(i)]->toggleFocus(isTown);
+    fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
     finishFocus(i, g, fcbls);
+}
+
+void Player::recedePage() {
+
+}
+
+void Player::advancePage() {
+
 }
 
 void Player::setState(UIState::State s) {
@@ -377,6 +385,7 @@ void Player::setState(UIState::State s) {
     UIState newState = uIStates.at(s);
     pagers.clear();
     pagers.resize(newState.pagerCount);
+    currentPager = pagers.begin();
     focusBox = -1;
     fs::path path;
     std::vector<std::string> saves;
@@ -430,6 +439,9 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
             // No box captured the key press.
             if (state != UIState::quitting) {
                 if (traveler) {
+                    int columnCount = state == UIState::managing ?
+                        kBusinessButtonXDivisor / kBusinessButtonSpaceMultiplier / 2 :
+                        kGoodButtonXDivisor / kGoodButtonSpaceMultiplier / 2;
                     switch (state) {
                     case UIState::traveling:
                         switch (k.keysym.sym) {
@@ -459,10 +471,10 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             focusNext(box);
                             break;
                         case SDLK_UP:
-                            for (int i = 0; i < 7; ++i) focusPrev(box);
+                            for (int i = 0; i < columnCount; ++i) focusPrev(box);
                             break;
                         case SDLK_DOWN:
-                            for (int i = 0; i < 7; ++i) focusNext(box);
+                            for (int i = 0; i < columnCount; ++i) focusNext(box);
                             break;
                         case SDLK_COMMA:
                             traveler->changePortion(-0.1);
@@ -471,6 +483,12 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                         case SDLK_PERIOD:
                             traveler->changePortion(0.1);
                             traveler->updatePortionBox(pagers[0u].getVisible(kPortionBoxIndex));
+                            break;
+                        case SDLK_LEFTBRACKET:
+                            recedePage();
+                            break;
+                        case SDLK_RIGHTBRACKET:
+                            advancePage();
                             break;
                         }
                         break;

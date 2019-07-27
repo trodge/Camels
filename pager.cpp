@@ -46,15 +46,15 @@ void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
     bxs.clear();
 }
 
-void Pager::advancePage() {
-    // Advance to next page. Prevent advancing past last page.
-    if (pageIt != indices.end() - 1) ++pageIt;
-    setVisible();
-}
-
 void Pager::recedePage() {
     // Recede to previous page. Prevent receding past first page.
     if (pageIt != indices.begin() + 1) --pageIt;
+    setVisible();
+}
+
+void Pager::advancePage() {
+    // Advance to next page. Prevent advancing past last page.
+    if (pageIt != indices.end() - 1) ++pageIt;
     setVisible();
 }
 

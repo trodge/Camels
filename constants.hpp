@@ -42,7 +42,7 @@ const int kGoodButtonXDivisor = 434;
 const int kGoodButtonYDivisor = 527;
 const int kBusinessButtonSizeMultiplier = 29;
 const int kBusinessButtonSpaceMultiplier = 31;
-const int kBusinessButtonXDivisor = 434;
+const int kBusinessButtonXDivisor = 155;
 const int kBusinessButtonYDivisor = 341;
 
 #endif

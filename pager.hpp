@@ -45,8 +45,8 @@ public:
     int visibleCount() const;
     void addBox(std::unique_ptr<TextBox> &&bx);
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
-    void advancePage();
     void recedePage();
+    void advancePage();
     void toggleLock(size_t idx) { boxes[idx]->toggleLock(); }
     int getKeyedIndex(const SDL_KeyboardEvent &k);
     int getClickedIndex(const SDL_MouseButtonEvent &b);
