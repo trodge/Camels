@@ -78,14 +78,13 @@ void TextBox::toggleLock() {
         SDL_StopTextInput();
 }
 
-void TextBox::toggleFocus(bool iTn) {
+void TextBox::toggleFocus() {
     isFocus = not isFocus;
-    int dB = iTn ? kTownDB : kBoxDB;
     if (isFocus)
-        changeBorder(dB);
+        setBorder(border * 2);
     else {
-        setInvColors(clicked);
-        changeBorder(-dB);
+        invColors = clicked;
+        setBorder(border / 2);
     }
 }
 
@@ -145,7 +144,7 @@ bool TextBox::clickCaptured(const SDL_MouseButtonEvent &b) const {
     SDL_Point mp;
     mp.x = b.x;
     mp.y = b.y;
-    return (SDL_PointInRect(&mp, &rect));
+    return (canFocus && SDL_PointInRect(&mp, &rect));
 }
 
 void TextBox::handleKey(const SDL_KeyboardEvent &k) {

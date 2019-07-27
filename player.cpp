@@ -309,11 +309,10 @@ void Player::focus(int f, FocusGroup g) {
     // Focus item f from group g.
     int i, s;
     std::vector<TextBox *> fcbls;
-    bool isBox = g == FocusGroup::box;
     prepFocus(g, i, s, fcbls);
     if (i == f) return;
-    if (i > -1 && i < s) fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
-    if (f > -1 && f < s) fcbls[static_cast<size_t>(f)]->toggleFocus(!isBox);
+    if (i > -1 && i < s) fcbls[static_cast<size_t>(i)]->toggleFocus();
+    if (f > -1 && f < s) fcbls[static_cast<size_t>(f)]->toggleFocus();
     finishFocus(f, g, fcbls);
 }
 
@@ -321,7 +320,6 @@ void Player::focusPrev(FocusGroup g) {
     // Focus previous item from group g.
     int i, s;
     std::vector<TextBox *> fcbls;
-    bool isBox = g == FocusGroup::box;
     prepFocus(g, i, s, fcbls);
     if (i == -1) {
         i = s;
@@ -331,7 +329,7 @@ void Player::focusPrev(FocusGroup g) {
             // No focusable item found in group.
             return;
     } else {
-        fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
+        fcbls[static_cast<size_t>(i)]->toggleFocus();
         int j = i;
         while (--i != j)
             if (i < 0)
@@ -339,7 +337,7 @@ void Player::focusPrev(FocusGroup g) {
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
     }
-    fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
+    fcbls[static_cast<size_t>(i)]->toggleFocus();
     finishFocus(i, g, fcbls);
 }
 
@@ -347,7 +345,6 @@ void Player::focusNext(FocusGroup g) {
     // Focus next item from group g.
     int i, s;
     std::vector<TextBox *> fcbls;
-    bool isBox = g == FocusGroup::box;
     prepFocus(g, i, s, fcbls);
     if (i == -1) {
         // Nothing was focused, find first focusable item.
@@ -359,7 +356,7 @@ void Player::focusNext(FocusGroup g) {
             return;
         }
     } else {
-        fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
+        fcbls[static_cast<size_t>(i)]->toggleFocus();
         int j = i;
         while (++i != j)
             // Loop until we come back to the same item.
@@ -368,7 +365,7 @@ void Player::focusNext(FocusGroup g) {
             else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
                 break;
     }
-    fcbls[static_cast<size_t>(i)]->toggleFocus(!isBox);
+    fcbls[static_cast<size_t>(i)]->toggleFocus();
     finishFocus(i, g, fcbls);
 }
 

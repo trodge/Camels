@@ -46,6 +46,12 @@ void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
     bxs.clear();
 }
 
+void Pager::reset() {
+    boxes.clear();
+    indices.clear();
+    setVisible();
+}
+
 void Pager::recedePage() {
     // Recede to previous page. Prevent receding past first page.
     if (pageIt != indices.begin() + 1) --pageIt;

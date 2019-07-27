@@ -45,6 +45,7 @@ public:
     int visibleCount() const;
     void addBox(std::unique_ptr<TextBox> &&bx);
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
+    void reset();
     void recedePage();
     void advancePage();
     void toggleLock(size_t idx) { boxes[idx]->toggleLock(); }

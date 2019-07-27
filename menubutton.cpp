@@ -23,11 +23,6 @@ MenuButton::MenuButton(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), key(bI
     canFocus = true;
 }
 
-void MenuButton::toggleFocus(bool iTn) {
-    if (isFocus) setInvColors(clicked);
-    TextBox::toggleFocus(iTn);
-}
-
 bool MenuButton::keyCaptured(const SDL_KeyboardEvent &k) const {
     switch (k.keysym.sym) {
     case SDLK_SPACE:

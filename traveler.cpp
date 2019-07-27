@@ -403,7 +403,7 @@ void Traveler::refreshFocusBox(std::vector<Pager> &pgrs, int &fB) {
 
 void Traveler::refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Delete and re-create storage buttons to reflect changes.
-    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) *pgrIt = Pager{};
+    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) pgrIt->reset();
     createStorageButtons(pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
@@ -628,7 +628,7 @@ void Traveler::equip(unsigned int pI) {
 
 void Traveler::refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Delete and re-create storage buttons to reflect changes.
-    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) *pgrIt = Pager{};
+    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) pgrIt->reset();
     createEquipButtons(pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
@@ -690,7 +690,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
             // Refresh buttons.
             refreshEquipButtons(pgrs, fB, pr);
         };
-        pgrs[2u].addBox(e.button(false, boxInfo, pr));
+        pgrs[1u].addBox(e.button(false, boxInfo, pr));
     }
 }
 
@@ -957,7 +957,7 @@ void Traveler::loot(Traveler &t) {
 }
 
 void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) *pgrIt = Pager{};
+    for (auto pgrIt = pgrs.begin() + 1; pgrIt != pgrs.end(); ++pgrIt) pgrIt->reset();
     createLootButtons(pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
