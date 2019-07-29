@@ -72,7 +72,7 @@ enum class FightChoice { none = -1, fight, run, yield };
 
 class AI;
 
-class Traveler : public std::enable_shared_from_this<Traveler> {
+class Traveler {
     std::string name;
     Town *toTown, *fromTown;
     const Nation *nation;
@@ -87,9 +87,10 @@ class Traveler : public std::enable_shared_from_this<Traveler> {
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
-    std::weak_ptr<Traveler> target; // pointer to enemy if currently fighting
-    double fightTime;               // time left to fight this round
+    Traveler *target = nullptr; // pointer to enemy if currently fighting
+    double fightTime;           // time left to fight this round
     FightChoice choice;
+    bool dead = false; // true if traveler is not alive and not being looted from
     std::unique_ptr<AI> aI;
     const GameData &gameData;
     std::forward_list<Town *> pathTo(const Town *t) const;
@@ -124,13 +125,14 @@ public:
     double getSpeed() const { return stats[1] + stats[2] + stats[3]; }
     unsigned int getPart(size_t i) const { return parts[i]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
-    std::weak_ptr<Traveler> getTarget() const { return target; }
+    Traveler *getTarget() const { return target; }
     bool alive() const { return parts[0] < 5 && parts[1] < 5; }
+    bool getDead() const { return dead; }
     bool getMoving() const { return moving; }
     int getPX() const { return px; }
     int getPY() const { return py; }
     bool fightWon() const {
-        auto t = target.lock();
+        auto t = target;
         return t && (t->choice == FightChoice::yield || !t->alive());
     }
     double getFightTime() const { return fightTime; }
@@ -156,8 +158,8 @@ public:
     void equip(Good &g);
     void equip(unsigned int pI);
     void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    std::vector<std::shared_ptr<Traveler>> attackable() const;
-    void attack(std::shared_ptr<Traveler> t);
+    std::vector<Traveler *> attackable() const;
+    void attack(Traveler *t);
     void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
     void choose(FightChoice c) { choice = c; }
     void loseTarget();

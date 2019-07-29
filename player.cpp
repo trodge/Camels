@@ -86,7 +86,8 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                 {UIState::traveling,
                  {{Settings::getBoxInfo(false, {sR.w / 9, sR.h * 14 / 15, 0, 0}, {"(G)o"}, SDLK_g,
                                         [this](MenuButton *btn) {
-                                            if (focusTown > -1) game.pickTown(traveler, static_cast<size_t>(focusTown));
+                                            if (focusTown > -1)
+                                                game.pickTown(traveler.get(), static_cast<size_t>(focusTown));
                                             show = true;
                                             btn->setClicked(false);
                                         }),
@@ -206,7 +207,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                         }),
                    Settings::getBoxInfo(false, {sR.w * 4 / 15, sR.h * 14 / 15, 0, 0}, {"(L)oot All"}, SDLK_l,
                                         [this](MenuButton *) {
-                                            auto tgt = traveler->getTarget().lock();
+                                            auto tgt = traveler->getTarget();
                                             traveler->loot(*tgt);
                                             traveler->loseTarget();
                                             setState(UIState::traveling);
@@ -245,7 +246,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
-    traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
+    traveler = std::make_unique<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
 void Player::addPageButtons() {
@@ -606,7 +607,7 @@ void Player::handleEvent(const SDL_Event &e) {
 void Player::update(unsigned int e) {
     // Update the UI to reflect current state.
     auto t = traveler.get();
-    bool target = t && t->getTarget().lock();
+    bool target = t && t->getTarget();
     switch (state) {
     case UIState::traveling:
         if (target) {

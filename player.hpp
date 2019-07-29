@@ -64,7 +64,7 @@ struct UIState {
 };
 
 class Player {
-    std::shared_ptr<Traveler> traveler;
+    std::unique_ptr<Traveler> traveler;
     std::vector<Pager> pagers;
     std::vector<Pager>::iterator currentPager;
     Game &game;

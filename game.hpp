@@ -83,7 +83,8 @@ class Game {
     std::vector<Route> routes;
     std::vector<sdl::SurfacePtr> goodImages;
     GameData gameData;
-    std::vector<std::shared_ptr<Traveler>> aITravelers;
+    std::vector<std::unique_ptr<Traveler>> aITravelers;
+    int travelersCheckCounter;
     std::unique_ptr<Player> player;
     void loadData(sqlite3 *cn);
     void loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx);
@@ -109,8 +110,8 @@ public:
     std::vector<TextBox *> getTownBoxes() const;
     const GameData &getData() const { return gameData; }
     Printer &getPrinter() { return printer; }
-    std::shared_ptr<Traveler> createPlayerTraveler(size_t nId, std::string n);
-    void pickTown(std::shared_ptr<Traveler> t, size_t tId);
+    std::unique_ptr<Traveler> createPlayerTraveler(size_t nId, std::string n);
+    void pickTown(Traveler *t, unsigned int tId);
 };
 
 #endif

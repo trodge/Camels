@@ -55,8 +55,8 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
     // Start with enough inputs for one run cycle.
     resetGoods();
     // randomize business run counter
-    static std::uniform_int_distribution<unsigned int> dis(0, Settings::getBusinessRunTime());
-    businessCounter = static_cast<int>(dis(Settings::getRng()));
+    static std::uniform_int_distribution<> dis(-Settings::getBusinessRunTime(), 0);
+    businessCounter = dis(Settings::getRng());
     travelersDis = std::uniform_int_distribution<>(Settings::getTravelersMin(),
                                                    static_cast<int>(pow(population, Settings::getTravelersExponent())));
 }
@@ -117,7 +117,7 @@ void Town::setMax() {
     }
 }
 
-void Town::removeTraveler(const std::shared_ptr<Traveler> t) {
+void Town::removeTraveler(const Traveler *t) {
     auto it = std::find(begin(travelers), end(travelers), t);
     if (it != end(travelers)) travelers.erase(it);
 }
@@ -142,8 +142,7 @@ void Town::draw(SDL_Renderer *s) {
 
 void Town::update(unsigned int e) {
     businessCounter += e;
-    int bsnsRnTm = Settings::getBusinessRunTime();
-    if (businessCounter > bsnsRnTm) {
+    if (businessCounter > 0) {
         for (auto &g : goods) g.consume(Settings::getBusinessRunTime());
         std::vector<int> conflicts(goods.size(), 0);
         if (maxGoods) // When maxGoods is true, towns create as many goods as possible for testing purposes.
@@ -171,7 +170,7 @@ void Town::update(unsigned int e) {
             // Run businesses on town's goods.
             b.run(goods);
         }
-        businessCounter -= bsnsRnTm;
+        businessCounter -= Settings::getBusinessRunTime();
     }
 }
 
@@ -179,12 +178,12 @@ void Town::take(Good &g) { goods[g.getId()].take(g); }
 
 void Town::put(Good &g) { goods[g.getId()].put(g); }
 
-void Town::generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Traveler>> &ts) {
+void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts) {
     // Create a random number of travelers from this town, weighted down
     int n = travelersDis(Settings::getRng());
     if (n < 0) n = 0;
     ts.reserve(ts.size() + static_cast<size_t>(n));
-    for (int i = 0; i < n; ++i) ts.push_back(std::make_shared<Traveler>(nation->randomName(), this, gD));
+    for (int i = 0; i < n; ++i) ts.push_back(std::make_unique<Traveler>(nation->randomName(), this, gD));
 }
 
 double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }

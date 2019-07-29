@@ -71,7 +71,7 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     }
 }
 
-void Traveler::addToTown() { fromTown->addTraveler(shared_from_this()); }
+void Traveler::addToTown() { fromTown->addTraveler(this); }
 
 double Traveler::netWeight() const {
     return std::accumulate(begin(goods), end(goods), static_cast<double>(stats[0]) * kTravelerCarry,
@@ -155,7 +155,7 @@ void Traveler::setPortion(double d) {
 void Traveler::changePortion(double d) { setPortion(portion + d); }
 
 void Traveler::pickTown(const Town *t) {
-    if (netWeight() > 0 /* || moving*/) return;
+    if (netWeight() > 0 || moving) return;
     const std::forward_list<Town *> &path = pathTo(t);
     if (path.empty() || path.front() == toTown) return;
     moving = true;
@@ -696,30 +696,30 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     }
 }
 
-std::vector<std::shared_ptr<Traveler>> Traveler::attackable() const {
+std::vector<Traveler *> Traveler::attackable() const {
     // Get a vector of attackable travelers.
     auto &forwardTravelers = fromTown->getTravelers(); // travelers traveling from the same town
     auto &backwardTravelers = toTown->getTravelers();  // travelers traveling from the destination town
-    std::vector<std::shared_ptr<Traveler>> able;
+    std::vector<Traveler *> able;
     able.insert(end(able), begin(forwardTravelers), end(forwardTravelers));
     if (fromTown != toTown) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
     if (!able.empty()) {
         // Eliminate travelers which are too far away or have reached town or
         // are already fighting or are this traveler.
         able.erase(std::remove_if(begin(able), end(able),
-                                  [this](std::shared_ptr<Traveler> t) {
+                                  [this](Traveler *t) {
                                       return t->toTown == t->fromTown || distSq(t->px, t->py) > Settings::getAttackDistSq() ||
-                                             t->target.lock() || !t->alive() || t == shared_from_this();
+                                             t->target || !t->alive() || t == this;
                                   }),
                    end(able));
     }
     return able;
 }
 
-void Traveler::attack(std::shared_ptr<Traveler> t) {
+void Traveler::attack(Traveler *t) {
     // Attack the given parameter traveler.
     target = t;
-    t->target = shared_from_this();
+    t->target = this;
     fightTime = 0.;
     t->fightTime = 0.;
     if (aI)
@@ -741,7 +741,7 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
     std::vector<std::string> names; // vector of names of attackable travelers
     names.reserve(able.size());
     std::transform(begin(able), end(able), std::back_inserter(names),
-                   [](const std::shared_ptr<Traveler> t) { return t->getName(); });
+                   [](const Traveler *t) { return t->getName(); });
     // Create attack button.
     pgr.addBox(std::make_unique<SelectButton>(BoxInfo{{sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2},
                                                       names,
@@ -768,12 +768,14 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
 }
 
 void Traveler::loseTarget() {
-    if (auto t = target.lock()) {
-        t->target.reset();
+    if (auto t = target) {
+        t->target = nullptr;
         // Remove target from town so that it can't be attacked again.
         t->fromTown->removeTraveler(t);
+        // Set dead to true if target is not alive.
+        t->dead = !t->alive();
     }
-    target.reset();
+    target = nullptr;
 }
 
 CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
@@ -886,7 +888,7 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &t) {
 void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
     // Create buttons and text boxes for combat.
     const SDL_Rect &sR = Settings::getScreenRect();
-    auto tgt = target.lock();
+    auto tgt = target;
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &hgl = nation->getHighlight(),
                     &tFgr = tgt->nation->getForeground(), &tBgr = tgt->nation->getBackground(),
                     &tHgl = tgt->nation->getHighlight();
@@ -939,7 +941,7 @@ void Traveler::updateFightBoxes(Pager &pgr) {
     for (size_t i = 1; i < statusText.size(); ++i)
         statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[getPart(i - 1)];
     bxs[1]->setText(statusText);
-    auto tgt = target.lock();
+    auto tgt = target;
     if (!tgt) return;
     statusText[0] = tgt->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
@@ -967,7 +969,7 @@ void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
 void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     const SDL_Rect &sR = Settings::getScreenRect();
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
-    auto &tgt = *target.lock();
+    auto &tgt = *target;
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &tFgr = tgt.nation->getForeground(),
                     &tBgr = tgt.nation->getBackground();
     int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonYDivisor, bottom = sR.h * 13 / 14,
@@ -1077,8 +1079,8 @@ void Traveler::update(unsigned int e) {
             // We have reached the destination.
             latitude = toTown->getLatitude();
             longitude = toTown->getLongitude();
-            fromTown->removeTraveler(shared_from_this());
-            toTown->addTraveler(shared_from_this());
+            fromTown->removeTraveler(this);
+            toTown->addTraveler(this);
             fromTown = toTown;
             moving = false;
             logText.push_back(name + " has arrived in the " +
@@ -1087,7 +1089,7 @@ void Traveler::update(unsigned int e) {
                               gameData.townTypeNouns[toTown->getTownType() - 1] + " of " + toTown->getName() + ".");
         }
     }
-    if (auto t = target.lock()) {
+    if (auto t = target) {
         if (fightWon() && aI) {
             aI->autoLoot();
             loseTarget();

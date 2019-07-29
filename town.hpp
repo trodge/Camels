@@ -53,7 +53,7 @@ class Town {
     std::vector<Town *> neighbors;
     int businessCounter;
     bool maxGoods = false; // town creates maximum goods for testing purposes
-    std::vector<std::shared_ptr<Traveler>> travelers;
+    std::vector<Traveler *> travelers;
     std::uniform_int_distribution<int> travelersDis;
     int dpx, dpy;
     int distSq(int x, int y) const;
@@ -78,11 +78,11 @@ public:
     const std::vector<Good> &getGoods() const { return goods; }
     const Good &getGood(size_t i) const { return goods[i]; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
-    const std::vector<std::shared_ptr<Traveler>> &getTravelers() const { return travelers; }
+    const std::vector<Traveler *> &getTravelers() const { return travelers; }
     int getDPX() const { return dpx; }
     int getDPY() const { return dpy; }
-    void addTraveler(std::shared_ptr<Traveler> t) { travelers.push_back(t); }
-    void removeTraveler(const std::shared_ptr<Traveler> t);
+    void addTraveler(Traveler *t) { travelers.push_back(t); }
+    void removeTraveler(const Traveler *t);
     void clearTravelers() { travelers.clear(); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
     void toggleMaxGoods() { maxGoods = !maxGoods; }
@@ -92,7 +92,7 @@ public:
     void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
-    void generateTravelers(const GameData &gD, std::vector<std::shared_ptr<Traveler>> &ts);
+    void generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts);
     double dist(const Town *t) const;
     void addNeighbor(Town *t) { neighbors.push_back(t); }
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);

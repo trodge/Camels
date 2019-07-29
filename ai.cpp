@@ -70,7 +70,7 @@ void AI::randomizeCriteria() {
     static std::uniform_real_distribution<double> rDis(1, Settings::getCriteriaMax());
     for (auto &c : decisionCriteria) c = rDis(Settings::getRng());
     // Randomize decision counter.
-    static std::uniform_int_distribution<int> iDis(0, Settings::getAIDecisionTime());
+    static std::uniform_int_distribution<int> iDis(-Settings::getAIDecisionTime(), 0);
     decisionCounter = iDis(Settings::getRng());
 }
 
@@ -234,14 +234,14 @@ void AI::autoEquip() {
 
 void AI::autoAttack() {
     // Attack traveler with lower equipment score and lootable goods.
-    if (!traveler.getTarget().lock()) {
+    if (!traveler.getTarget()) {
         // There isn't already a target.
         auto able = traveler.attackable();
         double ourEquipScore = equipScore(traveler.getEquipment(), traveler.getStats());
         // Remove travelers who do not meet threshold for attacking.
         auto &gs = traveler.getGoods();
         able.erase(std::remove_if(begin(able), end(able),
-                                  [this, ourEquipScore, &gs](const std::shared_ptr<Traveler> a) {
+                                  [this, ourEquipScore, &gs](const Traveler *a) {
                                       return decisionCriteria[4] < Settings::getCriteriaMax() / 3 ||
                                              lootScore(a->getGoods()) * ourEquipScore * decisionCriteria[4] /
                                                      equipScore(a->getEquipment(), a->getStats()) <
@@ -251,7 +251,7 @@ void AI::autoAttack() {
         if (!able.empty()) {
             // Attack the easiest target.
             auto easiest = std::min_element(
-                begin(able), end(able), [this](const std::shared_ptr<Traveler> a, const std::shared_ptr<Traveler> b) {
+                begin(able), end(able), [this](const Traveler *a, const Traveler *b) {
                     return equipScore(a->getEquipment(), a->getStats()) < equipScore(b->getEquipment(), b->getStats());
                 });
             traveler.attack(*easiest);
@@ -262,7 +262,7 @@ void AI::autoAttack() {
 void AI::autoChoose() {
     // Choose to fight, run, or yield based on equip scores, stats, and speeds.
     std::array<double, 3> scores; // fight, run, yield scores
-    auto target = traveler.getTarget().lock();
+    auto target = traveler.getTarget();
     double equipmentScoreRatio =
         equipScore(target->getGoods(), target->getStats()) / equipScore(traveler.getGoods(), traveler.getStats());
     scores[0] = 1. / equipmentScoreRatio * decisionCriteria[4];
@@ -281,7 +281,7 @@ void AI::autoChoose() {
 void AI::autoLoot() {
     // Automatically loot based on scores and decision criteria.
     auto &gs = traveler.getGoods();
-    auto tgt = traveler.getTarget().lock();
+    auto tgt = traveler.getTarget();
     if (!tgt) return;
     auto &tGs = tgt->getGoods();
     double lootGoal = lootScore(tGs);
@@ -396,7 +396,7 @@ void AI::run(unsigned int e) {
     // Run the AI for the elapsed time. Includes trading, equipping, and attacking.
     if (!traveler.getMoving()) {
         decisionCounter += e;
-        if (decisionCounter > Settings::getAIDecisionTime()) {
+        if (decisionCounter > 0) {
             autoTrade();
             autoEquip();
             autoAttack();

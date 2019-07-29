@@ -83,6 +83,7 @@ class Settings {
     static int dayLength;                  // length of a day in milliseconds
     static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
     static int businessRunTime;            // time between business cycles in milliseconds
+    static int travelersCheckTime;         // time between checks of dead travelers in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static double townProfit;
     static int minPriceDivisor;
@@ -132,6 +133,7 @@ public:
     static int getDayLength() { return dayLength; }
     static unsigned int getBusinessHeadStart() { return businessHeadStart; }
     static int getBusinessRunTime() { return businessRunTime; }
+    static int getTravelersCheckTime() { return travelersCheckTime; }
     static double getConsumptionSpaceFactor() { return consumptionSpaceFactor; }
     static double getInputSpaceFactor() { return inputSpaceFactor; }
     static double getOutputSpaceFactor() { return outputSpaceFactor; }

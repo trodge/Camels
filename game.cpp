@@ -206,7 +206,7 @@ void Game::loadData(sqlite3 *cn) {
             goods[static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))]);
 
     // Load good images.
-    int imageSize = screenRect.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor - 2 * Settings::getTradeBorder();
+    int imageSize = screenRect.h * kGoodButtonSizeMultiplier * 13 / 15 / kGoodButtonYDivisor - 2 * Settings::getTradeBorder();
     SDL_Rect rt = {0, 0, imageSize, imageSize};
     goodImages.reserve(goods.size());
     for (size_t i = 0; i < goods.size(); ++i) {
@@ -519,6 +519,8 @@ void Game::newGame() {
         loadBar.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
+    std::uniform_int_distribution<> dis(-Settings::getTravelersCheckTime(), 0);
+    travelersCheckCounter = dis(Settings::getRng());
 }
 
 void Game::loadGame(const fs::path &p) {
@@ -582,7 +584,7 @@ void Game::loadGame(const fs::path &p) {
         auto lTravelers = game->aITravelers();
         auto lTI = lTravelers->begin();
         for (++lTI; lTI != lTravelers->end(); ++lTI)
-            aITravelers.push_back(std::make_shared<Traveler>(*lTI, towns, nations, gameData));
+            aITravelers.push_back(std::make_unique<Traveler>(*lTI, towns, nations, gameData));
         for (auto &t : aITravelers) t->startAI();
         place();
     }
@@ -621,6 +623,15 @@ void Game::update() {
             t->runAI(elapsed);
             t->update(elapsed);
             t->place(offsetX, offsetY, scale);
+        }
+        if (!aITravelers.empty()) {
+            travelersCheckCounter += elapsed;
+            if (travelersCheckCounter > 0) {
+                aITravelers.erase(std::remove_if(begin(aITravelers), end(aITravelers),
+                                                 [](const std::unique_ptr<Traveler> &tvl) { return tvl->getDead(); }),
+                                  end(aITravelers));
+                travelersCheckCounter -= Settings::getTravelersCheckTime();
+            }
         }
     }
     player->update(elapsed);
@@ -707,7 +718,7 @@ void Game::saveGame() {
     path /= player->getTraveler()->getName();
     path.replace_extension("sav");
     std::ofstream file(path.string(), std::ofstream::binary);
-    if (file.is_open()) file.write(reinterpret_cast<const char*>(builder.GetBufferPointer()), builder.GetSize());
+    if (file.is_open()) file.write(reinterpret_cast<const char *>(builder.GetBufferPointer()), builder.GetSize());
 }
 
 std::vector<TextBox *> Game::getTownBoxes() const {
@@ -717,13 +728,13 @@ std::vector<TextBox *> Game::getTownBoxes() const {
     return townBoxes;
 }
 
-std::shared_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) {
+std::unique_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) {
     if (n.empty()) n = nations[nId].randomName();
     // Create traveler object for player
-    auto traveler = std::make_shared<Traveler>(n, &towns[nId - 1], gameData);
+    auto traveler = std::make_unique<Traveler>(n, &towns[nId - 1], gameData);
     traveler->addToTown();
     traveler->place(offsetX, offsetY, scale);
     return traveler;
 }
 
-void Game::pickTown(std::shared_ptr<Traveler> t, size_t tId) { t->pickTown(&towns[tId]); }
+void Game::pickTown(Traveler *t, unsigned int tId) { t->pickTown(&towns[tId - 1]); }
