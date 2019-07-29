@@ -115,7 +115,7 @@ void Settings::load(const fs::path &p) {
     equipBorder = tree.get("ui.equipBorder", current.h * 5 / 1080);
     equipRadius = tree.get("ui.equipRadius", current.h * 7 / 1080);
     equipFontSize = tree.get("ui.equipFontSize", current.h * 18 / 1080);
-    townFontSize = tree.get("ui.townFontSize", current.h * 14 / 1080);
+    townFontSize = tree.get("ui.townFontSize", current.h * 16 / 1080);
     tradeBorder = tree.get("ui.tradeBorder", current.h * 2 / 1080);
     tradeRadius = tree.get("ui.tradeRadius", current.h * 5 / 1080);
     tradeFontSize = tree.get("ui.tradeFontSize", current.h * 12 / 1080);
@@ -196,4 +196,44 @@ void Settings::save(const fs::path &p) {
     tree.put("aI.limitFactorMax", limitFactorMax);
     tree.put("aI.attackThreshold", aIAttackThreshold);
     pt::write_ini(p.string(), tree);
+}
+
+BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
+                             std::function<void(MenuButton *)> fn, bool scl) {
+    if (iBg)
+        return {rt,           tx,           uIForeground,   uIBackground, uIHighlight, 0,  false,
+                bigBoxBorder, bigBoxRadius, bigBoxFontSize, {},           ky,          fn, true};
+    else
+        return {
+            rt, tx, uIForeground, uIBackground, uIHighlight, 0, false, smallBoxBorder, smallBoxRadius, smallBoxFontSize,
+            {}, ky, fn,           true};
+}
+
+BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
+                             std::function<void(MenuButton *)> fn) {
+    if (iBg)
+        return {rt,           tx,           uIForeground,   uIBackground, uIHighlight, 0, false,
+                bigBoxBorder, bigBoxRadius, bigBoxFontSize, {},           ky,          fn};
+    else
+        return {rt,
+                tx,
+                uIForeground,
+                uIBackground,
+                uIHighlight,
+                0,
+                false,
+                smallBoxBorder,
+                smallBoxRadius,
+                smallBoxFontSize,
+                {},
+                ky,
+                fn};
+}
+
+BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx) {
+    if (iBg)
+        return {rt, tx, uIForeground, uIBackground, uIHighlight, 0, false, bigBoxBorder, bigBoxRadius, bigBoxFontSize};
+    else
+        return {rt, tx,    uIForeground,   uIBackground,   uIHighlight,
+                0,  false, smallBoxBorder, smallBoxRadius, smallBoxFontSize};
 }

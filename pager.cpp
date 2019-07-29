@@ -7,6 +7,25 @@ void Pager::setVisible() {
     visible[1] = pageCount > 1 && pageIt != end(indices) - 1 ? begin(boxes) + *(pageIt + 1) : end(boxes);
 }
 
+void Pager::setBounds() {
+    // Set bounds to enclose all boxes.
+    size_t boxCount = boxes.size();
+    if (!boxCount) return;
+    // Get rects for all boxes.
+    std::vector<SDL_Rect> rts;
+    rts.reserve(boxes.size());
+    std::transform(begin(boxes), end(boxes), std::back_inserter(rts), [](const std::unique_ptr<TextBox> &bx) { return bx->getRect(); });
+    // Get minimum and maximum x and y for boxes.
+    int xMin = rts[0].x, xMax = rts[0].x, yMin = rts[0].y, yMax = rts[0].y;
+    for (auto &rt : rts) {
+        xMin = std::min(xMin, rt.x);
+        yMin = std::min(yMin, rt.y);
+        xMax = std::max(xMax, rt.x + rt.w);
+        yMax = std::max(yMax, rt.y + rt.h);
+    }
+    bounds = {xMin, yMin, xMax - xMin, yMax - yMin};
+}
+
 TextBox *Pager::getVisible(size_t idx) {
     // Get pointer to box with given index currently visible on this pager.
     return (visible[0] + idx)->get();
@@ -15,8 +34,7 @@ TextBox *Pager::getVisible(size_t idx) {
 std::vector<TextBox *> Pager::getVisible() {
     // Get vector of pointers to all boxes currently visible on this pager.
     std::vector<TextBox *> bxs;
-    std::transform(visible[0], visible[1], std::back_inserter(bxs),
-                   [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
+    std::transform(visible[0], visible[1], std::back_inserter(bxs), [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
     return bxs;
 }
 
@@ -27,8 +45,6 @@ std::vector<TextBox *> Pager::getAll() {
     return bxs;
 }
 
-int Pager::visibleCount() const { return visible[1] - visible[0]; }
-
 void Pager::addBox(std::unique_ptr<TextBox> &&bx) {
     if (indices.empty() || pageIt == end(indices) - 1)
         // There are no pages or we are on last page, put box on end of boxes vector.
@@ -38,11 +54,10 @@ void Pager::addBox(std::unique_ptr<TextBox> &&bx) {
         auto nextPage = pageIt + 1;
         boxes.insert(begin(boxes) + *nextPage, std::move(bx));
         // Increase indices of all following pages.
-        for (;nextPage != end(indices); ++nextPage)
-            ++*nextPage;
+        for (; nextPage != end(indices); ++nextPage) ++*nextPage;
     }
-        
     setVisible();
+    setBounds();
 }
 
 void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
@@ -55,6 +70,7 @@ void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
     std::move(begin(bxs), end(bxs), std::back_inserter(boxes));
     bxs.clear();
     setVisible();
+    setBounds();
 }
 
 void Pager::reset() {
@@ -65,7 +81,7 @@ void Pager::reset() {
 
 void Pager::recedePage() {
     // Recede to previous page. Prevent receding past first page.
-    if (pageIt != begin(indices) + 1) --pageIt;
+    if (pageIt != begin(indices)) --pageIt;
     setVisible();
 }
 
@@ -80,13 +96,6 @@ void Pager::setPage(size_t pg) {
     setVisible();
 }
 
-void Pager::addPageButtons(BoxInfo bI) {
-    // Add buttons for switching pages to this pager with given box info.
-    for (auto pgIt = begin(indices); pgIt != end(indices); ++pgIt) {
-
-    }
-}
-
 int Pager::getKeyedIndex(const SDL_KeyboardEvent &k) {
     // Return the index relative to current page of keyed box, or -1 if no box was keyed on current page.
     auto keyedIt =
@@ -96,8 +105,8 @@ int Pager::getKeyedIndex(const SDL_KeyboardEvent &k) {
 
 int Pager::getClickedIndex(const SDL_MouseButtonEvent &b) {
     // Return the index relative to current page of clicked box, or -1 if no box was clicked on current page.
-    auto clickedIt = std::find_if(visible[0], visible[1],
-                                  [&b](const std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
+    auto clickedIt =
+        std::find_if(visible[0], visible[1], [&b](const std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
     return clickedIt == visible[1] ? -1 : clickedIt - visible[0];
 }
 

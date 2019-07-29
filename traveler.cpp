@@ -243,10 +243,11 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     // Create the offer buttons for the player.
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 14 / 15,
-        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
-                             sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 13 / 14,
+        dx = (right - left) * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+        dy = (bottom - top) * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
+                             (bottom - top) * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
@@ -329,9 +330,8 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
         }
     }
     bxs = pgrs[2].getAll();
-    unsigned int requestCount = std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) {
-        return c + rB->getClicked();
-    }); // count of clicked request buttons.
+    unsigned int requestCount =
+        std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) { return c + rB->getClicked(); }); // count of clicked request buttons.
     request.reserve(requestCount);
     double excess = 0.; // excess value of offer over value needed for request
     // Loop through request buttons.
@@ -415,10 +415,11 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     // Create buttons for depositing goods.
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 14 / 15,
-        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
-                             sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 13 / 14,
+        dx = (right - left) * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+        dy = (bottom - top) * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
+                             (bottom - top) * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
@@ -520,10 +521,10 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
     // Create buttons for demolishing businesses.
     std::vector<Business> &oBsns = properties[toTown->getId() - 1].businesses;
     int left = sR.w / kBusinessButtonXDivisor, right = sR.w / 2, top = sR.h / kBusinessButtonYDivisor,
-        bottom = sR.h * 14 / 15, dx = sR.w * kBusinessButtonSpaceMultiplier / kBusinessButtonXDivisor,
-        dy = sR.h * kBusinessButtonSpaceMultiplier / kBusinessButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, sR.w * kBusinessButtonSizeMultiplier / kBusinessButtonXDivisor,
-                             sR.h * kBusinessButtonSizeMultiplier / kBusinessButtonYDivisor},
+        bottom = sR.h * 13 / 14, dx = (right - left) * kBusinessButtonSpaceMultiplier / kBusinessButtonXDivisor,
+        dy = (bottom - top) * kBusinessButtonSpaceMultiplier / kBusinessButtonYDivisor;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * kBusinessButtonSizeMultiplier / kBusinessButtonXDivisor,
+                             (bottom - top) * kBusinessButtonSizeMultiplier / kBusinessButtonYDivisor},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
@@ -639,7 +640,8 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
     int eB = Settings::getEquipBorder(), eR = Settings::getEquipRadius(), eFS = Settings::getEquipFontSize();
     int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor,
-        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor / 2,
+        dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
     BoxInfo boxInfo{.rect = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
                              sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
                     .foreground = fgr,
@@ -968,11 +970,11 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
     auto &tgt = *target.lock();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &tFgr = tgt.nation->getForeground(),
                     &tBgr = tgt.nation->getBackground();
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonYDivisor, bottom = sR.h * 14 / 15,
-        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor, dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-
-    BoxInfo boxInfo{.rect = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
-                             sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
+    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonYDivisor, bottom = sR.h * 13 / 14,
+        dx = (right - left) * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
+        dy = (bottom - top) * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
+                             (bottom - top) * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,

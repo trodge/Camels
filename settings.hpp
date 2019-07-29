@@ -30,6 +30,27 @@ namespace pt = boost::property_tree;
 
 #include <SDL2/SDL.h>
 
+class MenuButton;
+
+struct Image {
+    SDL_Surface *surface;
+    SDL_Rect rect;
+};
+
+struct BoxInfo {
+    SDL_Rect rect{0, 0, 0, 0};
+    std::vector<std::string> text;
+    SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
+    unsigned int id = 0;
+    bool isNation = false;
+    int border = 0, radius = 0, fontSize = 0;
+    std::vector<Image> images;
+    SDL_Keycode key = SDLK_UNKNOWN;
+    std::function<void(MenuButton *)> onClick = nullptr;
+    bool scrolls = false;
+    SDL_Rect outsideRect{0, 0, 0, 0};
+};
+
 class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapRect;
@@ -129,6 +150,11 @@ public:
     static double getAIAttackThreshold() { return aIAttackThreshold; }
     static std::mt19937 &getRng() { return rng; }
     static void save(const fs::path &p);
+    static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
+                              std::function<void(MenuButton *)> fn, bool scl);
+    static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
+                              std::function<void(MenuButton *)> fn);
+    static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx);
 };
 
 #endif // SETTINGS_H

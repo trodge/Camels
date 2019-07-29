@@ -31,22 +31,23 @@ class Pager {
     std::vector<size_t> indices;                 // indices to page breaks in boxes
     std::vector<size_t>::iterator pageIt;        // index of beginning indices of current page
     std::array<std::vector<std::unique_ptr<TextBox>>::iterator, 2> visible;
-    SDL_Rect bounds;
+    SDL_Rect bounds{0, 0, 0, 0};
     void setVisible();
     void setBounds();
 public:
+    size_t boxCount() { return boxes.size(); }
     TextBox *getVisible(size_t idx);
     std::vector<TextBox *> getVisible();
     std::vector<TextBox *> getAll();
     size_t pageCount() const { return indices.size(); }
-    int visibleCount() const;
+    int visibleCount() const { return visible[1] - visible[0]; }
+    const SDL_Rect &getBounds() { return bounds; }
     void addBox(std::unique_ptr<TextBox> &&bx);
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void reset();
-    void setPage(size_t pg);
     void recedePage();
     void advancePage();
-    void addPageButtons(BoxInfo bI);
+    void setPage(size_t pg);
     void toggleLock(size_t idx) { boxes[idx]->toggleLock(); }
     int getKeyedIndex(const SDL_KeyboardEvent &k);
     int getClickedIndex(const SDL_MouseButtonEvent &b);

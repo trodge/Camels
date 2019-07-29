@@ -20,235 +20,261 @@
 #include "player.hpp"
 
 Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
-    SDL_Rect sR = Settings::getScreenRect();
-    SDL_Color uIFgr = Settings::getUiForeground(), uIBgr = Settings::getUiBackground(), uIHgl = Settings::getUiHighlight();
+    const auto &sR = Settings::getScreenRect();
     int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
         sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize();
-    auto bigBox = [&uIFgr, &uIBgr, &uIHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, bBB, bBR, bBFS, {}};
-    };
-    auto bigButton = [&uIFgr, &uIBgr, &uIHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
-                                                              SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, bBB, bBR, bBFS, {}, ky, fn};
-    };
-    auto bigSelectButton = [&uIFgr, &uIBgr, &uIHgl, bBB, bBR, bBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
-                                                                    SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, bBB, bBR, bBFS, {}, ky, fn};
-    };
-    auto smallBox = [&uIFgr, &uIBgr, &uIHgl, sBB, sBR, sBFS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, sBB, sBR, sBFS, {}};
-    };
-    auto smallButton = [&uIFgr, &uIBgr, &uIHgl, sBB, sBR, sBFS](const SDL_Rect &rt, const std::vector<std::string> &tx,
-                                                                SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, uIFgr, uIBgr, uIHgl, 0, false, sBB, sBR, sBFS, {}, ky, fn};
-    };
-    uIStates = {
-        {UIState::starting,
-         {{bigBox({sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}),
-           bigButton({sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, SDLK_n,
-                     [this, sR, bBB, bBR, bBFS](MenuButton *) {
-                         game.newGame();
-                         auto &nations = game.getNations();
-                         auto &beginningBoxes = uIStates.at(UIState::beginning).boxesInfo;
-                         for (auto &nt : nations)
-                             // Create a button for each nation to start in that nation.
-                             beginningBoxes.push_back({.rect = {sR.w * (static_cast<int>(nt.getId() - 1) % 3 * 2 + 1) / 6,
-                                                                sR.h * (static_cast<int>(nt.getId() - 1) / 3 + 2) / 7, 0, 0},
-                                                       .text = nt.getNames(),
-                                                       .foreground = nt.getForeground(),
-                                                       .background = nt.getBackground(),
-                                                       .id = nt.getId(),
-                                                       .isNation = true,
-                                                       .border = bBB,
-                                                       .radius = bBR,
-                                                       .fontSize = bBFS,
-                                                       .onClick = [this, nt](MenuButton *) {
-                                                           unsigned int nId = nt.getId(); // nation id
-                                                           std::string name = pagers[0].getVisible(0)->getText(1);
-                                                           if (name.empty()) name = nt.randomName();
-                                                           // Create traveler object for player
-                                                           traveler = game.createPlayerTraveler(nId, name);
-                                                           show = true;
-                                                           focusBox = -1;
-                                                           setState(UIState::traveling);
-                                                       }});
-                         setState(UIState::beginning);
-                     }),
-           bigButton({sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L)oad Game"}, SDLK_l,
-                     [this](MenuButton *) { setState(UIState::loading); })}}},
-        {UIState::beginning,
-         {{bigBox({sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})},
-          [this] {
-              // Allow typing in name box.
-              pagers[0].toggleLock(0);
-          }}},
-        {UIState::quitting,
-         {{bigButton({sR.w / 2, sR.h / 4, 0, 0}, {"Continue"}, SDLK_ESCAPE,
-                     [this](MenuButton *) {
-                         pause = storedPause;
-                         setState(storedState);
-                     }),
-           traveler ? bigButton({sR.w / 2, sR.h * 3 / 4, 0, 0}, {"Save and Quit"}, SDLK_q,
-                                [this](MenuButton *) {
-                                    game.saveGame();
-                                    stop = true;
-                                }) :
-                      bigButton({sR.w / 2, sR.h * 3 / 4, 0, 0}, {"Quit"}, SDLK_q, [this](MenuButton *) { stop = true; })},
-          [this] {
-              storedState = state;
-              storedPause = pause;
-          }}},
-        {UIState::loading,
-         {{bigButton({sR.w / 7, sR.h / 7, 0, 0}, {"(B)ack"}, SDLK_b,
-                     [this](MenuButton *) { setState(UIState::starting); })}}},
-        {UIState::traveling,
-         {{smallButton({sR.w / 9, sR.h * 14 / 15, 0, 0}, {"(G)o"}, SDLK_g,
-                       [this](MenuButton *btn) {
-                           if (focusTown > -1) game.pickTown(traveler, static_cast<size_t>(focusTown));
-                           show = true;
-                           btn->setClicked(false);
-                       }),
-           smallButton({sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"(T)rade"}, SDLK_t,
-                       [this](MenuButton *) { setState(UIState::trading); }),
-           smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {"(S)tore"}, SDLK_s,
-                       [this](MenuButton *) { setState(UIState::storing); }),
-           smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(M)anage"}, SDLK_m,
-                       [this](MenuButton *) { setState(UIState::managing); }),
-           smallButton({sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"(E)quip"}, SDLK_e,
-                       [this](MenuButton *) { setState(UIState::equipping); }),
-           smallButton({sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"(H)ire"}, SDLK_h,
-                       [this](MenuButton *) { setState(UIState::hiring); }),
-           smallButton({sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, {"(A)ttack"}, SDLK_a,
-                       [this](MenuButton *) { setState(UIState::attacking); }),
-           smallButton({sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, {"(L)og"}, SDLK_l,
-                       [this](MenuButton *) { setState(UIState::logging); })},
-          [this] { pause = false; }}},
-        {UIState::trading,
-         {{smallButton({sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (T)rading"}, SDLK_t,
-                       [this](MenuButton *) { setState(UIState::traveling); }),
-           smallBox({sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
-           smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
-                       [this](MenuButton *btn) {
-                           double p;
-                           TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
-                           std::stringstream{portionBox->getText(0)} >> p;
-                           traveler->setPortion(p);
-                           traveler->updatePortionBox(portionBox);
-                           btn->setClicked(false);
-                       }),
-           smallButton({sR.w * 2 / 9, sR.h * 13 / 15, 0, 0}, {"(C)omplete Trade"}, SDLK_c,
-                       [this](MenuButton *) {
-                           traveler->makeTrade();
-                           setState(UIState::trading);
-                       })},
-          [this] {
-              traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
-              traveler->createTradeButtons(pagers, printer);
-          },
-          3}},
-        {UIState::storing,
-         {{smallButton({sR.w / 3, sR.h * 14 / 15, 0, 0}, {"Stop (S)toring"}, SDLK_s,
-                       [this](MenuButton *) { setState(UIState::traveling); }),
-           smallBox({sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
-           smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
-                       [this](MenuButton *btn) {
-                           double p;
-                           TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
-                           std::stringstream{portionBox->getText(0)} >> p;
-                           traveler->setPortion(p);
-                           traveler->updatePortionBox(portionBox);
-                           btn->setClicked(false);
-                       })},
-          [this] {
-              traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
-              traveler->createStorageButtons(pagers, focusBox, printer);
-          },
-          3}},
-        {UIState::managing,
-         {{smallButton({sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (M)anaging"}, SDLK_m,
-                       [this](MenuButton *) { setState(UIState::traveling); })},
-          [this] { traveler->createManageButtons(pagers, printer); },
-          3}},
-        {UIState::equipping,
-         {{smallButton({sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (E)quipping"}, SDLK_e,
-                       [this](MenuButton *) { setState(UIState::traveling); })},
-          [this] { traveler->createEquipButtons(pagers, focusBox, printer); }, 2}},
-        {UIState::hiring,
-         {{smallButton({sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"Stop (H)iring"}, SDLK_h,
-                       [this](MenuButton *) { setState(UIState::traveling); })}}},
-        {UIState::attacking,
-         {{smallButton({sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, {"Cancel (A)ttack"}, SDLK_a,
-                       [this](MenuButton *) { setState(UIState::traveling); })},
-          [this] {
-              pause = true;
-              traveler->createAttackButton(
-                  pagers[0], [this] { setState(UIState::fighting); }, printer);
-          }}},
-        {UIState::logging,
-         {{smallButton({sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, {"Close (L)og"}, SDLK_l,
-                       [this](MenuButton *) { setState(UIState::traveling); })},
-          [this, sR, bBB, bBR, sBFS] {
-              // Create log box.
-              pagers[0].addBox(std::make_unique<ScrollBox>(BoxInfo{{sR.w / 15, sR.h * 2 / 15, sR.w * 13 / 15, sR.h * 11 / 15},
-                                                                   traveler->getLogText(),
-                                                                   traveler->getNation()->getForeground(),
-                                                                   traveler->getNation()->getBackground(),
-                                                                   traveler->getNation()->getHighlight(),
-                                                                   0,
-                                                                   false,
-                                                                   bBB,
-                                                                   bBR,
-                                                                   sBFS,
-                                                                   {},
-                                                                   SDLK_UNKNOWN,
-                                                                   nullptr,
-                                                                   true},
-                                                           printer));
-          }}},
-        {UIState::fighting, {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }}},
-        {UIState::looting,
-         {{smallButton({sR.w / 15, sR.h * 14 / 15, 0, 0}, {"(D)one Looting"}, SDLK_d,
-                       [this](MenuButton *) {
-                           traveler->loseTarget();
-                           setState(UIState::traveling);
-                       }),
-           smallButton({sR.w * 4 / 15, sR.h * 14 / 15, 0, 0}, {"(L)oot All"}, SDLK_l,
-                       [this](MenuButton *) {
-                           auto tgt = traveler->getTarget().lock();
-                           traveler->loot(*tgt);
-                           traveler->loseTarget();
-                           setState(UIState::traveling);
-                       })},
-          [this] { traveler->createLootButtons(pagers, focusBox, printer); },
-          3}},
-        {UIState::dying, {{}, [this, &sR, bBB, bBR, bBFS] {
-                              pagers[0].addBox(std::make_unique<TextBox>(
-                                  BoxInfo{.rect = {sR.w / 2, sR.h / 2, 0, 0},
-                                          .text = {traveler->getLogText().back(), "You have died."},
-                                          .foreground = traveler->getNation()->getForeground(),
-                                          .background = traveler->getNation()->getBackground(),
-                                          .highlight = traveler->getNation()->getHighlight(),
-                                          .border = bBB,
-                                          .radius = bBR,
-                                          .fontSize = bBFS},
-                                  printer));
-                          }}}};
+    uIStates = {{UIState::starting,
+                 {{Settings::getBoxInfo(true, {sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}),
+                   Settings::getBoxInfo(true, {sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, SDLK_n,
+                                        [this, sR, bBB, bBR, bBFS](MenuButton *) {
+                                            game.newGame();
+                                            auto &nations = game.getNations();
+                                            auto &beginningBoxes = uIStates.at(UIState::beginning).boxesInfo;
+                                            for (auto &nt : nations)
+                                                // Create a button for each nation to start in that nation.
+                                                beginningBoxes.push_back(
+                                                    {.rect = {sR.w * (static_cast<int>(nt.getId() - 1) % 3 * 2 + 1) / 6,
+                                                              sR.h * (static_cast<int>(nt.getId() - 1) / 3 + 2) / 7, 0, 0},
+                                                     .text = nt.getNames(),
+                                                     .foreground = nt.getForeground(),
+                                                     .background = nt.getBackground(),
+                                                     .id = nt.getId(),
+                                                     .isNation = true,
+                                                     .border = bBB,
+                                                     .radius = bBR,
+                                                     .fontSize = bBFS,
+                                                     .onClick = [this, nt](MenuButton *) {
+                                                         unsigned int nId = nt.getId(); // nation id
+                                                         std::string name = pagers[0].getVisible(0)->getText(1);
+                                                         if (name.empty()) name = nt.randomName();
+                                                         // Create traveler object for player
+                                                         traveler = game.createPlayerTraveler(nId, name);
+                                                         show = true;
+                                                         focusBox = -1;
+                                                         setState(UIState::traveling);
+                                                     }});
+                                            setState(UIState::beginning);
+                                        }),
+                   Settings::getBoxInfo(true, {sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L)oad Game"}, SDLK_l,
+                                        [this](MenuButton *) { setState(UIState::loading); })}}},
+                {UIState::beginning,
+                 {{Settings::getBoxInfo(true, {sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})},
+                  [this] {
+                      // Allow typing in name box.
+                      pagers[0].toggleLock(0);
+                  }}},
+                {UIState::quitting,
+                 {{Settings::getBoxInfo(true, {sR.w / 2, sR.h / 4, 0, 0}, {"Continue"}, SDLK_ESCAPE,
+                                        [this](MenuButton *) {
+                                            pause = storedPause;
+                                            setState(storedState);
+                                        }),
+                   traveler ? Settings::getBoxInfo(true, {sR.w / 2, sR.h * 3 / 4, 0, 0}, {"Save and Quit"}, SDLK_q,
+                                                   [this](MenuButton *) {
+                                                       game.saveGame();
+                                                       stop = true;
+                                                   }) :
+                              Settings::getBoxInfo(true, {sR.w / 2, sR.h * 3 / 4, 0, 0}, {"Quit"}, SDLK_q,
+                                                   [this](MenuButton *) { stop = true; })},
+                  [this] {
+                      storedState = state;
+                      storedPause = pause;
+                  }}},
+                {UIState::loading,
+                 {{Settings::getBoxInfo(true, {sR.w / 7, sR.h / 7, 0, 0}, {"(B)ack"}, SDLK_b,
+                                        [this](MenuButton *) { setState(UIState::starting); })}}},
+                {UIState::traveling,
+                 {{Settings::getBoxInfo(false, {sR.w / 9, sR.h * 14 / 15, 0, 0}, {"(G)o"}, SDLK_g,
+                                        [this](MenuButton *btn) {
+                                            if (focusTown > -1) game.pickTown(traveler, static_cast<size_t>(focusTown));
+                                            show = true;
+                                            btn->setClicked(false);
+                                        }),
+                   Settings::getBoxInfo(false, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"(T)rade"}, SDLK_t,
+                                        [this](MenuButton *) { setState(UIState::trading); }),
+                   Settings::getBoxInfo(false, {sR.w / 3, sR.h * 14 / 15, 0, 0}, {"(S)tore"}, SDLK_s,
+                                        [this](MenuButton *) { setState(UIState::storing); }),
+                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(M)anage"}, SDLK_m,
+                                        [this](MenuButton *) { setState(UIState::managing); }),
+                   Settings::getBoxInfo(false, {sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"(E)quip"}, SDLK_e,
+                                        [this](MenuButton *) { setState(UIState::equipping); }),
+                   Settings::getBoxInfo(false, {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"(H)ire"}, SDLK_h,
+                                        [this](MenuButton *) { setState(UIState::hiring); }),
+                   Settings::getBoxInfo(false, {sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, {"(A)ttack"}, SDLK_a,
+                                        [this](MenuButton *) { setState(UIState::attacking); }),
+                   Settings::getBoxInfo(false, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, {"(L)og"}, SDLK_l,
+                                        [this](MenuButton *) { setState(UIState::logging); })},
+                  [this] { pause = false; }}},
+                {UIState::trading,
+                 {{Settings::getBoxInfo(false, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (T)rading"}, SDLK_t,
+                                        [this](MenuButton *) { setState(UIState::traveling); }),
+                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
+                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                                        [this](MenuButton *btn) {
+                                            double p;
+                                            TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                                            std::stringstream{portionBox->getText(0)} >> p;
+                                            traveler->setPortion(p);
+                                            traveler->updatePortionBox(portionBox);
+                                            btn->setClicked(false);
+                                        }),
+                   Settings::getBoxInfo(false, {sR.w * 2 / 9, sR.h * 13 / 15, 0, 0}, {"(C)omplete Trade"}, SDLK_c,
+                                        [this](MenuButton *) {
+                                            traveler->makeTrade();
+                                            setState(UIState::trading);
+                                        })},
+                  [this] {
+                      auto portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                      portionBox->toggleLock();
+                      traveler->updatePortionBox(portionBox);
+                      traveler->createTradeButtons(pagers, printer);
+                      addPageButtons();
+                  },
+                  3}},
+                {UIState::storing,
+                 {{Settings::getBoxInfo(false, {sR.w / 3, sR.h * 14 / 15, 0, 0}, {"Stop (S)toring"}, SDLK_s,
+                                        [this](MenuButton *) { setState(UIState::traveling); }),
+                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
+                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                                        [this](MenuButton *btn) {
+                                            double p;
+                                            TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                                            std::stringstream{portionBox->getText(0)} >> p;
+                                            traveler->setPortion(p);
+                                            traveler->updatePortionBox(portionBox);
+                                            btn->setClicked(false);
+                                        })},
+                  [this] {
+                      auto portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                      portionBox->toggleLock();
+                      traveler->updatePortionBox(portionBox);
+                      traveler->createStorageButtons(pagers, focusBox, printer);
+                      addPageButtons();
+                  },
+                  3}},
+                {UIState::managing,
+                 {{Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (M)anaging"}, SDLK_m,
+                                        [this](MenuButton *) { setState(UIState::traveling); })},
+                  [this] {
+                      traveler->createManageButtons(pagers, printer);
+                      addPageButtons();
+                  },
+                  3}},
+                {UIState::equipping,
+                 {{Settings::getBoxInfo(false, {sR.w * 5 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (E)quipping"}, SDLK_e,
+                                        [this](MenuButton *) { setState(UIState::traveling); })},
+                  [this] { traveler->createEquipButtons(pagers, focusBox, printer); },
+                  2}},
+                {UIState::hiring,
+                 {{Settings::getBoxInfo(false, {sR.w * 2 / 3, sR.h * 14 / 15, 0, 0}, {"Stop (H)iring"}, SDLK_h,
+                                        [this](MenuButton *) { setState(UIState::traveling); })}}},
+                {UIState::attacking,
+                 {{Settings::getBoxInfo(false, {sR.w * 7 / 9, sR.h * 14 / 15, 0, 0}, {"Cancel (A)ttack"}, SDLK_a,
+                                        [this](MenuButton *) { setState(UIState::traveling); })},
+                  [this] {
+                      pause = true;
+                      traveler->createAttackButton(
+                          pagers[0], [this] { setState(UIState::fighting); }, printer);
+                  }}},
+                {UIState::logging,
+                 {{Settings::getBoxInfo(false, {sR.w * 8 / 9, sR.h * 14 / 15, 0, 0}, {"Close (L)og"}, SDLK_l,
+                                        [this](MenuButton *) { setState(UIState::traveling); })},
+                  [this, sR, bBB, bBR, sBFS] {
+                      // Create log box.
+                      pagers[0].addBox(std::make_unique<ScrollBox>(BoxInfo{{sR.w / 15, sR.h * 2 / 15, sR.w * 13 / 15, sR.h * 11 / 15},
+                                                                           traveler->getLogText(),
+                                                                           traveler->getNation()->getForeground(),
+                                                                           traveler->getNation()->getBackground(),
+                                                                           traveler->getNation()->getHighlight(),
+                                                                           0,
+                                                                           false,
+                                                                           bBB,
+                                                                           bBR,
+                                                                           sBFS,
+                                                                           {},
+                                                                           SDLK_UNKNOWN,
+                                                                           nullptr,
+                                                                           true},
+                                                                   printer));
+                  }}},
+                {UIState::fighting, {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }}},
+                {UIState::looting,
+                 {{Settings::getBoxInfo(false, {sR.w / 15, sR.h * 14 / 15, 0, 0}, {"(D)one Looting"}, SDLK_d,
+                                        [this](MenuButton *) {
+                                            traveler->loseTarget();
+                                            setState(UIState::traveling);
+                                        }),
+                   Settings::getBoxInfo(false, {sR.w * 4 / 15, sR.h * 14 / 15, 0, 0}, {"(L)oot All"}, SDLK_l,
+                                        [this](MenuButton *) {
+                                            auto tgt = traveler->getTarget().lock();
+                                            traveler->loot(*tgt);
+                                            traveler->loseTarget();
+                                            setState(UIState::traveling);
+                                        })},
+                  [this] {
+                      traveler->createLootButtons(pagers, focusBox, printer);
+                      addPageButtons();
+                  },
+                  3}},
+                {UIState::dying, {{}, [this, &sR, bBB, bBR, bBFS] {
+                                      pagers[0].addBox(std::make_unique<TextBox>(
+                                          BoxInfo{.rect = {sR.w / 2, sR.h / 2, 0, 0},
+                                                  .text = {traveler->getLogText().back(), "You have died."},
+                                                  .foreground = traveler->getNation()->getForeground(),
+                                                  .background = traveler->getNation()->getBackground(),
+                                                  .highlight = traveler->getNation()->getHighlight(),
+                                                  .border = bBB,
+                                                  .radius = bBR,
+                                                  .fontSize = bBFS},
+                                          printer));
+                                  }}}};
 
     fs::path path{"save"};
     std::vector<std::string> saves;
     for (auto &file : fs::directory_iterator{path}) saves.push_back(file.path().stem().string());
     uIStates.at(UIState::loading)
-        .boxesInfo.push_back(bigSelectButton({sR.w / 5, sR.h / 7, sR.w * 3 / 5, sR.h * 5 / 7}, saves, SDLK_l,
-                                             [this, &path](MenuButton *btn) {
-                                                 game.loadGame((path / btn->getItem()).replace_extension("sav"));
-                                                 show = true;
-                                                 setState(UIState::traveling);
-                                             }));
+        .boxesInfo.push_back(Settings::getBoxInfo(
+            true, {sR.w / 5, sR.h / 7, sR.w * 3 / 5, sR.h * 5 / 7}, saves, SDLK_l,
+            [this, &path](MenuButton *btn) {
+                game.loadGame((path / btn->getItem()).replace_extension("sav"));
+                show = true;
+                setState(UIState::traveling);
+            },
+            true));
 }
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
     traveler = std::make_shared<Traveler>(t, ts, game.getNations(), game.getData());
+}
+
+void Player::addPageButtons() {
+    const auto &sR = Settings::getScreenRect();
+    std::array<SDL_Keycode, 4> keys{SDLK_MINUS, SDLK_EQUALS, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};
+    auto kyIt = keys.begin();
+    for (auto pgIt = begin(pagers) + 1; pgIt != end(pagers); ++pgIt) {
+        std::cout << *kyIt;
+        if (pgIt->pageCount() < 2) {
+            // Don't create buttons for pagers with only one page.
+            kyIt += 2;
+            continue;
+        }
+        auto &bnds = pgIt->getBounds();
+        pagers[0].addBox(std::make_unique<MenuButton>(
+            Settings::getBoxInfo(false, {bnds.x + bnds.w / 6, sR.h * 14 / 15, 0, 0}, {"Previous Page"}, *kyIt++,
+                                 [pgIt](MenuButton *btn) {
+                                     pgIt->recedePage();
+                                     btn->setClicked(false);
+                                 }),
+            printer));
+        pagers[0].addBox(std::make_unique<MenuButton>(
+            Settings::getBoxInfo(false, {bnds.x + bnds.w * 5 / 6, sR.h * 14 / 15, 0, 0}, {"Next Page"}, *kyIt++,
+                                 [pgIt](MenuButton *btn) {
+                                     pgIt->advancePage();
+                                     btn->setClicked(false);
+                                 }),
+            printer));
+    }
 }
 
 void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls) {
@@ -292,6 +318,14 @@ void Player::finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbl
     switch (g) {
     case box:
         focusBox = f;
+        // Set current pager to pager that contains focus box.
+        for (currentPager = begin(pagers); currentPager != end(pagers); ++currentPager) {
+            int vC = currentPager->visibleCount();
+            if (f >= vC)
+                f -= vC;
+            else
+                break;
+        }
         break;
     case neighbor:
         if (f > -1)
@@ -369,14 +403,6 @@ void Player::focusNext(FocusGroup g) {
     finishFocus(i, g, fcbls);
 }
 
-void Player::recedePage() {
-
-}
-
-void Player::advancePage() {
-
-}
-
 void Player::setState(UIState::State s) {
     // Change the UI state to s.
     UIState newState = uIStates.at(s);
@@ -437,8 +463,8 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
             if (state != UIState::quitting) {
                 if (traveler) {
                     int columnCount = state == UIState::managing ?
-                        kBusinessButtonXDivisor / kBusinessButtonSpaceMultiplier / 2 :
-                        kGoodButtonXDivisor / kGoodButtonSpaceMultiplier / 2;
+                                          kBusinessButtonXDivisor / kBusinessButtonSpaceMultiplier / 2 :
+                                          kGoodButtonXDivisor / kGoodButtonSpaceMultiplier / 2;
                     switch (state) {
                     case UIState::traveling:
                         switch (k.keysym.sym) {
@@ -480,12 +506,6 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                         case SDLK_PERIOD:
                             traveler->changePortion(0.1);
                             traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
-                            break;
-                        case SDLK_LEFTBRACKET:
-                            recedePage();
-                            break;
-                        case SDLK_RIGHTBRACKET:
-                            advancePage();
                             break;
                         }
                         break;
@@ -546,8 +566,7 @@ void Player::handleTextInput(const SDL_TextInputEvent &t) {
 void Player::handleClick(const SDL_MouseButtonEvent &b) {
     if (state == UIState::traveling) {
         std::vector<TextBox *> fcbls = game.getTownBoxes();
-        auto clickedTown =
-            std::find_if(begin(fcbls), end(fcbls), [&b](const TextBox *t) { return t->clickCaptured(b); });
+        auto clickedTown = std::find_if(begin(fcbls), end(fcbls), [&b](const TextBox *t) { return t->clickCaptured(b); });
         if (clickedTown != end(fcbls)) focus(static_cast<int>(std::distance(begin(fcbls), clickedTown)), town);
     }
     int clickedIndex = -1, indexOffset = 0;

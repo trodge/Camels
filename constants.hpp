@@ -34,15 +34,13 @@ const double kTravelerCarry = -16.;
 const size_t kFontCount = 5;        // Number of fonts used to display text
 const size_t kPortionBoxIndex = 1;  // Index of box representing current traveler portion
 const size_t kFightChoiceIndex = 3; // Index of box representing choice when fighting
-const int kBoxDB = 2;
-const int kTownDB = 1;
 const int kGoodButtonSizeMultiplier = 29;
 const int kGoodButtonSpaceMultiplier = 31;
-const int kGoodButtonXDivisor = 434;
-const int kGoodButtonYDivisor = 527;
+const int kGoodButtonXDivisor = 186;
+const int kGoodButtonYDivisor = 403;
 const int kBusinessButtonSizeMultiplier = 29;
 const int kBusinessButtonSpaceMultiplier = 31;
-const int kBusinessButtonXDivisor = 155;
-const int kBusinessButtonYDivisor = 341;
+const int kBusinessButtonXDivisor = 124;
+const int kBusinessButtonYDivisor = 93;
 
 #endif

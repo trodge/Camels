@@ -60,7 +60,7 @@ struct UIState {
     };
     std::vector<BoxInfo> boxesInfo;           // info for boxes to create for this state
     std::function<void()> onChange = nullptr; // function to run when this UIState is switched to
-    size_t pagerCount = 1;                   // number of pagers this state uses
+    size_t pagerCount = 1;                    // number of pagers this state uses
 };
 
 class Player {
@@ -77,13 +77,12 @@ class Player {
     UIState::State state = UIState::starting, storedState = UIState::starting;
     std::unordered_map<UIState::State, UIState> uIStates;
     enum FocusGroup { box, neighbor, town };
+    void addPageButtons();
     void prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls);
     void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);
     void focus(int f, FocusGroup g);
     void focusPrev(FocusGroup g);
     void focusNext(FocusGroup g);
-    void recedePage();
-    void advancePage();
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);

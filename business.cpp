@@ -147,10 +147,10 @@ std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) c
         unitText = " per uncia anum";
     bI.text.push_back("Requirements");
     for (auto &rq : requirements) bI.text.push_back(rq.businessText());
-    bI.text.push_back("Inputs");
-    for (auto &ip : inputs) bI.text.push_back(ip.businessText() + unitText);
-    bI.text.push_back("Outputs");
-    for (auto &op : outputs) bI.text.push_back(op.businessText() + unitText);
+    bI.text.push_back("Inputs" + unitText);
+    for (auto &ip : inputs) bI.text.push_back(ip.businessText());
+    bI.text.push_back("Outputs" + unitText);
+    for (auto &op : outputs) bI.text.push_back(op.businessText());
     return std::make_unique<MenuButton>(bI, pr);
 }
 

@@ -26,12 +26,8 @@
 #include <vector>
 
 #include "constants.hpp"
+#include "settings.hpp"
 #include "draw.hpp"
-
-struct Image {
-    SDL_Surface *surface;
-    SDL_Rect rect;
-};
 
 class Printer {
     unsigned int nationId;

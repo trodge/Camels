@@ -30,22 +30,6 @@
 #include "printer.hpp"
 #include "settings.hpp"
 
-class MenuButton;
-
-struct BoxInfo {
-    SDL_Rect rect{0, 0, 0, 0};
-    std::vector<std::string> text;
-    SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
-    unsigned int id = 0;
-    bool isNation = false;
-    int border = 0, radius = 0, fontSize = 0;
-    std::vector<Image> images;
-    SDL_Keycode key = SDLK_UNKNOWN;
-    std::function<void(MenuButton *)> onClick = nullptr;
-    bool scrolls = false;
-    SDL_Rect outsideRect{0, 0, 0, 0};
-};
-
 class TextBox {
 protected:
     SDL_Rect rect{0, 0, 0, 0};

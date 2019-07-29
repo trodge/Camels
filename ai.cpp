@@ -48,8 +48,7 @@ AI::AI(Traveler &tvl, const Save::AI *a) : traveler(tvl), decisionCounter(a->dec
 }
 
 void AI::randomizeLimitFactors() {
-    // Randomize factors which will be used to choose buy and sell limits for each
-    // material.
+    // Randomize factors which will be used to choose buy and sell limits for each material.
     auto &gs = traveler.getGoods();
     // Total count of materials across all goods, including labor.
     size_t mC = std::accumulate(begin(gs), end(gs), 0,
