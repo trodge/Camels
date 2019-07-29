@@ -642,8 +642,8 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor,
         dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor / 2,
         dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
-                             sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
+    BoxInfo boxInfo{.rect = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor / 2,
+                             sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor / 2},
                     .foreground = fgr,
                     .background = bgr,
                     .border = eB,
@@ -680,7 +680,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     }
     // Create buttons for unequipping equipment.
     boxInfo.rect.y = top;
-    left = sR.w * 218 / kGoodButtonXDivisor;
+    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
     for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
@@ -740,8 +740,7 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
     auto able = attackable();       // vector of attackable travelers
     std::vector<std::string> names; // vector of names of attackable travelers
     names.reserve(able.size());
-    std::transform(begin(able), end(able), std::back_inserter(names),
-                   [](const Traveler *t) { return t->getName(); });
+    std::transform(begin(able), end(able), std::back_inserter(names), [](const Traveler *t) { return t->getName(); });
     // Create attack button.
     pgr.addBox(std::make_unique<SelectButton>(BoxInfo{{sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2},
                                                       names,

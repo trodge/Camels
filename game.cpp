@@ -23,7 +23,7 @@ Game::Game()
     : screenRect(Settings::getScreenRect()), mapRect(Settings::getMapRect()), offsetX(Settings::getOffsetX()),
       offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
       window(sdl::makeWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
-                             SDL_WINDOW_BORDERLESS)),
+                             /*SDL_WINDOW_BORDERLESS*/0)),
       screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)) {
     player = std::make_unique<Player>(*this);
     player->setState(UIState::starting);
