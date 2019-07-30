@@ -1067,7 +1067,7 @@ void Traveler::startAI(const Traveler &p) {
 
 void Traveler::runAI(unsigned int e) {
     // Run the AI for the elapsed time.
-    // aI->run(e);
+    aI->run(e);
 }
 
 void Traveler::update(unsigned int e) {

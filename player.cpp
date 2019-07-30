@@ -109,8 +109,8 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                 {UIState::trading,
                  {{Settings::getBoxInfo(false, {sR.w * 2 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (T)rading"}, SDLK_t,
                                         [this](MenuButton *) { setState(UIState::traveling); }),
-                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
-                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                   Settings::getBoxInfo(false, {sR.w / 9, sR.h * 13 / 15, 0, 0}, {""}),
+                   Settings::getBoxInfo(false, {sR.w / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
                                         [this](MenuButton *btn) {
                                             double p;
                                             TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
@@ -135,8 +135,8 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                 {UIState::storing,
                  {{Settings::getBoxInfo(false, {sR.w / 3, sR.h * 14 / 15, 0, 0}, {"Stop (S)toring"}, SDLK_s,
                                         [this](MenuButton *) { setState(UIState::traveling); }),
-                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 13 / 15, 0, 0}, {""}),
-                   Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                   Settings::getBoxInfo(false, {sR.w / 9, sR.h * 13 / 15, 0, 0}, {""}),
+                   Settings::getBoxInfo(false, {sR.w / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
                                         [this](MenuButton *btn) {
                                             double p;
                                             TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
@@ -155,8 +155,21 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                   3}},
                 {UIState::managing,
                  {{Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (M)anaging"}, SDLK_m,
-                                        [this](MenuButton *) { setState(UIState::traveling); })},
+                                        [this](MenuButton *) { setState(UIState::traveling); }),
+                   Settings::getBoxInfo(false, {sR.w / 9, sR.h * 13 / 15, 0, 0}, {""}),
+                   Settings::getBoxInfo(false, {sR.w / 9, sR.h * 14 / 15, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                                        [this](MenuButton *btn) {
+                                            double p;
+                                            TextBox *portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                                            std::stringstream{portionBox->getText(0)} >> p;
+                                            traveler->setPortion(p);
+                                            traveler->updatePortionBox(portionBox);
+                                            btn->setClicked(false);
+                                        })},
                   [this] {
+                      auto portionBox = pagers[0].getVisible(kPortionBoxIndex);
+                      portionBox->toggleLock();
+                      traveler->updatePortionBox(portionBox);
                       traveler->createManageButtons(pagers, focusBox, printer);
                       addPageButtons();
                   },
@@ -590,10 +603,11 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
         }
         indexOffset += pgr.visibleCount();
     }
-    if (clickedIndex < 0)
-        focus(-1, FocusGroup::box);
-    else
-        focus(clickedIndex + indexOffset, FocusGroup::box);
+    if (b.state == SDL_PRESSED)
+        if (clickedIndex < 0)
+            focus(-1, FocusGroup::box);
+        else
+            focus(clickedIndex + indexOffset, FocusGroup::box);
 }
 
 void Player::handleEvent(const SDL_Event &e) {
