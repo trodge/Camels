@@ -241,13 +241,13 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
+        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
+        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 13 / 14,
-        dx = (right - left) * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
-        dy = (bottom - top) * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
-                             (bottom - top) * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
+    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBXD, bottom = sR.h * 13 / 14,
+        dx = (right - left) * gBScM / gBXD, dy = (bottom - top) * gBScM / gBYD;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * gBSzM / gBXD, (bottom - top) * gBSzM / gBYD},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
@@ -274,8 +274,8 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     if (bxs.size())
         // Flush remaining boxes to new page.
         pgrs[1].addPage(bxs);
-    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
-    right = sR.w - sR.w / kGoodButtonXDivisor;
+    left = sR.w / 2 + sR.w / gBXD;
+    right = sR.w - sR.w / gBXD;
     boxInfo.rect.x = left;
     boxInfo.rect.y = top;
     boxInfo.foreground = tFgr;
@@ -304,8 +304,7 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
 void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     // Update the values shown on offer and request boxes and set offer and request.
     std::string bN;
-    offer.clear();
-    request.clear();
+    clearTrade();
     double offerValue = 0.;
     // Loop through all offer buttons.
     std::vector<TextBox *> bxs = pgrs[1].getAll();
@@ -413,13 +412,13 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
+        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
+        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create buttons for depositing goods.
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonXDivisor, bottom = sR.h * 13 / 14,
-        dx = (right - left) * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
-        dy = (bottom - top) * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
-                             (bottom - top) * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
+    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBXD, bottom = sR.h * 13 / 14,
+        dx = (right - left) * gBScM / gBXD, dy = (bottom - top) * gBScM / gBYD;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * gBSzM / gBXD, (bottom - top) * gBSzM / gBYD},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
@@ -452,8 +451,8 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     if (bxs.size())
         // Flush remaining boxes to new page.
         pgrs[1].addPage(bxs);
-    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
-    right = sR.w - sR.w / kGoodButtonXDivisor;
+    left = sR.w / 2 + sR.w / gBXD;
+    right = sR.w - sR.w / gBXD;
     boxInfo.rect.x = left;
     boxInfo.rect.y = top;
     boxInfo.foreground = tFgr;
@@ -489,17 +488,17 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
 void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before
     // calling. Determine if business exists in property.
-    auto &oBsns = properties[toTown->getId() - 1].businesses;
-    auto oBsnIt = std::lower_bound(begin(oBsns), end(oBsns), bsn);
-    if (*oBsnIt == bsn) {
-        // Business already exists, grow it.
-        oBsnIt->takeRequirements(goods, a);
-        oBsnIt->changeArea(a);
-    } else {
+    auto &businesses = properties[toTown->getId() - 1].businesses;
+    auto bsnsIt = std::lower_bound(begin(businesses), end(businesses), bsn);
+    if (bsnsIt == end(businesses) || *bsnsIt != bsn) {
         // Insert new business into properties and set its area.
-        auto nwBsns = oBsns.insert(oBsnIt, Business(bsn));
+        auto nwBsns = businesses.insert(bsnsIt, Business(bsn));
         nwBsns->takeRequirements(goods, a);
         nwBsns->setArea(a);
+    } else {
+        // Business already exists, grow it.
+        bsnsIt->takeRequirements(goods, a);
+        bsnsIt->changeArea(a);
     }
 }
 
@@ -512,29 +511,37 @@ void Traveler::demolish(const Business &bsn, double a) {
     if (oBsnIt->getArea() == 0.) oBsns.erase(oBsnIt);
 }
 
-void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
+void Traveler::refreshManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+    // Delete and re-create manage buttons to reflect changes.
+    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
+    createManageButtons(pgrs, fB, pr);
+    refreshFocusBox(pgrs, fB);
+}
+
+void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for managing businesses.
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
+        bBXD = Settings::getBusinessButtonXDivisor(), bBYD = Settings::getBusinessButtonYDivisor(),
+        bBSzM = Settings::getBusinessButtonSizeMultiplier(), bBScM = Settings::getBusinessButtonSpaceMultiplier();
     // Create buttons for demolishing businesses.
     std::vector<Business> &oBsns = properties[toTown->getId() - 1].businesses;
-    int left = sR.w / kBusinessButtonXDivisor, right = sR.w / 2, top = sR.h / kBusinessButtonYDivisor,
-        bottom = sR.h * 13 / 14, dx = (right - left) * kBusinessButtonSpaceMultiplier / kBusinessButtonXDivisor,
-        dy = (bottom - top) * kBusinessButtonSpaceMultiplier / kBusinessButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * kBusinessButtonSizeMultiplier / kBusinessButtonXDivisor,
-                             (bottom - top) * kBusinessButtonSizeMultiplier / kBusinessButtonYDivisor},
+    int left = sR.w / bBXD, right = sR.w / 2, top = sR.h / bBYD, bottom = sR.h * 13 / 14,
+        dx = (right - left) * bBScM / bBXD, dy = (bottom - top) * bBScM / bBYD;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * bBSzM / bBXD, (bottom - top) * bBSzM / bBYD},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
                     .radius = tR,
-                    .fontSize = tFS,
-                    .onClick = [](MenuButton *) {
-
-                    }};
+                    .fontSize = tFS};
     std::vector<std::unique_ptr<TextBox>> bxs;
     for (auto &bsn : oBsns) {
+        boxInfo.onClick = [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
+            demolish(bsn, bsn.getArea() * portion);
+            refreshManageButtons(pgrs, fB, pr);
+        };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
         if (boxInfo.rect.x + boxInfo.rect.w >= right) {
@@ -552,13 +559,21 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, Printer &pr) {
         // Flush remaining boxes to new page.
         pgrs[1].addPage(bxs);
     const std::vector<Business> &tBsns = toTown->getBusinesses();
-    left = sR.w / 2 + sR.w / kBusinessButtonXDivisor;
-    right = sR.w - sR.w / kBusinessButtonXDivisor;
+    left = sR.w / 2 + sR.w / bBXD;
+    right = sR.w - sR.w / bBXD;
     boxInfo.rect.x = left;
     boxInfo.rect.y = top;
     boxInfo.foreground = tFgr;
     boxInfo.background = tBgr;
     for (auto &bsn : tBsns) {
+        boxInfo.onClick = [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
+            // Determine buildable area based on portion.
+            double buildable = std::numeric_limits<double>::max();
+            for (auto &rq : bsn.getRequirements())
+                buildable = std::min(buildable, goods[rq.getId()].getAmount() * portion / rq.getAmount());
+            if (buildable > 0.) build(bsn, buildable);
+            refreshManageButtons(pgrs, fB, pr);
+        };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
         if (boxInfo.rect.x + boxInfo.rect.w >= right) {
@@ -638,12 +653,11 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     // Create buttons for equipping equippables.
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
-    int eB = Settings::getEquipBorder(), eR = Settings::getEquipRadius(), eFS = Settings::getEquipFontSize();
-    int left = sR.w / kGoodButtonXDivisor, top = sR.h / kGoodButtonYDivisor,
-        dx = sR.w * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor / 2,
-        dy = sR.h * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, sR.w * kGoodButtonSizeMultiplier / kGoodButtonXDivisor / 2,
-                             sR.h * kGoodButtonSizeMultiplier / kGoodButtonYDivisor / 2},
+    int eB = Settings::getEquipBorder(), eR = Settings::getEquipRadius(), eFS = Settings::getEquipFontSize(),
+        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
+        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
+    int left = sR.w / gBXD, top = sR.h / gBYD, dx = sR.w * gBScM / gBXD / 2, dy = sR.h * gBScM / gBYD;
+    BoxInfo boxInfo{.rect = {left, top, sR.w * gBSzM / gBXD / 2, sR.h * gBSzM / gBYD / 2},
                     .foreground = fgr,
                     .background = bgr,
                     .border = eB,
@@ -680,7 +694,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     }
     // Create buttons for unequipping equipment.
     boxInfo.rect.y = top;
-    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
+    left = sR.w / 2 + sR.w / gBXD;
     for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
@@ -967,15 +981,15 @@ void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
 
 void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     const SDL_Rect &sR = Settings::getScreenRect();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
+        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
+        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     auto &tgt = *target;
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &tFgr = tgt.nation->getForeground(),
                     &tBgr = tgt.nation->getBackground();
-    int left = sR.w / kGoodButtonXDivisor, right = sR.w / 2, top = sR.h / kGoodButtonYDivisor, bottom = sR.h * 13 / 14,
-        dx = (right - left) * kGoodButtonSpaceMultiplier / kGoodButtonXDivisor,
-        dy = (bottom - top) * kGoodButtonSpaceMultiplier / kGoodButtonYDivisor;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * kGoodButtonSizeMultiplier / kGoodButtonXDivisor,
-                             (bottom - top) * kGoodButtonSizeMultiplier / kGoodButtonYDivisor},
+    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBYD, bottom = sR.h * 13 / 14,
+        dx = (right - left) * gBScM / gBXD, dy = (bottom - top) * gBScM / gBYD;
+    BoxInfo boxInfo{.rect = {left, top, (right - left) * gBSzM / gBXD, (bottom - top) * gBSzM / gBYD},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
@@ -1008,8 +1022,8 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
     if (bxs.size())
         // Flush remaining boxes to new page.
         pgrs[1].addPage(bxs);
-    left = sR.w / 2 + sR.w / kGoodButtonXDivisor;
-    right = sR.w - sR.w / kGoodButtonXDivisor;
+    left = sR.w / 2 + sR.w / gBXD;
+    right = sR.w - sR.w / gBXD;
     boxInfo.rect.x = left;
     boxInfo.rect.y = top;
     boxInfo.foreground = tFgr;

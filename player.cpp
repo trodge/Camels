@@ -157,7 +157,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                  {{Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 14 / 15, 0, 0}, {"Stop (M)anaging"}, SDLK_m,
                                         [this](MenuButton *) { setState(UIState::traveling); })},
                   [this] {
-                      traveler->createManageButtons(pagers, printer);
+                      traveler->createManageButtons(pagers, focusBox, printer);
                       addPageButtons();
                   },
                   3}},
@@ -430,13 +430,13 @@ void Player::setState(UIState::State s) {
 
 void Player::handleKey(const SDL_KeyboardEvent &k) {
     SDL_Keymod mod = SDL_GetModState();
-    if (mod & (KMOD_CTRL | KMOD_SHIFT | KMOD_ALT))
+    if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT) && (mod & KMOD_ALT))
         modMultiplier = 10000.;
-    else if (mod & (KMOD_CTRL | KMOD_ALT))
+    else if ((mod & KMOD_CTRL) && (mod & KMOD_ALT))
         modMultiplier = 0.001;
-    else if (mod & (KMOD_SHIFT | KMOD_ALT))
+    else if ((mod & KMOD_SHIFT) && (mod & KMOD_ALT))
         modMultiplier = 0.01;
-    else if (mod & (KMOD_CTRL | KMOD_SHIFT))
+    else if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT))
         modMultiplier = 1000.;
     else if (mod & KMOD_ALT)
         modMultiplier = 0.1;
@@ -458,94 +458,105 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
         indexOffset += pgr.visibleCount();
     }
     if (k.state == SDL_PRESSED) {
-        // Event is SDL_KEYDOWN
-        if (keyedIndex < 0) {
-            // No box captured the key press.
-            if (state != UIState::quitting) {
-                if (traveler) {
-                    int columnCount = state == UIState::managing ?
-                                          kBusinessButtonXDivisor / kBusinessButtonSpaceMultiplier / 2 :
-                                          kGoodButtonXDivisor / kGoodButtonSpaceMultiplier / 2;
-                    switch (state) {
-                    case UIState::traveling:
-                        switch (k.keysym.sym) {
-                        case SDLK_LEFT:
-                        case SDLK_RIGHT:
-                        case SDLK_UP:
-                        case SDLK_DOWN:
-                            scrollKeys.insert(k.keysym.sym);
-                            show = false;
-                            break;
-                        case SDLK_n:
-                            if (mod & KMOD_SHIFT)
-                                focusPrev(neighbor);
-                            else
-                                focusNext(neighbor);
-                            break;
-                        }
+        // Key was pressed down.
+        if (keyedIndex > -1)
+            // A box's key was pressed.
+            focus(keyedIndex + indexOffset, FocusGroup::box);
+        if (state != UIState::quitting) {
+            if (traveler) {
+                int columnCount = state == UIState::managing ?
+                                      Settings::getBusinessButtonXDivisor() / Settings::getBusinessButtonSpaceMultiplier() / 2 :
+                                      Settings::getGoodButtonXDivisor() / Settings::getGoodButtonSpaceMultiplier() / 2;
+                switch (state) {
+                case UIState::traveling:
+                    switch (k.keysym.sym) {
+                    case SDLK_LEFT:
+                        scroll.insert(left);
+                        show = false;
                         break;
-                    case UIState::trading:
-                    case UIState::storing:
-                    case UIState::managing:
-                        switch (k.keysym.sym) {
-                        case SDLK_LEFT:
-                            focusPrev(box);
-                            break;
-                        case SDLK_RIGHT:
-                            focusNext(box);
-                            break;
-                        case SDLK_UP:
-                            for (int i = 0; i < columnCount; ++i) focusPrev(box);
-                            break;
-                        case SDLK_DOWN:
-                            for (int i = 0; i < columnCount; ++i) focusNext(box);
-                            break;
-                        case SDLK_COMMA:
-                            traveler->changePortion(-0.1);
-                            traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
-                            break;
-                        case SDLK_PERIOD:
-                            traveler->changePortion(0.1);
-                            traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
-                            break;
-                        }
+                    case SDLK_RIGHT:
+                        scroll.insert(right);
+                        show = false;
                         break;
-                    default:
+                    case SDLK_UP:
+                        scroll.insert(up);
+                        show = false;
+                        break;
+                    case SDLK_DOWN:
+                        scroll.insert(down);
+                        show = false;
+                        break;
+                    case SDLK_n:
+                        if (mod & KMOD_SHIFT)
+                            focusPrev(neighbor);
+                        else
+                            focusNext(neighbor);
                         break;
                     }
-                }
-                // Keyboard shortcuts for all non-quitting states
-                switch (k.keysym.sym) {
-                case SDLK_ESCAPE:
-                    storedState = state;
-                    setState(UIState::quitting);
+                    break;
+                case UIState::trading:
+                case UIState::storing:
+                case UIState::managing:
+                    switch (k.keysym.sym) {
+                    case SDLK_LEFT:
+                        focusPrev(box);
+                        break;
+                    case SDLK_RIGHT:
+                        focusNext(box);
+                        break;
+                    case SDLK_UP:
+                        for (int i = 0; i < columnCount; ++i) focusPrev(box);
+                        break;
+                    case SDLK_DOWN:
+                        for (int i = 0; i < columnCount; ++i) focusNext(box);
+                        break;
+                    case SDLK_COMMA:
+                        traveler->changePortion(-0.1);
+                        traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
+                        break;
+                    case SDLK_PERIOD:
+                        traveler->changePortion(0.1);
+                        traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
+                        break;
+                    }
+                    break;
+                default:
                     break;
                 }
             }
-            // Keyboard shortcuts for all states.
+            // Keyboard shortcuts for all non-quitting states
             switch (k.keysym.sym) {
-            case SDLK_TAB:
-                if (mod & KMOD_SHIFT)
-                    focusPrev(box);
-                else
-                    focusNext(box);
+            case SDLK_ESCAPE:
+                storedState = state;
+                setState(UIState::quitting);
                 break;
             }
-        } else
-            // A box was keyed down.
-            focus(keyedIndex + indexOffset, FocusGroup::box);
+        }
+        // Keyboard shortcuts for all states.
+        switch (k.keysym.sym) {
+        case SDLK_TAB:
+            if (mod & KMOD_SHIFT)
+                focusPrev(box);
+            else
+                focusNext(box);
+            break;
+        }
     } else {
-        // Event is SDL_KEYUP.
-        if (keyedIndex < 0)
-            // Key is not used by any box.
-            switch (k.keysym.sym) {
-            case SDLK_LEFT:
-            case SDLK_RIGHT:
-            case SDLK_UP:
-            case SDLK_DOWN:
-                scrollKeys.erase(k.keysym.sym);
-                break;
-            }
+        // Key was lifted up.
+        switch (k.keysym.sym) {
+        case SDLK_LEFT:
+            scroll.erase(left);
+            break;
+        case SDLK_RIGHT:
+            scroll.erase(right);
+            break;
+        case SDLK_UP:
+            scroll.erase(up);
+            break;
+        case SDLK_DOWN:
+            scroll.erase(down);
+            break;
+        }
     }
 }
 
@@ -634,7 +645,8 @@ void Player::update(unsigned int e) {
     default:
         break;
     }
-    int scrollX = 0, scrollY = 0, sS = Settings::getScroll();
+    int scrollX = 0, scrollY = 0;
+    double sS = Settings::getScroll() * modMultiplier;
     if (show) {
         const SDL_Rect &mR = game.getMapRect();
         if (traveler->getPX() < int(mR.w * kShowPlayerPadding)) scrollX = -sS;
@@ -642,14 +654,22 @@ void Player::update(unsigned int e) {
         if (traveler->getPX() > int(mR.w * (1 - kShowPlayerPadding))) scrollX = sS;
         if (traveler->getPY() > int(mR.h * (1 - kShowPlayerPadding))) scrollY = sS;
     }
-    if (!(scrollKeys.empty())) {
-        auto upIt = scrollKeys.find(SDLK_UP), dnIt = scrollKeys.find(SDLK_DOWN), lfIt = scrollKeys.find(SDLK_LEFT),
-             rtIt = scrollKeys.find(SDLK_RIGHT);
-        scrollX -= (lfIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
-        scrollX += (rtIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
-        scrollY -= (upIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
-        scrollY += (dnIt != end(scrollKeys)) * static_cast<int>(static_cast<double>(sS) * modMultiplier);
-    }
+    std::for_each(begin(scroll), end(scroll), [&scrollX, &scrollY, sS](Direction dir) {
+        switch (dir) {
+        case left:
+            scrollX -= sS;
+            break;
+        case right:
+            scrollX += sS;
+            break;
+        case up:
+            scrollY -= sS;
+            break;
+        case down:
+            scrollY += sS;
+            break;
+        }
+    });
     if (scrollX || scrollY) game.moveView(scrollX, scrollY);
     if (traveler.get() && !pause) traveler->update(e);
 }

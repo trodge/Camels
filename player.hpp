@@ -70,7 +70,8 @@ class Player {
     Game &game;
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false;
-    std::unordered_set<SDL_Keycode> scrollKeys;
+    enum Direction { left, right, up, down };
+    std::unordered_set<Direction> scroll;
     double modMultiplier = 1.; // multiplier for values which depend on keymod state
     int focusBox = -1;         // index of box we are focusing across all pagers
     int focusTown = -1;        // index of town currently focused

@@ -62,8 +62,8 @@ class Settings {
     static SDL_Color waterColor;
     static SDL_Color playerColor;
     static SDL_Color aIColor;
-    static int scroll;
-    static int offsetX, offsetY;
+    static int scroll, offsetX, offsetY;
+    static double scale;
     static int bigBoxBorder;
     static int bigBoxRadius;
     static int bigBoxFontSize;
@@ -79,7 +79,14 @@ class Settings {
     static int tradeBorder;
     static int tradeRadius;
     static int tradeFontSize;
-    static double scale;
+    static int goodButtonSizeMultiplier;
+    static int goodButtonSpaceMultiplier;
+    static int goodButtonXDivisor;
+    static int goodButtonYDivisor;
+    static int businessButtonSizeMultiplier;
+    static int businessButtonSpaceMultiplier;
+    static int businessButtonXDivisor;
+    static int businessButtonYDivisor;
     static int dayLength;                  // length of a day in milliseconds
     static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
     static int businessRunTime;            // time between business cycles in milliseconds
@@ -114,6 +121,7 @@ public:
     static int getScroll() { return scroll; }
     static int getOffsetX() { return offsetX; }
     static int getOffsetY() { return offsetY; }
+    static double getScale() { return scale; }
     static int getBigBoxBorder() { return bigBoxBorder; }
     static int getBigBoxRadius() { return bigBoxRadius; }
     static int getBigBoxFontSize() { return bigBoxFontSize; }
@@ -129,7 +137,14 @@ public:
     static int getTradeBorder() { return tradeBorder; }
     static int getTradeRadius() { return tradeRadius; }
     static int getTradeFontSize() { return tradeFontSize; }
-    static double getScale() { return scale; }
+    static int getGoodButtonSizeMultiplier() { return goodButtonSizeMultiplier; }
+    static int getGoodButtonSpaceMultiplier() { return goodButtonSpaceMultiplier; }
+    static int getGoodButtonXDivisor() { return goodButtonXDivisor; }
+    static int getGoodButtonYDivisor() { return goodButtonYDivisor; }
+    static int getBusinessButtonSizeMultiplier() { return businessButtonSizeMultiplier; }
+    static int getBusinessButtonSpaceMultiplier() { return businessButtonSpaceMultiplier; }
+    static int getBusinessButtonXDivisor() { return businessButtonXDivisor; }
+    static int getBusinessButtonYDivisor() { return businessButtonYDivisor; }
     static int getDayLength() { return dayLength; }
     static unsigned int getBusinessHeadStart() { return businessHeadStart; }
     static int getBusinessRunTime() { return businessRunTime; }

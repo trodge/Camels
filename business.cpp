@@ -36,12 +36,6 @@ Business::Business(const Save::Business *b)
     for (auto lOI = lOutputs->begin(); lOI != lOutputs->end(); ++lOI) outputs.push_back(Good(*lOI));
 }
 
-bool Business::operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
-
-bool Business::operator<(const Business &other) const {
-    return (id < other.id || (id == other.id && mode < other.mode));
-}
-
 void Business::setArea(double a) {
     if (a > 0. && area > 0.) {
         for (auto &ip : inputs) ip.setAmount(ip.getAmount() * a / area);
@@ -63,10 +57,10 @@ void Business::takeRequirements(std::vector<Good> &gds, double a) {
         tG.setAmount(tG.getAmount() * reclaimFactor);
         // Put into reclaimables.
         auto rcbIt = std::lower_bound(begin(reclaimables), end(reclaimables), rq);
-        if (*rcbIt == rq)
-            rcbIt->put(tG);
-        else
+        if (rcbIt == end(reclaimables) || *rcbIt != rq)
             reclaimables.insert(rcbIt, tG);
+        else
+            rcbIt->put(tG);
     }
 }
 
@@ -136,6 +130,7 @@ void Business::run(std::vector<Good> &gds) {
 }
 
 std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) const {
+    // Create a button for this business using the given box info.
     bI.text = {name};
     std::string unitText; // Units of input and output post-fix.
     if (aS) {
@@ -145,7 +140,7 @@ std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) c
         unitText = " per annum";
     } else
         unitText = " per uncia anum";
-    bI.text.push_back("Requirements");
+    bI.text.push_back("Requirements per uncia");
     for (auto &rq : requirements) bI.text.push_back(rq.businessText());
     bI.text.push_back("Inputs" + unitText);
     for (auto &ip : inputs) bI.text.push_back(ip.businessText());

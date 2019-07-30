@@ -96,12 +96,17 @@ class Traveler {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
+    void clearTrade();
     void deposit(Good &g);
     void withdraw(Good &g);
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
     void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
+    void refreshManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void unequip(unsigned int pI);
+    void equip(Good &g);
+    void equip(unsigned int pI);
     void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
     void useAmmo(double t);
@@ -145,18 +150,12 @@ public:
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
     void updatePortionBox(TextBox *bx) const;
-    void clearTrade();
-    void offerGood(const Good &g) { offer.push_back(g); };
-    void requestGood(const Good &g) { request.push_back(g); }
     void divideExcess(double ec);
     void makeTrade();
     void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
     void updateTradeButtons(std::vector<Pager> &pgrs);
     void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void createManageButtons(std::vector<Pager> &pgrs, Printer &pr);
-    void unequip(unsigned int pI);
-    void equip(Good &g);
-    void equip(unsigned int pI);
+    void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<Traveler *> attackable() const;
     void attack(Traveler *t);
@@ -177,6 +176,7 @@ public:
     void resetTown();
     void toggleMaxGoods();
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
+    friend class AI;
 };
 
 #endif // TRAVELER_H

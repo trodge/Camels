@@ -113,7 +113,7 @@ void AI::autoTrade() {
     // Attempt to make best possible single trade in current town.
     double amount, score, offerValue = 0;
     traveler.clearTrade();
-    auto &gs = traveler.getGoods();
+    auto &gs = traveler.goods;
     auto &tGs = traveler.getTown()->getGoods();
     double weight = traveler.netWeight(), offerWeight = 0.;
     bool overWeight = weight > 0;
@@ -154,7 +154,7 @@ void AI::autoTrade() {
     // If no good found, stop trading.
     if (!bestGood) return;
     // Add best good to offer if found.
-    traveler.offerGood(*bestGood);
+    traveler.offer.push_back(*bestGood);
     bestGood = nullptr;
     // Force a trade to occur if over weight.
     if (overWeight)
@@ -203,7 +203,7 @@ void AI::autoTrade() {
     }
     if (!bestGood) return;
     if (excess > 0.) traveler.divideExcess(excess);
-    traveler.requestGood(*bestGood);
+    traveler.request.push_back(*bestGood);
     // Make the trade.
     traveler.makeTrade();
 }

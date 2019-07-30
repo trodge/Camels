@@ -47,8 +47,11 @@ class Business {
 public:
     Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM);
     Business(const Save::Business *b);
-    bool operator==(const Business &other) const;
-    bool operator<(const Business &other) const;
+    bool operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
+    bool operator!=(const Business &other) const { return (id != other.id || mode != other.mode); }
+    bool operator<(const Business &other) const {
+        { return (id < other.id || (id == other.id && mode < other.mode)); }
+    }
     unsigned int getId() const { return id; }
     unsigned int getMode() const { return mode; }
     double getArea() const { return area; }

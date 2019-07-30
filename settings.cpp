@@ -2,16 +2,16 @@
  * This file is part of Camels.
  *
  * Camels is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the gNU general Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * Camels is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * gNU general Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the gNU general Public License
  * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
  *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
@@ -32,6 +32,7 @@ SDL_Color Settings::aIColor;
 int Settings::scroll;
 int Settings::offsetX;
 int Settings::offsetY;
+double Settings::scale;
 int Settings::bigBoxBorder;
 int Settings::bigBoxRadius;
 int Settings::bigBoxFontSize;
@@ -47,7 +48,14 @@ int Settings::townFontSize;
 int Settings::tradeBorder;
 int Settings::tradeRadius;
 int Settings::tradeFontSize;
-double Settings::scale;
+int Settings::goodButtonSizeMultiplier;
+int Settings::goodButtonSpaceMultiplier;
+int Settings::goodButtonXDivisor;
+int Settings::goodButtonYDivisor;
+int Settings::businessButtonSizeMultiplier;
+int Settings::businessButtonSpaceMultiplier;
+int Settings::businessButtonXDivisor;
+int Settings::businessButtonYDivisor;
 int Settings::dayLength;
 unsigned int Settings::businessHeadStart;
 int Settings::businessRunTime;
@@ -120,6 +128,14 @@ void Settings::load(const fs::path &p) {
     tradeBorder = tree.get("ui.tradeBorder", current.h * 2 / 1080);
     tradeRadius = tree.get("ui.tradeRadius", current.h * 5 / 1080);
     tradeFontSize = tree.get("ui.tradeFontSize", current.h * 16 / 1080);
+    goodButtonSizeMultiplier = tree.get("ui.goodButtonSizeMultiplier", 29);
+    goodButtonSpaceMultiplier = tree.get("ui.goodButtonSpaceMultiplier", 31);
+    goodButtonXDivisor = tree.get("ui.goodButtonXDivisor", 155);
+    goodButtonYDivisor = tree.get("ui.goodButtonYDivisor", 403);
+    businessButtonSizeMultiplier = tree.get("ui.businessButtonSizeMultiplier", 29);
+    businessButtonSpaceMultiplier = tree.get("ui.businessButtonSpaceMultiplier", 31);
+    businessButtonXDivisor = tree.get("ui.businessButtonXDivisor", 124);
+    businessButtonYDivisor = tree.get("ui.businessButtonYDivisor", 93);
     dayLength = tree.get("time.dayLength", 5000);
     businessHeadStart = static_cast<unsigned int>(tree.get("time.businessHeadStart", 15000));
     businessRunTime = tree.get("time.businessRunTime", 1500);

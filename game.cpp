@@ -23,7 +23,7 @@ Game::Game()
     : screenRect(Settings::getScreenRect()), mapRect(Settings::getMapRect()), offsetX(Settings::getOffsetX()),
       offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
       window(sdl::makeWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
-                             /*SDL_WINDOW_BORDERLESS*/0)),
+                             SDL_WINDOW_BORDERLESS)),
       screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)) {
     player = std::make_unique<Player>(*this);
     player->setState(UIState::starting);
@@ -206,7 +206,8 @@ void Game::loadData(sqlite3 *cn) {
             goods[static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))]);
 
     // Load good images.
-    int imageSize = screenRect.h * kGoodButtonSizeMultiplier * 13 / 15 / kGoodButtonYDivisor - 2 * Settings::getTradeBorder();
+    int imageSize = screenRect.h * Settings::getGoodButtonSizeMultiplier() * 13 / 15 / Settings::getGoodButtonYDivisor() -
+                    2 * Settings::getTradeBorder();
     SDL_Rect rt = {0, 0, imageSize, imageSize};
     goodImages.reserve(goods.size());
     for (size_t i = 0; i < goods.size(); ++i) {
