@@ -430,23 +430,22 @@ void Player::setState(UIState::State s) {
 
 void Player::handleKey(const SDL_KeyboardEvent &k) {
     SDL_Keymod mod = SDL_GetModState();
-    if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT) && (mod & KMOD_ALT))
+    if ((mod & KMOD_CTRL) && (mod & KMOD_ALT) && (mod & KMOD_SHIFT))
         modMultiplier = 10000.;
     else if ((mod & KMOD_CTRL) && (mod & KMOD_ALT))
         modMultiplier = 0.001;
-    else if ((mod & KMOD_SHIFT) && (mod & KMOD_ALT))
-        modMultiplier = 0.01;
     else if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT))
         modMultiplier = 1000.;
+    else if ((mod & KMOD_ALT) && (mod & KMOD_SHIFT))
+        modMultiplier = 0.01;
+    else if (mod & KMOD_CTRL)
+        modMultiplier = 100.;
     else if (mod & KMOD_ALT)
         modMultiplier = 0.1;
     else if (mod & KMOD_SHIFT)
         modMultiplier = 10.;
-    else if (mod & KMOD_CTRL)
-        modMultiplier = 100.;
     else
         modMultiplier = 1.;
-
     int keyedIndex = -1, indexOffset = 0;
     for (auto &pgr : pagers) {
         keyedIndex = pgr.getKeyedIndex(k);
@@ -468,6 +467,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                                       Settings::getBusinessButtonXDivisor() / Settings::getBusinessButtonSpaceMultiplier() / 2 :
                                       Settings::getGoodButtonXDivisor() / Settings::getGoodButtonSpaceMultiplier() / 2;
                 switch (state) {
+                case UIState::beginning:
                 case UIState::traveling:
                     switch (k.keysym.sym) {
                     case SDLK_LEFT:
@@ -630,17 +630,14 @@ void Player::update(unsigned int e) {
         traveler->updateTradeButtons(pagers);
         break;
     case UIState::fighting:
-        if (!traveler->alive()) {
+        if (!traveler->alive())
             setState(UIState::dying);
-            break;
-        } else if (!target) {
+        else if (!target)
             setState(UIState::logging);
-            break;
-        } else if (traveler->fightWon()) {
+        else if (traveler->fightWon())
             setState(UIState::looting);
-            break;
-        }
-        traveler->updateFightBoxes(pagers[0]);
+        else
+            traveler->updateFightBoxes(pagers[0]);
         break;
     default:
         break;
