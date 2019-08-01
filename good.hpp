@@ -100,15 +100,7 @@ public:
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
-struct GoodButtonSet {
-    Pager &pager;
-    const std::vector<Good> &goods;
-    const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &func;
-    int left, right, top, bottom, dx, dy;
-    BoxInfo boxInfo;
-    Printer &printer;
-};
-
-void createGoodButtons(GoodButtonSet &gBS);
+void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, int dx, int dy, BoxInfo bI, Printer &pr,
+                       const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn);
 
 #endif // GOOD_H

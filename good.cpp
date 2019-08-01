@@ -252,27 +252,29 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
     return Save::CreateGood(b, id, sName, amount, sMaterials, perish, carry, sMeasure, shoots);
 }
 
-void createGoodButtons(GoodButtonSet &gBS) {
+void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, int dx, int dy, BoxInfo bI, Printer &pr,
+                       const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn) {
     // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
+    int lft = rt.x, rgt = lft + rt.w, top = rt.y, btm = top + rt.h;
     std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
-    for (auto &g : gBS.goods) {
+    for (auto &g : gds) {
         for (auto &m : g.getMaterials())
             if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
-                gBS.boxInfo.onClick = gBS.func(g, m);
-                bxs.push_back(g.button(true, m, gBS.boxInfo, gBS.printer));
-                gBS.boxInfo.rect.x += gBS.dx;
-                if (gBS.boxInfo.rect.x + gBS.boxInfo.rect.w >= gBS.right) {
-                    gBS.boxInfo.rect.x = gBS.left;
-                    gBS.boxInfo.rect.y += gBS.dy;
-                    if (gBS.boxInfo.rect.y + gBS.boxInfo.rect.h >= gBS.bottom) {
-                        // Flush current page upon reaching gBS.bottom.
-                        gBS.boxInfo.rect.y = gBS.top;
-                        gBS.pager.addPage(bxs);
+                bI.onClick = fn(g, m);
+                bxs.push_back(g.button(true, m, bI, pr));
+                bI.rect.x += dx;
+                if (bI.rect.x + bI.rect.w >= rgt) {
+                    bI.rect.x = lft;
+                    bI.rect.y += dy;
+                    if (bI.rect.y + bI.rect.h >= btm) {
+                        // Flush current page upon reaching bottom.
+                        bI.rect.y = top;
+                        pgr.addPage(bxs);
                     }
                 }
             }
     }
     if (bxs.size())
         // Flush remaining boxes to new page.
-        gBS.pager.addPage(bxs);
+        pgr.addPage(bxs);
 }

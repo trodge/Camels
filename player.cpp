@@ -393,7 +393,6 @@ void Player::addPageButtons() {
     std::array<SDL_Keycode, 4> keys{SDLK_MINUS, SDLK_EQUALS, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};
     auto kyIt = keys.begin();
     for (auto pgIt = begin(pagers) + 1; pgIt != end(pagers); ++pgIt) {
-        std::cout << *kyIt;
         if (pgIt->pageCount() < 2) {
             // Don't create buttons for pagers with only one page.
             kyIt += 2;

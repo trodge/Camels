@@ -239,66 +239,28 @@ void Traveler::divideExcess(double ec) {
 void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     // Create offer and request buttons for the player on given pagers.
     const SDL_Rect &sR = Settings::getScreenRect();
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
-                    &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
-        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
+    int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
         gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
-    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBXD, bottom = sR.h * 13 / 14,
-        dx = (right - left) * gBScM / gBXD, dy = (bottom - top) * gBScM / gBYD;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * gBSzM / gBXD, (bottom - top) * gBSzM / gBYD},
-                    .foreground = fgr,
-                    .background = bgr,
-                    .border = tB,
-                    .radius = tR,
-                    .fontSize = tFS,
-                    .onClick = [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); }};
-    std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on next page
-    for (auto &g : goods) {
-        for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
-                bxs.push_back(g.button(true, m, boxInfo, pr));
-                boxInfo.rect.x += dx;
-                if (boxInfo.rect.x + boxInfo.rect.w >= right) {
-                    boxInfo.rect.x = left;
-                    boxInfo.rect.y += dy;
-                    if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                        // Flush current page upon reaching bottom.
-                        boxInfo.rect.y = top;
-                        pgrs[1].addPage(bxs);
-                    }
-                }
-            }
-    }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[1].addPage(bxs);
-    left = sR.w / 2 + sR.w / gBXD;
-    right = sR.w - sR.w / gBXD;
-    boxInfo.rect.x = left;
-    boxInfo.rect.y = top;
-    boxInfo.foreground = tFgr;
-    boxInfo.background = tBgr;
-    for (auto &g : toTown->getGoods()) {
-        for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
-                bxs.push_back(g.button(true, m, boxInfo, pr));
-                boxInfo.rect.x += dx;
-                if (boxInfo.rect.x + boxInfo.rect.w >= right) {
-                    boxInfo.rect.x = left;
-                    boxInfo.rect.y += dy;
-                    if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                        // Flush current page upon reaching bottom.
-                        boxInfo.rect.y = top;
-                        pgrs[2].addPage(bxs);
-                    }
-                }
-            }
-    }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[2].addPage(bxs);
+    SDL_Rect rt = {sR.w / 31, sR.h / 31, sR.w * 15 / 31, sR.h * 26 / 31};
+    BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
+                     .foreground = nation->getForeground(),
+                     .background = nation->getBackground(),
+                     .border = Settings::getTradeBorder(),
+                     .radius = Settings::getTradeRadius(),
+                     .fontSize = Settings::getTradeFontSize()};
+    createGoodButtons(pgrs[1], goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+                      [this, &pgrs](const Good &, const Material &) {
+                          return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
+                      });
+    rt.x = sR.w * 16 / 31;
+    firstBox.rect.x = rt.x;
+    firstBox.foreground = toTown->getNation()->getForeground();
+    firstBox.background = toTown->getNation()->getBackground();
+    createGoodButtons(pgrs[2], toTown->getGoods(), rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+                      [this, &pgrs](const Good &, const Material &) {
+                          return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
+                      });
 }
 
 void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
@@ -410,79 +372,38 @@ void Traveler::refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer 
 void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for depositing and withdrawing goods to and from the current town.
     const SDL_Rect &sR = Settings::getScreenRect();
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
-                    &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
-        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
+    int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
         gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
-    // Create buttons for depositing goods.
-    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBXD, bottom = sR.h * 13 / 14,
-        dx = (right - left) * gBScM / gBXD, dy = (bottom - top) * gBScM / gBYD;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * gBSzM / gBXD, (bottom - top) * gBSzM / gBYD},
-                    .foreground = fgr,
-                    .background = bgr,
-                    .border = tB,
-                    .radius = tR,
-                    .fontSize = tFS};
-    std::vector<std::unique_ptr<TextBox>> bxs;
-    for (auto &g : goods)
-        for (auto &m : g.getMaterials()) {
-            if (((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1))) {
-                // Good has enough amount to create button.
-                boxInfo.onClick = [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-                    Good dG(g.getId(), g.getAmount() * portion);
-                    dG.addMaterial(Material(m.getId(), m.getAmount()));
-                    deposit(dG);
-                    refreshStorageButtons(pgrs, fB, pr);
-                };
-                bxs.push_back(g.button(true, m, boxInfo, pr));
-                boxInfo.rect.x += dx;
-                if (boxInfo.rect.x + boxInfo.rect.w >= right) {
-                    boxInfo.rect.x = left;
-                    boxInfo.rect.y += dy;
-                    if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                        // Flush current page upon reaching bottom.
-                        boxInfo.rect.y = top;
-                        pgrs[1].addPage(bxs);
-                    }
-                }
-            }
-        }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[1].addPage(bxs);
-    left = sR.w / 2 + sR.w / gBXD;
-    right = sR.w - sR.w / gBXD;
-    boxInfo.rect.x = left;
-    boxInfo.rect.y = top;
-    boxInfo.foreground = tFgr;
-    boxInfo.background = tBgr;
-    auto &storage = properties[toTown->getId() - 1].storage;
-    for (auto &g : storage)
-        for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1)) {
-                // Good has enough amount to create button.
-                boxInfo.onClick = [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-                    Good dG(g.getId(), g.getAmount() * portion);
-                    dG.addMaterial(Material(m.getId(), m.getAmount()));
-                    withdraw(dG);
-                    refreshStorageButtons(pgrs, fB, pr);
-                };
-                bxs.push_back(g.button(true, m, boxInfo, pr));
-                boxInfo.rect.x += dx;
-                if (boxInfo.rect.x + boxInfo.rect.w >= right) {
-                    boxInfo.rect.x = left;
-                    boxInfo.rect.y += dy;
-                    if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                        // Flush current page upon reaching bottom.
-                        boxInfo.rect.y = top;
-                        pgrs[2].addPage(bxs);
-                    }
-                }
-            }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[2].addPage(bxs);
+    // Create the offer buttons for the player.
+    SDL_Rect rt = {sR.w / 31, sR.h / 31, sR.w * 15 / 31, sR.h * 26 / 31};
+    BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
+                     .foreground = nation->getForeground(),
+                     .background = nation->getBackground(),
+                     .border = Settings::getTradeBorder(),
+                     .radius = Settings::getTradeRadius(),
+                     .fontSize = Settings::getTradeFontSize()};
+    createGoodButtons(pgrs[1], goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+                      [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
+                          return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
+                              Good dG(g.getId(), g.getAmount() * portion);
+                              dG.addMaterial(Material(m.getId(), m.getAmount()));
+                              deposit(dG);
+                              refreshStorageButtons(pgrs, fB, pr);
+                          };
+                      });
+    rt.x = sR.w * 16 / 31;
+    firstBox.rect.x = rt.x;
+    firstBox.foreground = toTown->getNation()->getForeground();
+    firstBox.background = toTown->getNation()->getBackground();
+    createGoodButtons(pgrs[2], toTown->getGoods(), rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+                      [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
+                          return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
+                              Good dG(g.getId(), g.getAmount() * portion);
+                              dG.addMaterial(Material(m.getId(), m.getAmount()));
+                              withdraw(dG);
+                              refreshStorageButtons(pgrs, fB, pr);
+                          };
+                      });
 }
 
 void Traveler::build(const Business &bsn, double a) {

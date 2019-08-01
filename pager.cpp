@@ -81,13 +81,15 @@ void Pager::reset() {
 
 void Pager::recedePage() {
     // Recede to previous page. Prevent receding past first page.
-    if (pageIt != begin(indices)) --pageIt;
+    if (pageIt == begin(indices)) return;
+    --pageIt;
     setVisible();
 }
 
 void Pager::advancePage() {
     // Advance to next page. Prevent advancing past last page.
-    if (pageIt != end(indices) - 1) ++pageIt;
+    if (pageIt == end(indices) - 1) return;
+    ++pageIt;
     setVisible();
 }
 
