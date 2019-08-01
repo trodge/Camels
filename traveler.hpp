@@ -108,9 +108,9 @@ class Traveler {
     void equip(Good &g);
     void equip(unsigned int pI);
     void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    CombatHit firstHit(Traveler &t, std::uniform_real_distribution<> &d);
+    CombatHit firstHit(Traveler &t, std::uniform_real_distribution<double> &d);
     void useAmmo(double t);
-    void runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d);
+    void fight(Traveler &t, unsigned int e, std::uniform_real_distribution<double> &d);
     void takeHit(const CombatHit &cH, Traveler &t);
     void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
 
@@ -169,7 +169,6 @@ public:
     void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void startAI();
     void startAI(const Traveler &p);
-    void runAI(unsigned int e);
     void update(unsigned int e);
     void adjustAreas(Pager &pgr, double mM);
     void adjustDemand(Pager &pgr, double mM);

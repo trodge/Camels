@@ -51,8 +51,8 @@ void AI::randomizeLimitFactors() {
     // Randomize factors which will be used to choose buy and sell limits for each material.
     auto &gs = traveler.goods;
     // Total count of materials across all goods, including labor.
-    size_t mC = std::accumulate(begin(gs), end(gs), 0,
-                                [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
+    size_t mC =
+        std::accumulate(begin(gs), end(gs), 0, [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
     materialInfo = std::vector<MaterialInfo>(mC);
     static std::uniform_real_distribution<double> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
     auto mII = begin(materialInfo);
@@ -70,7 +70,7 @@ void AI::randomizeCriteria() {
     static std::uniform_real_distribution<double> rDis(1, Settings::getCriteriaMax());
     for (auto &c : decisionCriteria) c = rDis(Settings::getRng());
     // Randomize decision counter.
-    static std::uniform_int_distribution<int> iDis(-Settings::getAIDecisionTime(), 0);
+    static std::uniform_int_distribution<> iDis(-Settings::getAIDecisionTime(), 0);
     decisionCounter = iDis(Settings::getRng());
 }
 
@@ -94,14 +94,12 @@ double AI::equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned 
 }
 
 double AI::lootScore(const std::vector<Good> &tGs) const {
-    // Score for looting target parameter goods given our goods
-    auto &gs = traveler.goods;
+    // Total value from looting given set of goods.
     double score = 0.;
     auto mII = begin(materialInfo); // material info iterator
-    for (size_t i = 1; i < gs.size(); ++i) {
-        auto &gMs = gs[i].getMaterials();
+    for (size_t i = 0; i < tGs.size(); ++i) {
         auto &tGMs = tGs[i].getMaterials();
-        for (size_t j = 0; j < gMs.size(); ++j) {
+        for (size_t j = 0; j < tGMs.size(); ++j) {
             score += tGMs[j].getAmount() * mII->value;
             ++mII;
         }
@@ -109,7 +107,7 @@ double AI::lootScore(const std::vector<Good> &tGs) const {
     return score;
 }
 
-void AI::autoTrade() {
+void AI::trade() {
     // Attempt to make best possible single trade in current town.
     double amount, score, offerValue = 0;
     traveler.clearTrade();
@@ -208,7 +206,7 @@ void AI::autoTrade() {
     traveler.makeTrade();
 }
 
-void AI::autoEquip() {
+void AI::equip() {
     // Equip best scoring item for each part.
     std::array<double, 6> bestScore;
     auto &gs = traveler.goods;
@@ -232,7 +230,7 @@ void AI::autoEquip() {
                 }
 }
 
-void AI::autoAttack() {
+void AI::attack() {
     // Attack traveler with lower equipment score and lootable goods.
     if (!traveler.target) {
         // There isn't already a target.
@@ -250,18 +248,17 @@ void AI::autoAttack() {
                    end(able));
         if (!able.empty()) {
             // Attack the easiest target.
-            auto easiest = std::min_element(
-                begin(able), end(able), [this](const Traveler *a, const Traveler *b) {
-                    return equipScore(a->getEquipment(), a->getStats()) < equipScore(b->getEquipment(), b->getStats());
-                });
+            auto easiest = std::min_element(begin(able), end(able), [this](const Traveler *a, const Traveler *b) {
+                return equipScore(a->getEquipment(), a->getStats()) < equipScore(b->getEquipment(), b->getStats());
+            });
             traveler.attack(*easiest);
         }
     }
 }
 
-void AI::autoChoose() {
-    // Choose to fight, run, or yield based on equip scores, stats, and speeds.
-    std::array<double, 3> scores; // fight, run, yield scores
+void AI::choose() {
+    // Choose to fight, update, or yield based on equip scores, stats, and speeds.
+    std::array<double, 3> scores; // fight, update, yield scores
     auto target = traveler.target;
     double equipmentScoreRatio =
         equipScore(target->getGoods(), target->getStats()) / equipScore(traveler.goods, traveler.stats);
@@ -269,7 +266,7 @@ void AI::autoChoose() {
     scores[1] = equipmentScoreRatio * decisionCriteria[5];
     scores[2] = equipmentScoreRatio * decisionCriteria[6];
     if (equipmentScoreRatio > 1.) {
-        // Target's equipment is better, weigh run and yield decisions by speed
+        // Target's equipment is better, weigh update and yield decisions by speed
         // ratio.
         double speedRatio = target->speed() / traveler.speed();
         scores[1] /= speedRatio;
@@ -278,12 +275,11 @@ void AI::autoChoose() {
     traveler.choose(static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores)));
 }
 
-void AI::autoLoot() {
+void AI::loot() {
     // Automatically loot based on scores and decision criteria.
-    auto &gs = traveler.goods;
     auto tgt = traveler.target;
     if (!tgt) return;
-    auto &tGs = tgt->getGoods();
+    auto &tGs = tgt->goods;
     double lootGoal = lootScore(tGs);
     if (tgt->alive())
         // Looting from an alive target dependent on greed.
@@ -291,31 +287,49 @@ void AI::autoLoot() {
     double looted = 0.; // value that has already been looted
     double weight = traveler.netWeight();
     while (looted < lootGoal) {
-        // Keep looting until amount looted matches goal or net weight is above 0.
+        // Keep looting until amount looted matches goal or we can carry no more.
         std::unique_ptr<Good> bestGood;
-        double bestScore = 0;
+        double bestScore = 0.;
+        double bestLooted = 0.;
+        double bestWeight = 0.;
         auto mII = begin(materialInfo); // material info iterator
-        for (size_t i = 0; i < gs.size(); ++i) {
-            auto &gMs = gs[i].getMaterials(); // good materials
-            auto &tG = tGs[i];                // target good
-            auto &tGMs = tG.getMaterials();   // target good materials
-            for (unsigned int j = 0; j < gMs.size(); ++j) {
-                auto &tGM = tGMs[j]; // target good material
-                double score = tGM.getAmount() * mII->value / tG.getCarry();
+        for (auto &tG : tGs) {
+            if (tG.getAmount() == 0.) continue;
+            auto &tGMs = tG.getMaterials(); // target good materials
+            for (auto &tGM : tGMs) {
+                if (tGM.getAmount() == 0.) continue;
+                double carry = tG.getCarry();
+                double value = mII->value;
+                double score;
+                if (carry > 0.)
+                    // Heavier goods score lower.
+                    score = value / carry;
+                else if (carry == 0.)
+                    // Weightless goods score highest.
+                    score = std::numeric_limits<double>::max();
+                else
+                    // Goods that carry other good score negative.
+                    score = carry;
                 if ((bestScore >= 0. && score > bestScore) || (score < 0. && score < bestScore)) {
+                    // Either this is more valuable per weight than current best or this helps carry more than current best.
                     bestScore = score;
-                    bestGood = std::make_unique<Good>(i, tGM.getAmount());
-                    bestGood->addMaterial(Material(j, tGM.getAmount()));
+                    double amount = tGM.getAmount();
+                    if (looted + amount * value > lootGoal)
+                        amount = (lootGoal - looted) / value;
+                    bestLooted = amount * value;
+                    bestGood = std::make_unique<Good>(tG.getId(), amount);
+                    bestGood->addMaterial(Material(tGM.getId(), amount));
+                    bestWeight = amount * carry;
                 }
                 ++mII;
             }
         }
-        if (!bestGood || weight + bestGood->getCarry() * bestGood->getAmount() > 0.) break;
-        looted += bestScore * gs[bestGood->getId()].getCarry();
+        if (!bestGood || weight + bestGood->weight() > 0.) break;
+        looted += bestLooted;
         // Loot the current best good from target.
         traveler.loot(*bestGood, *tgt);
         // Add the weight of looted good to weight variable.
-        weight += bestGood->getCarry();
+        weight += bestWeight;
     }
 }
 
@@ -344,7 +358,7 @@ void AI::setLimits() {
         n.sellScore = 0.;
     }
     auto &gs = traveler.goods;
-    size_t gC = gs.size();           // good count
+    size_t gC = gs.size();          // good count
     auto mII = begin(materialInfo); // material info iterator
     // Find minimum and maximum price for each material of each good in nearby towns.
     for (size_t i = 0; i < gC; ++i) {
@@ -392,14 +406,14 @@ void AI::setLimits() {
     }
 }
 
-void AI::run(unsigned int e) {
+void AI::update(unsigned int e) {
     // Run the AI for the elapsed time. Includes trading, equipping, and attacking.
     if (!traveler.moving) {
         decisionCounter += e;
         if (decisionCounter > 0) {
-            autoTrade();
-            autoEquip();
-            autoAttack();
+            trade();
+            equip();
+            attack();
             size_t nC = nearby.size();
             std::vector<double> townScores(nC); // scores for going to each town
             // Set scores based on buying and selling prices in each town.

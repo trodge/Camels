@@ -70,6 +70,7 @@ public:
     bool getSplit() const { return split; }
     double getMax() const { return max; }
     unsigned int getShoots() const { return shoots; }
+    double weight() const { return carry * amount; }
     double getConsumption() const;
     std::string businessText() const;
     std::string logText() const;

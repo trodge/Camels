@@ -71,38 +71,39 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     }
 }
 
-void Traveler::addToTown() { fromTown->addTraveler(this); }
+void Traveler::addToTown() { toTown->addTraveler(this); }
 
 double Traveler::netWeight() const {
     return std::accumulate(begin(goods), end(goods), static_cast<double>(stats[0]) * kTravelerCarry,
-                           [](double d, Good g) { return d + g.getCarry() * g.getAmount(); });
+                           [](double d, Good g) { return d + g.weight(); });
 }
 
 std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
-    // return forward list of towns on shortest path to t, excluding current town
+    // Return forward list of towns on shortest path to t, excluding current town.
     std::forward_list<Town *> path;
-    // the town which each town can be most efficiently reached from
     std::unordered_map<Town *, Town *> from;
-    // distance along route to each town
+    // the town which each town can be most efficiently reached from
     std::unordered_map<Town *, double> distTo({{toTown, 0}});
-    // estimated distance along route through each town to goal
+    // distance along route to each town
     std::unordered_map<Town *, double> distEst({{toTown, toTown->dist(t)}});
-    // set of towns already evaluated
+    // estimated distance along route through each town to goal
     std::unordered_set<Town *> closed;
+    // set of towns already evaluated
     auto shortest = [&distEst](Town *m, Town *n) {
         double c = distEst[m];
         double d = distEst[n];
         if (c == d) return m->getId() < n->getId();
         return c < d;
     };
-    // set of discovered towns not yet evaluated sorted so that shortest is first
     std::set<Town *, decltype(shortest)> open(shortest);
+    // set of discovered towns not yet evaluated sorted so that closest is first
     open.insert(toTown);
     while (!open.empty()) {
-        // find current town with lowest distance
+        // Find current town with lowest distance.
         Town *current = *begin(open);
         const std::vector<Town *> &neighbors = current->getNeighbors();
         if (current == t) {
+            // Current town is target town.
             while (from.count(current)) {
                 path.push_front(current);
                 current = from[current];
@@ -112,28 +113,28 @@ std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
         open.erase(begin(open));
         closed.insert(current);
         for (auto &n : neighbors) {
-            // ignore town if already explored
+            // Ignore town if already explored.
             if (closed.count(n)) continue;
-            // find distance to n through current
+            // Find distance to n through current.
             double dT = distTo[current] + current->dist(n);
-            // check if distance through current is less than previous shortest
-            // path to n
+            // Check if distance through current is less than previous shortest path to n.
             if (!distTo.count(n) || dT < distTo[n]) {
                 from[n] = current;
                 distTo[n] = dT;
                 distEst[n] = dT + n->dist(t);
             }
-            // add undiscovered node to open set
+            // Add undiscovered node to open set.
             if (!open.count(n)) open.insert(n);
         }
     }
+    // A path does not exist, return empty list.
     return path;
 }
 
 double Traveler::distSq(int x, int y) const { return (px - x) * (px - x) + (py - y) * (py - y); }
 
 double Traveler::pathDist(const Town *t) const {
-    // return the distance to t along shortest path
+    // Return the distance to t along shortest path.
     const std::forward_list<Town *> &path = pathTo(t);
     double dist = 0;
     const Town *m = toTown;
@@ -155,11 +156,12 @@ void Traveler::setPortion(double d) {
 void Traveler::changePortion(double d) { setPortion(portion + d); }
 
 void Traveler::pickTown(const Town *t) {
+    // Start moving toward given town.
     if (netWeight() > 0 || moving) return;
-    const std::forward_list<Town *> &path = pathTo(t);
+    const auto &path = pathTo(t);
     if (path.empty() || path.front() == toTown) return;
-    moving = true;
     toTown = path.front();
+    moving = true;
 }
 
 void Traveler::place(int ox, int oy, double s) {
@@ -408,7 +410,7 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
 
 void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before
-    // calling. Determine if business exists in property.
+    // calling.
     auto &businesses = properties[toTown->getId() - 1].businesses;
     auto bsnsIt = std::lower_bound(begin(businesses), end(businesses), bsn);
     if (bsnsIt == end(businesses) || *bsnsIt != bsn) {
@@ -639,12 +641,11 @@ std::vector<Traveler *> Traveler::attackable() const {
     able.insert(end(able), begin(forwardTravelers), end(forwardTravelers));
     if (fromTown != toTown) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
     if (!able.empty()) {
-        // Eliminate travelers which are too far away or have reached town or
-        // are already fighting or are this traveler.
+        // Eliminate travelers which are too far away or have reached town or are already fighting or are this traveler.
+        double aDstSq = Settings::getAttackDistSq();
         able.erase(std::remove_if(begin(able), end(able),
-                                  [this](Traveler *t) {
-                                      return t->toTown == t->fromTown || distSq(t->px, t->py) > Settings::getAttackDistSq() ||
-                                             t->target || !t->alive() || t == this;
+                                  [this, aDstSq](Traveler *t) {
+                                      return !t->moving || t->distSq(px, py) > aDstSq || t->target || !t->alive() || t == this;
                                   }),
                    end(able));
     }
@@ -662,7 +663,7 @@ void Traveler::attack(Traveler *t) {
     else
         choice = FightChoice::none;
     if (t->aI)
-        t->aI->autoChoose();
+        t->aI->choose();
     else
         t->choice = FightChoice::none;
 }
@@ -712,7 +713,7 @@ void Traveler::loseTarget() {
     target = nullptr;
 }
 
-CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
+CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double> &d) {
     // Find first hit of this traveler on t.
     std::array<unsigned int, 3> defense{};
     for (auto &e : t.equipment)
@@ -722,7 +723,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
     for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         if (ss.front().attack) {
-            // e is a weapon
+            // e is a weapon.
             unsigned int attack = 0, type = ss.front().type, speed = 0;
             for (auto &s : ss) {
                 attack += s.attack * stats[s.statId];
@@ -745,7 +746,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<> &d) {
                 first.status = t.parts[first.partId];
                 r = d(Settings::getRng());
                 auto sCI = begin(cO.statusChances);
-                while (r > 0 && sCI != end(cO.statusChances)) {
+                while (r > 0. && sCI != end(cO.statusChances)) {
                     // Find status such that part becomes more damaged.
                     if (sCI->first > first.status) {
                         // This part is less damaged than the current status.
@@ -774,7 +775,7 @@ void Traveler::useAmmo(double t) {
     }
 }
 
-void Traveler::runFight(Traveler &t, unsigned int e, std::uniform_real_distribution<> &d) {
+void Traveler::fight(Traveler &t, unsigned int e, std::uniform_real_distribution<double> &d) {
     // Fight t for e milliseconds.
     fightTime += e;
     // Prevent fight from happening twice.
@@ -802,8 +803,8 @@ void Traveler::runFight(Traveler &t, unsigned int e, std::uniform_real_distribut
             useAmmo(ourFirst.time);
             t.useAmmo(ourFirst.time);
         }
-        if (aI) aI->autoChoose();
-        if (t.aI) t.aI->autoChoose();
+        if (aI) aI->choose();
+        if (t.aI) t.aI->choose();
     }
 }
 
@@ -986,14 +987,9 @@ void Traveler::startAI(const Traveler &p) {
     aI = std::make_unique<AI>(*this, *p.aI);
 }
 
-void Traveler::runAI(unsigned int e) {
-    // Run the AI for the elapsed time.
-    aI->run(e);
-}
-
 void Traveler::update(unsigned int e) {
     // Move traveler toward destination and perform combat with target.
-    if (toTown && moving) {
+    if (moving) {
         double t = static_cast<double>(e) / static_cast<double>(Settings::getDayLength());
         // Take a step toward town.
         double dlt = toTown->getLatitude() - latitude;
@@ -1022,35 +1018,37 @@ void Traveler::update(unsigned int e) {
                               toTown->getNation()->getAdjective() + " " +
                               gameData.townTypeNouns[toTown->getTownType() - 1] + " of " + toTown->getName() + ".");
         }
+    } else if (aI) {
+        aI->update(e);
     }
-    if (auto t = target) {
+    if (target) {
         if (fightWon() && aI) {
-            aI->autoLoot();
+            aI->loot();
             loseTarget();
             return;
         }
         if (choice == FightChoice::fight) {
             static std::uniform_real_distribution<double> dis(0., 1.);
             double escapeChance;
-            switch (t->choice) {
+            switch (target->choice) {
             case FightChoice::fight:
-                runFight(*t, e, dis);
+                fight(*target, e, dis);
                 break;
             case FightChoice::run:
                 // Check if target escapes.
-                escapeChance = Settings::getEscapeChance() * t->speed() / speed();
+                escapeChance = Settings::getEscapeChance() * target->speed() / speed();
                 if (dis(Settings::getRng()) > escapeChance) {
                     // Target is caught, fight.
-                    t->choice = FightChoice::fight;
-                    runFight(*t, e, dis);
-                    std::string logEntry = name + " catches up to " + t->name + ".";
+                    target->choice = FightChoice::fight;
+                    fight(*target, e, dis);
+                    std::string logEntry = name + " catches up to " + target->name + ".";
                     logText.push_back(logEntry);
-                    t->logText.push_back(logEntry);
+                    target->logText.push_back(logEntry);
                 } else {
                     // Target escapes.
-                    std::string logEntry = t->name + " has eluded " + name + ".";
+                    std::string logEntry = target->name + " has eluded " + name + ".";
                     logText.push_back(logEntry);
-                    t->logText.push_back(logEntry);
+                    target->logText.push_back(logEntry);
                     loseTarget();
                 }
                 break;

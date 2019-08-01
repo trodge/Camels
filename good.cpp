@@ -205,7 +205,7 @@ void Good::consume(unsigned int e) {
     for (auto &m : materials) {
         amount -= m.consume(e);
         if (perish != 0.) amount -= m.perish(e, perish);
-        if (amount < 0) amount = 0;
+        if (amount < 0.) amount = 0.;
         // Keep demand slopes from being too low or too high
         m.fixDemand(max);
     }

@@ -49,13 +49,13 @@ struct TownInfo {
 };
 
 /**
- * AI which runs non-player travelers
+ * AI which updates non-player travelers
  */
 class AI {
     Traveler &traveler;                     // the traveler this AI controls
-    int decisionCounter;                    // counter for running AI
+    int decisionCounter;                    // counter for updatening AI
     std::array<double, 8> decisionCriteria; /* buy/sell score weight, weapon/armor
-    equip score, tendency to fight/run/yield, looting greed */
+    equip score, tendency to fight/update/yield, looting greed */
     std::vector<MaterialInfo> materialInfo; // known information about each material of each good
     std::vector<TownInfo> nearby;           // known information about nearby towns
     void randomizeLimitFactors();
@@ -65,17 +65,17 @@ class AI {
     double equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
     double lootScore(const std::vector<Good> &tGs) const;
-    void autoTrade();
-    void autoEquip();
-    void autoAttack();
+    void trade();
+    void equip();
+    void attack();
 
 public:
     AI(Traveler &tvl);
     AI(Traveler &tvl, const AI &p);
     AI(Traveler &tvl, const Save::AI *a);
-    void autoChoose();
-    void autoLoot();
-    void run(unsigned int e);
+    void choose();
+    void loot();
+    void update(unsigned int e);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
