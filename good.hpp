@@ -25,6 +25,8 @@
 #include <vector>
 
 #include "material.hpp"
+#include "pager.hpp"
+#include "printer.hpp"
 
 class Good {
     unsigned int id;
@@ -97,5 +99,16 @@ public:
     void saveDemand(unsigned long p, std::string &u) const;
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
 };
+
+struct GoodButtonSet {
+    Pager &pager;
+    const std::vector<Good> &goods;
+    const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &func;
+    int left, right, top, bottom, dx, dy;
+    BoxInfo boxInfo;
+    Printer &printer;
+};
+
+void createGoodButtons(GoodButtonSet &gBS);
 
 #endif // GOOD_H

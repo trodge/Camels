@@ -251,3 +251,28 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
     auto sMeasure = b.CreateString(measure);
     return Save::CreateGood(b, id, sName, amount, sMaterials, perish, carry, sMeasure, shoots);
 }
+
+void createGoodButtons(GoodButtonSet &gBS) {
+    // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
+    std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
+    for (auto &g : gBS.goods) {
+        for (auto &m : g.getMaterials())
+            if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
+                gBS.boxInfo.onClick = gBS.func(g, m);
+                bxs.push_back(g.button(true, m, gBS.boxInfo, gBS.printer));
+                gBS.boxInfo.rect.x += gBS.dx;
+                if (gBS.boxInfo.rect.x + gBS.boxInfo.rect.w >= gBS.right) {
+                    gBS.boxInfo.rect.x = gBS.left;
+                    gBS.boxInfo.rect.y += gBS.dy;
+                    if (gBS.boxInfo.rect.y + gBS.boxInfo.rect.h >= gBS.bottom) {
+                        // Flush current page upon reaching gBS.bottom.
+                        gBS.boxInfo.rect.y = gBS.top;
+                        gBS.pager.addPage(bxs);
+                    }
+                }
+            }
+    }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        gBS.pager.addPage(bxs);
+}

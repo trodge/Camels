@@ -78,12 +78,12 @@ class Player {
     UIState::State state = UIState::starting, storedState = UIState::starting;
     std::unordered_map<UIState::State, UIState> uIStates;
     enum FocusGroup { box, neighbor, town };
-    void addPageButtons();
     void prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls);
     void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);
     void focus(int f, FocusGroup g);
     void focusPrev(FocusGroup g);
     void focusNext(FocusGroup g);
+    void addPageButtons();
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);

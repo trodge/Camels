@@ -177,6 +177,9 @@ public:
     void toggleMaxGoods();
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
     friend class AI;
+    friend class Player;
 };
 
 #endif // TRAVELER_H
+
+

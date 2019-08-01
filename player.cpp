@@ -262,35 +262,6 @@ void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
     traveler = std::make_unique<Traveler>(t, ts, game.getNations(), game.getData());
 }
 
-void Player::addPageButtons() {
-    const auto &sR = Settings::getScreenRect();
-    std::array<SDL_Keycode, 4> keys{SDLK_MINUS, SDLK_EQUALS, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};
-    auto kyIt = keys.begin();
-    for (auto pgIt = begin(pagers) + 1; pgIt != end(pagers); ++pgIt) {
-        std::cout << *kyIt;
-        if (pgIt->pageCount() < 2) {
-            // Don't create buttons for pagers with only one page.
-            kyIt += 2;
-            continue;
-        }
-        auto &bnds = pgIt->getBounds();
-        pagers[0].addBox(std::make_unique<MenuButton>(
-            Settings::getBoxInfo(false, {bnds.x + bnds.w / 6, sR.h * 14 / 15, 0, 0}, {"Previous Page"}, *kyIt++,
-                                 [pgIt](MenuButton *btn) {
-                                     pgIt->recedePage();
-                                     btn->setClicked(false);
-                                 }),
-            printer));
-        pagers[0].addBox(std::make_unique<MenuButton>(
-            Settings::getBoxInfo(false, {bnds.x + bnds.w * 5 / 6, sR.h * 14 / 15, 0, 0}, {"Next Page"}, *kyIt++,
-                                 [pgIt](MenuButton *btn) {
-                                     pgIt->advancePage();
-                                     btn->setClicked(false);
-                                 }),
-            printer));
-    }
-}
-
 void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls) {
     std::vector<Town *> neighbors;
     switch (g) {
@@ -415,6 +386,35 @@ void Player::focusNext(FocusGroup g) {
     }
     fcbls[static_cast<size_t>(i)]->toggleFocus();
     finishFocus(i, g, fcbls);
+}
+
+void Player::addPageButtons() {
+    const auto &sR = Settings::getScreenRect();
+    std::array<SDL_Keycode, 4> keys{SDLK_MINUS, SDLK_EQUALS, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};
+    auto kyIt = keys.begin();
+    for (auto pgIt = begin(pagers) + 1; pgIt != end(pagers); ++pgIt) {
+        std::cout << *kyIt;
+        if (pgIt->pageCount() < 2) {
+            // Don't create buttons for pagers with only one page.
+            kyIt += 2;
+            continue;
+        }
+        auto &bnds = pgIt->getBounds();
+        pagers[0].addBox(std::make_unique<MenuButton>(
+            Settings::getBoxInfo(false, {bnds.x + bnds.w / 6, sR.h * 14 / 15, 0, 0}, {"Previous Page"}, *kyIt++,
+                                 [pgIt](MenuButton *btn) {
+                                     pgIt->recedePage();
+                                     btn->setClicked(false);
+                                 }),
+            printer));
+        pagers[0].addBox(std::make_unique<MenuButton>(
+            Settings::getBoxInfo(false, {bnds.x + bnds.w * 5 / 6, sR.h * 14 / 15, 0, 0}, {"Next Page"}, *kyIt++,
+                                 [pgIt](MenuButton *btn) {
+                                     pgIt->advancePage();
+                                     btn->setClicked(false);
+                                 }),
+            printer));
+    }
 }
 
 void Player::setState(UIState::State s) {
