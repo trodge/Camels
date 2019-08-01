@@ -97,13 +97,8 @@ double AI::lootScore(const std::vector<Good> &tGs) const {
     // Total value from looting given set of goods.
     double score = 0.;
     auto mII = begin(materialInfo); // material info iterator
-    for (size_t i = 0; i < tGs.size(); ++i) {
-        auto &tGMs = tGs[i].getMaterials();
-        for (size_t j = 0; j < tGMs.size(); ++j) {
-            score += tGMs[j].getAmount() * mII->value;
-            ++mII;
-        }
-    }
+    for (auto &tG : tGs)
+        for (auto &tGM : tG.getMaterials()) score += tGM.getAmount() * mII++->value;
     return score;
 }
 
@@ -294,32 +289,30 @@ void AI::loot() {
         double bestWeight = 0.;
         auto mII = begin(materialInfo); // material info iterator
         for (auto &tG : tGs) {
-            if (tG.getAmount() == 0.) continue;
-            auto &tGMs = tG.getMaterials(); // target good materials
-            for (auto &tGM : tGMs) {
-                if (tGM.getAmount() == 0.) continue;
-                double carry = tG.getCarry();
-                double value = mII->value;
-                double score;
-                if (carry > 0.)
-                    // Heavier goods score lower.
-                    score = value / carry;
-                else if (carry == 0.)
-                    // Weightless goods score highest.
-                    score = std::numeric_limits<double>::max();
-                else
-                    // Goods that carry other good score negative.
-                    score = carry;
-                if ((bestScore >= 0. && score > bestScore) || (score < 0. && score < bestScore)) {
-                    // Either this is more valuable per weight than current best or this helps carry more than current best.
-                    bestScore = score;
-                    double amount = tGM.getAmount();
-                    if (looted + amount * value > lootGoal)
-                        amount = (lootGoal - looted) / value;
-                    bestLooted = amount * value;
-                    bestGood = std::make_unique<Good>(tG.getId(), amount);
-                    bestGood->addMaterial(Material(tGM.getId(), amount));
-                    bestWeight = amount * carry;
+            for (auto &tGM : tG.getMaterials()) {
+                double amount = tGM.getAmount();
+                if (amount > 0.) {
+                    double value = mII->value;
+                    double carry = tG.getCarry();
+                    double score;
+                    if (carry > 0.)
+                        // Heavier goods score lower.
+                        score = value / carry;
+                    else if (carry == 0.)
+                        // Weightless goods score highest.
+                        score = std::numeric_limits<double>::max();
+                    else
+                        // Goods that carry other good score negative.
+                        score = carry;
+                    if ((bestScore >= 0. && score > bestScore) || (score < 0. && score < bestScore)) {
+                        // Either this is more valuable per weight than current best or this helps carry more than current best.
+                        bestScore = score;
+                        if (looted + amount * value > lootGoal) amount = (lootGoal - looted) / value;
+                        bestLooted = amount * value;
+                        bestGood = std::make_unique<Good>(tG.getId(), amount);
+                        bestGood->addMaterial(Material(tGM.getId(), amount));
+                        bestWeight = amount * carry;
+                    }
                 }
                 ++mII;
             }
@@ -388,8 +381,7 @@ void AI::setLimits() {
                 mII->sell = mII->value / Settings::getTownProfit();
             }
             for (auto &n : nearby) {
-                // Loop through nearby towns again now that material info has been
-                // gathered
+                // Loop through nearby towns again now that material info has been gathered.
                 auto &nM = n.town->getGood(i).getMaterial(j);
                 double price = nM.getPrice();
                 if (hasMaterial && price > 0.) {
