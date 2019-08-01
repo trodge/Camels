@@ -127,7 +127,7 @@ public:
     const Good &getGood(unsigned int i) const { return goods[i]; }
     double getPortion() const { return portion; }
     const std::array<unsigned int, 5> &getStats() const { return stats; }
-    double getSpeed() const { return stats[1] + stats[2] + stats[3]; }
+    double speed() const { return stats[1] + stats[2] + stats[3]; }
     unsigned int getPart(size_t i) const { return parts[i]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     Traveler *getTarget() const { return target; }

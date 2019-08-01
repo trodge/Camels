@@ -242,7 +242,7 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
         gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
-    SDL_Rect rt = {sR.w / 31, sR.h / 31, sR.w * 15 / 31, sR.h * 26 / 31};
+    SDL_Rect rt = {sR.w / 31, sR.h / 31, sR.w * 15 / 31, sR.h * 24 / 31};
     BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
                      .foreground = nation->getForeground(),
                      .background = nation->getBackground(),
@@ -1038,7 +1038,7 @@ void Traveler::update(unsigned int e) {
                 break;
             case FightChoice::run:
                 // Check if target escapes.
-                escapeChance = Settings::getEscapeChance() * t->getSpeed() / getSpeed();
+                escapeChance = Settings::getEscapeChance() * t->speed() / speed();
                 if (dis(Settings::getRng()) > escapeChance) {
                     // Target is caught, fight.
                     t->choice = FightChoice::fight;

@@ -197,6 +197,7 @@ void Settings::save(const fs::path &p) {
     tree.put("time.dayLength", dayLength);
     tree.put("time.businessHeadStart", businessHeadStart);
     tree.put("time.businessRunTime", businessRunTime);
+    tree.put("time.travelersCheckTime", travelersCheckTime);
     tree.put("goods.consumptionSpaceFactor", consumptionSpaceFactor);
     tree.put("goods.inputSpaceFactor", inputSpaceFactor);
     tree.put("goods.outputSpaceFactor", outputSpaceFactor);

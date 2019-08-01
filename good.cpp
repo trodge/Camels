@@ -255,7 +255,6 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
 void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, int dx, int dy, BoxInfo bI, Printer &pr,
                        const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn) {
     // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
-    int lft = rt.x, rgt = lft + rt.w, top = rt.y, btm = top + rt.h;
     std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
     for (auto &g : gds) {
         for (auto &m : g.getMaterials())
@@ -263,12 +262,13 @@ void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect 
                 bI.onClick = fn(g, m);
                 bxs.push_back(g.button(true, m, bI, pr));
                 bI.rect.x += dx;
-                if (bI.rect.x + bI.rect.w >= rgt) {
-                    bI.rect.x = lft;
+                if (bI.rect.x + bI.rect.w >= rt.x + rt.w) {
+                    // Go back to left and down one row upon reaching right.
+                    bI.rect.x = rt.x;
                     bI.rect.y += dy;
-                    if (bI.rect.y + bI.rect.h >= btm) {
-                        // Flush current page upon reaching bottom.
-                        bI.rect.y = top;
+                    if (bI.rect.y + bI.rect.h >= rt.y + rt.h) {
+                        // Go back to top and flush current page upon reaching bottom.
+                        bI.rect.y = rt.y;
                         pgr.addPage(bxs);
                     }
                 }
