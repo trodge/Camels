@@ -44,8 +44,8 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     tWs.reserve(numLines);
     tHs.reserve(numLines);
     tSs.reserve(numLines);
-    int mW = 0;                                                                    // Minimum width to fit text.
-    int mH = 0;                                                                    // Minimum height to fit text.
+    int mW = 0;                                                                   // Minimum width to fit text.
+    int mH = 0;                                                                   // Minimum height to fit text.
     std::array<sdl::FontPtr, kFontCount>::iterator fI = begin(fontSizeIt->fonts); // Font to use.
     for (auto &t : tx) {
         // Render lines of text.

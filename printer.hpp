@@ -26,8 +26,8 @@
 #include <vector>
 
 #include "constants.hpp"
-#include "settings.hpp"
 #include "draw.hpp"
+#include "settings.hpp"
 
 class Printer {
     unsigned int nationId;

@@ -70,8 +70,8 @@ struct Property {
 
 struct Contract {
     Traveler *employer;
-    double owed;        // value of goods holder will retain at end of contract 
-    double wage;        // value holder earns daily
+    double owed; // value of goods holder will retain at end of contract
+    double wage; // value holder earns daily
 };
 
 enum class FightChoice { none = -1, fight, run, yield };
@@ -95,8 +95,8 @@ class Traveler {
     std::vector<Good> equipment;
     std::vector<Traveler *> agents;     // travelers employed
     std::unique_ptr<Contract> contract; // contract with employer, if any
-    Traveler *target = nullptr; // pointer to enemy if currently fighting
-    double fightTime;           // time left to fight this round
+    Traveler *target = nullptr;         // pointer to enemy if currently fighting
+    double fightTime;                   // time left to fight this round
     FightChoice choice;
     bool dead = false; // true if traveler is not alive and not being looted from
     std::unique_ptr<AI> aI;
@@ -163,9 +163,7 @@ public:
     int getPX() const { return px; }
     int getPY() const { return py; }
     double netWeight() const;
-    bool fightWon() const {
-        return target && (target->choice == FightChoice::yield || !target->alive());
-    }
+    bool fightWon() const { return target && (target->choice == FightChoice::yield || !target->alive()); }
     double getFightTime() const { return fightTime; }
     FightChoice getChoice() const { return choice; }
     void setPortion(double p);
@@ -186,5 +184,3 @@ public:
 };
 
 #endif // TRAVELER_H
-
-

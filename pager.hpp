@@ -34,6 +34,7 @@ class Pager {
     SDL_Rect bounds{0, 0, 0, 0};
     void setVisible();
     void setBounds();
+
 public:
     size_t boxCount() { return boxes.size(); }
     TextBox *getVisible(size_t idx);

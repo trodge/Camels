@@ -69,13 +69,12 @@ class Material {
 public:
     Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img)
         : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
-        minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
+          minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
     Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img)
         : Material(i, n, 0., c, dS, dI, img) {}
     Material(unsigned int i, const std::string &n, double c, double dS, double dI)
         : Material(i, n, c, dS, dI, nullptr) {}
-    Material(unsigned int i, const std::string &n, double a, SDL_Surface *img)
-        : Material(i, n, a, 0., 0., 0., img) {}
+    Material(unsigned int i, const std::string &n, double a, SDL_Surface *img) : Material(i, n, a, 0., 0., 0., img) {}
     Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, nullptr) {}
     Material(unsigned int i, const std::string &n, SDL_Surface *img) : Material(i, n, 0., img) {}
     Material(unsigned int i, const std::string &n) : Material(i, n, 0.) {}

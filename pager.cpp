@@ -14,7 +14,8 @@ void Pager::setBounds() {
     // Get rects for all boxes.
     std::vector<SDL_Rect> rts;
     rts.reserve(boxes.size());
-    std::transform(begin(boxes), end(boxes), std::back_inserter(rts), [](const std::unique_ptr<TextBox> &bx) { return bx->getRect(); });
+    std::transform(begin(boxes), end(boxes), std::back_inserter(rts),
+                   [](const std::unique_ptr<TextBox> &bx) { return bx->getRect(); });
     // Get minimum and maximum x and y for boxes.
     int xMin = rts[0].x, xMax = rts[0].x, yMin = rts[0].y, yMax = rts[0].y;
     for (auto &rt : rts) {

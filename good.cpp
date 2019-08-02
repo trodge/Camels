@@ -19,7 +19,6 @@
 
 #include "good.hpp"
 
-
 Good::Good(const Save::Good *g)
     : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()),
       carry(g->carry()), measure(g->measure()->str()), split(!measure.empty()), shoots(g->shoots()) {
