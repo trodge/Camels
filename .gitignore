@@ -8,6 +8,7 @@ packages/
 save/
 win-build/
 vs-build/
+callgrind.*
 CMakeCache\.txt
 CMakeSettings.json
 Camels\.*
