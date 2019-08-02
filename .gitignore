@@ -8,7 +8,6 @@ packages/
 save/
 win-build/
 vs-build/
-\.clang-format
 CMakeCache\.txt
 CMakeSettings.json
 Camels\.*

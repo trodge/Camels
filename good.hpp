@@ -42,16 +42,20 @@ class Good {
     void removeExcess();
 
 public:
-    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s);
-    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s);
-    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m);
-    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m);
-    Good(unsigned int i, const std::string &n, double a, const std::string &m);
-    Good(unsigned int i, const std::string &n, double a);
-    Good(unsigned int i, const std::string &n);
-    Good(unsigned int i, double a);
-    Good(unsigned int i);
+    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s)
+        : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(!m.empty()), shoots(s) {}
+    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s)
+        : Good(i, n, 0., p, c, m, s) {}
+    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
+        : Good(i, n, a, p, c, m, 0) {}
+    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0., p, c, m) {}
+    Good(unsigned int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, 0., 0., m) {}
+    Good(unsigned int i, const std::string &n, double a) : Good(i, n, a, "") {}
+    Good(unsigned int i, const std::string &n) : Good(i, n, 0) {}
+    Good(unsigned int i, double a) : Good(i, "", a) {}
+    Good(unsigned int i) : Good(i, "") {}
     Good(const Save::Good *g);
+    flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Good &other) const { return id == other.id; }
     bool operator!=(const Good &other) const { return id != other.id; }
     bool operator<(const Good &other) const { return id < other.id; }
@@ -98,7 +102,6 @@ public:
     }
     void adjustDemand(std::string rBN, double d);
     void saveDemand(unsigned long p, std::string &u) const;
-    flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, int dx, int dy, BoxInfo bI, Printer &pr,

@@ -267,7 +267,7 @@ void AI::choose() {
         scores[1] /= speedRatio;
         scores[2] *= speedRatio;
     }
-    traveler.choose(static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores)));
+    traveler.choice = static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores));
 }
 
 void AI::loot() {

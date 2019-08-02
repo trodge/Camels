@@ -19,29 +19,6 @@
 
 #include "material.hpp"
 
-Material::Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img)
-    : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
-      minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
-
-Material::Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img)
-    : Material(i, n, 0., c, dS, dI, img) {}
-
-Material::Material(unsigned int i, const std::string &n, double c, double dS, double dI)
-    : Material(i, n, c, dS, dI, nullptr) {}
-
-Material::Material(unsigned int i, const std::string &n, double a, SDL_Surface *img)
-    : Material(i, n, a, 0., 0., 0., img) {}
-
-Material::Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, nullptr) {}
-
-Material::Material(unsigned int i, const std::string &n, SDL_Surface *img) : Material(i, n, 0., img) {}
-
-Material::Material(unsigned int i, const std::string &n) : Material(i, n, 0.) {}
-
-Material::Material(unsigned int i, double a) : Material(i, "", a) {}
-
-Material::Material(unsigned int i) : Material(i, 0.) {}
-
 Material::Material(const Save::Material *m)
     : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()),
       demandSlope(m->demandSlope()), demandIntercept(m->demandIntercept()), minPrice(demandIntercept / 63) {
@@ -56,6 +33,20 @@ Material::Material(const Save::Material *m)
                                (*lCS)->type(),
                                (*lCS)->speed(),
                                {{(*lCS)->bashDefense(), (*lCS)->cutDefense(), (*lCS)->stabDefense()}}});
+}
+
+flatbuffers::Offset<Save::Material> Material::save(flatbuffers::FlatBufferBuilder &b) const {
+    auto sName = b.CreateString(name);
+    auto sPerishCounters =
+        b.CreateVectorOfStructs<Save::PerishCounter>(perishCounters.size(), [this](size_t i, Save::PerishCounter *pC) {
+            *pC = Save::PerishCounter(perishCounters[i].time, perishCounters[i].amount);
+        });
+    auto sCombatStats = b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
+        *cS = Save::CombatStat(combatStats[i].statId, combatStats[i].partId, combatStats[i].attack, combatStats[i].type,
+                               combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
+                               combatStats[i].defense[2]);
+    });
+    return Save::CreateMaterial(b, id, sName, amount, consumption, demandSlope, demandIntercept, sPerishCounters, sCombatStats);
 }
 
 double Material::getPrice(double q) const {
@@ -278,20 +269,6 @@ void Material::saveDemand(unsigned long p, std::string &u) const {
     u.append(std::to_string(id));
     u.append(" THEN ");
     u.append(std::to_string(demandSlope * static_cast<double>(p)));
-}
-
-flatbuffers::Offset<Save::Material> Material::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sName = b.CreateString(name);
-    auto sPerishCounters =
-        b.CreateVectorOfStructs<Save::PerishCounter>(perishCounters.size(), [this](size_t i, Save::PerishCounter *pC) {
-            *pC = Save::PerishCounter(perishCounters[i].time, perishCounters[i].amount);
-        });
-    auto sCombatStats = b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
-        *cS = Save::CombatStat(combatStats[i].statId, combatStats[i].partId, combatStats[i].attack, combatStats[i].type,
-                               combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
-                               combatStats[i].defense[2]);
-    });
-    return Save::CreateMaterial(b, id, sName, amount, consumption, demandSlope, demandIntercept, sPerishCounters, sCombatStats);
 }
 
 void dropTrail(std::string &tx, unsigned int dK) {

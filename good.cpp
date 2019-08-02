@@ -19,32 +19,20 @@
 
 #include "good.hpp"
 
-Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s)
-    : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(!m.empty()), shoots(s) {}
-
-Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s)
-    : Good(i, n, 0., p, c, m, s) {}
-
-Good::Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
-    : Good(i, n, a, p, c, m, 0) {}
-
-Good::Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0., p, c, m) {}
-
-Good::Good(unsigned int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, 0., 0., m) {}
-
-Good::Good(unsigned int i, const std::string &n, double a) : Good(i, n, a, "") {}
-
-Good::Good(unsigned int i, const std::string &n) : Good(i, n, 0) {}
-
-Good::Good(unsigned int i, double a) : Good(i, "", a) {}
-
-Good::Good(unsigned int i) : Good(i, "") {}
 
 Good::Good(const Save::Good *g)
     : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()),
       carry(g->carry()), measure(g->measure()->str()), split(!measure.empty()), shoots(g->shoots()) {
     auto lMaterials = g->materials();
     for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI) materials.push_back(Material(*lMI));
+}
+
+flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) const {
+    auto sName = b.CreateString(name);
+    auto sMaterials = b.CreateVector<flatbuffers::Offset<Save::Material>>(
+        materials.size(), [this, &b](size_t i) { return materials[i].save(b); });
+    auto sMeasure = b.CreateString(measure);
+    return Save::CreateGood(b, id, sName, amount, sMaterials, perish, carry, sMeasure, shoots);
 }
 
 std::string Good::getFullName(const Material &m) const { return id == m.getId() ? name : m.getName() + " " + name; }
@@ -242,14 +230,6 @@ void Good::saveDemand(unsigned long p, std::string &u) const {
         u.append(std::to_string(id));
         m.saveDemand(p, u);
     }
-}
-
-flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sName = b.CreateString(name);
-    auto sMaterials = b.CreateVector<flatbuffers::Offset<Save::Material>>(
-        materials.size(), [this, &b](size_t i) { return materials[i].save(b); });
-    auto sMeasure = b.CreateString(measure);
-    return Save::CreateGood(b, id, sName, amount, sMaterials, perish, carry, sMeasure, shoots);
 }
 
 void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, int dx, int dy, BoxInfo bI, Printer &pr,

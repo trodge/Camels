@@ -68,6 +68,12 @@ struct Property {
     std::vector<Business> businesses;
 };
 
+struct Contract {
+    Traveler *employer;
+    double owed;        // value of goods holder will retain at end of contract 
+    double wage;        // value holder earns daily
+};
+
 enum class FightChoice { none = -1, fight, run, yield };
 
 class AI;
@@ -87,6 +93,8 @@ class Traveler {
     std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
     std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
+    std::vector<Traveler *> agents;     // travelers employed
+    std::unique_ptr<Contract> contract; // contract with employer, if any
     Traveler *target = nullptr; // pointer to enemy if currently fighting
     double fightTime;           // time left to fight this round
     FightChoice choice;
@@ -97,26 +105,44 @@ class Traveler {
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
     void clearTrade();
+    void updatePortionBox(TextBox *bx) const;
+    void divideExcess(double ec);
+    void makeTrade();
+    void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
+    void updateTradeButtons(std::vector<Pager> &pgrs);
     void deposit(Good &g);
     void withdraw(Good &g);
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
     void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void refreshManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
     void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    std::vector<Traveler *> attackable() const;
+    void attack(Traveler *t);
+    void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
+    void loseTarget();
     CombatHit firstHit(Traveler &t, std::uniform_real_distribution<double> &d);
     void useAmmo(double t);
     void fight(Traveler &t, unsigned int e, std::uniform_real_distribution<double> &d);
     void takeHit(const CombatHit &cH, Traveler &t);
+    void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
+    void updateFightBoxes(Pager &pgr);
+    void loot(Good &g, Traveler &t);
+    void loot(Traveler &t);
+    void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
 
 public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
     Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD);
+    flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
     std::string getName() const { return name; }
     const Town *getTown() const { return toTown; }
     const Nation *getNation() const { return nation; }
@@ -136,37 +162,18 @@ public:
     bool getMoving() const { return moving; }
     int getPX() const { return px; }
     int getPY() const { return py; }
+    double netWeight() const;
     bool fightWon() const {
-        auto t = target;
-        return t && (t->choice == FightChoice::yield || !t->alive());
+        return target && (target->choice == FightChoice::yield || !target->alive());
     }
     double getFightTime() const { return fightTime; }
     FightChoice getChoice() const { return choice; }
     void setPortion(double p);
     void changePortion(double d);
     void addToTown();
-    double netWeight() const;
     void pickTown(const Town *t);
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
-    void updatePortionBox(TextBox *bx) const;
-    void divideExcess(double ec);
-    void makeTrade();
-    void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
-    void updateTradeButtons(std::vector<Pager> &pgrs);
-    void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    std::vector<Traveler *> attackable() const;
-    void attack(Traveler *t);
-    void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
-    void choose(FightChoice c) { choice = c; }
-    void loseTarget();
-    void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
-    void updateFightBoxes(Pager &pgr);
-    void loot(Good &g, Traveler &t);
-    void loot(Traveler &t);
-    void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void startAI();
     void startAI(const Traveler &p);
     void update(unsigned int e);
@@ -174,7 +181,6 @@ public:
     void adjustDemand(Pager &pgr, double mM);
     void resetTown();
     void toggleMaxGoods();
-    flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
     friend class AI;
     friend class Player;
 };

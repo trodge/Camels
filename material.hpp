@@ -67,16 +67,22 @@ class Material {
     void updateButton(std::string &aT, bool gS, TextBox *b) const;
 
 public:
-    Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img);
-    Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img);
-    Material(unsigned int i, const std::string &n, double c, double dS, double dI);
-    Material(unsigned int i, const std::string &n, double a, SDL_Surface *img);
-    Material(unsigned int i, const std::string &n, double a);
-    Material(unsigned int i, const std::string &n, SDL_Surface *img);
-    Material(unsigned int i, const std::string &n);
-    Material(unsigned int i, double a);
-    Material(unsigned int i);
+    Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img)
+        : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
+        minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
+    Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img)
+        : Material(i, n, 0., c, dS, dI, img) {}
+    Material(unsigned int i, const std::string &n, double c, double dS, double dI)
+        : Material(i, n, c, dS, dI, nullptr) {}
+    Material(unsigned int i, const std::string &n, double a, SDL_Surface *img)
+        : Material(i, n, a, 0., 0., 0., img) {}
+    Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, nullptr) {}
+    Material(unsigned int i, const std::string &n, SDL_Surface *img) : Material(i, n, 0., img) {}
+    Material(unsigned int i, const std::string &n) : Material(i, n, 0.) {}
+    Material(unsigned int i, double a) : Material(i, "", a) {}
+    Material(unsigned int i) : Material(i, 0.) {}
     Material(const Save::Material *m);
+    flatbuffers::Offset<Save::Material> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Material &other) const { return id == other.id; }
     bool operator!=(const Material &other) const { return id != other.id; }
     bool operator<(const Material &other) const { return id < other.id; }
@@ -119,7 +125,6 @@ public:
     void adjustDemand(double d);
     void fixDemand(double m);
     void saveDemand(unsigned long p, std::string &u) const;
-    flatbuffers::Offset<Save::Material> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 void dropTrail(std::string &tx, unsigned int dK);

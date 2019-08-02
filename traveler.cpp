@@ -26,9 +26,6 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     const std::vector<Good> &gs = t->getNation()->getGoods();
     goods.reserve(gs.size());
     for (auto &g : gs) { goods.push_back(Good(g)); }
-    // Create starting goods.
-    goods[55].create(0.75);
-    goods[59].create(2);
     // Equip fists.
     equip(2);
     equip(3);
@@ -71,7 +68,31 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     }
 }
 
-void Traveler::addToTown() { toTown->addTraveler(this); }
+flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilder &b) const {
+    // Return a flatbuffers save object for this traveler.
+    auto sName = b.CreateString(name);
+    auto sLog = b.CreateVectorOfStrings(logText);
+    auto sGoods =
+        b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
+    auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(properties.size(), [this, &b](size_t i) {
+        auto &property = properties[i];
+        auto sStorage = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+            properties[i].storage.size(), [&property, &b](size_t j) { return property.storage[j].save(b); });
+        auto sBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
+            properties[i].businesses.size(), [&property, &b](size_t j) { return property.businesses[j].save(b); });
+        return Save::CreateProperty(b, sStorage, sBusinesses);
+    });
+    auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
+    auto sParts = b.CreateVector(std::vector<unsigned int>(begin(parts), end(parts)));
+    auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
+    if (aI)
+        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
+                                    latitude, sGoods, sProperties, sStats, sParts, sEquipment, aI->save(b), moving);
+    else
+        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
+                                    latitude, sGoods, sProperties, sStats, sParts, sEquipment, 0, moving);
+}
 
 double Traveler::netWeight() const {
     return std::accumulate(begin(goods), end(goods), static_cast<double>(stats[0]) * kTravelerCarry,
@@ -144,6 +165,8 @@ double Traveler::pathDist(const Town *t) const {
     }
     return dist;
 }
+
+void Traveler::addToTown() { toTown->addTraveler(this); }
 
 void Traveler::setPortion(double d) {
     portion = d;
@@ -409,8 +432,7 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
 }
 
 void Traveler::build(const Business &bsn, double a) {
-    // Build the given area of the given business. Check requirements before
-    // calling.
+    // Build the given area of the given business. Check requirements before calling.
     auto &businesses = properties[toTown->getId() - 1].businesses;
     auto bsnsIt = std::lower_bound(begin(businesses), end(businesses), bsn);
     if (bsnsIt == end(businesses) || *bsnsIt != bsn) {
@@ -844,9 +866,9 @@ void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
     pgr.addBox(std::make_unique<SelectButton>(
         selectButton({sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3}, {"Fight", "Run", "Yield"}, SDLK_c,
                      [this, &p](MenuButton *btn) {
-                         int choice = btn->getHighlightLine();
-                         if (choice > -1) {
-                             choose(static_cast<FightChoice>(choice));
+                         int hl = btn->getHighlightLine();
+                         if (hl > -1) {
+                             choice = static_cast<FightChoice>(hl);
                              p = false;
                          }
                      }),
@@ -1077,29 +1099,3 @@ void Traveler::adjustDemand(Pager &pgr, double mM) {
 void Traveler::resetTown() { toTown->resetGoods(); }
 
 void Traveler::toggleMaxGoods() { toTown->toggleMaxGoods(); }
-
-flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilder &b) const {
-    // Return a flatbuffers save object for this traveler.
-    auto sName = b.CreateString(name);
-    auto sLog = b.CreateVectorOfStrings(logText);
-    auto sGoods =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
-    auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(properties.size(), [this, &b](size_t i) {
-        auto &property = properties[i];
-        auto sStorage = b.CreateVector<flatbuffers::Offset<Save::Good>>(
-            properties[i].storage.size(), [&property, &b](size_t j) { return property.storage[j].save(b); });
-        auto sBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
-            properties[i].businesses.size(), [&property, &b](size_t j) { return property.businesses[j].save(b); });
-        return Save::CreateProperty(b, sStorage, sBusinesses);
-    });
-    auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
-    auto sParts = b.CreateVector(std::vector<unsigned int>(begin(parts), end(parts)));
-    auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
-        equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
-    if (aI)
-        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
-                                    latitude, sGoods, sProperties, sStats, sParts, sEquipment, aI->save(b), moving);
-    else
-        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
-                                    latitude, sGoods, sProperties, sStats, sParts, sEquipment, 0, moving);
-}
