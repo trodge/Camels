@@ -79,17 +79,17 @@ Game::Game()
 }
 
 Game::~Game() {
-    std::cout << "Freeing map surface" << std::endl;
+    std::cout << "Freeing Map Surface" << std::endl;
     mapSurface = nullptr;
-    std::cout << "Freeing map textures" << std::endl;
+    std::cout << "Freeing Map Textures" << std::endl;
     for (auto &mT : mapTextures) mT = nullptr;
-    std::cout << "Freeing map texture" << std::endl;
+    std::cout << "Freeing Map Texture" << std::endl;
     mapTexture = nullptr;
-    std::cout << "Freeing good images" << std::endl;
+    std::cout << "Freeing Good Images" << std::endl;
     for (auto &gI : goodImages) gI = nullptr;
-    std::cout << "Destroying screen" << std::endl;
+    std::cout << "Destroying Screen" << std::endl;
     screen = nullptr;
-    std::cout << "Destroying window" << std::endl;
+    std::cout << "Destroying Window" << std::endl;
     window = nullptr;
 }
 
@@ -157,7 +157,7 @@ void Game::moveView(int dx, int dy) {
 void Game::loadData(sqlite3 *cn) {
     // Load data from database which is needed both for new game and loading a game.
     sql::StmtPtr quer;
-    std::cout << "Loading data" << std::endl;
+    std::cout << "Loading Data" << std::endl;
     // Load game data.
     // Load part names.
     quer = sql::makeQuery(cn, "SELECT name FROM parts");
@@ -606,7 +606,7 @@ void Game::handleEvents() {
             mh = mapSurface->h;
             if (mx >= 0 && mx < mw && my >= 0 && my < mh) {
                 SDL_GetRGB(getAt(mapSurface.get(), mx, my), mapSurface->format, &r, &g, &b);
-                std::cout << "Clicked color: (" << int(r) << "," << int(g) << "," << int(b) << ")" << std::endl;
+                std::cout << "Clicked Color: (" << int(r) << ", " << int(g) << ", " << int(b) << ")" << std::endl;
             }
             break;
         }

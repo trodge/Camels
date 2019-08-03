@@ -93,6 +93,16 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
     setMax();
 }
 
+flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) const {
+    auto sNames = b.CreateVectorOfStrings(box->getText());
+    auto sBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
+        businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
+    auto sGoods =
+        b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
+    return Save::CreateTown(b, id, sNames, nation->getId(), longitude, latitude, coastal, population, townType,
+                            sBusinesses, sGoods, businessCounter);
+}
+
 bool Town::operator==(const Town &other) const { return id == other.id; }
 
 int Town::distSq(int x, int y) const { return (dpx - x) * (dpx - x) + (dpy - y) * (dpy - y); }
@@ -313,16 +323,6 @@ void Town::saveDemand(std::string &u) const {
     for (auto &g : goods) g.saveDemand(population, u);
     u.append(" ELSE demand_slope END WHERE nation_id = ");
     u.append(std::to_string(nation->getId()));
-}
-
-flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sNames = b.CreateVectorOfStrings(box->getText());
-    auto sBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
-        businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
-    auto sGoods =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [this, &b](size_t i) { return goods[i].save(b); });
-    return Save::CreateTown(b, id, sNames, nation->getId(), longitude, latitude, coastal, population, townType,
-                            sBusinesses, sGoods, businessCounter);
 }
 
 Route::Route(Town *fT, Town *tT) : towns({fT, tT}) {}

@@ -19,15 +19,16 @@
 
 #ifndef SETTINGS_H
 #define SETTINGS_H
-#include <boost/filesystem.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include <array>
 #include <chrono>
 #include <random>
 #include <unordered_map>
+
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
-
 #include <SDL2/SDL.h>
 
 class MenuButton;
@@ -91,6 +92,7 @@ class Settings {
     static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
     static int businessRunTime;            // time between business cycles in milliseconds
     static int travelersCheckTime;         // time between checks of dead travelers in milliseconds
+    static int aIDecisionTime;             // time between AI cycles in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static double townProfit;
     static int minPriceDivisor;
@@ -99,7 +101,7 @@ class Settings {
     static unsigned int statMax;
     static double attackDistSq;
     static double escapeChance;
-    static int aIDecisionTime;
+    static std::array<double, 4> aITypeWeights;
     static int criteriaMax;
     static unsigned int aITownRange;
     static double limitFactorMin, limitFactorMax;
@@ -108,16 +110,16 @@ class Settings {
 
 public:
     static void load(const fs::path &p);
-    static SDL_Rect getScreenRect() { return screenRect; }
-    static SDL_Rect getMapRect() { return mapRect; }
-    static SDL_Color getUiForeground() { return uIForeground; }
-    static SDL_Color getUiBackground() { return uIBackground; }
-    static SDL_Color getUiHighlight() { return uIHighlight; }
-    static SDL_Color getLoadBarColor() { return loadBarColor; }
-    static SDL_Color getRouteColor() { return routeColor; }
-    static SDL_Color getWaterColor() { return waterColor; }
-    static SDL_Color getPlayerColor() { return playerColor; }
-    static SDL_Color getAIColor() { return aIColor; }
+    static const SDL_Rect &getScreenRect() { return screenRect; }
+    static const SDL_Rect &getMapRect() { return mapRect; }
+    static const SDL_Color &getUiForeground() { return uIForeground; }
+    static const SDL_Color &getUiBackground() { return uIBackground; }
+    static const SDL_Color &getUiHighlight() { return uIHighlight; }
+    static const SDL_Color &getLoadBarColor() { return loadBarColor; }
+    static const SDL_Color &getRouteColor() { return routeColor; }
+    static const SDL_Color &getWaterColor() { return waterColor; }
+    static const SDL_Color &getPlayerColor() { return playerColor; }
+    static const SDL_Color &getAIColor() { return aIColor; }
     static int getScroll() { return scroll; }
     static int getOffsetX() { return offsetX; }
     static int getOffsetY() { return offsetY; }
@@ -149,6 +151,7 @@ public:
     static unsigned int getBusinessHeadStart() { return businessHeadStart; }
     static int getBusinessRunTime() { return businessRunTime; }
     static int getTravelersCheckTime() { return travelersCheckTime; }
+    static int getAIDecisionTime() { return aIDecisionTime; }
     static double getConsumptionSpaceFactor() { return consumptionSpaceFactor; }
     static double getInputSpaceFactor() { return inputSpaceFactor; }
     static double getOutputSpaceFactor() { return outputSpaceFactor; }
@@ -159,7 +162,7 @@ public:
     static unsigned int getStatMax() { return statMax; }
     static double getAttackDistSq() { return attackDistSq; }
     static double getEscapeChance() { return escapeChance; }
-    static int getAIDecisionTime() { return aIDecisionTime; }
+    static const std::array<double, 4> &getAITypeWeights() { return aITypeWeights; }
     static int getCriteriaMax() { return criteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
     static double getLimitFactorMin() { return limitFactorMin; }

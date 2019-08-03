@@ -60,6 +60,7 @@ int Settings::dayLength;
 unsigned int Settings::businessHeadStart;
 int Settings::businessRunTime;
 int Settings::travelersCheckTime;
+int Settings::aIDecisionTime;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
 double Settings::townProfit;
 int Settings::minPriceDivisor;
@@ -68,7 +69,7 @@ int Settings::travelersMin;
 unsigned int Settings::statMax;
 double Settings::attackDistSq;
 double Settings::escapeChance;
-int Settings::aIDecisionTime;
+std::array<double, 4> Settings::aITypeWeights;
 int Settings::criteriaMax;
 unsigned int Settings::aITownRange;
 double Settings::limitFactorMin, Settings::limitFactorMax;
@@ -76,18 +77,25 @@ double Settings::aIAttackThreshold;
 
 std::mt19937 Settings::rng(static_cast<unsigned long>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
 
-void loadRect(const std::string &n, SDL_Rect *r, const SDL_Rect &d, const pt::ptree &t) {
-    r->x = t.get(n + "_x", d.x);
-    r->y = t.get(n + "_y", d.y);
-    r->w = t.get(n + "_w", d.w);
-    r->h = t.get(n + "_h", d.h);
+void loadRect(const std::string &n, SDL_Rect &r, const SDL_Rect &d, const pt::ptree &t) {
+    r.x = t.get(n + "_x", d.x);
+    r.y = t.get(n + "_y", d.y);
+    r.w = t.get(n + "_w", d.w);
+    r.h = t.get(n + "_h", d.h);
 }
 
-void loadColor(const std::string &n, SDL_Color *c, const SDL_Color &d, const pt::ptree &t) {
-    c->r = t.get(n + "_r", d.r);
-    c->g = t.get(n + "_g", d.g);
-    c->b = t.get(n + "_b", d.b);
-    c->a = t.get(n + "_a", d.a);
+void loadColor(const std::string &n, SDL_Color &c, const SDL_Color &d, const pt::ptree &t) {
+    c.r = t.get(n + "_r", d.r);
+    c.g = t.get(n + "_g", d.g);
+    c.b = t.get(n + "_b", d.b);
+    c.a = t.get(n + "_a", d.a);
+}
+
+template<class OutputIt, class T> void loadRange(const std::string &n, OutputIt bgn, const std::initializer_list<T> &dfs,
+                                                 const::pt::ptree &t) {
+    auto it = bgn;
+    for (auto &df : dfs)
+        *it++ = t.get(n + "_" + std::to_string(it - bgn), df);
 }
 
 void Settings::load(const fs::path &p) {
@@ -99,16 +107,16 @@ void Settings::load(const fs::path &p) {
     pt::read_ini(p.string(), tree);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    loadRect("ui.screenRect", &screenRect, {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
-    loadRect("ui.mapRect", &mapRect, {3330, 2250, screenRect.w, screenRect.h}, tree);
-    loadColor("ui.foreground", &uIForeground, {0, 0, 0, 255}, tree);
-    loadColor("ui.background", &uIBackground, {109, 109, 109, 255}, tree);
-    loadColor("ui.highlight", &uIHighlight, {0, 127, 251, 255}, tree);
-    loadColor("ui.loadBarColor", &loadBarColor, {0, 255, 0, 255}, tree);
-    loadColor("ui.routeColor", &routeColor, {97, 97, 97, 255}, tree);
-    loadColor("ui.waterColor", &waterColor, {29, 109, 149, 255}, tree);
-    loadColor("ui.playerColor", &playerColor, {255, 255, 255, 255}, tree);
-    loadColor("ui.aIColor", &aIColor, {191, 191, 191, 255}, tree);
+    loadRect("ui.screenRect", screenRect, {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
+    loadRect("ui.mapRect", mapRect, {3330, 2250, screenRect.w, screenRect.h}, tree);
+    loadColor("ui.foreground", uIForeground, {0, 0, 0, 255}, tree);
+    loadColor("ui.background", uIBackground, {109, 109, 109, 255}, tree);
+    loadColor("ui.highlight", uIHighlight, {0, 127, 251, 255}, tree);
+    loadColor("ui.loadBarColor", loadBarColor, {0, 255, 0, 255}, tree);
+    loadColor("ui.routeColor", routeColor, {97, 97, 97, 255}, tree);
+    loadColor("ui.waterColor", waterColor, {29, 109, 149, 255}, tree);
+    loadColor("ui.playerColor", playerColor, {255, 255, 255, 255}, tree);
+    loadColor("ui.aIColor", aIColor, {191, 191, 191, 255}, tree);
     scroll = tree.get("ui.scroll", 64);
     offsetX = tree.get("ui.offsetX", -3197);
     offsetY = tree.get("ui.offsetY", 4731);
@@ -140,6 +148,7 @@ void Settings::load(const fs::path &p) {
     businessHeadStart = static_cast<unsigned int>(tree.get("time.businessHeadStart", 15000));
     businessRunTime = tree.get("time.businessRunTime", 1500);
     travelersCheckTime = tree.get("time.travelersCheckTime", 4500);
+    aIDecisionTime = tree.get("time.aIDecisionTime", 12000);
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
     inputSpaceFactor = tree.get("goods.inputSpaceFactor", 0.054);
     outputSpaceFactor = tree.get("goods.outputSpaceFactor", 0.054);
@@ -150,37 +159,42 @@ void Settings::load(const fs::path &p) {
     statMax = static_cast<unsigned int>(tree.get("travelers.statMax", 15));
     attackDistSq = tree.get("travelers.attackDistSq", 9000);
     escapeChance = tree.get("travelers.escapeChance", 0.5);
-    aIDecisionTime = tree.get("aI.decisionTime", 12000);
     criteriaMax = tree.get("aI.criteriaMax", 9);
+    loadRange("aI.typeWeights", begin(aITypeWeights), {0.5, 0.3, 0.1, 0.1}, tree);
     aITownRange = static_cast<unsigned int>(tree.get("aI.townRange", 9));
     limitFactorMin = tree.get("aI.limitFactorMin", 0.1);
     limitFactorMax = tree.get("aI.limitFactorMax", 0.9);
     aIAttackThreshold = tree.get("aI.attackThreshold", 13500);
 }
 
-void saveRect(const std::string &n, const SDL_Rect &r, pt::ptree *t) {
-    t->put(n + "_x", r.x);
-    t->put(n + "_y", r.y);
-    t->put(n + "_w", r.w);
-    t->put(n + "_h", r.h);
+void saveRect(const std::string &n, const SDL_Rect &r, pt::ptree &t) {
+    t.put(n + "_x", r.x);
+    t.put(n + "_y", r.y);
+    t.put(n + "_w", r.w);
+    t.put(n + "_h", r.h);
 }
 
-void saveColor(const std::string &n, const SDL_Color &c, pt::ptree *t) {
-    t->put(n + "_r", c.r);
-    t->put(n + "_g", c.g);
-    t->put(n + "_b", c.b);
+void saveColor(const std::string &n, const SDL_Color &c, pt::ptree &t) {
+    t.put(n + "_r", c.r);
+    t.put(n + "_g", c.g);
+    t.put(n + "_b", c.b);
+}
+
+template<class InputIt> void saveRange(const std::string &n, InputIt bgn, InputIt end, pt::ptree &t) {
+    for (auto it = bgn; it != end; ++it)
+        t.put(n + "_" + std::to_string(it - bgn), *it);
 }
 
 void Settings::save(const fs::path &p) {
     pt::ptree tree;
-    saveRect("ui.mapRect", mapRect, &tree);
-    saveColor("ui.foreground", uIForeground, &tree);
-    saveColor("ui.background", uIBackground, &tree);
-    saveColor("ui.highlight", uIHighlight, &tree);
-    saveColor("ui.routeColor", routeColor, &tree);
-    saveColor("ui.waterColor", waterColor, &tree);
-    saveColor("ui.playerColor", playerColor, &tree);
-    saveColor("ui.aIColor", aIColor, &tree);
+    saveRect("ui.mapRect", mapRect, tree);
+    saveColor("ui.foreground", uIForeground, tree);
+    saveColor("ui.background", uIBackground, tree);
+    saveColor("ui.highlight", uIHighlight, tree);
+    saveColor("ui.routeColor", routeColor, tree);
+    saveColor("ui.waterColor", waterColor, tree);
+    saveColor("ui.playerColor", playerColor, tree);
+    saveColor("ui.aIColor", aIColor, tree);
     tree.put("ui.scroll", scroll);
     tree.put("ui.offsetX", offsetX);
     tree.put("ui.offsetY", offsetY);
@@ -198,6 +212,7 @@ void Settings::save(const fs::path &p) {
     tree.put("time.businessHeadStart", businessHeadStart);
     tree.put("time.businessRunTime", businessRunTime);
     tree.put("time.travelersCheckTime", travelersCheckTime);
+    tree.put("time.aIDecisionTime", aIDecisionTime);
     tree.put("goods.consumptionSpaceFactor", consumptionSpaceFactor);
     tree.put("goods.inputSpaceFactor", inputSpaceFactor);
     tree.put("goods.outputSpaceFactor", outputSpaceFactor);
@@ -208,8 +223,8 @@ void Settings::save(const fs::path &p) {
     tree.put("travelers.statMax", statMax);
     tree.put("travelers.attackDistSq", attackDistSq);
     tree.put("travelers.escapeChance", escapeChance);
-    tree.put("aI.decisionTime", aIDecisionTime);
     tree.put("aI.criteriaMax", criteriaMax);
+    saveRange("aI.typeWeights", begin(aITypeWeights), end(aITypeWeights), tree);
     tree.put("aI.townRange", aITownRange);
     tree.put("aI.limitFactorMin", limitFactorMin);
     tree.put("aI.limitFactorMax", limitFactorMax);

@@ -49,9 +49,9 @@ struct UIState {
         traveling,
         trading,
         storing,
-        managing,
+        building,
         equipping,
-        hiring,
+        managing,
         attacking,
         logging,
         fighting,
@@ -69,7 +69,7 @@ class Player {
     std::vector<Pager>::iterator currentPager;
     Game &game;
     Printer &printer;
-    bool stop = false, show = false, pause = false, storedPause = false;
+    bool stop = false, show = false, pause = false, storedPause = false, developer = false;
     enum Direction { left, right, up, down };
     std::unordered_set<Direction> scroll;
     double modMultiplier = 1.; // multiplier for values which depend on keymod state
@@ -83,7 +83,7 @@ class Player {
     void focus(int f, FocusGroup g);
     void focusPrev(FocusGroup g);
     void focusNext(FocusGroup g);
-    void addPageButtons();
+    void createBoxes(UIState::State s);
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);

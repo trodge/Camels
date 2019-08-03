@@ -267,7 +267,7 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
         gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
-    SDL_Rect rt = {sR.w / 31, sR.h / 31, sR.w * 15 / 31, sR.h * 24 / 31};
+    SDL_Rect rt = {sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 24 / 31};
     BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
                      .foreground = nation->getForeground(),
                      .background = nation->getBackground(),
@@ -400,7 +400,7 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
         gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
-    SDL_Rect rt = {sR.w / 31, sR.h / 31, sR.w * 15 / 31, sR.h * 26 / 31};
+    SDL_Rect rt = {sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
     BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
                      .foreground = nation->getForeground(),
                      .background = nation->getBackground(),
@@ -420,7 +420,7 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     firstBox.rect.x = rt.x;
     firstBox.foreground = toTown->getNation()->getForeground();
     firstBox.background = toTown->getNation()->getBackground();
-    createGoodButtons(pgrs[2], toTown->getGoods(), rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+    createGoodButtons(pgrs[2], properties[toTown->getId() - 1].storage, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
                       [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
                           return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
                               Good dG(g.getId(), g.getAmount() * portion);
@@ -456,14 +456,14 @@ void Traveler::demolish(const Business &bsn, double a) {
     if (oBsnIt->getArea() == 0.) oBsns.erase(oBsnIt);
 }
 
-void Traveler::refreshManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+void Traveler::refreshBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Delete and re-create manage buttons to reflect changes.
     for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
-    createManageButtons(pgrs, fB, pr);
+    createBuildButtons (pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
 
-void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+void Traveler::createBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for managing businesses.
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
@@ -473,7 +473,7 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
         bBSzM = Settings::getBusinessButtonSizeMultiplier(), bBScM = Settings::getBusinessButtonSpaceMultiplier();
     // Create buttons for demolishing businesses.
     std::vector<Business> &oBsns = properties[toTown->getId() - 1].businesses;
-    int left = sR.w / bBXD, right = sR.w / 2, top = sR.h / bBYD, bottom = sR.h * 13 / 14,
+    int left = sR.w / bBXD, right = sR.w / 2, top = sR.h * 2 / 31, bottom = sR.h * 28 / 31,
         dx = (right - left) * bBScM / bBXD, dy = (bottom - top) * bBScM / bBYD;
     BoxInfo boxInfo{.rect = {left, top, (right - left) * bBSzM / bBXD, (bottom - top) * bBSzM / bBYD},
                     .foreground = fgr,
@@ -485,7 +485,7 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
     for (auto &bsn : oBsns) {
         boxInfo.onClick = [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             demolish(bsn, bsn.getArea() * portion);
-            refreshManageButtons(pgrs, fB, pr);
+            refreshBuildButtons (pgrs, fB, pr);
         };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
@@ -517,7 +517,7 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
             for (auto &rq : bsn.getRequirements())
                 buildable = std::min(buildable, goods[rq.getId()].getAmount() * portion / rq.getAmount());
             if (buildable > 0.) build(bsn, buildable);
-            refreshManageButtons(pgrs, fB, pr);
+            refreshBuildButtons (pgrs, fB, pr);
         };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
@@ -1000,7 +1000,8 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
 }
 
 void Traveler::startAI() {
-    // Initialized variables for running a new AI.
+    // Initialize variables for running a new AI.
+    
     aI = std::make_unique<AI>(*this);
 }
 
@@ -1095,7 +1096,3 @@ void Traveler::adjustDemand(Pager &pgr, double mM) {
     for (auto rBI = begin(bxs); rBI != end(bxs); ++rBI) requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
     toTown->adjustDemand(requestButtons, mM);
 }
-
-void Traveler::resetTown() { toTown->resetGoods(); }
-
-void Traveler::toggleMaxGoods() { toTown->toggleMaxGoods(); }

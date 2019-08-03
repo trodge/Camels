@@ -65,6 +65,7 @@ public:
          long unsigned int ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs,
          int fS, Printer &pr);
     Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr);
+    flatbuffers::Offset<Save::Town> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Town &other) const;
     unsigned int getId() const { return id; }
     TextBox *getBox() const { return box.get(); }
@@ -102,7 +103,6 @@ public:
     void saveFrequencies(std::string &u) const;
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d);
     void saveDemand(std::string &u) const;
-    flatbuffers::Offset<Save::Town> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 class Route {

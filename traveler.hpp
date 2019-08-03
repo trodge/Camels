@@ -117,8 +117,8 @@ class Traveler {
     void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
-    void refreshManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void refreshBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
@@ -177,8 +177,6 @@ public:
     void update(unsigned int e);
     void adjustAreas(Pager &pgr, double mM);
     void adjustDemand(Pager &pgr, double mM);
-    void resetTown();
-    void toggleMaxGoods();
     friend class AI;
     friend class Player;
 };

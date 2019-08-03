@@ -47,6 +47,7 @@ class Business {
 public:
     Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM);
     Business(const Save::Business *b);
+    flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
     bool operator!=(const Business &other) const { return (id != other.id || mode != other.mode); }
     bool operator<(const Business &other) const {
@@ -76,7 +77,6 @@ public:
     void run(std::vector<Good> &gds);
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void saveFrequency(unsigned long p, std::string &u) const;
-    flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 #endif // BUSINESS_H

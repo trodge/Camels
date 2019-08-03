@@ -20,8 +20,11 @@
 #include "ai.hpp"
 
 AI::AI(Traveler &tvl) : traveler(tvl) {
-    // Initialize variables for running a new AI based on starting goods and
-    // current town.
+    // Initialize variables for running a new AI based on starting goods and current town.
+    auto &rng = Settings::getRng();
+    auto &tWs = Settings::getAITypeWeights();
+    std::discrete_distribution<> dis(begin(tWs), end(tWs));
+    type = static_cast<Type>(dis(rng));
     randomizeLimitFactors();
     randomizeCriteria();
     const Town *toTown = traveler.toTown;
@@ -45,6 +48,16 @@ AI::AI(Traveler &tvl, const Save::AI *a) : traveler(tvl), decisionCounter(a->dec
     for (auto mII = lMaterialInfo->begin(); mII != lMaterialInfo->end(); ++mII)
         materialInfo.push_back({(*mII)->limitFactor(), (*mII)->minPrice(), (*mII)->maxPrice(), (*mII)->value(),
                                 (*mII)->buy(), (*mII)->sell()});
+}
+
+flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const {
+    auto sDecisionCriteria = b.CreateVector(std::vector<double>(begin(decisionCriteria), end(decisionCriteria)));
+    auto sMaterialInfo =
+        b.CreateVectorOfStructs<Save::MaterialInfo>(materialInfo.size(), [this](size_t i, Save::MaterialInfo *mI) {
+            *mI = Save::MaterialInfo(materialInfo[i].limitFactor, materialInfo[i].minPrice, materialInfo[i].maxPrice,
+                                     materialInfo[i].value, materialInfo[i].buy, materialInfo[i].sell);
+        });
+    return Save::CreateAI(b, static_cast<short>(decisionCounter), sDecisionCriteria, sMaterialInfo);
 }
 
 void AI::randomizeLimitFactors() {
@@ -422,14 +435,4 @@ void AI::update(unsigned int e) {
             decisionCounter -= Settings::getAIDecisionTime();
         }
     }
-}
-
-flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sDecisionCriteria = b.CreateVector(std::vector<double>(begin(decisionCriteria), end(decisionCriteria)));
-    auto sMaterialInfo =
-        b.CreateVectorOfStructs<Save::MaterialInfo>(materialInfo.size(), [this](size_t i, Save::MaterialInfo *mI) {
-            *mI = Save::MaterialInfo(materialInfo[i].limitFactor, materialInfo[i].minPrice, materialInfo[i].maxPrice,
-                                     materialInfo[i].value, materialInfo[i].buy, materialInfo[i].sell);
-        });
-    return Save::CreateAI(b, static_cast<short>(decisionCounter), sDecisionCriteria, sMaterialInfo);
 }

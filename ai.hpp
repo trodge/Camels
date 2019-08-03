@@ -58,6 +58,8 @@ class AI {
     equip score, tendency to fight/update/yield, looting greed */
     std::vector<MaterialInfo> materialInfo; // known information about each material of each good
     std::vector<TownInfo> nearby;           // known information about nearby towns
+    enum Type {trader, agent, guard, thug};
+    Type type;                              // behavior for this ai
     void randomizeLimitFactors();
     void randomizeCriteria();
     void setNearby(const Town *t, const Town *tT, unsigned int i);
@@ -73,10 +75,10 @@ public:
     AI(Traveler &tvl);
     AI(Traveler &tvl, const AI &p);
     AI(Traveler &tvl, const Save::AI *a);
+    flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
     void choose();
     void loot();
     void update(unsigned int e);
-    flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
 };
 
 #endif // AI_H

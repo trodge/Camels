@@ -29,7 +29,7 @@ int main(int, char **) {
     std::cout << "Initializing IMG" << std::endl;
     if (IMG_Init(IMG_INIT_PNG) < 0)
         std::cout << "TTF initialization failed, IMG Error: " << SDL_GetError() << std::endl;
-    std::cout << "Loading settings" << std::endl;
+    std::cout << "Loading Settings" << std::endl;
     Settings::load("settings.ini");
     {
         Game game;

@@ -36,6 +36,20 @@ Business::Business(const Save::Business *b)
     for (auto lOI = lOutputs->begin(); lOI != lOutputs->end(); ++lOI) outputs.push_back(Good(*lOI));
 }
 
+flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilder &b) const {
+    auto sName = b.CreateString(name);
+    auto sRequirements = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        requirements.size(), [this, &b](size_t i) { return requirements[i].save(b); });
+    auto sReclaimables = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
+    auto sInputs =
+        b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
+    auto sOutputs = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
+    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements,
+                                sReclaimables, sInputs, sOutputs, frequency);
+}
+
 void Business::setArea(double a) {
     if (a > 0. && area > 0.) {
         for (auto &ip : inputs) ip.setAmount(ip.getAmount() * a / area);
@@ -158,18 +172,4 @@ void Business::saveFrequency(unsigned long p, std::string &u) const {
         u.append(" THEN ");
         u.append(std::to_string(area / static_cast<double>(p) / frequency));
     }
-}
-
-flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sName = b.CreateString(name);
-    auto sRequirements = b.CreateVector<flatbuffers::Offset<Save::Good>>(
-        requirements.size(), [this, &b](size_t i) { return requirements[i].save(b); });
-    auto sReclaimables = b.CreateVector<flatbuffers::Offset<Save::Good>>(
-        reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
-    auto sInputs =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
-    auto sOutputs = b.CreateVector<flatbuffers::Offset<Save::Good>>(
-        outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
-    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements,
-                                sReclaimables, sInputs, sOutputs, frequency);
 }
