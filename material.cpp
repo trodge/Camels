@@ -78,8 +78,7 @@ double Material::quantity(double p, double &e) const {
     double q;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0.)
-        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) /
-                         demandSlope;
+        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) / demandSlope;
     else if (demandIntercept != 0.)
         q = p / demandIntercept;
     else
@@ -96,8 +95,7 @@ double Material::quantity(double p) const {
     double q;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0.)
-        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) /
-                         demandSlope;
+        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) / demandSlope;
     else if (demandIntercept != 0.)
         q = p / demandIntercept;
     else
@@ -111,8 +109,7 @@ double Material::quantum(double c) const {
     double q;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0.)
-        q = amount - (demandIntercept - sqrt(b * b - demandSlope * c * 2)) /
-                         demandSlope;
+        q = amount - (demandIntercept - sqrt(b * b - demandSlope * c * 2)) / demandSlope;
     else if (demandIntercept != 0.)
         q = c / demandIntercept;
     else

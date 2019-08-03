@@ -173,7 +173,6 @@ void AI::trade() {
                 auto &rM = traveler.goods[tG.getId()].getMaterial(tM);
                 score = rM.buyScore(tM.price(),
                                     mII->buy); // score based on maximum buy price
-                ++mII;
                 if (score > bestScore) {
                     bestScore = score;
                     // Remove amout town takes as profit, store excess.
@@ -198,6 +197,7 @@ void AI::trade() {
                     }
                 }
             }
+            ++mII;
         }
     if (!bestGood) return;
     if (excess > 0.) traveler.divideExcess(excess);
