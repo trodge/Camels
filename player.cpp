@@ -134,7 +134,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                  {{Settings::getBoxInfo(false, {sR.w * 4 / 9, sR.h * 30 / 31, 0, 0}, {"Stop (B)uilding"}, SDLK_b,
                                         [this](MenuButton *) { setState(UIState::traveling); })},
                   [this] {
-                      traveler->createBuildButtons (pagers, focusBox, printer);
+                      traveler->createBuildButtons(pagers, focusBox, printer);
                       createBoxes(UIState::building);
                   },
                   3}},
@@ -374,14 +374,12 @@ void Player::createBoxes(UIState::State s) {
     // Create labels.
     auto typeText = s == UIState::building ? "Businesses" : "Goods";
     pagers[0].addBox(std::make_unique<TextBox>(
-        Settings::getBoxInfo(false, {sR.w / 4, sR.h / 31, 0, 0},
-                             {traveler->getName() + "'s " + typeText}),
-        printer));
+        Settings::getBoxInfo(false, {sR.w / 4, sR.h / 31, 0, 0}, {traveler->getName() + "'s " + typeText}), printer));
     pagers[0].addBox(std::make_unique<TextBox>(
         Settings::getBoxInfo(false, {sR.w * 3 / 4, sR.h / 31, 0, 0},
-                             {s == UIState::storing ? "Goods in " + traveler->toTown->getName() : 
-                                 (s == UIState::looting ? traveler->target->getName() : traveler->toTown->getName()) +
-                              "'s " + typeText}),
+                             {s == UIState::storing ?
+                                  "Goods in " + traveler->toTown->getName() :
+                                  (s == UIState::looting ? traveler->target->getName() : traveler->toTown->getName()) + "'s " + typeText}),
         printer));
     // Create page switching buttons.
     std::array<SDL_Keycode, 4> keys{SDLK_MINUS, SDLK_EQUALS, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};

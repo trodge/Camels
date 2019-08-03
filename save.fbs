@@ -29,6 +29,8 @@ table Material {
     id:uint;
     name:string;
     amount:double;
+    perish:double;
+    carry:double;
     consumption:double;
     demandSlope:double;
     demandIntercept:double;
@@ -42,8 +44,6 @@ table Good {
     name:string;
     amount:double;
     materials:[Material];
-    perish:double;
-    carry:double;
     measure:string;
     shoots:uint;
 }

@@ -20,8 +20,9 @@
 #include "material.hpp"
 
 Material::Material(const Save::Material *m)
-    : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), consumption(m->consumption()),
-      demandSlope(m->demandSlope()), demandIntercept(m->demandIntercept()), minPrice(demandIntercept / 63) {
+    : id(static_cast<unsigned int>(m->id())), name(m->name()->str()), amount(m->amount()), perish(m->perish()),
+      carry(m->carry()), consumption(m->consumption()), demandSlope(m->demandSlope()),
+      demandIntercept(m->demandIntercept()), minPrice(demandIntercept / 63) {
     auto lPerishCounters = m->perishCounters();
     for (auto lMI = lPerishCounters->begin(); lMI != lPerishCounters->end(); ++lMI)
         perishCounters.push_back({(*lMI)->time(), (*lMI)->amount()});
@@ -46,37 +47,38 @@ flatbuffers::Offset<Save::Material> Material::save(flatbuffers::FlatBufferBuilde
                                combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
                                combatStats[i].defense[2]);
     });
-    return Save::CreateMaterial(b, id, sName, amount, consumption, demandSlope, demandIntercept, sPerishCounters, sCombatStats);
+    return Save::CreateMaterial(b, id, sName, amount, perish, carry, consumption, demandSlope, demandIntercept,
+                                sPerishCounters, sCombatStats);
 }
 
-double Material::getPrice(double q) const {
+double Material::price(double q) const {
     // Get the price offered when selling the given quantity
     double p = (demandIntercept - demandSlope * (amount + q / 2)) * q;
     if (p < minPrice * q) p = minPrice * q;
     return p;
 }
 
-double Material::getPrice() const {
+double Material::price() const {
     // Get the current price of this material
     double p = demandIntercept - demandSlope * amount;
     if (p < minPrice) p = minPrice;
     return p;
 }
 
-double Material::getCost(double q) const {
+double Material::cost(double q) const {
     // Get the cost to buy the given quantity
     double c = (demandIntercept - demandSlope * (amount - q / 2)) * q;
     if (c < minPrice * q) c = minPrice * q;
     return c;
 }
 
-double Material::getQuantity(double p, double &e) const {
+double Material::quantity(double p, double &e) const {
     /* Get quantity of this material available at given price.
      * Second parameter holds excess quantity after amount is used up. */
     double q;
+    double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0.)
-        q = amount - (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
-                                             demandSlope * p * 2)) /
+        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) /
                          demandSlope;
     else if (demandIntercept != 0.)
         q = p / demandIntercept;
@@ -89,12 +91,12 @@ double Material::getQuantity(double p, double &e) const {
     return amount;
 }
 
-double Material::getQuantity(double p) const {
+double Material::quantity(double p) const {
     // Get quantity of this material corresponding to price. Ignore material availability.
     double q;
+    double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0.)
-        q = amount - (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) +
-                                             demandSlope * p * 2)) /
+        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) /
                          demandSlope;
     else if (demandIntercept != 0.)
         q = p / demandIntercept;
@@ -104,12 +106,12 @@ double Material::getQuantity(double p) const {
     return q;
 }
 
-double Material::getQuantum(double c) const {
+double Material::quantum(double c) const {
     // Get quantum of this material needed to match given cost.
     double q;
+    double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0.)
-        q = amount - (demandIntercept - sqrt((demandIntercept - demandSlope * amount) * (demandIntercept - demandSlope * amount) -
-                                             demandSlope * c * 2)) /
+        q = amount - (demandIntercept - sqrt(b * b - demandSlope * c * 2)) /
                          demandSlope;
     else if (demandIntercept != 0.)
         q = c / demandIntercept;
@@ -194,30 +196,8 @@ void Material::create(double a) {
     if (a > 0) perishCounters.push_front({0, a});
 }
 
-double Material::perish(unsigned int e, double p) {
-    // Perish this material for e milliseconds with maximum shelf life p years. Find the first perish counter that will
-    // expire.
-    PerishCounter ePC = {int(p * Settings::getDayLength() * kDaysPerYear - e), 0};
-    auto expired = std::upper_bound(begin(perishCounters), end(perishCounters), ePC);
-    // Remove expired amounts from amount and total them.
-    double a =
-        std::accumulate(expired, end(perishCounters), 0, [](double d, const PerishCounter &pC) { return d + pC.amount; });
-    // Erase expired perish counters.
-    perishCounters.erase(expired, end(perishCounters));
-    // Add elapsed time to remaining counters.
-    for (auto &pC : perishCounters) pC.time += e;
-    // If too much perished, reduce total by overage.
-    if (amount > a) {
-        amount -= a;
-    } else {
-        a = amount;
-        amount = 0;
-    }
-    // Return total amount perished.
-    return a;
-}
-
 double Material::consume(unsigned int e) {
+    // Consume the material for e milliseconds.
     lastAmount = amount;
     double c = consumption * e / kDaysPerYear / Settings::getDayLength();
     if (c > amount) c = amount;
@@ -225,7 +205,25 @@ double Material::consume(unsigned int e) {
         use(c);
     else if (c < 0.)
         create(-c);
-    return c;
+    // Find the first perish counter that will expire.
+    PerishCounter ePC = {int(perish * Settings::getDayLength() * kDaysPerYear - e), 0};
+    auto expired = std::upper_bound(begin(perishCounters), end(perishCounters), ePC);
+    // Remove expired amounts from amount and total them.
+    double p =
+        std::accumulate(expired, end(perishCounters), 0., [](double d, const PerishCounter &pC) { return d + pC.amount; });
+    // Erase expired perish counters.
+    perishCounters.erase(expired, end(perishCounters));
+    // Add elapsed time to remaining counters.
+    for (auto &pC : perishCounters) pC.time += e;
+    // If too much perished, reduce total by overage.
+    if (amount > p) {
+        amount -= p;
+    } else {
+        p = amount;
+        amount = 0;
+    }
+    // Return total amount perished and consumed.
+    return c + p;
 }
 
 void Material::updateButton(std::string &aT, bool gS, TextBox *b) const {
@@ -246,10 +244,9 @@ void Material::updateButton(bool gS, TextBox *b) const {
 void Material::updateButton(bool gS, double oV, unsigned int rC, TextBox *b) const {
     // Update amount shown on this material's button. Call only when offer value and request count are non-zero.
     std::string amountText;
-    if (rC) {
-        double quantity = getQuantity(oV / rC * Settings::getTownProfit());
-        amountText = std::to_string(std::min(quantity, amount));
-    } else
+    if (rC)
+        amountText = std::to_string(std::min(quantity(oV / rC * Settings::getTownProfit()), amount));
+    else
         amountText = std::to_string(amount);
     updateButton(amountText, gS, b);
 }

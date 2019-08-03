@@ -20,8 +20,8 @@
 #include "good.hpp"
 
 Good::Good(const Save::Good *g)
-    : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), perish(g->perish()),
-      carry(g->carry()), measure(g->measure()->str()), split(!measure.empty()), shoots(g->shoots()) {
+    : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), measure(g->measure()->str()),
+      split(!measure.empty()), shoots(g->shoots()) {
     auto lMaterials = g->materials();
     for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI) materials.push_back(Material(*lMI));
 }
@@ -31,7 +31,7 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
     auto sMaterials = b.CreateVector<flatbuffers::Offset<Save::Material>>(
         materials.size(), [this, &b](size_t i) { return materials[i].save(b); });
     auto sMeasure = b.CreateString(measure);
-    return Save::CreateGood(b, id, sName, amount, sMaterials, perish, carry, sMeasure, shoots);
+    return Save::CreateGood(b, id, sName, amount, sMaterials, sMeasure, shoots);
 }
 
 std::string Good::getFullName(const Material &m) const { return id == m.getId() ? name : m.getName() + " " + name; }
@@ -98,8 +98,6 @@ void Good::setAmount(double a) {
 }
 
 void Good::addMaterial(const Material &m) { materials.push_back(m); }
-
-void Good::addMaterial(const Good &g) { materials.push_back(Material(g.id, g.name)); }
 
 void Good::setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs) {
     for (auto &m : materials) {
@@ -191,7 +189,6 @@ void Good::consume(unsigned int e) {
     // Remove consumed goods and perished goods over elapsed time.
     for (auto &m : materials) {
         amount -= m.consume(e);
-        if (perish != 0.) amount -= m.perish(e, perish);
         if (amount < 0.) amount = 0.;
         // Keep demand slopes from being too low or too high
         m.fixDemand(max);

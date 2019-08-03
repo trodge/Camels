@@ -51,6 +51,8 @@ class Material {
     unsigned int id;
     std::string name;
     double amount;
+    double perish;
+    double carry;
     double consumption;
     double demandSlope;
     double demandIntercept;
@@ -67,16 +69,19 @@ class Material {
     void updateButton(std::string &aT, bool gS, TextBox *b) const;
 
 public:
-    Material(unsigned int i, const std::string &n, double a, double c, double dS, double dI, SDL_Surface *img)
-        : id(i), name(n), amount(a), consumption(c), demandSlope(dS), demandIntercept(dI),
+    Material(unsigned int i, const std::string &n, double a, double p, double c, double cs, double dS, double dI, SDL_Surface *img)
+        : id(i), name(n), amount(a), perish(p), carry(c), consumption(cs), demandSlope(dS), demandIntercept(dI),
           minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
-    Material(unsigned int i, const std::string &n, double c, double dS, double dI, SDL_Surface *img)
-        : Material(i, n, 0., c, dS, dI, img) {}
-    Material(unsigned int i, const std::string &n, double c, double dS, double dI)
-        : Material(i, n, c, dS, dI, nullptr) {}
-    Material(unsigned int i, const std::string &n, double a, SDL_Surface *img) : Material(i, n, a, 0., 0., 0., img) {}
+    Material(unsigned int i, const std::string &n, double cs, double dS, double dI, SDL_Surface *img)
+        : Material(i, n, 0., 0., 0., cs, dS, dI, img) {}
+    Material(unsigned int i, const std::string &n, double cs, double dS, double dI)
+        : Material(i, n, cs, dS, dI, nullptr) {}
+    Material(unsigned int i, const std::string &n, double a, SDL_Surface *img)
+        : Material(i, n, a, 0., 0., 0., 0., 0., img) {}
     Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, nullptr) {}
-    Material(unsigned int i, const std::string &n, SDL_Surface *img) : Material(i, n, 0., img) {}
+    Material(unsigned int i, const std::string &n, double p, double c, SDL_Surface *img)
+        : Material(i, n, 0., p, c, 0., 0., 0., img) {}
+    Material(unsigned int i, const std::string &n, double p, double c) : Material(i, n, p, c, nullptr) {}
     Material(unsigned int i, const std::string &n) : Material(i, n, 0.) {}
     Material(unsigned int i, double a) : Material(i, "", a) {}
     Material(unsigned int i) : Material(i, 0.) {}
@@ -88,22 +93,25 @@ public:
     unsigned int getId() const { return id; }
     std::string getName() const { return name; }
     double getAmount() const { return amount; }
+    double getPerish() const { return perish; }
+    double getCarry() const { return carry; }
     double getConsumption() const { return consumption; }
     double getDemandSlope() const { return demandSlope; }
     double getMaxPrice() const { return demandIntercept; }
     double getMinPrice() const { return minPrice; }
-    double getPrice(double q) const;
-    double getPrice() const;
-    double getCost(double q) const;
-    double getQuantity(double p, double &e) const;
-    double getQuantity(double p) const;
-    double getQuantum(double c) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
-    double getBuyScore(double p, double b) const {
+    double weight() const { return amount * carry; }
+    double price(double q) const;
+    double price() const;
+    double cost(double q) const;
+    double quantity(double p, double &e) const;
+    double quantity(double p) const;
+    double quantum(double c) const;
+    double buyScore(double p, double b) const {
         if (p != 0.) return b / p;
         return 0;
     } // score selling at price p
-    double getSellScore(double p, double s) const {
+    double sellScore(double p, double s) const {
         if (s != 0.) return p / s;
         return 0;
     } // score buying at price p
@@ -117,7 +125,6 @@ public:
     void use(double a);
     void put(Material &m);
     void create(double a);
-    double perish(unsigned int e, double p);
     double consume(unsigned int e);
     void updateButton(bool gS, TextBox *b) const;
     void updateButton(bool gS, double oV, unsigned int rC, TextBox *b) const;

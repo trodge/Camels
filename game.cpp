@@ -191,20 +191,20 @@ void Game::loadData(sqlite3 *cn) {
 
     // Load goods.
     std::vector<Good> goods;
-    quer = sql::makeQuery(cn, "SELECT good_id, name, perish, carry, measure, shoots FROM goods");
+    quer = sql::makeQuery(cn, "SELECT good_id, name, measure, shoots FROM goods");
     while (sqlite3_step(quer.get()) != SQLITE_DONE)
         goods.push_back(Good(static_cast<unsigned int>(sqlite3_column_int(quer.get(), 0)),
                              std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1))),
-                             sqlite3_column_double(quer.get(), 2), sqlite3_column_double(quer.get(), 3),
-                             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 4))),
-                             static_cast<unsigned int>(sqlite3_column_int(quer.get(), 5))));
+                             std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 2))),
+                             static_cast<unsigned int>(sqlite3_column_int(quer.get(), 3))));
 
     // Load materials for goods.
-    quer = sql::makeQuery(cn, "SELECT good_id, material_id FROM materials");
-    while (sqlite3_step(quer.get()) != SQLITE_DONE)
-        goods[static_cast<size_t>(sqlite3_column_int(quer.get(), 0))].addMaterial(
-            goods[static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1))]);
-
+    quer = sql::makeQuery(cn, "SELECT good_id, material_id, perish, carry FROM materials");
+    while (sqlite3_step(quer.get()) != SQLITE_DONE) {
+        auto mId = static_cast<unsigned int>(sqlite3_column_int(quer.get(), 1));
+        goods[static_cast<size_t>(sqlite3_column_int(quer.get(), 0))].addMaterial(Material(
+            mId, goods[mId].getName(), sqlite3_column_double(quer.get(), 2), sqlite3_column_double(quer.get(), 3)));
+    }
     // Load good images.
     int imageSize = screenRect.h * Settings::getGoodButtonSizeMultiplier() * 13 / 15 / Settings::getGoodButtonYDivisor() -
                     2 * Settings::getTradeBorder();

@@ -117,8 +117,8 @@ class Traveler {
     void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
-    void refreshBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void createBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void unequip(unsigned int pI);
     void equip(Good &g);
     void equip(unsigned int pI);
@@ -162,7 +162,7 @@ public:
     bool getMoving() const { return moving; }
     int getPX() const { return px; }
     int getPY() const { return py; }
-    double netWeight() const;
+    double weight() const;
     bool fightWon() const { return target && (target->choice == FightChoice::yield || !target->alive()); }
     double getFightTime() const { return fightTime; }
     FightChoice getChoice() const { return choice; }

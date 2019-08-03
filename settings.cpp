@@ -91,11 +91,10 @@ void loadColor(const std::string &n, SDL_Color &c, const SDL_Color &d, const pt:
     c.a = t.get(n + "_a", d.a);
 }
 
-template<class OutputIt, class T> void loadRange(const std::string &n, OutputIt bgn, const std::initializer_list<T> &dfs,
-                                                 const::pt::ptree &t) {
+template <class OutputIt, class T>
+void loadRange(const std::string &n, OutputIt bgn, const std::initializer_list<T> &dfs, const ::pt::ptree &t) {
     auto it = bgn;
-    for (auto &df : dfs)
-        *it++ = t.get(n + "_" + std::to_string(it - bgn), df);
+    for (auto &df : dfs) *it++ = t.get(n + "_" + std::to_string(it - bgn), df);
 }
 
 void Settings::load(const fs::path &p) {
@@ -180,9 +179,8 @@ void saveColor(const std::string &n, const SDL_Color &c, pt::ptree &t) {
     t.put(n + "_b", c.b);
 }
 
-template<class InputIt> void saveRange(const std::string &n, InputIt bgn, InputIt end, pt::ptree &t) {
-    for (auto it = bgn; it != end; ++it)
-        t.put(n + "_" + std::to_string(it - bgn), *it);
+template <class InputIt> void saveRange(const std::string &n, InputIt bgn, InputIt end, pt::ptree &t) {
+    for (auto it = bgn; it != end; ++it) t.put(n + "_" + std::to_string(it - bgn), *it);
 }
 
 void Settings::save(const fs::path &p) {

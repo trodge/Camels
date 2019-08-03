@@ -117,46 +117,40 @@ double AI::lootScore(const std::vector<Good> &tGs) const {
 
 void AI::trade() {
     // Attempt to make best possible single trade in current town.
-    double amount, score, offerValue = 0;
     traveler.clearTrade();
-    auto &gs = traveler.goods;
-    auto &tGs = traveler.toTown->getGoods();
-    double weight = traveler.netWeight(), offerWeight = 0.;
-    bool overWeight = weight > 0;
-    double bestScore = 0;
+    double amount, score, offerValue = 0, weight = traveler.weight(), offerWeight = 0., bestScore = 0.;
+    bool overWeight = weight > 0.;
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
     auto mII = begin(materialInfo); // material info iterator
+    auto &tGs = traveler.toTown->getGoods();
     // Loop through goods excluding labor.
-    for (auto gI = begin(gs) + 1; gI != end(gs); ++gI) {
-        double carry = gI->getCarry();
-        if (!overWeight || carry > 0.) {
-            // Can carry given good.
-            auto &gMs = gI->getMaterials();
-            for (auto mI = begin(gMs); mI != end(gMs); ++mI) {
-                auto &tM = tGs[gI->getId()].getMaterial(*mI);
-                amount = mI->getAmount();
+    for (auto &g : traveler.goods)
+        for (auto &m : g.getMaterials()) {
+            double mWgt = m.weight();
+            if (!overWeight || mWgt > 0.) {
+                // Either we are not over weight or given material doesn't help carry.
+                auto &tM = tGs[g.getId()].getMaterial(m);
+                amount = m.getAmount();
                 if (amount > 0.) {
-                    if (carry < 0 && weight > carry * amount)
+                    if (mWgt < 0. && weight > mWgt)
                         // This good is needed to carry existing goods, reduce amount.
-                        amount = weight / carry;
+                        amount *= weight / mWgt;
                     if (amount <= 0) continue;
-                    score = mI->getSellScore(tM.getPrice(), mII->sell); // score based on minimum sell price
-                    if ((overWeight && carry * amount > offerWeight) || (score > bestScore)) {
-                        // Either we are over weight and good is heavier than previous offer
-                        // or this good scores better.
+                    score = m.sellScore(tM.price(), mII->sell); // score based on minimum sell price
+                    if ((overWeight && mWgt > offerWeight) || (score > bestScore)) {
+                        // Either we are over weight and good is heavier than previous offer or this good scores better.
                         bestScore = score;
-                        if (!gI->getSplit()) amount = floor(amount);
-                        bestGood = std::make_unique<Good>(gI->getId(), gI->getName(), amount, gI->getMeasure());
-                        bestGood->addMaterial(Material(mI->getId(), mI->getName(), amount));
-                        offerValue = tM.getPrice(amount);
-                        offerWeight = amount * carry;
+                        if (!g.getSplit()) amount = floor(amount);
+                        bestGood = std::make_unique<Good>(g.getId(), g.getName(), amount, g.getMeasure());
+                        bestGood->addMaterial(Material(m.getId(), m.getName(), amount));
+                        offerValue = tM.price(amount);
+                        offerWeight = mWgt;
                     }
                 }
-                ++mII;
             }
+            ++mII;
         }
-    }
     // If no good found, stop trading.
     if (!bestGood) return;
     // Add best good to offer if found.
@@ -167,25 +161,24 @@ void AI::trade() {
         bestScore = 0;
     else
         bestScore = 1 / bestScore;
-    double excess;
+    double excess, townProfit = Settings::getTownProfit();
     amount = 0;
     // Find highest buy score.
     mII = begin(materialInfo); // material info iterator
-    // Loop through goods excluding labor.
-    for (auto gI = begin(tGs) + 1; gI != end(tGs); ++gI) {
-        double carry = gI->getCarry();
-        if (!overWeight || carry < 0) {
-            auto &gMs = gI->getMaterials();
-            for (auto mI = begin(gMs); mI != end(gMs); ++mI) {
-                auto &rM = gs[gI->getId()].getMaterial(*mI);
-                score = rM.getBuyScore(mI->getPrice(),
-                                       mII->buy); // score based on maximum buy price
+    // Loop through goods.
+    for (auto &tG : tGs)
+        for (auto &tM : tG.getMaterials()) {
+            double carry = tM.getCarry();
+            if (!overWeight || carry < 0.) {
+                auto &rM = traveler.goods[tG.getId()].getMaterial(tM);
+                score = rM.buyScore(tM.price(),
+                                    mII->buy); // score based on maximum buy price
                 ++mII;
                 if (score > bestScore) {
                     bestScore = score;
                     // Remove amout town takes as profit, store excess.
-                    excess = 0;
-                    amount = mI->getQuantity(offerValue * Settings::getTownProfit(), excess);
+                    excess = 0.;
+                    amount = tM.quantity(offerValue * townProfit, excess);
                     if (amount > 0.) {
                         if (overWeight) {
                             // Try to buy minimum that will bring net weight back below 0
@@ -195,18 +188,17 @@ void AI::trade() {
                                 amount = needed;
                             }
                         }
-                        if (!gI->getSplit())
+                        if (!tG.getSplit())
                             // Remove extra portion of goods that don't split.
                             excess += modf(amount, &amount);
                         // Convert the excess from units of bought good to deniers.
-                        excess = mI->getPrice(excess);
-                        bestGood = std::make_unique<Good>(gI->getId(), gI->getName(), amount, gI->getMeasure());
-                        bestGood->addMaterial(Material(mI->getId(), mI->getName(), amount));
+                        excess = tM.price(excess);
+                        bestGood = std::make_unique<Good>(tG.getId(), tG.getName(), amount, tG.getMeasure());
+                        bestGood->addMaterial(Material(tM.getId(), tM.getName(), amount));
                     }
                 }
             }
         }
-    }
     if (!bestGood) return;
     if (excess > 0.) traveler.divideExcess(excess);
     traveler.request.push_back(*bestGood);
@@ -293,7 +285,7 @@ void AI::loot() {
         // Looting from an alive target dependent on greed.
         lootGoal *= decisionCriteria[7] / Settings::getCriteriaMax();
     double looted = 0.; // value that has already been looted
-    double weight = traveler.netWeight();
+    double weight = traveler.weight();
     while (looted < lootGoal) {
         // Keep looting until amount looted matches goal or we can carry no more.
         std::unique_ptr<Good> bestGood;
@@ -306,7 +298,7 @@ void AI::loot() {
                 double amount = tGM.getAmount();
                 if (amount > 0.) {
                     double value = mII->value;
-                    double carry = tG.getCarry();
+                    double carry = tGM.getCarry();
                     double score;
                     if (carry > 0.)
                         // Heavier goods score lower.
@@ -330,7 +322,7 @@ void AI::loot() {
                 ++mII;
             }
         }
-        if (!bestGood || weight + bestGood->weight() > 0.) break;
+        if (!bestGood || weight + bestGood->getMaterial().weight() > 0.) break;
         looted += bestLooted;
         // Loot the current best good from target.
         traveler.loot(*bestGood, *tgt);
@@ -380,7 +372,7 @@ void AI::setLimits() {
             for (auto &n : nearby) {
                 // Loop through nearby towns to collect price info.
                 auto &nM = n.town->getGood(i).getMaterial(j);
-                double price = nM.getPrice();
+                double price = nM.price();
                 if (price > 0.)
                     // Good i material j is sold in nearby town k.
                     prices.push_back(price);
@@ -396,13 +388,13 @@ void AI::setLimits() {
             for (auto &n : nearby) {
                 // Loop through nearby towns again now that material info has been gathered.
                 auto &nM = n.town->getGood(i).getMaterial(j);
-                double price = nM.getPrice();
+                double price = nM.price();
                 if (hasMaterial && price > 0.) {
-                    double sellScore = gM.getSellScore(price, mII->sell);
+                    double sellScore = gM.sellScore(price, mII->sell);
                     if (sellScore > n.sellScore) n.sellScore = sellScore;
                 } else {
                     // Currently only scores buying materials not already owned.
-                    double buyScore = gM.getBuyScore(price, mII->buy);
+                    double buyScore = gM.buyScore(price, mII->buy);
                     if (buyScore > n.buyScore) n.buyScore = buyScore;
                 }
             }

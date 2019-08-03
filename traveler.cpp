@@ -94,9 +94,11 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
                                     latitude, sGoods, sProperties, sStats, sParts, sEquipment, 0, moving);
 }
 
-double Traveler::netWeight() const {
-    return std::accumulate(begin(goods), end(goods), static_cast<double>(stats[0]) * kTravelerCarry,
-                           [](double d, Good g) { return d + g.weight(); });
+double Traveler::weight() const {
+    return std::accumulate(begin(goods), end(goods), static_cast<double>(stats[0]) * kTravelerCarry, [](double d, const Good &g) {
+        auto &ms = g.getMaterials();
+        return std::accumulate(begin(ms), end(ms), d, [](double d, const Material &m) { return d + m.weight(); });
+    });
 }
 
 std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
@@ -180,7 +182,7 @@ void Traveler::changePortion(double d) { setPortion(portion + d); }
 
 void Traveler::pickTown(const Town *t) {
     // Start moving toward given town.
-    if (netWeight() > 0 || moving) return;
+    if (weight() > 0 || moving) return;
     const auto &path = pathTo(t);
     if (path.empty() || path.front() == toTown) return;
     toTown = path.front();
@@ -254,7 +256,7 @@ void Traveler::divideExcess(double ec) {
     for (auto &of : offer) {
         // Convert value to quantity of this good.
         auto &tM = toTown->getGood(of.getId()).getMaterial(of.getMaterial()); // town material
-        double q = tM.getQuantity(ec / Settings::getTownProfit());
+        double q = tM.quantity(ec / Settings::getTownProfit());
         if (!goods[of.getId()].getSplit()) q = floor(q);
         // Reduce quantity.
         of.use(q);
@@ -305,7 +307,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
             double amount = m.getAmount() * portion;
             if (!g.getSplit()) amount = floor(amount);
             auto &tM = toTown->getGood(g.getId()).getMaterial(m); // town material
-            double p = tM.getPrice(amount);
+            double p = tM.price(amount);
             if (p > 0.) {
                 offerValue += p;
                 offer.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
@@ -329,12 +331,12 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
             m.updateButton(g.getSplit(), offerValue, std::max(1u, requestCount), bx);
             if (bx->getClicked() && offerValue > 0.) {
                 double mE = 0; // excess quantity of this material
-                double amount = m.getQuantity(offerValue / requestCount * Settings::getTownProfit(), mE);
+                double amount = m.quantity(offerValue / requestCount * Settings::getTownProfit(), mE);
                 if (!g.getSplit())
                     // Remove extra portion of goods that don't split.
                     mE += modf(amount, &amount);
                 // Convert material excess to value and add to overall excess.
-                excess += m.getPrice(mE);
+                excess += m.price(mE);
                 request.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
                 request.back().addMaterial(Material(m.getId(), m.getName(), amount));
             }
@@ -353,8 +355,9 @@ void Traveler::deposit(Good &g) {
         storage.reserve(townGoods.size());
         for (auto &g : townGoods) {
             // Copy goods from town, omitting amounts.
-            storage.push_back(Good(g.getId(), g.getName(), g.getPerish(), g.getCarry(), g.getMeasure()));
-            for (auto &m : g.getMaterials()) storage.back().addMaterial(Material(m.getId(), m.getName(), m.getImage()));
+            storage.push_back(Good(g.getId(), g.getName(), g.getMeasure()));
+            for (auto &m : g.getMaterials())
+                storage.back().addMaterial(Material(m.getId(), m.getName(), m.getPerish(), m.getCarry(), m.getImage()));
         }
     }
     unsigned int gId = g.getId();
@@ -420,8 +423,8 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     firstBox.rect.x = rt.x;
     firstBox.foreground = toTown->getNation()->getForeground();
     firstBox.background = toTown->getNation()->getBackground();
-    createGoodButtons(pgrs[2], properties[toTown->getId() - 1].storage, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
-                      [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
+    createGoodButtons(pgrs[2], properties[toTown->getId() - 1].storage, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD,
+                      firstBox, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
                           return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
                               Good dG(g.getId(), g.getAmount() * portion);
                               dG.addMaterial(Material(m.getId(), m.getAmount()));
@@ -456,14 +459,14 @@ void Traveler::demolish(const Business &bsn, double a) {
     if (oBsnIt->getArea() == 0.) oBsns.erase(oBsnIt);
 }
 
-void Traveler::refreshBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Delete and re-create manage buttons to reflect changes.
     for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
-    createBuildButtons (pgrs, fB, pr);
+    createBuildButtons(pgrs, fB, pr);
     refreshFocusBox(pgrs, fB);
 }
 
-void Traveler::createBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for managing businesses.
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
@@ -485,7 +488,7 @@ void Traveler::createBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &p
     for (auto &bsn : oBsns) {
         boxInfo.onClick = [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             demolish(bsn, bsn.getArea() * portion);
-            refreshBuildButtons (pgrs, fB, pr);
+            refreshBuildButtons(pgrs, fB, pr);
         };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
@@ -517,7 +520,7 @@ void Traveler::createBuildButtons (std::vector<Pager> &pgrs, int &fB, Printer &p
             for (auto &rq : bsn.getRequirements())
                 buildable = std::min(buildable, goods[rq.getId()].getAmount() * portion / rq.getAmount());
             if (buildable > 0.) build(bsn, buildable);
-            refreshBuildButtons (pgrs, fB, pr);
+            refreshBuildButtons(pgrs, fB, pr);
         };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
@@ -1001,7 +1004,7 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
 
 void Traveler::startAI() {
     // Initialize variables for running a new AI.
-    
+
     aI = std::make_unique<AI>(*this);
 }
 

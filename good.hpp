@@ -33,8 +33,6 @@ class Good {
     std::string name;
     double amount;
     std::vector<Material> materials;
-    double perish;
-    double carry;
     std::string measure;
     bool split;
     double max = 0.;
@@ -42,14 +40,11 @@ class Good {
     void removeExcess();
 
 public:
-    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m, unsigned int s)
-        : id(i), name(n), amount(a), perish(p), carry(c), measure(m), split(!m.empty()), shoots(s) {}
-    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m, unsigned int s)
-        : Good(i, n, 0., p, c, m, s) {}
-    Good(unsigned int i, const std::string &n, double a, double p, double c, const std::string &m)
-        : Good(i, n, a, p, c, m, 0) {}
-    Good(unsigned int i, const std::string &n, double p, double c, const std::string &m) : Good(i, n, 0., p, c, m) {}
-    Good(unsigned int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, 0., 0., m) {}
+    Good(unsigned int i, const std::string &n, double a, const std::string &m, unsigned int s)
+        : id(i), name(n), amount(a), measure(m), split(!m.empty()), shoots(s) {}
+    Good(unsigned int i, const std::string &n, const std::string &m, unsigned int s) : Good(i, n, 0., m, s) {}
+    Good(unsigned int i, const std::string &n, double a, const std::string &m) : Good(i, n, a, m, 0) {}
+    Good(unsigned int i, const std::string &n, const std::string &m) : Good(i, n, 0., m) {}
     Good(unsigned int i, const std::string &n, double a) : Good(i, n, a, "") {}
     Good(unsigned int i, const std::string &n) : Good(i, n, 0) {}
     Good(unsigned int i, double a) : Good(i, "", a) {}
@@ -67,20 +62,16 @@ public:
     const Material &getMaterial(const Material &m) const;
     const Material &getMaterial(const std::string &mNm) const;
     const Material &getMaterial() const { return materials.front(); }
-    double getCarry() const { return carry; }
-    double getPerish() const { return perish; }
     double getAmount() const { return amount; }
     const std::string &getMeasure() const { return measure; }
     bool getSplit() const { return split; }
     double getMax() const { return max; }
     unsigned int getShoots() const { return shoots; }
-    double weight() const { return carry * amount; }
     double getConsumption() const;
     std::string businessText() const;
     std::string logText() const;
     void setAmount(double a);
     void addMaterial(const Material &m);
-    void addMaterial(const Good &g);
     void setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs);
     void setMax() { max = std::abs(getConsumption()) * Settings::getConsumptionSpaceFactor(); }
     void setMax(double m) {

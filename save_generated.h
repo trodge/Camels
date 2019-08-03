@@ -156,12 +156,14 @@ struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_ID = 4,
     VT_NAME = 6,
     VT_AMOUNT = 8,
-    VT_CONSUMPTION = 10,
-    VT_DEMANDSLOPE = 12,
-    VT_DEMANDINTERCEPT = 14,
-    VT_PERISHCOUNTERS = 16,
-    VT_COMBATSTATS = 18,
-    VT_LIMITFACTOR = 20
+    VT_PERISH = 10,
+    VT_CARRY = 12,
+    VT_CONSUMPTION = 14,
+    VT_DEMANDSLOPE = 16,
+    VT_DEMANDINTERCEPT = 18,
+    VT_PERISHCOUNTERS = 20,
+    VT_COMBATSTATS = 22,
+    VT_LIMITFACTOR = 24
   };
   uint32_t id() const {
     return GetField<uint32_t>(VT_ID, 0);
@@ -171,6 +173,12 @@ struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   double amount() const {
     return GetField<double>(VT_AMOUNT, 0.0);
+  }
+  double perish() const {
+    return GetField<double>(VT_PERISH, 0.0);
+  }
+  double carry() const {
+    return GetField<double>(VT_CARRY, 0.0);
   }
   double consumption() const {
     return GetField<double>(VT_CONSUMPTION, 0.0);
@@ -196,6 +204,8 @@ struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
            VerifyField<double>(verifier, VT_AMOUNT) &&
+           VerifyField<double>(verifier, VT_PERISH) &&
+           VerifyField<double>(verifier, VT_CARRY) &&
            VerifyField<double>(verifier, VT_CONSUMPTION) &&
            VerifyField<double>(verifier, VT_DEMANDSLOPE) &&
            VerifyField<double>(verifier, VT_DEMANDINTERCEPT) &&
@@ -219,6 +229,12 @@ struct MaterialBuilder {
   }
   void add_amount(double amount) {
     fbb_.AddElement<double>(Material::VT_AMOUNT, amount, 0.0);
+  }
+  void add_perish(double perish) {
+    fbb_.AddElement<double>(Material::VT_PERISH, perish, 0.0);
+  }
+  void add_carry(double carry) {
+    fbb_.AddElement<double>(Material::VT_CARRY, carry, 0.0);
   }
   void add_consumption(double consumption) {
     fbb_.AddElement<double>(Material::VT_CONSUMPTION, consumption, 0.0);
@@ -255,6 +271,8 @@ inline flatbuffers::Offset<Material> CreateMaterial(
     uint32_t id = 0,
     flatbuffers::Offset<flatbuffers::String> name = 0,
     double amount = 0.0,
+    double perish = 0.0,
+    double carry = 0.0,
     double consumption = 0.0,
     double demandSlope = 0.0,
     double demandIntercept = 0.0,
@@ -266,6 +284,8 @@ inline flatbuffers::Offset<Material> CreateMaterial(
   builder_.add_demandIntercept(demandIntercept);
   builder_.add_demandSlope(demandSlope);
   builder_.add_consumption(consumption);
+  builder_.add_carry(carry);
+  builder_.add_perish(perish);
   builder_.add_amount(amount);
   builder_.add_combatStats(combatStats);
   builder_.add_perishCounters(perishCounters);
@@ -279,6 +299,8 @@ inline flatbuffers::Offset<Material> CreateMaterialDirect(
     uint32_t id = 0,
     const char *name = nullptr,
     double amount = 0.0,
+    double perish = 0.0,
+    double carry = 0.0,
     double consumption = 0.0,
     double demandSlope = 0.0,
     double demandIntercept = 0.0,
@@ -293,6 +315,8 @@ inline flatbuffers::Offset<Material> CreateMaterialDirect(
       id,
       name__,
       amount,
+      perish,
+      carry,
       consumption,
       demandSlope,
       demandIntercept,
@@ -307,10 +331,8 @@ struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_NAME = 6,
     VT_AMOUNT = 8,
     VT_MATERIALS = 10,
-    VT_PERISH = 12,
-    VT_CARRY = 14,
-    VT_MEASURE = 16,
-    VT_SHOOTS = 18
+    VT_MEASURE = 12,
+    VT_SHOOTS = 14
   };
   uint32_t id() const {
     return GetField<uint32_t>(VT_ID, 0);
@@ -323,12 +345,6 @@ struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   const flatbuffers::Vector<flatbuffers::Offset<Material>> *materials() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Material>> *>(VT_MATERIALS);
-  }
-  double perish() const {
-    return GetField<double>(VT_PERISH, 0.0);
-  }
-  double carry() const {
-    return GetField<double>(VT_CARRY, 0.0);
   }
   const flatbuffers::String *measure() const {
     return GetPointer<const flatbuffers::String *>(VT_MEASURE);
@@ -345,8 +361,6 @@ struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_MATERIALS) &&
            verifier.VerifyVector(materials()) &&
            verifier.VerifyVectorOfTables(materials()) &&
-           VerifyField<double>(verifier, VT_PERISH) &&
-           VerifyField<double>(verifier, VT_CARRY) &&
            VerifyOffset(verifier, VT_MEASURE) &&
            verifier.VerifyString(measure()) &&
            VerifyField<uint32_t>(verifier, VT_SHOOTS) &&
@@ -368,12 +382,6 @@ struct GoodBuilder {
   }
   void add_materials(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Material>>> materials) {
     fbb_.AddOffset(Good::VT_MATERIALS, materials);
-  }
-  void add_perish(double perish) {
-    fbb_.AddElement<double>(Good::VT_PERISH, perish, 0.0);
-  }
-  void add_carry(double carry) {
-    fbb_.AddElement<double>(Good::VT_CARRY, carry, 0.0);
   }
   void add_measure(flatbuffers::Offset<flatbuffers::String> measure) {
     fbb_.AddOffset(Good::VT_MEASURE, measure);
@@ -399,13 +407,9 @@ inline flatbuffers::Offset<Good> CreateGood(
     flatbuffers::Offset<flatbuffers::String> name = 0,
     double amount = 0.0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Material>>> materials = 0,
-    double perish = 0.0,
-    double carry = 0.0,
     flatbuffers::Offset<flatbuffers::String> measure = 0,
     uint32_t shoots = 0) {
   GoodBuilder builder_(_fbb);
-  builder_.add_carry(carry);
-  builder_.add_perish(perish);
   builder_.add_amount(amount);
   builder_.add_shoots(shoots);
   builder_.add_measure(measure);
@@ -421,8 +425,6 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
     const char *name = nullptr,
     double amount = 0.0,
     const std::vector<flatbuffers::Offset<Material>> *materials = nullptr,
-    double perish = 0.0,
-    double carry = 0.0,
     const char *measure = nullptr,
     uint32_t shoots = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
@@ -434,8 +436,6 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
       name__,
       amount,
       materials__,
-      perish,
-      carry,
       measure__,
       shoots);
 }
