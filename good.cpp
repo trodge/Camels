@@ -228,13 +228,15 @@ void Good::saveDemand(unsigned long p, std::string &u) const {
     }
 }
 
-void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, int dx, int dy, BoxInfo bI, Printer &pr,
+void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, BoxInfo bI, Printer &pr,
                        const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn) {
     // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
+    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(), dy = (rt.h + m) / Settings::getGoodButtonRows();
+    bI.rect = {rt.x, rt.y, dx - m, dy - m};
     std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
     for (auto &g : gds) {
         for (auto &m : g.getMaterials())
-            if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
+            if (true || (m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
                 bI.onClick = fn(g, m);
                 bxs.push_back(g.button(true, m, bI, pr));
                 bI.rect.x += dx;

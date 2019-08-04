@@ -266,25 +266,21 @@ void Traveler::divideExcess(double ec) {
 void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     // Create offer and request buttons for the player on given pagers.
     const SDL_Rect &sR = Settings::getScreenRect();
-    int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
-        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
     SDL_Rect rt = {sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 24 / 31};
-    BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
-                     .foreground = nation->getForeground(),
+    BoxInfo boxInfo{.foreground = nation->getForeground(),
                      .background = nation->getBackground(),
                      .border = Settings::getTradeBorder(),
                      .radius = Settings::getTradeRadius(),
                      .fontSize = Settings::getTradeFontSize()};
-    createGoodButtons(pgrs[1], goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+    createGoodButtons(pgrs[1], goods, rt, boxInfo, pr,
                       [this, &pgrs](const Good &, const Material &) {
                           return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
                       });
     rt.x = sR.w * 16 / 31;
-    firstBox.rect.x = rt.x;
-    firstBox.foreground = toTown->getNation()->getForeground();
-    firstBox.background = toTown->getNation()->getBackground();
-    createGoodButtons(pgrs[2], toTown->getGoods(), rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+    boxInfo.foreground = toTown->getNation()->getForeground();
+    boxInfo.background = toTown->getNation()->getBackground();
+    createGoodButtons(pgrs[2], toTown->getGoods(), rt, boxInfo, pr,
                       [this, &pgrs](const Good &, const Material &) {
                           return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
                       });
@@ -400,17 +396,14 @@ void Traveler::refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer 
 void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for depositing and withdrawing goods to and from the current town.
     const SDL_Rect &sR = Settings::getScreenRect();
-    int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
-        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
     SDL_Rect rt{sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
-    BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
-                     .foreground = nation->getForeground(),
+    BoxInfo boxInfo{ .foreground = nation->getForeground(),
                      .background = nation->getBackground(),
                      .border = Settings::getTradeBorder(),
                      .radius = Settings::getTradeRadius(),
                      .fontSize = Settings::getTradeFontSize()};
-    createGoodButtons(pgrs[1], goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+    createGoodButtons(pgrs[1], goods, rt, boxInfo, pr,
                       [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
                           return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
                               double amt = m.getAmount() * portion;
@@ -421,11 +414,10 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
                           };
                       });
     rt.x = sR.w * 16 / 31;
-    firstBox.rect.x = rt.x;
-    firstBox.foreground = toTown->getNation()->getForeground();
-    firstBox.background = toTown->getNation()->getBackground();
-    createGoodButtons(pgrs[2], properties[toTown->getId() - 1].storage, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD,
-                      firstBox, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
+    boxInfo.foreground = toTown->getNation()->getForeground();
+    boxInfo.background = toTown->getNation()->getBackground();
+    createGoodButtons(pgrs[2], properties[toTown->getId() - 1].storage, rt, boxInfo,
+                      pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
                           return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
                               double amt = m.getAmount() * portion;
                               Good dG(g.getId(), amt);
@@ -473,14 +465,12 @@ void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     const SDL_Rect &sR = Settings::getScreenRect();
     const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
                     &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
-        bBXD = Settings::getBusinessButtonXDivisor(), bBYD = Settings::getBusinessButtonYDivisor(),
-        bBSzM = Settings::getBusinessButtonSizeMultiplier(), bBScM = Settings::getBusinessButtonSpaceMultiplier();
+    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
     // Create buttons for demolishing businesses.
     std::vector<Business> &oBsns = properties[toTown->getId() - 1].businesses;
-    int left = sR.w / bBXD, right = sR.w / 2, top = sR.h * 2 / 31, bottom = sR.h * 28 / 31,
-        dx = (right - left) * bBScM / bBXD, dy = (bottom - top) * bBScM / bBYD;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * bBSzM / bBXD, (bottom - top) * bBSzM / bBYD},
+    SDL_Rect rt = {sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 24 / 31};
+    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getBusinessButtonColumns(), dy = (rt.h + m) / Settings::getBusinessButtonRows();
+    BoxInfo boxInfo{.rect = {rt.x, rt.y, dx - m, dy - m},
                     .foreground = fgr,
                     .background = bgr,
                     .border = tB,
@@ -494,25 +484,24 @@ void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
         };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
-        if (boxInfo.rect.x + boxInfo.rect.w >= right) {
+        if (boxInfo.rect.x + boxInfo.rect.w >= rt.x + rt.w) {
             // Reached end of line, carriage return.
-            boxInfo.rect.x = left;
+            boxInfo.rect.x = rt.x;
             boxInfo.rect.y += dy;
-            if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                // Reached bottom of page, flush vector.
+            if (boxInfo.rect.y + boxInfo.rect.h >= rt.y + rt.h) {
+                // Reached rt.y + rt.h of page, flush vector.
                 pgrs[1].addPage(bxs);
-                boxInfo.rect.y = top;
+                boxInfo.rect.y = rt.y;
             }
         }
     }
     if (bxs.size())
         // Flush remaining boxes to new page.
         pgrs[1].addPage(bxs);
-    const std::vector<Business> &tBsns = toTown->getBusinesses();
-    left = sR.w / 2 + sR.w / bBXD;
-    right = sR.w - sR.w / bBXD;
-    boxInfo.rect.x = left;
-    boxInfo.rect.y = top;
+    auto &tBsns = toTown->getBusinesses();
+    rt.x = sR.w * 16 / 31;
+    boxInfo.rect.x = rt.x;
+    boxInfo.rect.y = rt.y;
     boxInfo.foreground = tFgr;
     boxInfo.background = tBgr;
     for (auto &bsn : tBsns) {
@@ -526,14 +515,14 @@ void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
         };
         bxs.push_back(bsn.button(true, boxInfo, pr));
         boxInfo.rect.x += dx;
-        if (boxInfo.rect.x + boxInfo.rect.w >= right) {
+        if (boxInfo.rect.x + boxInfo.rect.w >= rt.x + rt.w) {
             // Reached end of line, carriage return.
-            boxInfo.rect.x = left;
+            boxInfo.rect.x = rt.x;
             boxInfo.rect.y += dy;
-            if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                // Reached bottom of page, flush vector.
+            if (boxInfo.rect.y + boxInfo.rect.h >= rt.y + rt.h) {
+                // Reached rt.y + rt.h of page, flush vector.
                 pgrs[2].addPage(bxs);
-                boxInfo.rect.y = top;
+                boxInfo.rect.y = rt.y;
             }
         }
     }
@@ -602,19 +591,16 @@ void Traveler::refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
 void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for equipping equippables.
     const SDL_Rect &sR = Settings::getScreenRect();
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground();
-    int eB = Settings::getEquipBorder(), eR = Settings::getEquipRadius(), eFS = Settings::getEquipFontSize(),
-        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
-        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
-    int left = sR.w / gBXD, top = sR.h / gBYD, dx = sR.w * gBScM / gBXD / 2, dy = sR.h * gBScM / gBYD;
-    BoxInfo boxInfo{.rect = {left, top, sR.w * gBSzM / gBXD / 2, sR.h * gBSzM / gBYD / 2},
-                    .foreground = fgr,
-                    .background = bgr,
-                    .border = eB,
-                    .radius = eR,
-                    .fontSize = eFS};
-    std::array<std::vector<Good>, 6> equippable; // array of vectors corresponding to parts that can hold
-                                                 // equipment
+    SDL_Rect rt{sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
+    int m = Settings::getButtonMargin(), dx = (rt.w + m) / kPartsCount, dy = (rt.h + m) / kPartsCount;
+    BoxInfo boxInfo{.rect = {rt.x, rt.y, dx - m, dy - m},
+                    .foreground = nation->getForeground(),
+                    .background = nation->getBackground(),
+                    .border = Settings::getEquipBorder(),
+                    .radius = Settings::getEquipRadius(),
+                    .fontSize = Settings::getEquipFontSize()};
+    std::array<std::vector<Good>, kPartsCount> equippable; 
+    // array of vectors corresponding to parts that can hold equipment
     for (auto &g : goods)
         for (auto &m : g.getMaterials()) {
             auto &ss = m.getCombatStats();
@@ -639,16 +625,17 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
             pgrs[1].addBox(e.button(false, boxInfo, pr));
             boxInfo.rect.y += dy;
         }
-        boxInfo.rect.y = top;
+        boxInfo.rect.y = rt.y;
         boxInfo.rect.x += dx;
     }
     // Create buttons for unequipping equipment.
-    boxInfo.rect.y = top;
-    left = sR.w / 2 + sR.w / gBXD;
+    rt.x = sR.w * 16 / 31;
+    boxInfo.rect.x = rt.x;
+    boxInfo.rect.y = rt.y;
     for (auto &e : equipment) {
         auto &ss = e.getMaterial().getCombatStats();
         unsigned int pI = ss.front().partId;
-        boxInfo.rect.x = left + static_cast<int>(pI) * dx;
+        boxInfo.rect.x = rt.x + static_cast<int>(pI) * dx;
         boxInfo.onClick = [this, e, &pgrs, pI, &ss, &fB, &pr](MenuButton *) {
             unequip(pI);
             // Equip fists.
@@ -938,16 +925,13 @@ void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
 
 void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     const SDL_Rect &sR = Settings::getScreenRect();
-    int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
-        gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     SDL_Rect rt{sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
-    BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
-                    .foreground = nation->getForeground(),
-                    .background = nation->getBackground(),
-                    .border = Settings::getTradeBorder(),
-                    .radius = Settings::getTradeRadius(),
-                    .fontSize = Settings::getTradeFontSize()};
-    createGoodButtons(pgrs[1], goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+    BoxInfo boxInfo{.foreground = nation->getForeground(),
+                     .background = nation->getBackground(),
+                     .border = Settings::getTradeBorder(),
+                     .radius = Settings::getTradeRadius(),
+                     .fontSize = Settings::getTradeFontSize()};
+    createGoodButtons(pgrs[1], goods, rt, boxInfo, pr,
     [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
         return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
             double amt = m.getAmount() * portion;
@@ -958,11 +942,10 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
         };
     });
     rt.x = sR.w * 16 / 31;
-    firstBox.rect.x = rt.x;
-    firstBox.foreground = target->nation->getForeground();
-    firstBox.background = target->nation->getBackground();
-    createGoodButtons(pgrs[2], target->goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD,
-                      firstBox, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
+    boxInfo.foreground = target->nation->getForeground();
+    boxInfo.background = target->nation->getBackground();
+    createGoodButtons(pgrs[2], target->goods, rt, boxInfo, pr,
+                      [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
                           return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
                               double amt = m.getAmount() * portion;
                             Good lG(g.getId(), amt);

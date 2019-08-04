@@ -95,7 +95,7 @@ public:
     void saveDemand(unsigned long p, std::string &u) const;
 };
 
-void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, int dx, int dy, BoxInfo bI, Printer &pr,
+void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, BoxInfo bI, Printer &pr,
                        const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn);
 
 #endif // GOOD_H

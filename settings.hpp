@@ -31,6 +31,8 @@ namespace fs = boost::filesystem;
 namespace pt = boost::property_tree;
 #include <SDL2/SDL.h>
 
+#include "constants.hpp"
+
 class MenuButton;
 
 struct Image {
@@ -80,14 +82,11 @@ class Settings {
     static int tradeBorder;
     static int tradeRadius;
     static int tradeFontSize;
-    static int goodButtonSizeMultiplier;
-    static int goodButtonSpaceMultiplier;
-    static int goodButtonXDivisor;
-    static int goodButtonYDivisor;
-    static int businessButtonSizeMultiplier;
-    static int businessButtonSpaceMultiplier;
-    static int businessButtonXDivisor;
-    static int businessButtonYDivisor;
+    static int buttonMargin;               // margin between good and business buttons in pixels
+    static int goodButtonColumns;          // number of columns of good buttons
+    static int goodButtonRows;          // number of rows of good buttons
+    static int businessButtonColumns;      // number of columns of business buttons
+    static int businessButtonRows;      // number of rows of business buttons
     static int dayLength;                  // length of a day in milliseconds
     static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
     static int businessRunTime;            // time between business cycles in milliseconds
@@ -96,14 +95,14 @@ class Settings {
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static int minPriceDivisor;
     static double townProfit;
-    static size_t maxTowns;
-    static size_t maxNeighbors;
+    static size_t maxTowns;                   // max number of towns to load from database
+    static size_t connectionCount;            // number of connections each town makes
     static double travelersExponent;
     static int travelersMin;
     static unsigned int statMax;
     static double attackDistSq;
     static double escapeChance;
-    static std::array<double, 6> aITypeWeights;
+    static std::array<double, 6> aIRoleWeights;
     static int criteriaMax;
     static unsigned int aITownRange;
     static double limitFactorMin, limitFactorMax;
@@ -141,15 +140,12 @@ public:
     static int getTradeBorder() { return tradeBorder; }
     static int getTradeRadius() { return tradeRadius; }
     static int getTradeFontSize() { return tradeFontSize; }
-    static int getGoodButtonSizeMultiplier() { return goodButtonSizeMultiplier; }
-    static int getGoodButtonSpaceMultiplier() { return goodButtonSpaceMultiplier; }
-    static int getGoodButtonXDivisor() { return goodButtonXDivisor; }
-    static int getGoodButtonYDivisor() { return goodButtonYDivisor; }
-    static int getBusinessButtonSizeMultiplier() { return businessButtonSizeMultiplier; }
-    static int getBusinessButtonSpaceMultiplier() { return businessButtonSpaceMultiplier; }
-    static int getBusinessButtonXDivisor() { return businessButtonXDivisor; }
-    static int getBusinessButtonYDivisor() { return businessButtonYDivisor; }
-    static int getDayLength() { return dayLength; }
+    static int getButtonMargin() { return buttonMargin; }               
+    static int getGoodButtonColumns() { return goodButtonColumns; }          
+    static int getGoodButtonRows() { return goodButtonRows; }          
+    static int getBusinessButtonColumns() { return businessButtonColumns; }      
+    static int getBusinessButtonRows() { return businessButtonRows; }      
+    static int getDayLength() { return dayLength; }                  
     static unsigned int getBusinessHeadStart() { return businessHeadStart; }
     static int getBusinessRunTime() { return businessRunTime; }
     static int getTravelersCheckTime() { return travelersCheckTime; }
@@ -160,13 +156,13 @@ public:
     static int getMinPriceDivisor() { return minPriceDivisor; }
     static double getTownProfit() { return townProfit; }
     static size_t getMaxTowns() { return maxTowns; }
-    static size_t getMaxNeighbors() { return maxNeighbors; }
+    static size_t getMaxNeighbors() { return connectionCount; }
     static double getTravelersExponent() { return travelersExponent; }
     static int getTravelersMin() { return travelersMin; }
     static unsigned int getStatMax() { return statMax; }
     static double getAttackDistSq() { return attackDistSq; }
     static double getEscapeChance() { return escapeChance; }
-    static const std::array<double, 6> &getAITypeWeights() { return aITypeWeights; }
+    static const std::array<double, 6> &getAIRoleWeights() { return aIRoleWeights; }
     static int getCriteriaMax() { return criteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
     static double getLimitFactorMin() { return limitFactorMin; }

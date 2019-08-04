@@ -22,9 +22,9 @@
 AI::AI(Traveler &tvl) : traveler(tvl) {
     // Initialize variables for running a new AI based on starting goods and current town.
     auto &rng = Settings::getRng();
-    auto &tWs = Settings::getAITypeWeights();
-    std::discrete_distribution<> dis(begin(tWs), end(tWs));
-    type = static_cast<Type>(dis(rng));
+    auto &rWs = Settings::getAIRoleWeights();
+    std::discrete_distribution<> dis(begin(rWs), end(rWs));
+    role = static_cast<Role>(dis(rng));
     randomizeLimitFactors();
     randomizeCriteria();
     const Town *toTown = traveler.toTown;

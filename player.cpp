@@ -456,8 +456,8 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
         if (state != UIState::quitting) {
             if (traveler) {
                 int columnCount = state == UIState::building ?
-                                      Settings::getBusinessButtonXDivisor() / Settings::getBusinessButtonSpaceMultiplier() :
-                                      Settings::getGoodButtonXDivisor() / Settings::getGoodButtonSpaceMultiplier();
+                                      Settings::getBusinessButtonColumns() :
+                                      Settings::getGoodButtonColumns();
                 switch (state) {
                 case UIState::beginning:
                 case UIState::traveling:

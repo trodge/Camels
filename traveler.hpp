@@ -33,6 +33,7 @@
 #include <SDL2/SDL.h>
 
 #include "ai.hpp"
+#include "constants.hpp"
 #include "good.hpp"
 #include "menubutton.hpp"
 #include "nation.hpp"
