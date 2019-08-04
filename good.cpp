@@ -231,6 +231,7 @@ void Good::saveDemand(unsigned long p, std::string &u) const {
 void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, BoxInfo bI, Printer &pr,
                        const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn) {
     // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
+    pgr.setBounds(rt);
     int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(),
         dy = (rt.h + m) / Settings::getGoodButtonRows();
     bI.rect = {rt.x, rt.y, dx - m, dy - m};
@@ -241,11 +242,11 @@ void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect 
                 bI.onClick = fn(g, m);
                 bxs.push_back(g.button(true, m, bI, pr));
                 bI.rect.x += dx;
-                if (bI.rect.x + bI.rect.w >= rt.x + rt.w) {
+                if (bI.rect.x + bI.rect.w > rt.x + rt.w) {
                     // Go back to left and down one row upon reaching right.
                     bI.rect.x = rt.x;
                     bI.rect.y += dy;
-                    if (bI.rect.y + bI.rect.h >= rt.y + rt.h) {
+                    if (bI.rect.y + bI.rect.h > rt.y + rt.h) {
                         // Go back to top and flush current page upon reaching bottom.
                         bI.rect.y = rt.y;
                         pgr.addPage(bxs);

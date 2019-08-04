@@ -137,8 +137,8 @@ void Settings::load(const fs::path &p) {
     tradeBorder = tree.get("ui.tradeBorder", current.h * 2 / 1080);
     tradeRadius = tree.get("ui.tradeRadius", current.h * 5 / 1080);
     tradeFontSize = tree.get("ui.tradeFontSize", current.h * 16 / 1080);
-    buttonMargin = tree.get("ui.buttonMargin", 5);
-    goodButtonColumns = tree.get("ui.goodButtonColumns", 7);
+    buttonMargin = tree.get("ui.buttonMargin", 3);
+    goodButtonColumns = tree.get("ui.goodButtonColumns", 6);
     goodButtonRows = tree.get("ui.goodButtonRows", 11);
     businessButtonColumns = tree.get("ui.businessButtonColumns", 3);
     businessButtonRows = tree.get("ui.businessButtonRows", 3);

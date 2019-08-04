@@ -190,7 +190,7 @@ void Material::put(Material &m) {
 void Material::create(double a) {
     // Newly create the given amount of this material.
     amount += a;
-    if (a > 0) perishCounters.push_front({0, a});
+    if (a > 0. && perish != 0.) perishCounters.push_front({0, a});
 }
 
 double Material::consume(unsigned int e) {
@@ -202,6 +202,7 @@ double Material::consume(unsigned int e) {
         use(c);
     else if (c < 0.)
         create(-c);
+    if (perishCounters.empty()) return c;
     // Find the first perish counter that will expire.
     PerishCounter ePC = {int(perish * Settings::getDayLength() * kDaysPerYear - e), 0};
     auto expired = std::upper_bound(begin(perishCounters), end(perishCounters), ePC);

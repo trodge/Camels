@@ -40,8 +40,12 @@
 
 namespace sql {
 struct Deleter {
-    void operator()(sqlite3 *cn) { sqlite3_close(cn); }
-    void operator()(sqlite3_stmt *qr) { sqlite3_finalize(qr); }
+    void operator()(sqlite3 *cn) {
+        if (sqlite3_close(cn) != SQLITE_OK) std::cout << sqlite3_errmsg(cn) << std::endl;
+    }
+    void operator()(sqlite3_stmt *qr) {
+        if (sqlite3_finalize(qr) != SQLITE_OK) std::cout << sqlite3_errmsg(sqlite3_db_handle(qr)) << std::endl;
+    }
 };
 
 using DtbsPtr = std::unique_ptr<sqlite3, Deleter>;

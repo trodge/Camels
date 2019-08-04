@@ -33,7 +33,6 @@ class Pager {
     std::array<std::vector<std::unique_ptr<TextBox>>::iterator, 2> visible;
     SDL_Rect bounds{0, 0, 0, 0};
     void setVisible();
-    void setBounds();
 
 public:
     size_t boxCount() { return boxes.size(); }
@@ -43,6 +42,8 @@ public:
     size_t pageCount() const { return indices.size(); }
     int visibleCount() const { return visible[1] - visible[0]; }
     const SDL_Rect &getBounds() { return bounds; }
+    void setBounds(const SDL_Rect &bnds) { bounds = bnds; }
+    void setBounds();
     void addBox(std::unique_ptr<TextBox> &&bx);
     void addPage(std::vector<std::unique_ptr<TextBox>> &bxs);
     void reset();

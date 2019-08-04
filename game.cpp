@@ -701,7 +701,8 @@ void Game::saveData() {
     comm = sql::makeQuery(conn.get(), updates.c_str());
     if (sqlite3_step(comm.get()) != SQLITE_DONE)
         std::cout << "Error inserting routes: " << sqlite3_errmsg(conn.get()) << std::endl << updates << std::endl;
-    if (sqlite3_close(conn.get()) != SQLITE_OK) std::cout << sqlite3_errmsg(conn.get()) << std::endl;
+    comm = nullptr;
+    conn = nullptr;
 }
 
 void Game::saveGame() {

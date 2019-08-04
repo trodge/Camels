@@ -17,7 +17,7 @@ void Pager::setBounds() {
     std::transform(begin(boxes), end(boxes), std::back_inserter(rts),
                    [](const std::unique_ptr<TextBox> &bx) { return bx->getRect(); });
     // Get minimum and maximum x and y for boxes.
-    int xMin = rts[0].x, xMax = rts[0].x, yMin = rts[0].y, yMax = rts[0].y;
+    int xMin = std::numeric_limits<int>::max(), xMax = 0, yMin = std::numeric_limits<int>::max(), yMax = 0;
     for (auto &rt : rts) {
         xMin = std::min(xMin, rt.x);
         yMin = std::min(yMin, rt.y);
@@ -58,7 +58,6 @@ void Pager::addBox(std::unique_ptr<TextBox> &&bx) {
         for (; nextPage != end(indices); ++nextPage) ++*nextPage;
     }
     setVisible();
-    setBounds();
 }
 
 void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
@@ -71,7 +70,6 @@ void Pager::addPage(std::vector<std::unique_ptr<TextBox>> &bxs) {
     std::move(begin(bxs), end(bxs), std::back_inserter(boxes));
     bxs.clear();
     setVisible();
-    setBounds();
 }
 
 void Pager::reset() {

@@ -154,7 +154,9 @@ void Town::draw(SDL_Renderer *s) {
 void Town::update(unsigned int e) {
     businessCounter += e;
     if (businessCounter > 0) {
-        for (auto &g : goods) g.consume(Settings::getBusinessRunTime());
+        auto businessRunTime = Settings::getBusinessRunTime();
+        auto dayLength = Settings::getDayLength();
+        for (auto &g : goods) g.consume(businessRunTime);
         std::vector<int> conflicts(goods.size(), 0);
         if (maxGoods) // When maxGoods is true, towns create as many goods as possible for testing purposes.
             for (auto &g : goods) {
@@ -171,7 +173,7 @@ void Town::update(unsigned int e) {
             }
         for (auto &b : businesses) {
             // For each business, start by setting factor to business run time.
-            b.setFactor(Settings::getBusinessRunTime() / static_cast<double>(kDaysPerYear * Settings::getDayLength()));
+            b.setFactor(businessRunTime / static_cast<double>(kDaysPerYear * dayLength));
             // Count conflicts of businesses for available goods.
             b.addConflicts(conflicts, goods);
         }
@@ -181,7 +183,7 @@ void Town::update(unsigned int e) {
             // Run businesses on town's goods.
             b.run(goods);
         }
-        businessCounter -= Settings::getBusinessRunTime();
+        businessCounter -= businessRunTime;
     }
 }
 
