@@ -170,6 +170,6 @@ void Business::saveFrequency(unsigned long p, std::string &u) const {
         u.append(" AND mode = ");
         u.append(std::to_string(mode));
         u.append(" THEN ");
-        u.append(std::to_string(area / static_cast<double>(p) / frequency));
+        u.append(std::to_string(area / static_cast<double>(p)));
     }
 }
