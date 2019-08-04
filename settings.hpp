@@ -178,7 +178,7 @@ public:
     }
     static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, bool cE);
     static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return getBoxInfo(iBg, rt, tx);
+        return getBoxInfo(iBg, rt, tx, false);
     }
 };
 

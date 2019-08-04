@@ -737,4 +737,4 @@ std::unique_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) 
     return traveler;
 }
 
-void Game::pickTown(Traveler *t, unsigned int tId) { t->pickTown(&towns[tId - 1]); }
+void Game::pickTown(Traveler *t, size_t tIdx) { t->pickTown(&towns[tIdx]); }

@@ -111,7 +111,7 @@ public:
     const GameData &getData() const { return gameData; }
     Printer &getPrinter() { return printer; }
     std::unique_ptr<Traveler> createPlayerTraveler(size_t nId, std::string n);
-    void pickTown(Traveler *t, unsigned int tId);
+    void pickTown(Traveler *t, size_t tIdx);
 };
 
 #endif
