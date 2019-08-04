@@ -379,7 +379,7 @@ void Traveler::withdraw(Good &g) {
 void Traveler::refreshFocusBox(std::vector<Pager> &pgrs, int &fB) {
     // Run toggle focus on the focused box if it was just recreated.
     if (fB < 0) return;
-    int focusBox = fB;
+    int focusBox = fB - pgrs[0].visibleCount();
     for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) {
         int visibleCount = pgrIt->visibleCount();
         if (focusBox < visibleCount) {
@@ -413,8 +413,9 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     createGoodButtons(pgrs[1], goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
                       [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
                           return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-                              Good dG(g.getId(), g.getAmount() * portion);
-                              dG.addMaterial(Material(m.getId(), m.getAmount()));
+                              double amt = m.getAmount() * portion;
+                              Good dG(g.getId(), amt);
+                              dG.addMaterial(Material(m.getId(), amt));
                               deposit(dG);
                               refreshStorageButtons(pgrs, fB, pr);
                           };
@@ -426,8 +427,9 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     createGoodButtons(pgrs[2], properties[toTown->getId() - 1].storage, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD,
                       firstBox, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
                           return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-                              Good dG(g.getId(), g.getAmount() * portion);
-                              dG.addMaterial(Material(m.getId(), m.getAmount()));
+                              double amt = m.getAmount() * portion;
+                              Good dG(g.getId(), amt);
+                              dG.addMaterial(Material(m.getId(), amt));
                               withdraw(dG);
                               refreshStorageButtons(pgrs, fB, pr);
                           };
