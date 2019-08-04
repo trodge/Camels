@@ -67,6 +67,7 @@ class Player {
     std::unique_ptr<Traveler> traveler;
     std::vector<Pager> pagers;
     std::vector<Pager>::iterator currentPager;
+    TextBox *portionBox = nullptr;
     Game &game;
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false, developer = false;

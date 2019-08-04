@@ -21,15 +21,16 @@
 
 Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl, unsigned long ppl,
            unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS, Printer &pr)
-    : id(i), box(std::make_unique<TextBox>(BoxInfo{.text = nms,
+    : id(i), box{std::make_unique<TextBox>(BoxInfo{.text = nms,
                                                    .foreground = nt->getForeground(),
                                                    .background = nt->getBackground(),
                                                    .id = nt->getId(),
                                                    .isNation = true,
+                                                   .canFocus = true,
                                                    .border = 1,
                                                    .radius = 1,
                                                    .fontSize = fS},
-                                           pr)),
+                                           pr)},
       nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT) {
     // Create new town based on parameters.
     // Copy businesses from nations, scaling with frequencies.

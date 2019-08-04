@@ -33,19 +33,15 @@
 class TextBox {
 protected:
     SDL_Rect rect{0, 0, 0, 0};
-    bool fixedSize = false, canFocus = false, isFocus = false;
+    bool fixedSize = false, canFocus = false, canEdit = false, isFocus = false;
     std::vector<std::string> text;
     size_t lines = 0;
     SDL_Color foreground{0, 0, 0, 0};
     SDL_Color background{0, 0, 0, 0};
     unsigned int id = 0;
     bool isNation = false;
-    int border = 0;
-    int radius = 0; // radius of rounded corner circles
-    bool invColors = false;
-    bool clicked = false;
-    int fontSize = -1;
-    int lineHeight = -1;
+    int border = 0, radius = 0, fontSize = -1, lineHeight = -1; // radius of rounded corner circles
+    bool invColors = false, clicked = false;
     sdl::SurfacePtr surface;
     sdl::TexturePtr texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface
@@ -79,12 +75,11 @@ public:
         setText();
     }
     virtual void addItem(const std::string &i) { addText(i); }
-    void toggleLock();
-    void toggleFocus();
     void setInvColors(bool i);
     void setClicked(bool c);
     virtual void setKey(const SDL_Keycode &) {}
     virtual void setHighlightLine(int) {}
+    void toggleFocus();
     void place(int x, int y, std::vector<SDL_Rect> &drawn);
     void move(int dx, int dy);
     virtual void draw(SDL_Renderer *s);

@@ -20,9 +20,9 @@
 #include "textbox.hpp"
 
 TextBox::TextBox(const BoxInfo &bI, Printer &pr)
-    : rect(bI.rect), fixedSize(rect.w && rect.h), text(bI.text), foreground(bI.foreground), background(bI.background),
-      id(bI.id), isNation(bI.isNation), border(bI.border), radius(bI.radius), fontSize(bI.fontSize), images(bI.images),
-      printer(pr) {
+    : rect(bI.rect), fixedSize(rect.w && rect.h), canFocus(bI.canFocus), canEdit(bI.canEdit), text(bI.text),
+      foreground(bI.foreground), background(bI.background), id(bI.id), isNation(bI.isNation), border(bI.border),
+      radius(bI.radius), fontSize(bI.fontSize), images(bI.images), printer(pr) {
     setText();
 }
 
@@ -70,12 +70,14 @@ void TextBox::setBorder(int bd) {
     setText();
 }
 
-void TextBox::toggleLock() {
-    canFocus = !canFocus;
-    if (canFocus)
-        SDL_StartTextInput();
-    else
-        SDL_StopTextInput();
+void TextBox::setInvColors(bool i) {
+    invColors = i;
+    setText();
+}
+
+void TextBox::setClicked(bool c) {
+    clicked = c;
+    setInvColors(c);
 }
 
 void TextBox::toggleFocus() {
@@ -86,16 +88,6 @@ void TextBox::toggleFocus() {
         invColors = clicked;
         setBorder(border / 2);
     }
-}
-
-void TextBox::setInvColors(bool i) {
-    invColors = i;
-    setText();
-}
-
-void TextBox::setClicked(bool c) {
-    clicked = c;
-    setInvColors(c);
 }
 
 void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {

@@ -696,34 +696,30 @@ void Traveler::attack(Traveler *t) {
 void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr) {
     // Put attackable traveler names in names vector.
     const SDL_Rect &sR = Settings::getScreenRect();
-    int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), fFS = Settings::getFightFontSize();
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &hl = nation->getHighlight();
     auto able = attackable();       // vector of attackable travelers
     std::vector<std::string> names; // vector of names of attackable travelers
     names.reserve(able.size());
     std::transform(begin(able), end(able), std::back_inserter(names), [](const Traveler *t) { return t->getName(); });
     // Create attack button.
-    pgr.addBox(std::make_unique<SelectButton>(BoxInfo{{sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2},
-                                                      names,
-                                                      fgr,
-                                                      bgr,
-                                                      hl,
-                                                      0,
-                                                      false,
-                                                      bBB,
-                                                      bBR,
-                                                      fFS,
-                                                      {},
-                                                      SDLK_f,
-                                                      [this, able, sSF](MenuButton *btn) {
-                                                          int i = btn->getHighlightLine();
-                                                          if (i > -1) {
-                                                              attack(able[static_cast<size_t>(i)]);
-                                                              sSF();
-                                                          } else
-                                                              btn->setClicked(false);
-                                                      },
-                                                      true},
+    pgr.addBox(std::make_unique<SelectButton>(BoxInfo{.rect = {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2},
+                                                      .text = names,
+                                                      .foreground = nation->getForeground(),
+                                                      .background = nation->getBackground(),
+                                                      .highlight = nation->getHighlight(),
+                                                      .border = Settings::getBigBoxBorder(),
+                                                      .radius = Settings::getBigBoxRadius(),
+                                                      .fontSize = Settings::getFightFontSize(),
+                                                      .key = SDLK_f,
+                                                      .onClick =
+                                                          [this, able, sSF](MenuButton *btn) {
+                                                              int i = btn->getHighlightLine();
+                                                              if (i > -1) {
+                                                                  attack(able[static_cast<size_t>(i)]);
+                                                                  sSF();
+                                                              } else
+                                                                  btn->setClicked(false);
+                                                          },
+                                                      .scroll = true},
                                               pr));
 }
 
@@ -854,14 +850,26 @@ void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
                     &tHgl = tgt->nation->getHighlight();
     int b = Settings::getBigBoxBorder(), r = Settings::getBigBoxRadius(), fS = Settings::getFightFontSize();
     auto ourBox = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, fgr, bgr, hgl, 0, false, b, r, fS, {}};
+        return BoxInfo{
+            .rect = rt, .text = tx, .foreground = fgr, .background = bgr, .highlight = hgl, .border = b, .radius = r, .fontSize = fS};
     };
     auto theirBox = [&tFgr, &tBgr, &tHgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{rt, tx, tFgr, tBgr, tHgl, 0, false, b, r, fS, {}};
+        return BoxInfo{
+            .rect = rt, .text = tx, .foreground = tFgr, .background = tBgr, .highlight = tHgl, .border = b, .radius = r, .fontSize = fS};
     };
     auto selectButton = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx,
                                                      SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{rt, tx, fgr, bgr, hgl, 0, false, b, r, fS, {}, ky, fn, true};
+        return BoxInfo{.rect = rt,
+                       .text = tx,
+                       .foreground = fgr,
+                       .background = bgr,
+                       .highlight = hgl,
+                       .border = b,
+                       .radius = r,
+                       .fontSize = fS,
+                       .key = ky,
+                       .onClick = fn,
+                       .scroll = true};
     };
     pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + tgt->getName() + "..."}), pr));
     pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));

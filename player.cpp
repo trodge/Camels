@@ -22,7 +22,7 @@
 Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
     const auto &sR = Settings::getScreenRect();
     int bBB = Settings::getBigBoxBorder(), bBR = Settings::getBigBoxRadius(), bBFS = Settings::getBigBoxFontSize(),
-        sBB = Settings::getSmallBoxBorder(), sBR = Settings::getSmallBoxRadius(), sBFS = Settings::getSmallBoxFontSize();
+        sBFS = Settings::getSmallBoxFontSize();
     uIStates = {{UIState::starting,
                  {{Settings::getBoxInfo(true, {sR.w / 2, sR.h / 15, 0, 0}, {"Camels and Silk"}),
                    Settings::getBoxInfo(true, {sR.w / 7, sR.h / 3, 0, 0}, {"(N)ew Game"}, SDLK_n,
@@ -59,12 +59,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                         }),
                    Settings::getBoxInfo(true, {sR.w / 7, sR.h * 2 / 3, 0, 0}, {"(L)oad Game"}, SDLK_l,
                                         [this](MenuButton *) { setState(UIState::loading); })}}},
-                {UIState::beginning,
-                 {{Settings::getBoxInfo(true, {sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""})},
-                  [this] {
-                      // Allow typing in name box.
-                      pagers[0].toggleLock(0);
-                  }}},
+                {UIState::beginning, {{Settings::getBoxInfo(true, {sR.w / 2, sR.h / 7, 0, 0}, {"Name", ""}, true)}}},
                 {UIState::quitting,
                  {{Settings::getBoxInfo(true, {sR.w / 2, sR.h * 3 / 4, 0, 0}, {""}, SDLK_q,
                                         [this](MenuButton *) {
@@ -159,21 +154,17 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                         [this](MenuButton *) { setState(UIState::traveling); })},
                   [this, sR, bBB, bBR, sBFS] {
                       // Create log box.
-                      pagers[0].addBox(std::make_unique<ScrollBox>(BoxInfo{{sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15},
-                                                                           traveler->getLogText(),
-                                                                           traveler->getNation()->getForeground(),
-                                                                           traveler->getNation()->getBackground(),
-                                                                           traveler->getNation()->getHighlight(),
-                                                                           0,
-                                                                           false,
-                                                                           bBB,
-                                                                           bBR,
-                                                                           sBFS,
-                                                                           {},
-                                                                           SDLK_UNKNOWN,
-                                                                           nullptr,
-                                                                           true},
-                                                                   printer));
+                      pagers[0].addBox(std::make_unique<ScrollBox>(
+                          BoxInfo{.rect = {sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15},
+                                  .text = traveler->getLogText(),
+                                  .foreground = traveler->getNation()->getForeground(),
+                                  .background = traveler->getNation()->getBackground(),
+                                  .highlight = traveler->getNation()->getHighlight(),
+                                  .border = bBB,
+                                  .radius = bBR,
+                                  .fontSize = sBFS,
+                                  .scroll = true},
+                          printer));
                   }}},
                 {UIState::fighting, {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }}},
                 {UIState::looting,
@@ -356,21 +347,18 @@ void Player::createBoxes(UIState::State s) {
     // Creates boxes shared by trading, storing, managing, and looting states.
     const auto &sR = Settings::getScreenRect();
     // Create portion box and set portion button.
-    auto portionBox = std::make_unique<TextBox>(Settings::getBoxInfo(false, {sR.w / 9, sR.h * 28 / 31, 0, 0}, {""}), printer);
-    portionBox->toggleLock();
-    traveler->updatePortionBox(portionBox.get());
-    auto setPortionButton =
-        std::make_unique<MenuButton>(Settings::getBoxInfo(false, {sR.w / 9, sR.h * 30 / 31, 0, 0}, {"(S)et Portion"}, SDLK_s,
-                                                          [this, pB = portionBox.get()](MenuButton *btn) {
-                                                              double p;
-                                                              std::stringstream{pB->getText(0)} >> p;
-                                                              traveler->setPortion(p);
-                                                              traveler->updatePortionBox(pB);
-                                                              btn->setClicked(false);
-                                                          }),
-                                     printer);
-    pagers[0].addBox(std::move(portionBox));
-    pagers[0].addBox(std::move(setPortionButton));
+    pagers[0].addBox(std::make_unique<TextBox>(Settings::getBoxInfo(false, {sR.w / 9, sR.h * 28 / 31, 0, 0}, {""}, true), printer));
+    portionBox = pagers[0].getVisible().back();
+    traveler->updatePortionBox(portionBox);
+    pagers[0].addBox(std::make_unique<MenuButton>(Settings::getBoxInfo(false, {sR.w / 9, sR.h * 30 / 31, 0, 0}, {"(S)et Portion"}, SDLK_s,
+                                                                       [this](MenuButton *btn) {
+                                                                           double p;
+                                                                           std::stringstream{portionBox->getText(0)} >> p;
+                                                                           traveler->setPortion(p);
+                                                                           traveler->updatePortionBox(portionBox);
+                                                                           btn->setClicked(false);
+                                                                       }),
+                                                  printer));
     // Create labels.
     auto typeText = s == UIState::building ? "Businesses" : "Goods";
     pagers[0].addBox(std::make_unique<TextBox>(
@@ -419,11 +407,11 @@ void Player::setState(UIState::State s) {
     std::vector<std::string> saves;
     // Create boxes for new state.
     for (auto &bI : newState.boxesInfo)
-        if (bI.onClick && bI.scrolls)
+        if (bI.onClick && bI.scroll)
             pagers[0].addBox(std::make_unique<SelectButton>(bI, printer));
         else if (bI.onClick)
             pagers[0].addBox(std::make_unique<MenuButton>(bI, printer));
-        else if (bI.scrolls)
+        else if (bI.scroll)
             pagers[0].addBox(std::make_unique<ScrollBox>(bI, printer));
         else
             pagers[0].addBox(std::make_unique<TextBox>(bI, printer));
@@ -542,11 +530,11 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                         break;
                     case SDLK_COMMA:
                         traveler->changePortion(-0.1);
-                        traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
+                        traveler->updatePortionBox(portionBox);
                         break;
                     case SDLK_PERIOD:
                         traveler->changePortion(0.1);
-                        traveler->updatePortionBox(pagers[0].getVisible(kPortionBoxIndex));
+                        traveler->updatePortionBox(portionBox);
                         break;
                     }
                     break;
@@ -623,11 +611,12 @@ void Player::handleClick(const SDL_MouseButtonEvent &b) {
         }
         indexOffset += pgr.visibleCount();
     }
-    if (b.state == SDL_PRESSED)
+    if (b.state == SDL_PRESSED) {
         if (clickedIndex < 0)
             focus(-1, FocusGroup::box);
         else
             focus(clickedIndex + indexOffset, FocusGroup::box);
+    }
 }
 
 void Player::handleEvent(const SDL_Event &e) {

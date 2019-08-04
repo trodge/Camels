@@ -233,39 +233,19 @@ void Settings::save(const fs::path &p) {
 BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
                              std::function<void(MenuButton *)> fn, bool scl) {
     if (iBg)
-        return {rt,           tx,           uIForeground,   uIBackground, uIHighlight, 0,  false,
-                bigBoxBorder, bigBoxRadius, bigBoxFontSize, {},           ky,          fn, true};
+        return {rt,    tx,           uIForeground, uIBackground,   uIHighlight, 0,  false, true,
+                false, bigBoxBorder, bigBoxRadius, bigBoxFontSize, {},          ky, fn,    scl};
     else
-        return {
-            rt, tx, uIForeground, uIBackground, uIHighlight, 0, false, smallBoxBorder, smallBoxRadius, smallBoxFontSize,
-            {}, ky, fn,           true};
+        return {rt,   tx,    uIForeground,   uIBackground,   uIHighlight,      0,  false,
+                true, false, smallBoxBorder, smallBoxRadius, smallBoxFontSize, {}, ky,
+                fn,   scl};
 }
 
-BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
-                             std::function<void(MenuButton *)> fn) {
+BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, bool cE) {
     if (iBg)
-        return {rt,           tx,           uIForeground,   uIBackground, uIHighlight, 0, false,
-                bigBoxBorder, bigBoxRadius, bigBoxFontSize, {},           ky,          fn};
+        return {rt,    tx, uIForeground, uIBackground, uIHighlight,  0,
+                false, cE, cE,           bigBoxBorder, bigBoxRadius, bigBoxFontSize};
     else
-        return {rt,
-                tx,
-                uIForeground,
-                uIBackground,
-                uIHighlight,
-                0,
-                false,
-                smallBoxBorder,
-                smallBoxRadius,
-                smallBoxFontSize,
-                {},
-                ky,
-                fn};
-}
-
-BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx) {
-    if (iBg)
-        return {rt, tx, uIForeground, uIBackground, uIHighlight, 0, false, bigBoxBorder, bigBoxRadius, bigBoxFontSize};
-    else
-        return {rt, tx,    uIForeground,   uIBackground,   uIHighlight,
-                0,  false, smallBoxBorder, smallBoxRadius, smallBoxFontSize};
+        return {rt,    tx, uIForeground, uIBackground,   uIHighlight,    0,
+                false, cE, cE,           smallBoxBorder, smallBoxRadius, smallBoxFontSize};
 }

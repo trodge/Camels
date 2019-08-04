@@ -55,7 +55,7 @@ class AI {
     Traveler &traveler;                     // the traveler this AI controls
     int decisionCounter;                    // counter for updatening AI
     std::array<double, 8> decisionCriteria; /* buy/sell score weight, weapon/armor
-    equip score, tendency to fight/update/yield, looting greed */
+    equip score, tendency to fight/run/yield, looting greed */
     std::vector<MaterialInfo> materialInfo; // known information about each material of each good
     std::vector<TownInfo> nearby;           // known information about nearby towns
     enum Type { trader, soldier, bandit, agent, guard, thug };
