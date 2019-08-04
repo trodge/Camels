@@ -135,8 +135,8 @@ class Traveler {
     void takeHit(const CombatHit &cH, Traveler &t);
     void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
     void updateFightBoxes(Pager &pgr);
-    void loot(Good &g, Traveler &t);
-    void loot(Traveler &t);
+    void loot(Good &g);
+    void loot();
     void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
 

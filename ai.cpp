@@ -325,7 +325,7 @@ void AI::loot() {
         if (!bestGood || weight + bestGood->getMaterial().weight() > 0.) break;
         looted += bestLooted;
         // Loot the current best good from target.
-        traveler.loot(*bestGood, *tgt);
+        traveler.loot(*bestGood);
         // Add the weight of looted good to weight variable.
         weight += bestWeight;
     }

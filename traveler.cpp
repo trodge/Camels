@@ -403,7 +403,7 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
         gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
     // Create the offer buttons for the player.
-    SDL_Rect rt = {sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
+    SDL_Rect rt{sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
     BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
                      .foreground = nation->getForeground(),
                      .background = nation->getBackground(),
@@ -919,15 +919,15 @@ void Traveler::updateFightBoxes(Pager &pgr) {
     bxs[2]->setText(statusText);
 }
 
-void Traveler::loot(Good &g, Traveler &t) {
+void Traveler::loot(Good &g) {
     // Take the given good from the given traveler.
     unsigned int gId = g.getId();
-    t.goods[gId].take(g);
+    target->goods[gId].take(g);
     goods[gId].put(g);
 }
 
-void Traveler::loot(Traveler &t) {
-    for (auto g : t.goods) loot(g, t);
+void Traveler::loot() {
+    for (auto g : target->goods) loot(g);
 }
 
 void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
@@ -938,78 +938,39 @@ void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
 
 void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     const SDL_Rect &sR = Settings::getScreenRect();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize(),
-        gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
+    int gBXD = Settings::getGoodButtonXDivisor(), gBYD = Settings::getGoodButtonYDivisor(),
         gBSzM = Settings::getGoodButtonSizeMultiplier(), gBScM = Settings::getGoodButtonSpaceMultiplier();
-    auto &tgt = *target;
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &tFgr = tgt.nation->getForeground(),
-                    &tBgr = tgt.nation->getBackground();
-    int left = sR.w / gBXD, right = sR.w / 2, top = sR.h / gBYD, bottom = sR.h * 13 / 14,
-        dx = (right - left) * gBScM / gBXD, dy = (bottom - top) * gBScM / gBYD;
-    BoxInfo boxInfo{.rect = {left, top, (right - left) * gBSzM / gBXD, (bottom - top) * gBSzM / gBYD},
-                    .foreground = fgr,
-                    .background = bgr,
-                    .border = tB,
-                    .radius = tR,
-                    .fontSize = tFS};
-    std::vector<std::unique_ptr<TextBox>> bxs;
-    for (auto &g : goods)
-        for (auto &m : g.getMaterials()) {
-            if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1)) {
-                boxInfo.onClick = [this, &g, &m, &tgt, &pgrs, &fB, &pr](MenuButton *) {
-                    Good lG(g.getId(), m.getAmount());
-                    lG.addMaterial(Material(m.getId(), m.getAmount()));
-                    tgt.loot(lG, *this);
-                    refreshLootButtons(pgrs, fB, pr);
-                };
-                bxs.push_back(g.button(true, m, boxInfo, pr));
-                boxInfo.rect.x += dx;
-                if (boxInfo.rect.x + boxInfo.rect.w >= right) {
-                    boxInfo.rect.x = left;
-                    boxInfo.rect.y += dy;
-                    if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                        // Flush current page upon reaching bottom.
-                        boxInfo.rect.y = top;
-                        pgrs[1].addPage(bxs);
-                    }
-                }
-            }
-        }
-
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[1].addPage(bxs);
-    left = sR.w / 2 + sR.w / gBXD;
-    right = sR.w - sR.w / gBXD;
-    boxInfo.rect.x = left;
-    boxInfo.rect.y = top;
-    boxInfo.foreground = tFgr;
-    boxInfo.background = tBgr;
-    for (auto &g : tgt.goods)
-        for (auto &m : g.getMaterials()) {
-            if ((m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1)) {
-                boxInfo.onClick = [this, &g, &m, &tgt, &pgrs, &fB, &pr](MenuButton *) {
-                    Good lG(g.getId(), m.getAmount());
-                    lG.addMaterial(Material(m.getId(), m.getAmount()));
-                    loot(lG, tgt);
-                    refreshLootButtons(pgrs, fB, pr);
-                };
-                bxs.push_back(g.button(true, m, boxInfo, pr));
-                boxInfo.rect.x += dx;
-                if (boxInfo.rect.x + boxInfo.rect.w >= right) {
-                    boxInfo.rect.x = left;
-                    boxInfo.rect.y += dy;
-                    if (boxInfo.rect.y + boxInfo.rect.h >= bottom) {
-                        // Flush current page upon reaching bottom.
-                        boxInfo.rect.y = top;
-                        pgrs[2].addPage(bxs);
-                    }
-                }
-            }
-        }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[2].addPage(bxs);
+    SDL_Rect rt{sR.w / 31, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
+    BoxInfo firstBox{.rect = {rt.x, rt.y, rt.w * gBSzM / gBXD, rt.h * gBSzM / gBYD},
+                    .foreground = nation->getForeground(),
+                    .background = nation->getBackground(),
+                    .border = Settings::getTradeBorder(),
+                    .radius = Settings::getTradeRadius(),
+                    .fontSize = Settings::getTradeFontSize()};
+    createGoodButtons(pgrs[1], goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD, firstBox, pr,
+    [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
+        return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
+            double amt = m.getAmount() * portion;
+            Good lG(g.getId(), amt);
+            lG.addMaterial(Material(m.getId(), amt));
+            target->loot(lG);
+            refreshLootButtons(pgrs, fB, pr);
+        };
+    });
+    rt.x = sR.w * 16 / 31;
+    firstBox.rect.x = rt.x;
+    firstBox.foreground = target->nation->getForeground();
+    firstBox.background = target->nation->getBackground();
+    createGoodButtons(pgrs[2], target->goods, rt, rt.w * gBScM / gBXD, rt.h * gBScM / gBYD,
+                      firstBox, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
+                          return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
+                              double amt = m.getAmount() * portion;
+                            Good lG(g.getId(), amt);
+                            lG.addMaterial(Material(m.getId(), amt));
+                            loot(lG);
+                            refreshLootButtons(pgrs, fB, pr);
+                        };
+                      });
 }
 
 void Traveler::startAI() {

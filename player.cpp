@@ -176,7 +176,7 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                    Settings::getBoxInfo(false, {sR.w * 4 / 15, sR.h * 30 / 31, 0, 0}, {"Loot (A)ll"}, SDLK_a,
                                         [this](MenuButton *) {
                                             auto tgt = traveler->getTarget();
-                                            traveler->loot(*tgt);
+                                            traveler->loot();
                                             traveler->loseTarget();
                                             setState(UIState::traveling);
                                         })},
