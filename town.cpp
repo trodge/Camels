@@ -248,8 +248,7 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
         }
     }
     // Take only the closest towns.
-    if (neighbors.size() > mN)
-        neighbors = std::vector<Town *>(begin(neighbors), begin(neighbors) + mN);
+    if (neighbors.size() > mN) neighbors = std::vector<Town *>(begin(neighbors), begin(neighbors) + mN);
 }
 
 void Town::connectRoutes() {

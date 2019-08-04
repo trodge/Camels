@@ -207,7 +207,8 @@ void Game::loadData(sqlite3 *cn) {
     }
     // Load good images.
     int m = Settings::getButtonMargin();
-    int imageSize = std::min(kMaxGoodImageSize, (screenRect.h + m) / Settings::getGoodButtonRows() - m - 2 * Settings::getTradeBorder());
+    int imageSize =
+        std::min(kMaxGoodImageSize, (screenRect.h + m) / Settings::getGoodButtonRows() - m - 2 * Settings::getTradeBorder());
     SDL_Rect rt = {0, 0, imageSize, imageSize};
     goodImages.reserve(goods.size());
     for (size_t i = 0; i < goods.size(); ++i) {

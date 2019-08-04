@@ -84,9 +84,9 @@ class Settings {
     static int tradeFontSize;
     static int buttonMargin;               // margin between good and business buttons in pixels
     static int goodButtonColumns;          // number of columns of good buttons
-    static int goodButtonRows;          // number of rows of good buttons
+    static int goodButtonRows;             // number of rows of good buttons
     static int businessButtonColumns;      // number of columns of business buttons
-    static int businessButtonRows;      // number of rows of business buttons
+    static int businessButtonRows;         // number of rows of business buttons
     static int dayLength;                  // length of a day in milliseconds
     static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
     static int businessRunTime;            // time between business cycles in milliseconds
@@ -95,8 +95,8 @@ class Settings {
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static int minPriceDivisor;
     static double townProfit;
-    static size_t maxTowns;                   // max number of towns to load from database
-    static size_t connectionCount;            // number of connections each town makes
+    static size_t maxTowns;        // max number of towns to load from database
+    static size_t connectionCount; // number of connections each town makes
     static double travelersExponent;
     static int travelersMin;
     static unsigned int statMax;
@@ -140,12 +140,12 @@ public:
     static int getTradeBorder() { return tradeBorder; }
     static int getTradeRadius() { return tradeRadius; }
     static int getTradeFontSize() { return tradeFontSize; }
-    static int getButtonMargin() { return buttonMargin; }               
-    static int getGoodButtonColumns() { return goodButtonColumns; }          
-    static int getGoodButtonRows() { return goodButtonRows; }          
-    static int getBusinessButtonColumns() { return businessButtonColumns; }      
-    static int getBusinessButtonRows() { return businessButtonRows; }      
-    static int getDayLength() { return dayLength; }                  
+    static int getButtonMargin() { return buttonMargin; }
+    static int getGoodButtonColumns() { return goodButtonColumns; }
+    static int getGoodButtonRows() { return goodButtonRows; }
+    static int getBusinessButtonColumns() { return businessButtonColumns; }
+    static int getBusinessButtonRows() { return businessButtonRows; }
+    static int getDayLength() { return dayLength; }
     static unsigned int getBusinessHeadStart() { return businessHeadStart; }
     static int getBusinessRunTime() { return businessRunTime; }
     static int getTravelersCheckTime() { return travelersCheckTime; }

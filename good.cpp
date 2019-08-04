@@ -201,7 +201,7 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo b
     bI.id = id;
     // Find image in game data.
     SDL_Surface *img = oMtr.getImage();
-    if (img) bI.images = {{img, {2 * bI.border, 2 * bI.border, img->w, img->h}}};
+    if (img) bI.images = {{img, {2 * bI.border, bI.rect.h / 2 - img->h / 2, img->w, img->h}}};
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(oMtr.getAmount());
@@ -231,7 +231,8 @@ void Good::saveDemand(unsigned long p, std::string &u) const {
 void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, BoxInfo bI, Printer &pr,
                        const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn) {
     // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
-    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(), dy = (rt.h + m) / Settings::getGoodButtonRows();
+    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(),
+        dy = (rt.h + m) / Settings::getGoodButtonRows();
     bI.rect = {rt.x, rt.y, dx - m, dy - m};
     std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
     for (auto &g : gds) {
