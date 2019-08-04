@@ -101,7 +101,7 @@ class Settings {
     static unsigned int statMax;
     static double attackDistSq;
     static double escapeChance;
-    static std::array<double, 4> aITypeWeights;
+    static std::array<double, 6> aITypeWeights;
     static int criteriaMax;
     static unsigned int aITownRange;
     static double limitFactorMin, limitFactorMax;
@@ -162,7 +162,7 @@ public:
     static unsigned int getStatMax() { return statMax; }
     static double getAttackDistSq() { return attackDistSq; }
     static double getEscapeChance() { return escapeChance; }
-    static const std::array<double, 4> &getAITypeWeights() { return aITypeWeights; }
+    static const std::array<double, 6> &getAITypeWeights() { return aITypeWeights; }
     static int getCriteriaMax() { return criteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
     static double getLimitFactorMin() { return limitFactorMin; }

@@ -58,7 +58,7 @@ class AI {
     equip score, tendency to fight/update/yield, looting greed */
     std::vector<MaterialInfo> materialInfo; // known information about each material of each good
     std::vector<TownInfo> nearby;           // known information about nearby towns
-    enum Type { trader, agent, guard, thug };
+    enum Type { trader, soldier, bandit, agent, guard, thug };
     Type type; // behavior for this ai
     void randomizeLimitFactors();
     void randomizeCriteria();

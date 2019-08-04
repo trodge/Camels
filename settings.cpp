@@ -69,7 +69,7 @@ int Settings::travelersMin;
 unsigned int Settings::statMax;
 double Settings::attackDistSq;
 double Settings::escapeChance;
-std::array<double, 4> Settings::aITypeWeights;
+std::array<double, 6> Settings::aITypeWeights;
 int Settings::criteriaMax;
 unsigned int Settings::aITownRange;
 double Settings::limitFactorMin, Settings::limitFactorMax;
@@ -159,7 +159,7 @@ void Settings::load(const fs::path &p) {
     attackDistSq = tree.get("travelers.attackDistSq", 9000);
     escapeChance = tree.get("travelers.escapeChance", 0.5);
     criteriaMax = tree.get("aI.criteriaMax", 9);
-    loadRange("aI.typeWeights", begin(aITypeWeights), {0.5, 0.3, 0.1, 0.1}, tree);
+    loadRange("aI.typeWeights", begin(aITypeWeights), {0.4, 0.1, 0.1, 0.2, 0.1, 0.1}, tree);
     aITownRange = static_cast<unsigned int>(tree.get("aI.townRange", 9));
     limitFactorMin = tree.get("aI.limitFactorMin", 0.1);
     limitFactorMax = tree.get("aI.limitFactorMax", 0.9);
