@@ -436,7 +436,8 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
                           "town_type FROM towns");
     towns.reserve(gameData.townCount);
     std::cout << "Loading towns" << std::endl;
-    while (sqlite3_step(quer.get()) != SQLITE_DONE && towns.size() < kMaxTowns) {
+    size_t mT = Settings::getMaxTowns();
+    while (sqlite3_step(quer.get()) != SQLITE_DONE && towns.size() < mT) {
         SDL_RenderCopy(screen.get(), frzTx, nullptr, nullptr);
         std::vector<std::string> names = {std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 1))),
                                           std::string(reinterpret_cast<const char *>(sqlite3_column_text(quer.get(), 2)))};

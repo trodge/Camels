@@ -202,7 +202,8 @@ double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }
 void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy) {
     // Find nearest towns that can be traveled to directly from this one on map surface.
     neighbors.clear();
-    neighbors.reserve(kMaxNeighbors);
+    size_t mN = Settings::getMaxNeighbors();
+    neighbors.reserve(mN);
     auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
     for (auto &t : ts) {
         int dS = distSq(t.dpx, t.dpy);
@@ -247,8 +248,8 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
         }
     }
     // Take only the closest towns.
-    if (neighbors.size() > kMaxNeighbors)
-        neighbors = std::vector<Town *>(begin(neighbors), begin(neighbors) + kMaxNeighbors);
+    if (neighbors.size() > mN)
+        neighbors = std::vector<Town *>(begin(neighbors), begin(neighbors) + mN);
 }
 
 void Town::connectRoutes() {

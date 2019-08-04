@@ -62,8 +62,10 @@ int Settings::businessRunTime;
 int Settings::travelersCheckTime;
 int Settings::aIDecisionTime;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
-double Settings::townProfit;
 int Settings::minPriceDivisor;
+double Settings::townProfit;
+size_t Settings::maxTowns;
+size_t Settings::maxNeighbors;
 double Settings::travelersExponent;
 int Settings::travelersMin;
 unsigned int Settings::statMax;
@@ -92,9 +94,12 @@ void loadColor(const std::string &n, SDL_Color &c, const SDL_Color &d, const pt:
 }
 
 template <class OutputIt, class T>
-void loadRange(const std::string &n, OutputIt bgn, const std::initializer_list<T> &dfs, const ::pt::ptree &t) {
-    auto it = bgn;
-    for (auto &df : dfs) *it++ = t.get(n + "_" + std::to_string(it - bgn), df);
+void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const ::pt::ptree &t) {
+    auto it = out;
+    for (auto &df : dfs) {
+        *it = t.get(n + "_" + std::to_string(it - out), df);
+        ++it;
+    }
 }
 
 void Settings::load(const fs::path &p) {
@@ -151,8 +156,10 @@ void Settings::load(const fs::path &p) {
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
     inputSpaceFactor = tree.get("goods.inputSpaceFactor", 0.054);
     outputSpaceFactor = tree.get("goods.outputSpaceFactor", 0.054);
-    townProfit = tree.get("goods.townProfit", 0.9);
     minPriceDivisor = tree.get("goods.minPriceDivisor", 2047);
+    townProfit = tree.get("towns.profit", 0.9);
+    maxTowns = static_cast<size_t>(tree.get("towns.max", 500));
+    maxNeighbors = static_cast<size_t>(tree.get("towns.maxNeighbors", 5));
     travelersExponent = tree.get("travelers.exponent", 0.24);
     travelersMin = tree.get("travelers.min", -13);
     statMax = static_cast<unsigned int>(tree.get("travelers.statMax", 15));
@@ -206,6 +213,14 @@ void Settings::save(const fs::path &p) {
     tree.put("ui.equipFontSize", equipFontSize);
     tree.put("ui.townFontSize", townFontSize);
     tree.put("ui.tradeFontSize", tradeFontSize);
+    tree.put("ui.goodButtonSizeMultiplier", goodButtonSizeMultiplier);
+    tree.put("ui.goodButtonSpaceMultiplier", goodButtonSpaceMultiplier);
+    tree.put("ui.goodButtonXDivisor", goodButtonXDivisor);
+    tree.put("ui.goodButtonYDivisor", goodButtonYDivisor);
+    tree.put("ui.businessButtonSizeMultiplier", businessButtonSizeMultiplier);
+    tree.put("ui.businessButtonSpaceMultiplier", businessButtonSpaceMultiplier);
+    tree.put("ui.businessButtonXDivisor", businessButtonXDivisor);
+    tree.put("ui.businessButtonYDivisor", businessButtonYDivisor);
     tree.put("time.dayLength", dayLength);
     tree.put("time.businessHeadStart", businessHeadStart);
     tree.put("time.businessRunTime", businessRunTime);
@@ -214,8 +229,10 @@ void Settings::save(const fs::path &p) {
     tree.put("goods.consumptionSpaceFactor", consumptionSpaceFactor);
     tree.put("goods.inputSpaceFactor", inputSpaceFactor);
     tree.put("goods.outputSpaceFactor", outputSpaceFactor);
-    tree.put("goods.townProfit", townProfit);
     tree.put("goods.minPriceDivisor", minPriceDivisor);
+    tree.put("towns.profit", townProfit);
+    tree.put("towns.max", maxTowns);
+    tree.put("towns.maxNeighbors", maxNeighbors);
     tree.put("travelers.exponent", travelersExponent);
     tree.put("travelers.min", travelersMin);
     tree.put("travelers.statMax", statMax);

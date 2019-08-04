@@ -94,8 +94,10 @@ class Settings {
     static int travelersCheckTime;         // time between checks of dead travelers in milliseconds
     static int aIDecisionTime;             // time between AI cycles in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
-    static double townProfit;
     static int minPriceDivisor;
+    static double townProfit;
+    static size_t maxTowns;
+    static size_t maxNeighbors;
     static double travelersExponent;
     static int travelersMin;
     static unsigned int statMax;
@@ -155,8 +157,10 @@ public:
     static double getConsumptionSpaceFactor() { return consumptionSpaceFactor; }
     static double getInputSpaceFactor() { return inputSpaceFactor; }
     static double getOutputSpaceFactor() { return outputSpaceFactor; }
-    static double getTownProfit() { return townProfit; }
     static int getMinPriceDivisor() { return minPriceDivisor; }
+    static double getTownProfit() { return townProfit; }
+    static size_t getMaxTowns() { return maxTowns; }
+    static size_t getMaxNeighbors() { return maxNeighbors; }
     static double getTravelersExponent() { return travelersExponent; }
     static int getTravelersMin() { return travelersMin; }
     static unsigned int getStatMax() { return statMax; }
