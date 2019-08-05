@@ -489,11 +489,11 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                     break;
                 case UIState::trading:
                     if (developer) switch (k.keysym.sym) {
+                        case SDLK_z:
+                            traveler->toTown->resetGoods();
+                            break;
                         case SDLK_x:
                             traveler->toTown->toggleMaxGoods();
-                            break;
-                        case SDLK_c:
-                            traveler->toTown->resetGoods();
                             break;
                         case SDLK_v:
                             traveler->adjustDemand(pagers[2], -modMultiplier);
