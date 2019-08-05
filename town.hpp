@@ -36,8 +36,8 @@
 #include "traveler.hpp"
 
 struct GameData;
-
 class Nation;
+struct Contract;
 class Traveler;
 
 class Town {
@@ -54,7 +54,7 @@ class Town {
     int businessCounter;
     bool maxGoods = false; // town creates maximum goods for testing purposes
     std::vector<Traveler *> travelers;
-    std::uniform_int_distribution<int> travelersDis;
+    std::vector<std::unique_ptr<Contract>> bids;
     int dpx, dpy;
     int distSq(int x, int y) const;
     double dist(int x, int y) const;
@@ -80,11 +80,14 @@ public:
     const Good &getGood(size_t i) const { return goods[i]; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<Traveler *> &getTravelers() const { return travelers; }
+    const std::vector<std::unique_ptr<Contract>> &getBids() const { return bids; }
     int getDPX() const { return dpx; }
     int getDPY() const { return dpy; }
-    void addTraveler(Traveler *t) { travelers.push_back(t); }
-    void removeTraveler(const Traveler *t);
     void clearTravelers() { travelers.clear(); }
+    void removeTraveler(const Traveler *t);
+    void addTraveler(Traveler *t) { travelers.push_back(t); }
+    std::unique_ptr<Contract> removeBid(size_t idx);
+    void addBid(std::unique_ptr<Contract> &&bd) { bids.push_back(std::move(bd)); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
     void toggleMaxGoods() { maxGoods = !maxGoods; }
     void placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s);

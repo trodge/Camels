@@ -60,8 +60,6 @@ class AI {
     std::vector<TownInfo> nearby;           // known information about nearby towns
     enum Role { trader, soldier, bandit, agent, guard, thug };
     Role role; // behavior for this ai
-    void randomizeLimitFactors();
-    void randomizeCriteria();
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
     double equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const;

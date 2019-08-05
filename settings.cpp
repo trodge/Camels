@@ -91,7 +91,7 @@ void loadColor(const std::string &n, SDL_Color &c, const SDL_Color &d, const pt:
 }
 
 template <class OutputIt, class T>
-void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const ::pt::ptree &t) {
+void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const pt::ptree &t) {
     auto it = out;
     for (auto &df : dfs) {
         *it = t.get(n + "_" + std::to_string(it - out), df);

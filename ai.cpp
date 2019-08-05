@@ -23,16 +23,31 @@ AI::AI(Traveler &tvl) : traveler(tvl) {
     // Initialize variables for running a new AI based on starting goods and current town.
     auto &rng = Settings::getRng();
     auto &rWs = Settings::getAIRoleWeights();
-    std::discrete_distribution<> dis(begin(rWs), end(rWs));
-    role = static_cast<Role>(dis(rng));
-    randomizeLimitFactors();
-    randomizeCriteria();
+    std::discrete_distribution<> rlDis(begin(rWs), end(rWs));
+    role = static_cast<Role>(rlDis(rng));
+    // Randomize factors which will be used to choose buy and sell limits for each material.
+    auto &gs = traveler.goods;
+    // Total count of materials across all goods, including labor.
+    size_t mC =
+        std::accumulate(begin(gs), end(gs), 0, [](size_t c, const Good &g) { return c + g.getMaterials().size(); });
+    materialInfo = std::vector<MaterialInfo>(mC);
+    static std::uniform_real_distribution<double> lFDis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
+    auto mII = begin(materialInfo);
+    for (auto g : gs)
+        for (auto &m : g.getMaterials()) mII++->limitFactor = lFDis(rng);
+    // Randomize AI decision criteria.
+    static std::uniform_real_distribution<double> dcCrtDis(1, Settings::getCriteriaMax());
+    for (auto &c : decisionCriteria) c = dcCrtDis(rng);
+    // Randomize decision counter.
+    static std::uniform_int_distribution<> dcCntDis(-Settings::getAIDecisionTime(), 0);
+    decisionCounter = dcCntDis(rng);
     const Town *toTown = traveler.toTown;
     setNearby(toTown, toTown, Settings::getAITownRange());
     setLimits();
 }
 
-AI::AI(Traveler &tvl, const AI &p) : traveler(tvl), decisionCriteria(p.decisionCriteria), materialInfo(p.materialInfo) {
+AI::AI(Traveler &tvl, const AI &p)
+    : traveler(tvl), decisionCriteria(p.decisionCriteria), materialInfo(p.materialInfo), role(p.role) {
     // Starts an AI which imitates parameter's AI.
     const Town *toTown = traveler.toTown;
     setNearby(toTown, toTown, Settings::getAITownRange());
@@ -58,33 +73,6 @@ flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const 
                                      materialInfo[i].value, materialInfo[i].buy, materialInfo[i].sell);
         });
     return Save::CreateAI(b, static_cast<short>(decisionCounter), sDecisionCriteria, sMaterialInfo);
-}
-
-void AI::randomizeLimitFactors() {
-    // Randomize factors which will be used to choose buy and sell limits for each material.
-    auto &gs = traveler.goods;
-    // Total count of materials across all goods, including labor.
-    size_t mC =
-        std::accumulate(begin(gs), end(gs), 0, [](unsigned int c, const Good &g) { return c + g.getMaterials().size(); });
-    materialInfo = std::vector<MaterialInfo>(mC);
-    static std::uniform_real_distribution<double> dis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
-    auto mII = begin(materialInfo);
-    for (size_t i = 0; i < gs.size(); ++i) {
-        mC = gs[i].getMaterials().size();
-        for (size_t j = 0; j < mC; ++j) {
-            mII->limitFactor = dis(Settings::getRng());
-            ++mII;
-        }
-    }
-}
-
-void AI::randomizeCriteria() {
-    // Randomize AI decision criteria.
-    static std::uniform_real_distribution<double> rDis(1, Settings::getCriteriaMax());
-    for (auto &c : decisionCriteria) c = rDis(Settings::getRng());
-    // Randomize decision counter.
-    static std::uniform_int_distribution<> iDis(-Settings::getAIDecisionTime(), 0);
-    decisionCounter = iDis(Settings::getRng());
 }
 
 double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const {
@@ -158,11 +146,11 @@ void AI::trade() {
     bestGood = nullptr;
     // Force a trade to occur if over weight.
     if (overWeight)
-        bestScore = 0;
+        bestScore = 0.;
     else
-        bestScore = 1 / bestScore;
+        bestScore = 1. / bestScore;
     double excess, townProfit = Settings::getTownProfit();
-    amount = 0;
+    amount = 0.;
     // Find highest buy score.
     mII = begin(materialInfo); // material info iterator
     // Loop through goods.

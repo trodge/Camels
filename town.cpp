@@ -58,8 +58,6 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
     // randomize business run counter
     static std::uniform_int_distribution<> dis(-Settings::getBusinessRunTime(), 0);
     businessCounter = dis(Settings::getRng());
-    travelersDis = std::uniform_int_distribution<>(Settings::getTravelersMin(),
-                                                   static_cast<int>(pow(population, Settings::getTravelersExponent())));
 }
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
@@ -193,7 +191,9 @@ void Town::put(Good &g) { goods[g.getId()].put(g); }
 
 void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts) {
     // Create a random number of travelers from this town, weighted down
-    int n = travelersDis(Settings::getRng());
+    std::uniform_int_distribution<> tvlrsDis{Settings::getTravelersMin(),
+                                             static_cast<int>(pow(population, Settings::getTravelersExponent()))};
+    int n = tvlrsDis(Settings::getRng());
     if (n < 0) n = 0;
     ts.reserve(ts.size() + static_cast<size_t>(n));
     for (int i = 0; i < n; ++i) ts.push_back(std::make_unique<Traveler>(nation->randomName(), this, gD));

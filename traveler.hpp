@@ -70,9 +70,9 @@ struct Property {
 };
 
 struct Contract {
-    Traveler *employer;
-    double owed; // value of goods holder will retain at end of contract
-    double wage; // value holder earns daily
+    Traveler *party; // the other party to this contract, or this if contract is a bid
+    double owed;     // value of goods holder will retain at end of contract
+    double wage;     // value holder earns daily, in deniers
 };
 
 enum class FightChoice { none = -1, fight, run, yield };
@@ -126,6 +126,7 @@ class Traveler {
     void equip(unsigned int pI);
     void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<Traveler *> attackable() const;
     void attack(Traveler *t);
     void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);

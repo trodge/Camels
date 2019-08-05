@@ -648,6 +648,35 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     }
 }
 
+void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
+    // Create buttons for hiring and managing employees.
+    const SDL_Rect &sR = Settings::getScreenRect();
+    int m = Settings::getButtonMargin();
+    // Create the offer buttons for the player.
+    SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
+    BoxInfo boxInfo{.foreground = nation->getForeground(),
+                    .background = nation->getBackground(),
+                    .border = Settings::getTradeBorder(),
+                    .radius = Settings::getTradeRadius(),
+                    .fontSize = Settings::getTradeFontSize()};
+    createGoodButtons(pgrs[1], goods, rt, boxInfo, pr, [](const Good &, const Material &) { return [](MenuButton *) {}; });
+    auto &bids = toTown->getBids();
+    std::vector<std::string> names;
+    for (auto &bd : bids) names.push_back(bd->party->name);
+    pgrs[2].addBox(std::make_unique<SelectButton>(BoxInfo{.rect = {sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31},
+                                                          .text = names,
+                                                          .foreground = toTown->getNation()->getForeground(),
+                                                          .background = toTown->getNation()->getBackground(),
+                                                          .border = Settings::getBigBoxBorder(),
+                                                          .radius = Settings::getBigBoxRadius(),
+                                                          .fontSize = Settings::getBigBoxFontSize(),
+                                                          .onClick = [this](MenuButton *btn) {
+                                                              
+                                                          },
+                                                          .scroll = true},
+                                                  pr));
+}
+
 std::vector<Traveler *> Traveler::attackable() const {
     // Get a vector of attackable travelers.
     auto &forwardTravelers = fromTown->getTravelers(); // travelers traveling from the same town

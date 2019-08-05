@@ -98,7 +98,7 @@ void Business::addConflicts(std::vector<int> &cs, std::vector<Good> &gds) {
         unsigned int oId = op.getId();
         if (gds[oId].getAmount() < gds[oId].getMax()) space = true;
     }
-    if (!space) factor = 0;
+    if (!space) factor = 0.;
     for (auto &ip : inputs) {
         unsigned int iId = ip.getId();
         double mF = gds[iId].getAmount() / ip.getAmount();
@@ -125,18 +125,18 @@ void Business::handleConflicts(std::vector<int> &cs) {
 void Business::run(std::vector<Good> &gds) {
     // Run this business on the given goods.
     if (factor > 0) {
-        auto &lastInput = gds[inputs.back().getId()];
+        auto &lastInput = gds[inputs.back().getId()]; // input which determines material
         for (auto &op : outputs) {
-            if (keepMaterial && op != lastInput) {
-                // If last input and output are the same, ignore materials.
+            if (!keepMaterial && op == lastInput)
+                // Materials are not kept or last input and output are the same, ignore materials.
+                gds[op.getId()].create(op.getAmount() * factor);
+            else {
                 std::unordered_map<unsigned int, double> materialAmounts;
                 double lIA = lastInput.getAmount();
-                for (auto &m : lastInput.getMaterials()) {
-                    if (lIA > 0.) materialAmounts.emplace(m.getId(), op.getAmount() * factor * m.getAmount() / lIA);
-                }
+                if (lIA == 0.) return;
+                for (auto &m : lastInput.getMaterials())
+                    materialAmounts.emplace(m.getId(), op.getAmount() * factor * m.getAmount() / lIA);
                 gds[op.getId()].create(materialAmounts);
-            } else {
-                gds[op.getId()].create(op.getAmount() * factor);
             }
         }
         for (auto &ip : inputs) gds[ip.getId()].use(ip.getAmount() * factor);
