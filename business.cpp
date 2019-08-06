@@ -20,7 +20,7 @@
 #include "business.hpp"
 
 Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM)
-    : id(i), mode(m), name(nm), area(1.), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1.) {}
+    : id(i), mode(m), name(nm), area(1), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1) {}
 
 Business::Business(const Save::Business *b)
     : id(b->id()), mode(b->mode()), name(b->name()->str()), area(b->area()), canSwitch(b->canSwitch()),
@@ -51,95 +51,89 @@ flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilde
 }
 
 void Business::setArea(double a) {
-    if (a > 0. && area > 0.) {
+    if (a > 0 && area > 0) {
         for (auto &ip : inputs) ip.setAmount(ip.getAmount() * a / area);
         for (auto &op : outputs) op.setAmount(op.getAmount() * a / area);
         area = a;
     }
 }
 
-void Business::takeRequirements(std::vector<Good> &gds, double a) {
+void Business::takeRequirements(Inventory &inv, double a) {
     // Take the requirments to add given area to business from parameter and store them in reclaimables.
     for (auto &rq : requirements) {
-        auto &g = gds[rq.getId()];
-        // Construct a transfer good with materials proportional to those in g.
-        Good tG(g);
-        tG.setAmount(rq.getAmount() * a);
-        // Take from g.
-        g.take(tG);
-        // Reduce transfered amount to amount determined by reclaim factor.
-        tG.setAmount(tG.getAmount() * reclaimFactor);
-        // Put into reclaimables.
-        auto rcbIt = std::lower_bound(begin(reclaimables), end(reclaimables), rq);
-        if (rcbIt == end(reclaimables) || *rcbIt != rq)
-            reclaimables.insert(rcbIt, tG);
-        else
-            rcbIt->put(tG);
+        // Take goods from inventory matching requirement id.
+        auto tGs = inv.take(rq.getGoodId(), rq.getAmount());
+        for (auto &tG : tGs) {
+            // Reduce transfered amount to amount determined by reclaim factor.
+            tG.setAmount(tG.getAmount() * reclaimFactor);
+            // Put into reclaimables.
+            auto rcbIt = std::lower_bound(begin(reclaimables), end(reclaimables), tG);
+            if (rcbIt == end(reclaimables) || *rcbIt != tG)
+                // Good not yet in reclaimables, insert it.
+                reclaimables.insert(rcbIt, tG);
+            else
+                rcbIt->put(tG);
+        }
     }
 }
 
-void Business::reclaim(std::vector<Good> &gds, double a) {
+void Business::reclaim(Inventory &inv, double a) {
     // Return reclaimables for the given area to parameter.
-    for (auto &rq : requirements) {
-        auto rcbIt = std::lower_bound(begin(reclaimables), end(reclaimables), rq);
-        // Construct a transfer good with materials proportional to those in reclaimables.
-        Good tG(*rcbIt);
-        tG.setAmount(rq.getAmount() * a);
+    for (auto &rcbl : reclaimables) {
+        // Construct a transfer good matching one in reclaimables.
+        Good tG(rcbl);
+        // Set the transfer amount proportional to area being reclaimed.
+        tG.setAmount(rcbl.getAmount() * a / area);
         // Take from reclaimables.
-        rcbIt->take(tG);
-        // Put into gds.
-        gds[rq.getId()].put(tG);
+        rcbl.take(tG);
+        // Put into inventory.
+        inv.put(tG);
     }
 }
 
-void Business::addConflicts(std::vector<int> &cs, std::vector<Good> &gds) {
+void Business::addConflicts(std::vector<unsigned int> &cfts, const Inventory &inv) {
     bool space = false;
     for (auto &op : outputs) {
-        unsigned int oId = op.getId();
-        if (gds[oId].getAmount() < gds[oId].getMax()) space = true;
+        auto gId = op.getGoodId();
+        if (inv.getAmount(gId) < inv.getMaximum(gId)) space = true;
     }
-    if (!space) factor = 0.;
+    if (!space) factor = 0;
     for (auto &ip : inputs) {
-        unsigned int iId = ip.getId();
-        double mF = gds[iId].getAmount() / ip.getAmount();
+        auto gId = ip.getGoodId();
+        double mF = inv.getAmount(gId) / ip.getAmount(); // max factor
         if (ip == outputs.back() && mF < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             factor *= mF;
         else if (factor > mF) {
             factor = mF;
-            ++cs[iId];
+            ++cfts[gId];
         }
     }
     if (factor < 0) std::cout << "Negative factor for " << name << std::endl;
 }
 
-void Business::handleConflicts(std::vector<int> &cs) {
+void Business::handleConflicts(std::vector<unsigned int> &cfts) {
     int gc = 0;
     for (auto &ip : inputs) {
-        int c = cs[static_cast<size_t>(ip.getId())];
+        int c = cfts[static_cast<size_t>(ip.getGoodId())];
         if (c > gc) gc = c;
     }
     if (gc) factor /= gc;
 }
 
-void Business::run(std::vector<Good> &gds) {
+void Business::run(Inventory &inv) {
     // Run this business on the given goods.
     if (factor > 0) {
-        auto &lastInput = gds[inputs.back().getId()]; // input which determines material
+        auto lastInputId = inputs.back().getGoodId(); // inputs which determine material
         for (auto &op : outputs) {
-            if (!keepMaterial && op == lastInput)
+            auto outputId = op.getGoodId();
+            if (!keepMaterial || outputId == lastInputId)
                 // Materials are not kept or last input and output are the same, ignore materials.
-                gds[op.getId()].create(op.getAmount() * factor);
-            else {
-                std::unordered_map<unsigned int, double> materialAmounts;
-                double lIA = lastInput.getAmount();
-                if (lIA == 0.) return;
-                for (auto &m : lastInput.getMaterials())
-                    materialAmounts.emplace(m.getId(), op.getAmount() * factor * m.getAmount() / lIA);
-                gds[op.getId()].create(materialAmounts);
-            }
+                inv.create(lastInputId, op.getAmount() * factor);
+            else
+                inv.create(lastInputId, outputId, op.getAmount() * factor);
         }
-        for (auto &ip : inputs) gds[ip.getId()].use(ip.getAmount() * factor);
+        for (auto &ip : inputs) inv.use(ip.getGoodId(), ip.getAmount() * factor);
     }
 }
 
@@ -164,7 +158,7 @@ std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) c
 }
 
 void Business::saveFrequency(unsigned long p, std::string &u) const {
-    if (frequency > 0.) {
+    if (frequency > 0) {
         u.append(" WHEN business_id = ");
         u.append(std::to_string(id));
         u.append(" AND mode = ");

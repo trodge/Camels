@@ -14,8 +14,6 @@ struct CombatStat;
 
 struct MaterialInfo;
 
-struct Material;
-
 struct Good;
 
 struct Property;
@@ -151,25 +149,38 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) MaterialInfo FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(MaterialInfo, 48);
 
-struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
+struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ID = 4,
-    VT_NAME = 6,
-    VT_AMOUNT = 8,
-    VT_PERISH = 10,
-    VT_CARRY = 12,
-    VT_CONSUMPTION = 14,
-    VT_DEMANDSLOPE = 16,
-    VT_DEMANDINTERCEPT = 18,
-    VT_PERISHCOUNTERS = 20,
-    VT_COMBATSTATS = 22,
-    VT_LIMITFACTOR = 24
+    VT_GOODID = 4,
+    VT_MATERIALID = 6,
+    VT_FULLID = 8,
+    VT_GOODNAME = 10,
+    VT_MATERIALNAME = 12,
+    VT_AMOUNT = 14,
+    VT_PERISH = 16,
+    VT_CARRY = 18,
+    VT_MEASURE = 20,
+    VT_CONSUMPTIONRATE = 22,
+    VT_DEMANDSLOPE = 24,
+    VT_DEMANDINTERCEPT = 26,
+    VT_PERISHCOUNTERS = 28,
+    VT_COMBATSTATS = 30,
+    VT_AMMOID = 32
   };
-  uint32_t id() const {
-    return GetField<uint32_t>(VT_ID, 0);
+  uint32_t goodId() const {
+    return GetField<uint32_t>(VT_GOODID, 0);
   }
-  const flatbuffers::String *name() const {
-    return GetPointer<const flatbuffers::String *>(VT_NAME);
+  uint32_t materialId() const {
+    return GetField<uint32_t>(VT_MATERIALID, 0);
+  }
+  uint32_t fullId() const {
+    return GetField<uint32_t>(VT_FULLID, 0);
+  }
+  const flatbuffers::String *goodName() const {
+    return GetPointer<const flatbuffers::String *>(VT_GOODNAME);
+  }
+  const flatbuffers::String *materialName() const {
+    return GetPointer<const flatbuffers::String *>(VT_MATERIALNAME);
   }
   double amount() const {
     return GetField<double>(VT_AMOUNT, 0.0);
@@ -180,8 +191,11 @@ struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   double carry() const {
     return GetField<double>(VT_CARRY, 0.0);
   }
-  double consumption() const {
-    return GetField<double>(VT_CONSUMPTION, 0.0);
+  const flatbuffers::String *measure() const {
+    return GetPointer<const flatbuffers::String *>(VT_MEASURE);
+  }
+  double consumptionRate() const {
+    return GetField<double>(VT_CONSUMPTIONRATE, 0.0);
   }
   double demandSlope() const {
     return GetField<double>(VT_DEMANDSLOPE, 0.0);
@@ -195,175 +209,31 @@ struct Material FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<const CombatStat *> *combatStats() const {
     return GetPointer<const flatbuffers::Vector<const CombatStat *> *>(VT_COMBATSTATS);
   }
-  double limitFactor() const {
-    return GetField<double>(VT_LIMITFACTOR, 0.0);
+  uint32_t ammoId() const {
+    return GetField<uint32_t>(VT_AMMOID, 0);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_ID) &&
-           VerifyOffset(verifier, VT_NAME) &&
-           verifier.VerifyString(name()) &&
+           VerifyField<uint32_t>(verifier, VT_GOODID) &&
+           VerifyField<uint32_t>(verifier, VT_MATERIALID) &&
+           VerifyField<uint32_t>(verifier, VT_FULLID) &&
+           VerifyOffset(verifier, VT_GOODNAME) &&
+           verifier.VerifyString(goodName()) &&
+           VerifyOffset(verifier, VT_MATERIALNAME) &&
+           verifier.VerifyString(materialName()) &&
            VerifyField<double>(verifier, VT_AMOUNT) &&
            VerifyField<double>(verifier, VT_PERISH) &&
            VerifyField<double>(verifier, VT_CARRY) &&
-           VerifyField<double>(verifier, VT_CONSUMPTION) &&
+           VerifyOffset(verifier, VT_MEASURE) &&
+           verifier.VerifyString(measure()) &&
+           VerifyField<double>(verifier, VT_CONSUMPTIONRATE) &&
            VerifyField<double>(verifier, VT_DEMANDSLOPE) &&
            VerifyField<double>(verifier, VT_DEMANDINTERCEPT) &&
            VerifyOffset(verifier, VT_PERISHCOUNTERS) &&
            verifier.VerifyVector(perishCounters()) &&
            VerifyOffset(verifier, VT_COMBATSTATS) &&
            verifier.VerifyVector(combatStats()) &&
-           VerifyField<double>(verifier, VT_LIMITFACTOR) &&
-           verifier.EndTable();
-  }
-};
-
-struct MaterialBuilder {
-  flatbuffers::FlatBufferBuilder &fbb_;
-  flatbuffers::uoffset_t start_;
-  void add_id(uint32_t id) {
-    fbb_.AddElement<uint32_t>(Material::VT_ID, id, 0);
-  }
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
-    fbb_.AddOffset(Material::VT_NAME, name);
-  }
-  void add_amount(double amount) {
-    fbb_.AddElement<double>(Material::VT_AMOUNT, amount, 0.0);
-  }
-  void add_perish(double perish) {
-    fbb_.AddElement<double>(Material::VT_PERISH, perish, 0.0);
-  }
-  void add_carry(double carry) {
-    fbb_.AddElement<double>(Material::VT_CARRY, carry, 0.0);
-  }
-  void add_consumption(double consumption) {
-    fbb_.AddElement<double>(Material::VT_CONSUMPTION, consumption, 0.0);
-  }
-  void add_demandSlope(double demandSlope) {
-    fbb_.AddElement<double>(Material::VT_DEMANDSLOPE, demandSlope, 0.0);
-  }
-  void add_demandIntercept(double demandIntercept) {
-    fbb_.AddElement<double>(Material::VT_DEMANDINTERCEPT, demandIntercept, 0.0);
-  }
-  void add_perishCounters(flatbuffers::Offset<flatbuffers::Vector<const PerishCounter *>> perishCounters) {
-    fbb_.AddOffset(Material::VT_PERISHCOUNTERS, perishCounters);
-  }
-  void add_combatStats(flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats) {
-    fbb_.AddOffset(Material::VT_COMBATSTATS, combatStats);
-  }
-  void add_limitFactor(double limitFactor) {
-    fbb_.AddElement<double>(Material::VT_LIMITFACTOR, limitFactor, 0.0);
-  }
-  explicit MaterialBuilder(flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  MaterialBuilder &operator=(const MaterialBuilder &);
-  flatbuffers::Offset<Material> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = flatbuffers::Offset<Material>(end);
-    return o;
-  }
-};
-
-inline flatbuffers::Offset<Material> CreateMaterial(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t id = 0,
-    flatbuffers::Offset<flatbuffers::String> name = 0,
-    double amount = 0.0,
-    double perish = 0.0,
-    double carry = 0.0,
-    double consumption = 0.0,
-    double demandSlope = 0.0,
-    double demandIntercept = 0.0,
-    flatbuffers::Offset<flatbuffers::Vector<const PerishCounter *>> perishCounters = 0,
-    flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats = 0,
-    double limitFactor = 0.0) {
-  MaterialBuilder builder_(_fbb);
-  builder_.add_limitFactor(limitFactor);
-  builder_.add_demandIntercept(demandIntercept);
-  builder_.add_demandSlope(demandSlope);
-  builder_.add_consumption(consumption);
-  builder_.add_carry(carry);
-  builder_.add_perish(perish);
-  builder_.add_amount(amount);
-  builder_.add_combatStats(combatStats);
-  builder_.add_perishCounters(perishCounters);
-  builder_.add_name(name);
-  builder_.add_id(id);
-  return builder_.Finish();
-}
-
-inline flatbuffers::Offset<Material> CreateMaterialDirect(
-    flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t id = 0,
-    const char *name = nullptr,
-    double amount = 0.0,
-    double perish = 0.0,
-    double carry = 0.0,
-    double consumption = 0.0,
-    double demandSlope = 0.0,
-    double demandIntercept = 0.0,
-    const std::vector<PerishCounter> *perishCounters = nullptr,
-    const std::vector<CombatStat> *combatStats = nullptr,
-    double limitFactor = 0.0) {
-  auto name__ = name ? _fbb.CreateString(name) : 0;
-  auto perishCounters__ = perishCounters ? _fbb.CreateVectorOfStructs<PerishCounter>(*perishCounters) : 0;
-  auto combatStats__ = combatStats ? _fbb.CreateVectorOfStructs<CombatStat>(*combatStats) : 0;
-  return Save::CreateMaterial(
-      _fbb,
-      id,
-      name__,
-      amount,
-      perish,
-      carry,
-      consumption,
-      demandSlope,
-      demandIntercept,
-      perishCounters__,
-      combatStats__,
-      limitFactor);
-}
-
-struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ID = 4,
-    VT_NAME = 6,
-    VT_AMOUNT = 8,
-    VT_MATERIALS = 10,
-    VT_MEASURE = 12,
-    VT_SHOOTS = 14
-  };
-  uint32_t id() const {
-    return GetField<uint32_t>(VT_ID, 0);
-  }
-  const flatbuffers::String *name() const {
-    return GetPointer<const flatbuffers::String *>(VT_NAME);
-  }
-  double amount() const {
-    return GetField<double>(VT_AMOUNT, 0.0);
-  }
-  const flatbuffers::Vector<flatbuffers::Offset<Material>> *materials() const {
-    return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Material>> *>(VT_MATERIALS);
-  }
-  const flatbuffers::String *measure() const {
-    return GetPointer<const flatbuffers::String *>(VT_MEASURE);
-  }
-  uint32_t shoots() const {
-    return GetField<uint32_t>(VT_SHOOTS, 0);
-  }
-  bool Verify(flatbuffers::Verifier &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_ID) &&
-           VerifyOffset(verifier, VT_NAME) &&
-           verifier.VerifyString(name()) &&
-           VerifyField<double>(verifier, VT_AMOUNT) &&
-           VerifyOffset(verifier, VT_MATERIALS) &&
-           verifier.VerifyVector(materials()) &&
-           verifier.VerifyVectorOfTables(materials()) &&
-           VerifyOffset(verifier, VT_MEASURE) &&
-           verifier.VerifyString(measure()) &&
-           VerifyField<uint32_t>(verifier, VT_SHOOTS) &&
+           VerifyField<uint32_t>(verifier, VT_AMMOID) &&
            verifier.EndTable();
   }
 };
@@ -371,23 +241,50 @@ struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct GoodBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(uint32_t id) {
-    fbb_.AddElement<uint32_t>(Good::VT_ID, id, 0);
+  void add_goodId(uint32_t goodId) {
+    fbb_.AddElement<uint32_t>(Good::VT_GOODID, goodId, 0);
   }
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) {
-    fbb_.AddOffset(Good::VT_NAME, name);
+  void add_materialId(uint32_t materialId) {
+    fbb_.AddElement<uint32_t>(Good::VT_MATERIALID, materialId, 0);
+  }
+  void add_fullId(uint32_t fullId) {
+    fbb_.AddElement<uint32_t>(Good::VT_FULLID, fullId, 0);
+  }
+  void add_goodName(flatbuffers::Offset<flatbuffers::String> goodName) {
+    fbb_.AddOffset(Good::VT_GOODNAME, goodName);
+  }
+  void add_materialName(flatbuffers::Offset<flatbuffers::String> materialName) {
+    fbb_.AddOffset(Good::VT_MATERIALNAME, materialName);
   }
   void add_amount(double amount) {
     fbb_.AddElement<double>(Good::VT_AMOUNT, amount, 0.0);
   }
-  void add_materials(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Material>>> materials) {
-    fbb_.AddOffset(Good::VT_MATERIALS, materials);
+  void add_perish(double perish) {
+    fbb_.AddElement<double>(Good::VT_PERISH, perish, 0.0);
+  }
+  void add_carry(double carry) {
+    fbb_.AddElement<double>(Good::VT_CARRY, carry, 0.0);
   }
   void add_measure(flatbuffers::Offset<flatbuffers::String> measure) {
     fbb_.AddOffset(Good::VT_MEASURE, measure);
   }
-  void add_shoots(uint32_t shoots) {
-    fbb_.AddElement<uint32_t>(Good::VT_SHOOTS, shoots, 0);
+  void add_consumptionRate(double consumptionRate) {
+    fbb_.AddElement<double>(Good::VT_CONSUMPTIONRATE, consumptionRate, 0.0);
+  }
+  void add_demandSlope(double demandSlope) {
+    fbb_.AddElement<double>(Good::VT_DEMANDSLOPE, demandSlope, 0.0);
+  }
+  void add_demandIntercept(double demandIntercept) {
+    fbb_.AddElement<double>(Good::VT_DEMANDINTERCEPT, demandIntercept, 0.0);
+  }
+  void add_perishCounters(flatbuffers::Offset<flatbuffers::Vector<const PerishCounter *>> perishCounters) {
+    fbb_.AddOffset(Good::VT_PERISHCOUNTERS, perishCounters);
+  }
+  void add_combatStats(flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats) {
+    fbb_.AddOffset(Good::VT_COMBATSTATS, combatStats);
+  }
+  void add_ammoId(uint32_t ammoId) {
+    fbb_.AddElement<uint32_t>(Good::VT_AMMOID, ammoId, 0);
   }
   explicit GoodBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -403,41 +300,79 @@ struct GoodBuilder {
 
 inline flatbuffers::Offset<Good> CreateGood(
     flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t id = 0,
-    flatbuffers::Offset<flatbuffers::String> name = 0,
+    uint32_t goodId = 0,
+    uint32_t materialId = 0,
+    uint32_t fullId = 0,
+    flatbuffers::Offset<flatbuffers::String> goodName = 0,
+    flatbuffers::Offset<flatbuffers::String> materialName = 0,
     double amount = 0.0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Material>>> materials = 0,
+    double perish = 0.0,
+    double carry = 0.0,
     flatbuffers::Offset<flatbuffers::String> measure = 0,
-    uint32_t shoots = 0) {
+    double consumptionRate = 0.0,
+    double demandSlope = 0.0,
+    double demandIntercept = 0.0,
+    flatbuffers::Offset<flatbuffers::Vector<const PerishCounter *>> perishCounters = 0,
+    flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats = 0,
+    uint32_t ammoId = 0) {
   GoodBuilder builder_(_fbb);
+  builder_.add_demandIntercept(demandIntercept);
+  builder_.add_demandSlope(demandSlope);
+  builder_.add_consumptionRate(consumptionRate);
+  builder_.add_carry(carry);
+  builder_.add_perish(perish);
   builder_.add_amount(amount);
-  builder_.add_shoots(shoots);
+  builder_.add_ammoId(ammoId);
+  builder_.add_combatStats(combatStats);
+  builder_.add_perishCounters(perishCounters);
   builder_.add_measure(measure);
-  builder_.add_materials(materials);
-  builder_.add_name(name);
-  builder_.add_id(id);
+  builder_.add_materialName(materialName);
+  builder_.add_goodName(goodName);
+  builder_.add_fullId(fullId);
+  builder_.add_materialId(materialId);
+  builder_.add_goodId(goodId);
   return builder_.Finish();
 }
 
 inline flatbuffers::Offset<Good> CreateGoodDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t id = 0,
-    const char *name = nullptr,
+    uint32_t goodId = 0,
+    uint32_t materialId = 0,
+    uint32_t fullId = 0,
+    const char *goodName = nullptr,
+    const char *materialName = nullptr,
     double amount = 0.0,
-    const std::vector<flatbuffers::Offset<Material>> *materials = nullptr,
+    double perish = 0.0,
+    double carry = 0.0,
     const char *measure = nullptr,
-    uint32_t shoots = 0) {
-  auto name__ = name ? _fbb.CreateString(name) : 0;
-  auto materials__ = materials ? _fbb.CreateVector<flatbuffers::Offset<Material>>(*materials) : 0;
+    double consumptionRate = 0.0,
+    double demandSlope = 0.0,
+    double demandIntercept = 0.0,
+    const std::vector<PerishCounter> *perishCounters = nullptr,
+    const std::vector<CombatStat> *combatStats = nullptr,
+    uint32_t ammoId = 0) {
+  auto goodName__ = goodName ? _fbb.CreateString(goodName) : 0;
+  auto materialName__ = materialName ? _fbb.CreateString(materialName) : 0;
   auto measure__ = measure ? _fbb.CreateString(measure) : 0;
+  auto perishCounters__ = perishCounters ? _fbb.CreateVectorOfStructs<PerishCounter>(*perishCounters) : 0;
+  auto combatStats__ = combatStats ? _fbb.CreateVectorOfStructs<CombatStat>(*combatStats) : 0;
   return Save::CreateGood(
       _fbb,
-      id,
-      name__,
+      goodId,
+      materialId,
+      fullId,
+      goodName__,
+      materialName__,
       amount,
-      materials__,
+      perish,
+      carry,
       measure__,
-      shoots);
+      consumptionRate,
+      demandSlope,
+      demandIntercept,
+      perishCounters__,
+      combatStats__,
+      ammoId);
 }
 
 struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

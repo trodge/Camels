@@ -31,6 +31,7 @@
 
 #include "business.hpp"
 #include "draw.hpp"
+#include "inventory.hpp"
 #include "loadbar.hpp"
 #include "nation.hpp"
 #include "traveler.hpp"
@@ -49,7 +50,7 @@ class Town {
     unsigned long population;
     unsigned int townType;
     std::vector<Business> businesses;
-    std::vector<Good> goods;
+    Inventory inventory;
     std::vector<Town *> neighbors;
     int businessCounter;
     bool maxGoods = false; // town creates maximum goods for testing purposes
@@ -58,7 +59,6 @@ class Town {
     int dpx, dpy;
     int distSq(int x, int y) const;
     double dist(int x, int y) const;
-    void setMax();
 
 public:
     Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
@@ -76,8 +76,7 @@ public:
     unsigned long getPopulation() const { return population; }
     unsigned int getTownType() const { return townType; }
     const std::vector<Business> &getBusinesses() const { return businesses; }
-    const std::vector<Good> &getGoods() const { return goods; }
-    const Good &getGood(size_t i) const { return goods[i]; }
+    const Inventory &getInventory() const { return inventory; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<Traveler *> &getTravelers() const { return travelers; }
     const std::vector<std::unique_ptr<Contract>> &getBids() const { return bids; }
@@ -104,7 +103,9 @@ public:
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d);
     void resetGoods();
     void saveFrequencies(std::string &u) const;
-    void adjustDemand(const std::vector<MenuButton *> &rBs, double d);
+    void adjustDemand(const std::vector<MenuButton *> &rBs, double d) {
+        inventory.adjustDemand(rBs, d / static_cast<double>(population) / 1000);
+    }
     void saveDemand(std::string &u) const;
 };
 

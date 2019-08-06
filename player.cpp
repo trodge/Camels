@@ -425,21 +425,21 @@ void Player::setState(UIState::State s) {
 void Player::handleKey(const SDL_KeyboardEvent &k) {
     SDL_Keymod mod = SDL_GetModState();
     if ((mod & KMOD_CTRL) && (mod & KMOD_ALT) && (mod & KMOD_SHIFT))
-        modMultiplier = 10000.;
+        modMultiplier = 10000;
     else if ((mod & KMOD_CTRL) && (mod & KMOD_ALT))
         modMultiplier = 0.001;
     else if ((mod & KMOD_CTRL) && (mod & KMOD_SHIFT))
-        modMultiplier = 1000.;
+        modMultiplier = 1000;
     else if ((mod & KMOD_ALT) && (mod & KMOD_SHIFT))
         modMultiplier = 0.01;
     else if (mod & KMOD_CTRL)
-        modMultiplier = 100.;
+        modMultiplier = 100;
     else if (mod & KMOD_ALT)
         modMultiplier = 0.1;
     else if (mod & KMOD_SHIFT)
-        modMultiplier = 10.;
+        modMultiplier = 10;
     else
-        modMultiplier = 1.;
+        modMultiplier = 1;
     int keyedIndex = -1, indexOffset = 0;
     for (auto &pgr : pagers) {
         keyedIndex = pgr.getKeyedIndex(k);

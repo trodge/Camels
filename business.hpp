@@ -26,8 +26,10 @@
 #include <vector>
 
 #include "good.hpp"
+#include "inventory.hpp"
 
 class Good;
+class Inventory;
 
 class Business {
     unsigned int id, mode;
@@ -41,7 +43,7 @@ class Business {
     std::vector<Good> inputs;       // goods needed every production cycle
     std::vector<Good> outputs;      // goods created every production cycle
     double factor;                  // factor based on area and available inputs for production
-    double frequency = 0.;          // area of business per unit of population
+    double frequency = 0;          // area of business per unit of population
     double reclaimFactor = 0.7;     // portion of requirements that can be reclaimed
 
 public:
@@ -70,11 +72,11 @@ public:
     void setOutputs(const std::vector<Good> &ops) { outputs = ops; }
     void setFactor(double ft) { factor = ft; }
     void setFrequency(double fq) { frequency = fq; }
-    void takeRequirements(std::vector<Good> &gds, double a);
-    void reclaim(std::vector<Good> &gds, double a);
-    void addConflicts(std::vector<int> &cs, std::vector<Good> &gds);
-    void handleConflicts(std::vector<int> &cs);
-    void run(std::vector<Good> &gds);
+    void takeRequirements(Inventory &inv, double a);
+    void reclaim(Inventory &inv, double a);
+    void addConflicts(std::vector<unsigned int> &cfts, const Inventory &inv);
+    void handleConflicts(std::vector<unsigned int> &cfts);
+    void run(Inventory &inv);
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void saveFrequency(unsigned long p, std::string &u) const;
 };

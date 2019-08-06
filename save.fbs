@@ -25,27 +25,23 @@ struct MaterialInfo {
     sell:double;
 }
 
-table Material {
-    id:uint;
-    name:string;
+
+table Good {
+    goodId:uint;
+    materialId:uint;
+    fullId:uint;
+    goodName:string;
+    materialName:string;
     amount:double;
     perish:double;
     carry:double;
-    consumption:double;
+    measure:string;
+    consumptionRate:double;
     demandSlope:double;
     demandIntercept:double;
     perishCounters:[PerishCounter];
     combatStats:[CombatStat];
-    limitFactor:double;
-}
-
-table Good {
-    id:uint;
-    name:string;
-    amount:double;
-    materials:[Material];
-    measure:string;
-    shoots:uint;
+    ammoId:uint;
 }
 
 table Property {

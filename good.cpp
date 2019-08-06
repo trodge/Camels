@@ -19,39 +19,21 @@
 
 #include "good.hpp"
 
-Good::Good(const Save::Good *g)
-    : id(static_cast<unsigned int>(g->id())), name(g->name()->str()), amount(g->amount()), measure(g->measure()->str()),
-      split(!measure.empty()), shoots(g->shoots()) {
-    auto lMaterials = g->materials();
-    for (auto lMI = lMaterials->begin(); lMI != lMaterials->end(); ++lMI) materials.push_back(Material(*lMI));
-}
-
 flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sName = b.CreateString(name);
-    auto sMaterials = b.CreateVector<flatbuffers::Offset<Save::Material>>(
-        materials.size(), [this, &b](size_t i) { return materials[i].save(b); });
-    auto sMeasure = b.CreateString(measure);
-    return Save::CreateGood(b, id, sName, amount, sMaterials, sMeasure, shoots);
-}
-
-std::string Good::getFullName(const Material &m) const { return id == m.getId() ? name : m.getName() + " " + name; }
-
-const Material &Good::getMaterial(const Material &m) const {
-    return *std::lower_bound(begin(materials), end(materials), m);
-}
-
-const Material &Good::getMaterial(const std::string &mNm) const {
-    // Return material such that first word of material name matches first word of parameter.
-    return *std::find_if(begin(materials), end(materials), [mNm](const Material &m) {
-        const std::string &mN = m.getName(); // material name
-        return mN.substr(0, mN.find(' ')) == mNm.substr(0, mNm.find(' '));
-    }); // iterator to the material on bx
-}
-
-double Good::getConsumption() const {
-    double c = 0;
-    for (auto &m : materials) c += m.getConsumption();
-    return c;
+    auto svGoodName = b.CreateString(goodName);
+    auto svMaterialName = b.CreateString(materialName);
+    auto svMeasure = b.CreateString(measure);
+    auto svPerishCounters =
+        b.CreateVectorOfStructs<Save::PerishCounter>(perishCounters.size(), [this](size_t i, Save::PerishCounter *pC) {
+            *pC = Save::PerishCounter(perishCounters[i].time, perishCounters[i].amount);
+        });
+    auto svCombatStats = b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
+        *cS = Save::CombatStat(combatStats[i].statId, combatStats[i].partId, combatStats[i].attack, combatStats[i].type,
+                               combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
+                               combatStats[i].defense[2]);
+    });
+    return Save::CreateGood(b, goodId, materialId, index, svGoodName, svMaterialName, amount, perish, carry, svMeasure,
+                            consumptionRate, demandSlope, demandIntercept, svPerishCounters, svCombatStats, ammoId);
 }
 
 std::string Good::businessText() const {
@@ -64,147 +46,217 @@ std::string Good::businessText() const {
             // Pluralize.
             bsnTx += "s";
     }
-    if (split || amount == 1. || name == "sheep")
-        bsnTx = name + ": " + bsnTx;
+    if (split || amount == 1. || goodName == "sheep")
+        bsnTx = goodName + ": " + bsnTx;
     else
-        bsnTx = name + "s: " + bsnTx;
+        bsnTx = goodName + "s: " + bsnTx;
     return bsnTx;
 }
 
-std::string Good::logText() const {
-    std::string lTx = std::to_string(amount);
-    dropTrail(lTx, split ? 3 : 0);
+void Good::setFullName() { fullName = goodName == materialName ? goodName : goodName + " " + materialName; }
+
+std::string Good::logEntry() const {
+    std::string logText = std::to_string(amount);
+    dropTrail(logText, split ? 3 : 0);
     if (split) {
-        // Goods that split must be measured.
-        lTx += " " + measure;
-        if (amount != 1.)
-            // Pluralize.
-            lTx += "s";
-        lTx += " of";
+        logText += " " + measure;
+        if (amount != 1) logText += "s";
+        logText += " of";
     }
-    lTx += " ";
-    if (id != materials.front().getId()) lTx += materials.front().getName() + " ";
-    lTx += name;
-    if (!split && amount != 1. && name != "sheep")
-        // Pluralize.
-        lTx += "s";
-    return lTx;
+    logText += " " + fullName;
+    if (!split && amount != 1)
+        // Unsplitable goods don't use measure words.
+        logText += "s";
+    return logText;
 }
 
-void Good::setAmount(double a) {
-    // Set amount to given amount proportionally distributed among materials, if present.
-    for (auto &m : materials) m.setAmount(a * m.getAmount() / amount);
-    amount = a;
+double Good::price(double qtt) const {
+    // Get the price offered when selling the given quantity.
+    return std::max((demandIntercept - demandSlope * (amount + qtt / 2)) * qtt, minPrice * qtt);
 }
 
-void Good::addMaterial(const Material &m) { materials.push_back(m); }
-
-void Good::setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs) {
-    for (auto &m : materials) {
-        auto it = cSs.find(m.getId());
-        if (it == end(cSs)) continue;
-        m.setCombatStats(it->second);
-    }
+double Good::price() const {
+    // Get the current price of this good.
+    return std::max(demandIntercept - demandSlope * amount, minPrice);
 }
 
-void Good::setConsumptions(const std::vector<std::array<double, 3>> &cs) {
-    // Takes a vector of consumption rates, demand slopes, and demand intercepts for each material of this good.
-    for (size_t i = 0; i < cs.size(); ++i) materials[i].setConsumption(cs[i]);
+double Good::cost(double q) const {
+    // Get the cost to buy the given quantity
+    return std::max((demandIntercept - demandSlope * (amount - q / 2)) * q, minPrice * q);
 }
 
-void Good::scaleConsumptions(unsigned long p) {
-    for (auto &m : materials) m.scaleConsumption(p);
+double Good::quantity(double p, double &e) const {
+    /* Get quantity of this material available at given price.
+     * Second parameter holds excess quantity after amount is used up. */
+    double q;
+    double b = demandIntercept - demandSlope * amount;
+    if (demandSlope != 0)
+        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) / demandSlope;
+    else if (demandIntercept != 0)
+        q = p / demandIntercept;
+    else
+        q = 0;
+    if (q < 0) return 0;
+    if (amount > q) return q;
+    // There's not enough good to sell in the town.
+    e = q - amount;
+    return amount;
 }
 
-void Good::removeExcess() {
+double Good::quantity(double p) const {
+    // Get quantity of this material corresponding to price. Ignore material availability.
+    double q;
+    double b = demandIntercept - demandSlope * amount;
+    if (demandSlope != 0)
+        q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) / demandSlope;
+    else if (demandIntercept != 0)
+        q = p / demandIntercept;
+    else
+        q = 0;
+    if (q < 0) return 0;
+    return q;
+}
+
+double Good::quantum(double c) const {
+    // Get quantum of this material needed to match given cost.
+    double q;
+    double b = demandIntercept - demandSlope * amount;
+    if (demandSlope != 0)
+        q = amount - (demandIntercept - sqrt(b * b - demandSlope * c * 2)) / demandSlope;
+    else if (demandIntercept != 0)
+        q = c / demandIntercept;
+    else
+        q = 0;
+    if (q < 0) return 0;
+    return q;
+}
+
+void Good::setConsumption(const std::array<double, 3> &cnsptn) {
+    // Assign the given three values to consumption, demand slope, and demand intercept.
+    consumptionRate = cnsptn[0];
+    demandSlope = cnsptn[1];
+    demandIntercept = cnsptn[2];
+}
+
+void Good::scaleConsumption(unsigned long ppl) {
+    // Assign consumption to match given population.
+    demandSlope /= static_cast<double>(ppl);
+    consumptionRate *= static_cast<double>(ppl);
+}
+
+void Good::enforceMaximum() {
     // Removes materials in excess of max
-    if (max > 0 && amount > max) {
-        for (auto &m : materials) { m.use((amount - max) * m.getAmount() / amount); }
-        amount = max;
-    }
+    if (maximum > 0 && amount > maximum) { amount = maximum; }
 }
 
-void Good::take(Good &g) {
+void Good::take(Good &gd) {
     // Takes the given good from this good. Stores perish counters for transfer in parameter.
-    for (auto &gM : g.materials) {
-        // Find parameter material in this good's materials.
-        auto it = std::lower_bound(begin(materials), end(materials), gM);
-        if (it == end(materials) || *it != gM)
-            // Material was not found, so take its amount from overall transfer.
-            g.amount -= gM.getAmount();
+    amount -= gd.amount;
+    if (amount < 0) {
+        gd.amount += amount;
+        amount = 0;
+    }
+    double movedAmount = gd.getAmount(); // amount moved not accounted for by transfered perish counters
+    while (movedAmount > 0 && !perishCounters.empty()) {
+        // Moved amount is goingd down.
+        PerishCounter pC = perishCounters.back(); // copy of most recently added perish counter
+        perishCounters.pop_back();
+        if (pC.amount > movedAmount) {
+            // Perish counter is enough to make change and stay around.
+            pC.amount -= movedAmount;
+            // Put perish counter back less amount moved.
+            perishCounters.push_back(pC);
+            // Taken perish counter has just the amount taken.
+            pC.amount = movedAmount;
+            gd.perishCounters.push_front(pC);
+            movedAmount = 0;
+        } else {
+            // Perish counter is used up to make change.
+            gd.perishCounters.push_front(pC);
+            movedAmount -= pC.amount;
+        }
+    }
+}
+
+void Good::put(Good &gd) {
+    // Puts the given good in this good. Transfers perish counters from parameter.
+    amount += gd.amount;
+    auto middle = perishCounters.insert(perishCounters.end(), gd.perishCounters.begin(), gd.perishCounters.end());
+    std::inplace_merge(perishCounters.begin(), middle, perishCounters.end());
+}
+
+void Good::use(double amt) {
+    // Uses up the given amount of this good.
+    if (amt > 0) {
+        if (amount >= amt)
+            amount -= amt;
         else
-            it->take(gM);
+            amount = 0;
     }
-    amount -= g.amount;
-}
-
-void Good::use(double a) {
-    // Uses up the given amount of this good. Each material is used proportionally.
-    if (a > 0. && amount >= a) {
-        for (auto &m : materials) m.use(a * m.getAmount() / amount);
-        amount -= a;
-    } else if (a > 0.) {
-        for (auto &m : materials) m.use(m.getAmount());
-        amount = 0.;
+    while (amt > 0 && !perishCounters.empty()) {
+        // Amount is going down.
+        PerishCounter pC = perishCounters.back();
+        perishCounters.pop_back();
+        if (pC.amount > amt) {
+            // Perish counter is enough to make change and stay around.
+            pC.amount -= amt;
+            perishCounters.push_back(pC);
+            amt = 0;
+        } else {
+            // Perish counter is used up to make change.
+            amt -= pC.amount;
+        }
     }
 }
 
-void Good::put(Good &g) {
-    // Puts the given good in this good. Transfers perish counters.
-    for (auto &gM : g.materials) {
-        auto it = std::lower_bound(begin(materials), end(materials), gM);
-        if (it == end(materials) || *it != gM)
-            g.amount += gM.getAmount();
-        else
-            it->put(gM);
-    }
-    amount += g.amount;
+void Good::create(double amt) {
+    // Newly creates the given amount of this good.
+    amount += amt;
+    if (amt > 0 && perish != 0) perishCounters.push_front({0, amt});
+    enforceMaximum();
 }
 
-void Good::create(const std::unordered_map<unsigned int, double> &mAs) {
-    // Newly creates the given amount of each material.
-    double a = 0;
-    for (auto &m : materials) {
-        auto it = mAs.find(m.getId());
-        if (it == end(mAs)) continue;
-        double mA = it->second;
-        m.create(mA);
-        a += mA;
-    }
-    amount += a;
-    removeExcess();
-}
-
-void Good::create(double a) {
-    // Newly creates the given amount of this good's self named material
-    Material m(id);
-    auto it = std::lower_bound(begin(materials), end(materials), m);
-    if (it == end(materials) || *it != m) return;
-    it->create(a);
-    amount += a;
-    removeExcess();
-}
-
-void Good::consume(unsigned int e) {
+void Good::update(unsigned int elTm) {
     // Remove consumed goods and perished goods over elapsed time.
-    for (auto &m : materials) {
-        amount -= m.consume(e);
-        if (amount < 0.) amount = 0.;
-        // Keep demand slopes from being too low or too high
-        m.fixDemand(max);
+    lastAmount = amount;
+    double consumption = consumptionRate * elTm / kDaysPerYear / Settings::getDayLength();
+    if (consumption > amount) consumption = amount;
+    if (consumption > 0)
+        use(consumption);
+    else if (consumption < 0)
+        create(-consumption);
+    if (perish == 0) return;
+    // Find the first perish counter that will expire.
+    PerishCounter exPC = {int(perish * Settings::getDayLength() * kDaysPerYear - elTm), 0};
+    auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
+    // Remove expired amounts from amount and total them.
+    double amt =
+        std::accumulate(expired, perishCounters.end(), 0, [](double d, const PerishCounter &pC) { return d + pC.amount; });
+    // Erase expired perish counters.
+    perishCounters.erase(expired, perishCounters.end());
+    // Add elapsed time to remaining counters.
+    for (auto &pC : perishCounters) pC.time += elTm;
+    // If too much perished, reduce total by overage.
+    if (amount > amt) {
+        amount -= amt;
+    } else {
+        amt = amount;
+        amount = 0;
     }
+    if (amount < 0) amount = 0;
+    // Keep demand slopes from being too low or too high
+    if (demandIntercept - demandSlope * maximum < minPrice)
+        // Price goes too low when good is at maximum.
+        demandSlope = (demandIntercept - minPrice) / maximum;
 }
 
-std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo bI, Printer &pr) const {
-    auto &oMtr = getMaterial(mtr);
-    bI.text = {getFullName(mtr)};
-    bI.id = id;
-    // Find image in game data.
-    SDL_Surface *img = oMtr.getImage();
-    if (img) bI.images = {{img, {2 * bI.border, bI.rect.h / 2 - img->h / 2, img->w, img->h}}};
+std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo bI, Printer &pr) const {
+    bI.text = {fullName};
+    bI.id = index;
+    if (image) bI.images = {{image, {2 * bI.border, bI.rect.h / 2 - image->h / 2, image->w, image->h}}};
     if (aS) {
         // Button will have amount shown.
-        std::string amountText = std::to_string(oMtr.getAmount());
+        std::string amountText = std::to_string(amount);
         dropTrail(amountText, split ? 3 : 0);
         bI.text.push_back(std::move(amountText));
         return std::make_unique<MenuButton>(bI, pr);
@@ -213,48 +265,45 @@ std::unique_ptr<MenuButton> Good::button(bool aS, const Material &mtr, BoxInfo b
     return std::make_unique<MenuButton>(bI, pr);
 }
 
-void Good::adjustDemand(std::string rBN, double d) {
-    for (auto &m : materials) {
-        std::string mN = m.getName();
-        if (rBN == mN.substr(0, mN.find(' '))) { m.adjustDemand(d); }
-    }
+void Good::updateButton(std::string &aT, bool gS, TextBox *btn) const {
+    // Finish updating button.
+    std::string changeText = std::to_string(amount - lastAmount);
+    dropTrail(changeText, 5);
+    dropTrail(aT, gS ? 3 : 0);
+    btn->setText({btn->getText(0u), aT, changeText});
 }
 
-void Good::saveDemand(unsigned long p, std::string &u) const {
-    for (auto &m : materials) {
-        u.append(" WHEN good_id = ");
-        u.append(std::to_string(id));
-        m.saveDemand(p, u);
-    }
+void Good::updateButton(bool gS, TextBox *btn) const {
+    // Update amount shown on this material's button. Call when no offer or request has been made.
+    std::string amountText;
+    amountText = std::to_string(amount);
+    updateButton(amountText, gS, btn);
 }
 
-void createGoodButtons(Pager &pgr, const std::vector<Good> &gds, const SDL_Rect &rt, BoxInfo bI, Printer &pr,
-                       const std::function<std::function<void(MenuButton *)>(const Good &, const Material &)> &fn) {
-    // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
-    pgr.setBounds(rt);
-    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(),
-        dy = (rt.h + m) / Settings::getGoodButtonRows();
-    bI.rect = {rt.x, rt.y, dx - m, dy - m};
-    std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
-    for (auto &g : gds) {
-        for (auto &m : g.getMaterials())
-            if (true || (m.getAmount() >= 0.01 && g.getSplit()) || (m.getAmount() >= 1.)) {
-                bI.onClick = fn(g, m);
-                bxs.push_back(g.button(true, m, bI, pr));
-                bI.rect.x += dx;
-                if (bI.rect.x + bI.rect.w > rt.x + rt.w) {
-                    // Go back to left and down one row upon reaching right.
-                    bI.rect.x = rt.x;
-                    bI.rect.y += dy;
-                    if (bI.rect.y + bI.rect.h > rt.y + rt.h) {
-                        // Go back to top and flush current page upon reaching bottom.
-                        bI.rect.y = rt.y;
-                        pgr.addPage(bxs);
-                    }
-                }
-            }
-    }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgr.addPage(bxs);
+void Good::updateButton(bool gS, double oV, unsigned int rC, TextBox *btn) const {
+    // Update amount shown on this material's button. Call only when offer value and request count are non-zero.
+    std::string amountText;
+    if (rC)
+        amountText = std::to_string(std::min(quantity(oV / rC * Settings::getTownProfit()), amount));
+    else
+        amountText = std::to_string(amount);
+    updateButton(amountText, gS, btn);
+}
+
+void Good::adjustDemandSlope(double dDS) {
+    // Change demand slope by parameter * demandIntercept.
+    demandSlope += dDS * demandIntercept;
+    demandSlope = std::max(0., demandSlope);
+}
+
+void Good::saveDemand(unsigned long ppl, std::string &u) const {
+    u.append(" WHEN good_id = " + std::to_string(goodId) + " AND material_id = " + std::to_string(materialId) +
+             " THEN " + std::to_string(demandSlope * static_cast<double>(ppl)));
+}
+
+void dropTrail(std::string &tx, unsigned int dK) {
+    // Trim decimal places beyond dK from string tx.
+    size_t dP; // position to drop
+    dP = tx.find('.') + dK;
+    if (dP < std::string::npos) tx.erase(dP);
 }

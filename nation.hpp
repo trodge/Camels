@@ -38,7 +38,7 @@ class Nation {
     SDL_Color foreground, background, dot, highlight;
     std::string religion;
     std::vector<std::string> travelerNames;
-    std::vector<Good> goods;
+    Inventory inventory;
     std::vector<Business> businesses;
 
 public:
@@ -52,10 +52,10 @@ public:
     const SDL_Color &getBackground() const { return background; }
     const SDL_Color &getHighlight() const { return highlight; }
     const SDL_Color &getDotColor() const { return dot; }
-    const std::vector<Good> &getGoods() const { return goods; }
+    const Inventory &getInventory() const { return inventory; }
     const std::vector<Business> &getBusinesses() const { return businesses; }
     void setTravelerNames(const std::vector<std::string> &tNms) { travelerNames = tNms; }
-    void setGoodConsumptions(const std::vector<std::vector<std::array<double, 3>>> &gCnps);
+    void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &fqs);
     std::string randomName() const;
 };

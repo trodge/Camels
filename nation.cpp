@@ -34,9 +34,9 @@ std::string Nation::randomName() const {
     return travelerNames[dis(Settings::getRng())];
 }
 
-void Nation::setGoodConsumptions(const std::vector<std::vector<std::array<double, 3>>> &gCnps) {
+void Nation::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {
     // Takes a vector of consumption rates, demand slopes, and demand intercepts for this nation's goods' materials
-    for (size_t i = 0; i < goods.size(); ++i) goods[i].setConsumptions(gCnps[i]);
+    inventory.setConsumption(gdsCnsptn[i]);
 }
 
 void Nation::setFrequencies(const std::vector<double> &fqs) {

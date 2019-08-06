@@ -77,9 +77,9 @@ double Material::quantity(double p, double &e) const {
      * Second parameter holds excess quantity after amount is used up. */
     double q;
     double b = demandIntercept - demandSlope * amount;
-    if (demandSlope != 0.)
+    if (demandSlope != 0)
         q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) / demandSlope;
-    else if (demandIntercept != 0.)
+    else if (demandIntercept != 0)
         q = p / demandIntercept;
     else
         q = 0;
@@ -94,9 +94,9 @@ double Material::quantity(double p) const {
     // Get quantity of this material corresponding to price. Ignore material availability.
     double q;
     double b = demandIntercept - demandSlope * amount;
-    if (demandSlope != 0.)
+    if (demandSlope != 0)
         q = amount - (demandIntercept - sqrt(b * b + demandSlope * p * 2)) / demandSlope;
-    else if (demandIntercept != 0.)
+    else if (demandIntercept != 0)
         q = p / demandIntercept;
     else
         q = 0;
@@ -108,9 +108,9 @@ double Material::quantum(double c) const {
     // Get quantum of this material needed to match given cost.
     double q;
     double b = demandIntercept - demandSlope * amount;
-    if (demandSlope != 0.)
+    if (demandSlope != 0)
         q = amount - (demandIntercept - sqrt(b * b - demandSlope * c * 2)) / demandSlope;
-    else if (demandIntercept != 0.)
+    else if (demandIntercept != 0)
         q = c / demandIntercept;
     else
         q = 0;
@@ -161,11 +161,11 @@ void Material::take(Material &m) {
 
 void Material::use(double a) {
     // Use the given amount and discard the perish counters.
-    if (a > 0. && amount >= a)
+    if (a > 0 && amount >= a)
         amount -= a;
     else
-        a = 0.;
-    while (a > 0. && !perishCounters.empty()) {
+        a = 0;
+    while (a > 0 && !perishCounters.empty()) {
         // Amount is going down.
         PerishCounter pC = perishCounters.back();
         perishCounters.pop_back();
@@ -173,7 +173,7 @@ void Material::use(double a) {
             // Perish counter is enough to make change and stay around.
             pC.amount -= a;
             perishCounters.push_back(pC);
-            a = 0.;
+            a = 0;
         } else {
             // Perish counter is used up to make change.
             a -= pC.amount;
@@ -190,7 +190,7 @@ void Material::put(Material &m) {
 void Material::create(double a) {
     // Newly create the given amount of this material.
     amount += a;
-    if (a > 0. && perish != 0.) perishCounters.push_front({0, a});
+    if (a > 0 && perish != 0) perishCounters.push_front({0, a});
 }
 
 double Material::consume(unsigned int e) {
@@ -198,9 +198,9 @@ double Material::consume(unsigned int e) {
     lastAmount = amount;
     double c = consumption * e / kDaysPerYear / Settings::getDayLength();
     if (c > amount) c = amount;
-    if (c > 0.)
+    if (c > 0)
         use(c);
-    else if (c < 0.)
+    else if (c < 0)
         create(-c);
     if (perishCounters.empty()) return c;
     // Find the first perish counter that will expire.
@@ -208,7 +208,7 @@ double Material::consume(unsigned int e) {
     auto expired = std::upper_bound(begin(perishCounters), end(perishCounters), ePC);
     // Remove expired amounts from amount and total them.
     double p =
-        std::accumulate(expired, end(perishCounters), 0., [](double d, const PerishCounter &pC) { return d + pC.amount; });
+        std::accumulate(expired, end(perishCounters), 0, [](double d, const PerishCounter &pC) { return d + pC.amount; });
     // Erase expired perish counters.
     perishCounters.erase(expired, end(perishCounters));
     // Add elapsed time to remaining counters.

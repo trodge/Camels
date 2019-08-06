@@ -289,7 +289,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     // Update the values shown on offer and request boxes and set offer and request.
     std::string bN;
     clearTrade();
-    double offerValue = 0.;
+    double offerValue = 0;
     // Loop through all offer buttons.
     std::vector<TextBox *> bxs = pgrs[1].getAll();
     for (auto bx : bxs) {
@@ -303,7 +303,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
             if (!g.getSplit()) amount = floor(amount);
             auto &tM = toTown->getGood(g.getId()).getMaterial(m); // town material
             double p = tM.price(amount);
-            if (p > 0.) {
+            if (p > 0) {
                 offerValue += p;
                 offer.push_back(Good(g.getId(), g.getName(), amount, g.getMeasure()));
                 offer.back().addMaterial(Material(m.getId(), m.getName(), amount));
@@ -316,7 +316,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     unsigned int requestCount =
         std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) { return c + rB->getClicked(); }); // count of clicked request buttons.
     request.reserve(requestCount);
-    double excess = 0.; // excess value of offer over value needed for request
+    double excess = 0; // excess value of offer over value needed for request
     // Loop through request buttons.
     for (auto bx : bxs) {
         auto &g = toTown->getGood(bx->getId()); // good in town corresponding to bIt
@@ -324,7 +324,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
         auto &m = g.getMaterial(bN);
         if (offer.size()) {
             m.updateButton(g.getSplit(), offerValue, std::max(1u, requestCount), bx);
-            if (bx->getClicked() && offerValue > 0.) {
+            if (bx->getClicked() && offerValue > 0) {
                 double mE = 0; // excess quantity of this material
                 double amount = m.quantity(offerValue / requestCount * Settings::getTownProfit(), mE);
                 if (!g.getSplit())
@@ -449,7 +449,7 @@ void Traveler::demolish(const Business &bsn, double a) {
     auto oBsnIt = std::lower_bound(begin(oBsns), end(oBsns), bsn);
     oBsnIt->changeArea(-a);
     oBsnIt->reclaim(goods, a);
-    if (oBsnIt->getArea() == 0.) oBsns.erase(oBsnIt);
+    if (oBsnIt->getArea() == 0) oBsns.erase(oBsnIt);
 }
 
 void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
@@ -508,7 +508,7 @@ void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
             double buildable = std::numeric_limits<double>::max();
             for (auto &rq : bsn.getRequirements())
                 buildable = std::min(buildable, goods[rq.getId()].getAmount() * portion / rq.getAmount());
-            if (buildable > 0.) build(bsn, buildable);
+            if (buildable > 0) build(bsn, buildable);
             refreshBuildButtons(pgrs, fB, pr);
         };
         bxs.push_back(bsn.button(true, boxInfo, pr));
@@ -538,7 +538,7 @@ void Traveler::unequip(unsigned int pI) {
     auto uEI = std::partition(begin(equipment), end(equipment), unused);
     // Put equipment back in goods.
     for (auto eI = uEI; eI != end(equipment); ++eI)
-        if (eI->getAmount() > 0.) goods[eI->getId()].put(*eI);
+        if (eI->getAmount() > 0) goods[eI->getId()].put(*eI);
     equipment.erase(uEI, end(equipment));
 }
 
@@ -700,8 +700,8 @@ void Traveler::attack(Traveler *t) {
     // Attack the given parameter traveler.
     target = t;
     t->target = this;
-    fightTime = 0.;
-    t->fightTime = 0.;
+    fightTime = 0;
+    t->fightTime = 0;
     if (aI)
         choice = FightChoice::fight;
     else
@@ -774,10 +774,10 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
             double r = d(Settings::getRng());
             double p = static_cast<double>(attack) / cO.hitOdds / static_cast<double>(defense[type - 1]);
             double time;
-            if (p < 1.)
-                time = (log(r) / log(1. - p) + 1.) / speed;
+            if (p < 1)
+                time = (log(r) / log(1 - p) + 1) / speed;
             else
-                time = 1. / speed;
+                time = 1 / speed;
             if (time < first.time) {
                 first.time = time;
                 // Pick a random part.
@@ -786,7 +786,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
                 first.status = t.parts[first.partId];
                 r = d(Settings::getRng());
                 auto sCI = begin(cO.statusChances);
-                while (r > 0. && sCI != end(cO.statusChances)) {
+                while (r > 0 && sCI != end(cO.statusChances)) {
                     // Find status such that part becomes more damaged.
                     if (sCI->first > first.status) {
                         // This part is less damaged than the current status.
@@ -821,7 +821,7 @@ void Traveler::fight(Traveler &t, unsigned int e, std::uniform_real_distribution
     // Prevent fight from happening twice.
     t.fightTime -= static_cast<double>(e);
     // Keep fighting until one side dies, runs, or yields or time runs out.
-    while (alive() && t.alive() && choice == FightChoice::fight && t.choice == FightChoice::fight && fightTime > 0.) {
+    while (alive() && t.alive() && choice == FightChoice::fight && t.choice == FightChoice::fight && fightTime > 0) {
         CombatHit ourFirst = firstHit(t, d), theirFirst = t.firstHit(*this, d);
         if (ourFirst.time < theirFirst.time) {
             // Our hit happens first.
@@ -1006,7 +1006,7 @@ void Traveler::update(unsigned int e) {
         double ds = dlt * dlt + dlg * dlg;
         if (ds > t * t) {
             // There remains more distance to travel.
-            if (dlg != 0.) {
+            if (dlg != 0) {
                 double m = dlt / dlg;
                 double dxs = t * t / (1 + m * m);
                 double dys = t * t - dxs;
@@ -1037,7 +1037,7 @@ void Traveler::update(unsigned int e) {
             return;
         }
         if (choice == FightChoice::fight) {
-            static std::uniform_real_distribution<double> dis(0., 1.);
+            static std::uniform_real_distribution<double> dis(0, 1);
             double escapeChance;
             switch (target->choice) {
             case FightChoice::fight:

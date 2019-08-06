@@ -73,18 +73,18 @@ public:
         : id(i), name(n), amount(a), perish(p), carry(c), consumption(cs), demandSlope(dS), demandIntercept(dI),
           minPrice(dI / Settings::getMinPriceDivisor()), lastAmount(a), image(img) {}
     Material(unsigned int i, const std::string &n, double cs, double dS, double dI, SDL_Surface *img)
-        : Material(i, n, 0., 0., 0., cs, dS, dI, img) {}
+        : Material(i, n, 0, 0, 0, cs, dS, dI, img) {}
     Material(unsigned int i, const std::string &n, double cs, double dS, double dI)
         : Material(i, n, cs, dS, dI, nullptr) {}
     Material(unsigned int i, const std::string &n, double a, SDL_Surface *img)
-        : Material(i, n, a, 0., 0., 0., 0., 0., img) {}
+        : Material(i, n, a, 0, 0, 0, 0, 0, img) {}
     Material(unsigned int i, const std::string &n, double a) : Material(i, n, a, nullptr) {}
     Material(unsigned int i, const std::string &n, double p, double c, SDL_Surface *img)
-        : Material(i, n, 0., p, c, 0., 0., 0., img) {}
+        : Material(i, n, 0, p, c, 0, 0, 0, img) {}
     Material(unsigned int i, const std::string &n, double p, double c) : Material(i, n, p, c, nullptr) {}
-    Material(unsigned int i, const std::string &n) : Material(i, n, 0.) {}
+    Material(unsigned int i, const std::string &n) : Material(i, n, 0) {}
     Material(unsigned int i, double a) : Material(i, "", a) {}
-    Material(unsigned int i) : Material(i, 0.) {}
+    Material(unsigned int i) : Material(i, 0) {}
     Material(const Save::Material *m);
     flatbuffers::Offset<Save::Material> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Material &other) const { return id == other.id; }
@@ -108,11 +108,11 @@ public:
     double quantity(double p) const;
     double quantum(double c) const;
     double buyScore(double p, double b) const {
-        if (p != 0.) return b / p;
+        if (p != 0) return b / p;
         return 0;
     } // score selling at price p
     double sellScore(double p, double s) const {
-        if (s != 0.) return p / s;
+        if (s != 0) return p / s;
         return 0;
     } // score buying at price p
     SDL_Surface *getImage() const { return image; }
