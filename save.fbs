@@ -45,7 +45,8 @@ table Good {
 }
 
 table Property {
-    storage:[Good];
+    id:uint;
+    goods:[Good];
     businesses:[Business];
 }
 
@@ -63,7 +64,6 @@ table Traveler {
     log:[string];
     longitude:double;
     latitude:double;
-    goods:[Good];
     properties:[Property];
     stats:[uint];
     parts:[uint];
@@ -97,8 +97,7 @@ table Town {
     coastal:bool;
     population:ulong;
     townType:uint;
-    businesses:[Business];
-    goods:[Good];
+    property:Property;
     businessCounter:int;
 }
 

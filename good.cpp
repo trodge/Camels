@@ -265,29 +265,29 @@ std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo bI, Printer &pr) const
     return std::make_unique<MenuButton>(bI, pr);
 }
 
-void Good::updateButton(std::string &aT, bool gS, TextBox *btn) const {
+void Good::updateButton(std::string &aT, TextBox *btn) const {
     // Finish updating button.
     std::string changeText = std::to_string(amount - lastAmount);
     dropTrail(changeText, 5);
-    dropTrail(aT, gS ? 3 : 0);
+    dropTrail(aT, split ? 3 : 0);
     btn->setText({btn->getText(0u), aT, changeText});
 }
 
-void Good::updateButton(bool gS, TextBox *btn) const {
+void Good::updateButton(TextBox *btn) const {
     // Update amount shown on this material's button. Call when no offer or request has been made.
     std::string amountText;
     amountText = std::to_string(amount);
-    updateButton(amountText, gS, btn);
+    updateButton(amountText, btn);
 }
 
-void Good::updateButton(bool gS, double oV, unsigned int rC, TextBox *btn) const {
+void Good::updateButton(double oV, unsigned int rC, TextBox *btn) const {
     // Update amount shown on this material's button. Call only when offer value and request count are non-zero.
     std::string amountText;
     if (rC)
         amountText = std::to_string(std::min(quantity(oV / rC * Settings::getTownProfit()), amount));
     else
         amountText = std::to_string(amount);
-    updateButton(amountText, gS, btn);
+    updateButton(amountText, btn);
 }
 
 void Good::adjustDemandSlope(double dDS) {

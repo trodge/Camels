@@ -52,8 +52,8 @@ Player::Player(Game &g) : game(g), printer(g.getPrinter()) {
                                                  if (name.empty()) name = nt.randomName();
                                                  // Create traveler object for player
                                                  traveler = game.createPlayerTraveler(nId, name);
-                                                 traveler->goods[55].create(0.75);
-                                                 traveler->goods[59].create(2);
+                                                 traveler->properties.find(0)->second.create(55, 0.75);
+                                                 traveler->properties.find(0)->second.create(59, 2);
                                                  show = true;
                                                  focusBox = -1;
                                                  setState(UIState::traveling);
@@ -490,7 +490,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                 case UIState::trading:
                     if (developer) switch (k.keysym.sym) {
                         case SDLK_z:
-                            traveler->toTown->resetGoods();
+                            traveler->toTown->reset();
                             break;
                         case SDLK_x:
                             traveler->toTown->toggleMaxGoods();

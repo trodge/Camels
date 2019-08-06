@@ -214,7 +214,7 @@ void Game::loadData(sqlite3 *cn) {
     q = quer.get();
     while (sqlite3_step(q) != SQLITE_DONE)
         goods.push_back(Good(basicGoods[sqlite3_column_int(q, 0)], basicGoods[sqlite3_column_int(q, 1)], goods.size(),
-                        sqlite3_column_double(q, 2), sqlite3_column_double(q, 3)));
+                             sqlite3_column_double(q, 2), sqlite3_column_double(q, 3)));
     // Load good images.
     int m = Settings::getButtonMargin();
     int imageSize =
@@ -244,15 +244,24 @@ void Game::loadData(sqlite3 *cn) {
     }
 
     // Load combat stats.
-    std::vector<std::unordered_map<unsigned int, std::vector<CombatStat>>> combatStats(goods.size());
+    std::vector<CombatStat> combatStats;
     quer = sql::makeQuery(cn,
                           "SELECT good_id, material_id, stat_id, part_id, attack, type, "
                           "speed, bash_defense, cut_defense, stab_defense FROM combat_stats");
     q = quer.get();
+    auto gdIt = begin(goods);
     while (sqlite3_step(q) != SQLITE_DONE) {
-        unsigned int g = static_cast<unsigned int>(sqlite3_column_int(q, 0));
-        unsigned int m = static_cast<unsigned int>(sqlite3_column_int(q, 1));
-        combatStats[g][m].push_back(
+        std::array<unsigned int, 2> ids{static_cast<unsigned int>(sqlite3_column_int(q, 0)),
+                                        static_cast<unsigned int>(sqlite3_column_int(q, 1))};
+        if (gdIt->getGoodId() != ids[0] || gdIt->getMaterialId() != ids[1]) {
+            gdIt->setCombatStats(combatStats);
+            gdIt = std::lower_bound(gdIt, end(goods), ids, [](const Good &g, auto a) {
+                auto gId = g.getGoodId();
+                return gId < a[0] || (gId == a[0] && g.getMaterialId() < a[1]);
+            });
+            combatStats.clear();
+        }
+        combatStats.push_back(
             {static_cast<unsigned int>(sqlite3_column_int(q, 2)),
              static_cast<unsigned int>(sqlite3_column_int(q, 3)),
              static_cast<unsigned int>(sqlite3_column_int(q, 4)),
@@ -261,9 +270,7 @@ void Game::loadData(sqlite3 *cn) {
              {{static_cast<unsigned int>(sqlite3_column_int(q, 7)), static_cast<unsigned int>(sqlite3_column_int(q, 8)),
                static_cast<unsigned int>(sqlite3_column_int(q, 9))}}});
     }
-
-    for (size_t i = 0; i < goods.size(); ++i) goods[i].setCombatStats(combatStats[i]);
-
+    gdIt->setCombatStats(combatStats);
     // Load businesses.
     std::vector<Business> businesses;
     quer = sql::makeQuery(cn,
@@ -277,7 +284,6 @@ void Game::loadData(sqlite3 *cn) {
                                           std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
                                           static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
                                           static_cast<bool>(sqlite3_column_int(q, 5))));
-
     // Load requirements.
     quer = sql::makeQuery(cn, "SELECT business_id, good_id, amount FROM requirements");
     q = quer.get();
@@ -288,15 +294,13 @@ void Game::loadData(sqlite3 *cn) {
         if (bIt->getId() != bId) {
             // Business ids don't match, flush vector and increment.
             for (; bIt->getId() != bId; ++bIt)
-                // Loop over modes.
+                // Loop over modes until next business id is reached.
                 bIt->setRequirements(requirements);
             requirements.clear();
         }
-        unsigned int gId = sqlite3_column_int(q, 1);
-        auto &gd = goods[gId];
-        requirements.push_back(Good(gId, gd.getGoodName(), sqlite3_column_double(q, 2), gd.getMeasure()));
+        auto &gd = basicGoods[sqlite3_column_int(q, 1)];
+        requirements.push_back(Good(gd, sqlite3_column_double(q, 2)));
     }
-
     // Set requirements for last business.
     for (; bIt != end(businesses); ++bIt)
         // Loop over modes.
@@ -314,11 +318,9 @@ void Game::loadData(sqlite3 *cn) {
             inputs.clear();
             ++bIt;
         }
-        unsigned int gId = sqlite3_column_int(q, 2);
-        auto &gd = goods[gId];
-        inputs.push_back(Good(gId, gd.getGoodName(), sqlite3_column_double(q, 3), gd.getMeasure()));
+        auto &gd = basicGoods[sqlite3_column_int(q, 2)];
+        inputs.push_back(Good(gd, sqlite3_column_double(q, 3)));
     }
-
     // Set inputs for last business.
     bIt->setInputs(inputs);
     // Load outputs.
@@ -333,14 +335,11 @@ void Game::loadData(sqlite3 *cn) {
             outputs.clear();
             ++bIt;
         }
-        unsigned int gId = sqlite3_column_int(q, 2);
-        auto &gd = goods[gId];
-        outputs.push_back(Good(gId, gd.getGoodName(), sqlite3_column_double(q, 3), gd.getMeasure()));
+        auto &gd = basicGoods[sqlite3_column_int(q, 2)];
+        outputs.push_back(Good(gd, sqlite3_column_double(q, 3)));
     }
-
     // Set outputs for last business.
     bIt->setOutputs(outputs);
-
     // Load nations.
     quer = sql::makeQuery(cn,
                           "SELECT nation_id, english_name, language_name, adjective, color_r, "

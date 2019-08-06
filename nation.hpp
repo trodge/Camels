@@ -28,6 +28,7 @@
 
 #include "business.hpp"
 #include "good.hpp"
+#include "property.hpp"
 
 class Good;
 
@@ -38,8 +39,7 @@ class Nation {
     SDL_Color foreground, background, dot, highlight;
     std::string religion;
     std::vector<std::string> travelerNames;
-    Inventory inventory;
-    std::vector<Business> businesses;
+    Property property;
 
 public:
     Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr,
@@ -52,11 +52,10 @@ public:
     const SDL_Color &getBackground() const { return background; }
     const SDL_Color &getHighlight() const { return highlight; }
     const SDL_Color &getDotColor() const { return dot; }
-    const Inventory &getInventory() const { return inventory; }
-    const std::vector<Business> &getBusinesses() const { return businesses; }
+    const Property &getProperty() const { return property; }
     void setTravelerNames(const std::vector<std::string> &tNms) { travelerNames = tNms; }
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
-    void setFrequencies(const std::vector<double> &fqs);
+    void setFrequencies(const std::vector<double> &frqcs);
     std::string randomName() const;
 };
 

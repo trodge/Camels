@@ -16,8 +16,8 @@
  *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
-#ifndef INVENTORY_H
-#define INVENTORY_H
+#ifndef PROPERTY_H
+#define PROPERTY_H
 
 #include <unordered_map>
 #include <vector>
@@ -28,21 +28,22 @@
 
 class Business;
 
-class Inventory {
+class Property {
+    unsigned int id;
     std::vector<Good> goods;
     std::unordered_multimap<unsigned int, Good *> byGoodId;
+    std::vector<Business> businesses;
 
 public:
-    Inventory(const std::vector<Good> &gds) : goods(gds) { mapGoods(); }
-    Inventory(const Inventory &other) : goods(other.goods) { mapGoods(); }
-    Inventory(const flatbuffers::Vector<flatbuffers::Offset<Save::Good>> *ldGds) {
-        for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.push_back(Good(*lGI));
+    Property(unsigned int i, const std::vector<Good> &gds, const std::vector<Business> &bsns) : id(i), businesses(bsns), goods(gds) {
         mapGoods();
     }
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Save::Good>>> save(flatbuffers::FlatBufferBuilder &b) {
-        return b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(),
-                                                               [this, &b](size_t i) { return goods[i].save(b); });
-    }
+    Property(const std::vector<Good> &gds) : Property(0, gds, {}) {}
+    Property(unsigned int i, const Property &other) : Property(i, other.goods, other.businesses) {}
+    Property(const Save::Property *ppt, const Property &other);
+    flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b) const;
+    unsigned int getId() const { return id; }
+    unsigned int getGoodId(unsigned int fId) const { return goods[fId].getGoodId(); }
     double getAmount(unsigned int gId) const {
         auto gdRng = byGoodId.equal_range(gId);
         return std::accumulate(gdRng.first, gdRng.second, 0, [](double tA, auto g) { return tA + g.second->getAmount(); });
@@ -52,37 +53,34 @@ public:
         return std::accumulate(gdRng.first, gdRng.second, 0,
                                [](double tA, auto g) { return tA + g.second->getMaximum(); });
     }
-    unsigned int getGoodId(unsigned int fId) const { return goods[fId].getGoodId();}
+    const std::vector<Good> &getGoods() const { return goods; }
+    double weight() const {
+        return std::accumulate(begin(goods), end(goods), 0, [](double d, const auto &g) { return d + g.weight(); });
+    }
     void mapGoods() {
         for (auto &gd : goods) byGoodId.emplace(gd.getGoodId(), &gd);
     }
-    void setImages(const Inventory &other) {
-        for (size_t i = 0; i < goods.size(); ++i) goods[i].setImage(other.goods[i].getImage());
-    }
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
-    void setMaximum(const std::vector<Business> &bsns);
+    void setFrequencies(const std::vector<double> &frqcs);
+    void setMaximums();
+    void setAreas(bool ctl, unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs);
     std::vector<Good> take(unsigned int gId, double amt);
     void take(Good &gd) { goods[gd.getFullId()].take(gd); }
     void put(Good &gd) { goods[gd.getFullId()].put(gd); }
-    void use() {
-        for (auto &gd : goods) gd.use();
-    }
     void use(unsigned int gId, double amt);
     void create() {
         for (auto &gd : goods) gd.create();
     }
     void create(unsigned int gId, double amt);
     void create(unsigned int iId, unsigned int oId, double amt);
-    void update(unsigned int elTm) {
-        for (auto &gd : goods) gd.update(elTm);
-    }
-    void update(unsigned int elTm, std::vector<Business> &bsns);
-    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo bI, Printer &pr,
+    void update(unsigned int elTm);
+    void reset();
+    void goodButtons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
                  const std::function<std::function<void(MenuButton *)>(const Good &)> &fn);
+    void adjustAreas(const std::vector<MenuButton *> &rBs, double d);
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d);
-    void saveDemand(unsigned long ppl, std::string &u) const {
-        for (auto &gd : goods) gd.saveDemand(ppl, u);
-    }
+    void saveFrequencies(unsigned long ppl, std::string &u) const;
+    void saveDemand(unsigned long ppl, std::string &u) const;
 };
 
 #endif // INVENTORY_H

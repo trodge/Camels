@@ -31,9 +31,9 @@
 
 #include "business.hpp"
 #include "draw.hpp"
-#include "inventory.hpp"
 #include "loadbar.hpp"
 #include "nation.hpp"
+#include "property.hpp"
 #include "traveler.hpp"
 
 struct GameData;
@@ -49,8 +49,7 @@ class Town {
     bool coastal;
     unsigned long population;
     unsigned int townType;
-    std::vector<Business> businesses;
-    Inventory inventory;
+    Property property;
     std::vector<Town *> neighbors;
     int businessCounter;
     bool maxGoods = false; // town creates maximum goods for testing purposes
@@ -75,8 +74,7 @@ public:
     double getLatitude() const { return latitude; }
     unsigned long getPopulation() const { return population; }
     unsigned int getTownType() const { return townType; }
-    const std::vector<Business> &getBusinesses() const { return businesses; }
-    const Inventory &getInventory() const { return inventory; }
+    const Property &getProperty() const { return property; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<Traveler *> &getTravelers() const { return travelers; }
     const std::vector<std::unique_ptr<Contract>> &getBids() const { return bids; }
@@ -92,6 +90,7 @@ public:
     void placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s);
     void placeText(std::vector<SDL_Rect> &drawn) { box->place(dpx, dpy, drawn); }
     void draw(SDL_Renderer *s);
+    void reset() { property.reset(); }
     void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
@@ -100,11 +99,14 @@ public:
     void addNeighbor(Town *t) { neighbors.push_back(t); }
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);
     void connectRoutes();
-    void adjustAreas(const std::vector<MenuButton *> &rBs, double d);
-    void resetGoods();
+    void goodButtons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
+                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) { property.goodButtons(pgr, rt, bI, pr, fn); }
+    void adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
+        property.adjustAreas(rBs, d * static_cast<double>(population) / 5000);
+    }
     void saveFrequencies(std::string &u) const;
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d) {
-        inventory.adjustDemand(rBs, d / static_cast<double>(population) / 1000);
+        property.adjustDemand(rBs, d / static_cast<double>(population) / 1000);
     }
     void saveDemand(std::string &u) const;
 };

@@ -51,18 +51,18 @@ flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilde
 }
 
 void Business::setArea(double a) {
-    if (a > 0 && area > 0) {
+    if (area > 0) {
         for (auto &ip : inputs) ip.setAmount(ip.getAmount() * a / area);
         for (auto &op : outputs) op.setAmount(op.getAmount() * a / area);
         area = a;
     }
 }
 
-void Business::takeRequirements(Inventory &inv, double a) {
+void Business::takeRequirements(Property &inv, double a) {
     // Take the requirments to add given area to business from parameter and store them in reclaimables.
     for (auto &rq : requirements) {
-        // Take goods from inventory matching requirement id.
-        auto tGs = inv.take(rq.getGoodId(), rq.getAmount());
+        // Take goods from property matching requirement id.
+        auto tGs = inv.take(rq.getGoodId(), rq.getAmount() * a);
         for (auto &tG : tGs) {
             // Reduce transfered amount to amount determined by reclaim factor.
             tG.setAmount(tG.getAmount() * reclaimFactor);
@@ -77,7 +77,7 @@ void Business::takeRequirements(Inventory &inv, double a) {
     }
 }
 
-void Business::reclaim(Inventory &inv, double a) {
+void Business::reclaim(Property &inv, double a) {
     // Return reclaimables for the given area to parameter.
     for (auto &rcbl : reclaimables) {
         // Construct a transfer good matching one in reclaimables.
@@ -86,12 +86,12 @@ void Business::reclaim(Inventory &inv, double a) {
         tG.setAmount(rcbl.getAmount() * a / area);
         // Take from reclaimables.
         rcbl.take(tG);
-        // Put into inventory.
+        // Put into property.
         inv.put(tG);
     }
 }
 
-void Business::addConflicts(std::vector<unsigned int> &cfts, const Inventory &inv) {
+void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv) {
     bool space = false;
     for (auto &op : outputs) {
         auto gId = op.getGoodId();
@@ -121,7 +121,7 @@ void Business::handleConflicts(std::vector<unsigned int> &cfts) {
     if (gc) factor /= gc;
 }
 
-void Business::run(Inventory &inv) {
+void Business::run(Property &inv) {
     // Run this business on the given goods.
     if (factor > 0) {
         auto lastInputId = inputs.back().getGoodId(); // inputs which determine material

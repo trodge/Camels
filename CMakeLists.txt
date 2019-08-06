@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 project(Camels)
-set(SRCS main.cpp settings.cpp game.cpp player.cpp nation.cpp town.cpp business.cpp traveler.cpp ai.cpp good.cpp material.cpp pager.cpp textbox.cpp scrollbox.cpp menubutton.cpp selectbutton.cpp loadbar.cpp printer.cpp draw.cpp)
+set(SRCS main.cpp settings.cpp game.cpp player.cpp nation.cpp town.cpp business.cpp traveler.cpp ai.cpp inventory.cpp good.cpp pager.cpp textbox.cpp scrollbox.cpp menubutton.cpp selectbutton.cpp loadbar.cpp printer.cpp draw.cpp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

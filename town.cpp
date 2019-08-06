@@ -31,27 +31,13 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
                                                    .radius = 1,
                                                    .fontSize = fS},
                                            pr)},
-      nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), inventory(nt->getInventory()) {
+      nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty()) {
     // Create new town based on parameters.
-    // Copy businesses from nations, scaling with frequencies.
-    auto &nBsns = nt->getBusinesses();
-    businesses.reserve(nBsns.size());
-    for (auto &bsn : nBsns) {
-        double fq = bsn.getFrequency();
-        if (fq != 0 && (coastal || !bsn.getRequireCoast())) {
-            double fF = 1;
-            auto tTBI = std::make_pair(townType, bsn.getId());
-            auto fFI = fFs.lower_bound(tTBI);
-            if (fFI != end(fFs) && fFI->first == tTBI) fF = fFI->second;
-            businesses.push_back(Business(bsn));
-            businesses.back().setArea(static_cast<double>(ppl) * fq * fF);
-        }
-    }
-    inventory.mapGoods();
-    inventory.setMaximum(businesses);
+    property.setAreas(ctl, ppl, tT, fFs);
+    property.setMaximums();
     // Start with enough inputs for one run cycle.
-    resetGoods();
-    // randomize business run counter
+    property.reset();
+    // Randomize business run counter.
     static std::uniform_int_distribution<> dis(-Settings::getBusinessRunTime(), 0);
     businessCounter = dis(Settings::getRng());
 }
@@ -59,7 +45,7 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
     : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]), longitude(t->longitude()),
       latitude(t->latitude()), coastal(t->coastal()), population(static_cast<unsigned long>(t->population())),
-      townType(t->townType()), inventory(t->goods()), businessCounter(t->businessCounter()) {
+      townType(t->townType()), property(t->property(), nation->getProperty()), businessCounter(t->businessCounter()) {
     // Load a town from the given flatbuffers save object.
     SDL_Rect rt = {0, 0, 0, 0};
     auto lNames = t->names();
@@ -75,20 +61,14 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
                                             .radius = 1,
                                             .fontSize = fS},
                                     pr);
-    auto lBusinesses = t->businesses();
-    for (auto lBI = lBusinesses->begin(); lBI != lBusinesses->end(); ++lBI) businesses.push_back(Business(*lBI));
     // Copy image pointers from nation's goods.
-    inventory.setImages(nation->getInventory());
-    inventory.setMaxiumum();
+    property.setMaximums();
 }
 
 flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) const {
     auto svNames = b.CreateVectorOfStrings(box->getText());
-    auto svBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
-        businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
-    auto svGoods = inventory.save(b);
     return Save::CreateTown(b, id, svNames, nation->getId(), longitude, latitude, coastal, population, townType,
-                            svBusinesses, svGoods, businessCounter);
+                            property.save(b), businessCounter);
 }
 
 bool Town::operator==(const Town &other) const { return id == other.id; }
@@ -126,15 +106,15 @@ void Town::update(unsigned int e) {
         auto businessRunTime = Settings::getBusinessRunTime();
         if (maxGoods)
             // Towns create as many goods as possible for testing purposes.
-            inventory.create();
-        inventory.update(businessRunTime, businesses);
+            property.create();
+        property.update(businessRunTime);
         businessCounter -= businessRunTime;
     }
 }
 
-void Town::take(Good &g) { inventory.take(g); }
+void Town::take(Good &g) { property.take(g); }
 
-void Town::put(Good &g) { inventory.put(g); }
+void Town::put(Good &g) { property.put(g); }
 
 void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts) {
     // Create a random number of travelers from this town, weighted down
@@ -210,59 +190,14 @@ void Town::connectRoutes() {
     }
 }
 
-void Town::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
-    for (auto &b : businesses) {
-        bool go = false;
-        bool inputMatch = false;
-        std::vector<std::string> mMs = {"wool", "hide", "milk", "bowstring", "arrowhead", "cloth"};
-        for (auto &rB : rBs) {
-            if (rB->getClicked()) {
-                std::string rBN = rB->getText()[0];
-                for (auto &ip : b.getInputs()) {
-                    std::string ipN = ip.getGoodName();
-                    if (rBN.substr(0, rBN.find(' ')) == ipN.substr(0, ipN.find(' ')) ||
-                        std::find(begin(mMs), end(mMs), ipN) != end(mMs)) {
-                        inputMatch = true;
-                        break;
-                    }
-                }
-                for (auto &op : b.getOutputs()) {
-                    if ((!rB->getId() || op.getGoodId() == inventory.getGoodId(rB->getId())) && (!b.getKeepMaterial() || inputMatch)) {
-                        go = true;
-                        break;
-                    }
-                }
-            }
-            if (go) break;
-        }
-        if ((go) && b.getArea() > -d * static_cast<double>(population) / 5000) {
-            b.setArea(b.getArea() + d * static_cast<double>(population) / 5000);
-        }
-    }
-    inventory.setMaximum(businesses);
-}
-
-void Town::resetGoods() {
-    inventory.use();
-    for (auto &b : businesses)
-        for (auto &ip : b.getInputs())
-            if (ip == b.getOutputs().back())
-                // Input good is also output, create full amount.
-                inventory.create(ip.getGoodId(), ip.getAmount());
-            else
-                // Create only enough for one cycle.
-                inventory.create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessRunTime() /
-                                                     static_cast<double>(Settings::getDayLength() * kDaysPerYear));
-}
-
 void Town::saveFrequencies(std::string &u) const {
-    for (auto &b : businesses) { b.saveFrequency(population, u); }
+    property.saveFrequencies(population, u);
     u.append(" ELSE frequency END WHERE nation_id = ");
     u.append(std::to_string(nation->getId()));
 }
 
 void Town::saveDemand(std::string &u) const {
-    inventory.saveDemand(population, u);
+    property.saveDemand(population, u);
     u.append(" ELSE demand_slope END WHERE nation_id = ");
     u.append(std::to_string(nation->getId()));
 }

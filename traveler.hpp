@@ -64,11 +64,6 @@ struct CombatHit {
     std::string weapon;
 };
 
-struct Property {
-    std::vector<Good> storage;
-    std::vector<Business> businesses;
-};
-
 struct Contract {
     Traveler *party; // the other party to this contract, or this if contract is a bid
     double owed;     // value of goods holder will retain at end of contract
@@ -88,12 +83,11 @@ class Traveler {
     double longitude, latitude;
     bool moving;
     int px, py;
-    double portion;                    // portion of goods offered in next trade
-    std::vector<Good> goods;           // goods carried by traveler
-    std::vector<Good> offer, request;  // goods offered and requested in next trade
-    std::vector<Property> properties;  // vector of owned goods and businesses indexed by town id
-    std::array<unsigned int, 5> stats; // strength, endurance, agility, intelligence, charisma
-    std::array<unsigned int, 6> parts; // head, torso, left arm, right arm, left leg, right leg
+    double portion;                                  // portion of goods offered in next trade
+    std::vector<Good> offer, request;                // goods offered and requested in next trade
+    std::unordered_map<unsigned int, Property> properties; // owned goods and businesses by town id, 0 for carried goods
+    std::array<unsigned int, 5> stats;               // strength, endurance, agility, intelligence, charisma
+    std::array<unsigned int, 6> parts;               // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
     std::vector<Traveler *> agents;     // travelers employed
     std::unique_ptr<Contract> contract; // contract with employer, if any
@@ -150,10 +144,9 @@ public:
     const Town *getTown() const { return toTown; }
     const Nation *getNation() const { return nation; }
     const std::vector<std::string> &getLogText() const { return logText; }
-    const std::vector<Good> &getGoods() const { return goods; }
+    const Property &getProperty() const { return properties.find(0)->second; }
     const std::vector<Good> &getOffer() const { return offer; }
     const std::vector<Good> &getRequest() const { return request; }
-    const Good &getGood(unsigned int i) const { return goods[i]; }
     double getPortion() const { return portion; }
     const std::array<unsigned int, 5> &getStats() const { return stats; }
     double speed() const { return stats[1] + stats[2] + stats[3]; }

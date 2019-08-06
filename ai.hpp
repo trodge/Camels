@@ -35,7 +35,7 @@ class Town;
 
 class Traveler;
 
-struct MaterialInfo {
+struct GoodInfo {
     double limitFactor = 0; // factor controlling value based on min/max price
     double minPrice = 0,
            maxPrice = 0; // minimum and maximum price of material nearby
@@ -56,7 +56,7 @@ class AI {
     int decisionCounter;                    // counter for updatening AI
     std::array<double, 8> decisionCriteria; /* buy/sell score weight, weapon/armor
     equip score, tendency to fight/run/yield, looting greed */
-    std::vector<MaterialInfo> materialInfo; // known information about each material of each good
+    std::vector<GoodInfo> goodsInfo;        // known information about each good
     std::vector<TownInfo> nearby;           // known information about nearby towns
     enum Role { trader, soldier, bandit, agent, guard, thug };
     Role role; // behavior for this ai

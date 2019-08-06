@@ -25,7 +25,7 @@ Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::s
       dot({static_cast<Uint8>((fgr.r + bgr.r) / 2), static_cast<Uint8>((fgr.g + bgr.g) / 2),
            static_cast<Uint8>((fgr.b + bgr.b) / 2), 255}),
       highlight({static_cast<Uint8>(255 - dot.r), static_cast<Uint8>(255 - dot.g), static_cast<Uint8>(255 - dot.b), 255}),
-      religion(rlg), goods(gds), businesses(bsns) {}
+      religion(rlg), property(i, gds, bsns) {}
 
 bool Nation::operator==(const Nation &other) const { return id == other.id; }
 
@@ -36,9 +36,9 @@ std::string Nation::randomName() const {
 
 void Nation::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {
     // Takes a vector of consumption rates, demand slopes, and demand intercepts for this nation's goods' materials
-    inventory.setConsumption(gdsCnsptn[i]);
+    property.setConsumption(gdsCnsptn);
 }
 
-void Nation::setFrequencies(const std::vector<double> &fqs) {
-    for (size_t i = 0; i < fqs.size(); ++i) businesses[i].setFrequency(fqs[i]);
+void Nation::setFrequencies(const std::vector<double> &frqcs) {
+    property.setFrequencies(frqcs);
 }

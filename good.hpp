@@ -59,7 +59,7 @@ class Good {
     };
     std::deque<PerishCounter> perishCounters;
     void setFullName();
-    void updateButton(std::string &aT, bool gS, TextBox *btn) const;
+    void updateButton(std::string &aT, TextBox *btn) const;
     void enforceMaximum();
 
 public:
@@ -72,14 +72,17 @@ public:
     }
     Good(unsigned int gId, const std::string &gNm, const std::string &msr, unsigned int aId)
         : goodId(gId), goodName(gNm), measure(msr), ammoId(aId) {} // constructor for loading from goods table
-    Good(const Good &dbGd, const Good &dbMt, unsigned int fId, double pr, double cr)
-        : goodId(dbGd.goodId), materialId(dbMt.goodId), fullId(fId), goodName(dbGd.goodName),
-          materialName(dbMt.goodName), perish(pr), carry(cr), measure(dbGd.measure), split(!measure.empty()) {
+    Good(const Good &gd, const Good &mt, unsigned int fId, double pr, double cr)
+        : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName),
+          materialName(mt.goodName), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
         setFullName();
-    }                                                               // constructor for loading from materials table
+    }                                                                // constructor for loading from materials table
+    Good(const Good &gd, double amt) : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {}
+    Good(unsigned int fId, const std::string &fNm, double amt, const std::vector<CombatStat> &cSs, SDL_Surface *img)
+        : fullId(fId), fullName(fNm), amount(amt), combatStats(cSs), image(img) {} // constructor for equipment
     Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {} // constructor for transfer goods
-    Good(unsigned int gId, const std::string &gNm, double amt, const std::string &msr)
-        : goodId(gId), goodName(gNm), amount(amt), measure(msr) {} // constructor for business goods
+    Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
+        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
     Good(const Save::Good *svG)
         : goodId(svG->goodId()), materialId(svG->materialId()), fullId(svG->fullId()), goodName(svG->goodName()->str()),
           materialName(svG->materialName()->str()), amount(svG->amount()), perish(svG->perish()), carry(svG->carry()),
@@ -99,9 +102,10 @@ public:
     const std::string &getMaterialName() const { return materialName; }
     const std::string &getFullName() const { return fullName; }
     std::string businessText() const;
+    double getAmount() const { return amount; }
     double getPerish() const { return perish; }
     double getCarry() const { return carry; }
-    double getAmount() const { return amount; }
+    double weight() const { return amount * carry; }
     const std::string &getMeasure() const { return measure; }
     bool getSplit() const { return split; }
     double getMaximum() const { return maximum; }
@@ -138,13 +142,12 @@ public:
     void create(double amt);
     void create() { create(maximum); }
     void update(unsigned int elTm);
-    void updateButton(bool gS, TextBox *btn) const;
-    void updateButton(bool gS, double oV, unsigned int rC, TextBox *btn) const;
+    void updateButton(TextBox *btn) const;
+    void updateButton(double oV, unsigned int rC, TextBox *btn) const;
     void adjustDemand(double d);
     void fixDemand(double m);
     void saveDemand(unsigned long ppl, std::string &u) const;
     std::string logEntry() const;
-    void setCombatStats(const std::unordered_map<unsigned int, std::vector<CombatStat>> &cSs);
     void setMaximum() { maximum = std::abs(consumptionRate) * Settings::getConsumptionSpaceFactor(); }
     void setMaximum(double max) { maximum = std::max(maximum, max); }
     void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
