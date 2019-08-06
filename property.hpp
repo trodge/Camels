@@ -35,10 +35,11 @@ class Property {
     std::vector<Business> businesses;
 
 public:
-    Property(unsigned int i, const std::vector<Good> &gds, const std::vector<Business> &bsns) : id(i), businesses(bsns), goods(gds) {
+    Property(unsigned int i, const std::vector<Good> &gds, const std::vector<Business> &bsns)
+        : id(i), goods(gds), businesses(bsns) {
         mapGoods();
     }
-    Property(const std::vector<Good> &gds) : Property(0, gds, {}) {}
+    Property(unsigned int i, const std::vector<Good> &gds) : Property(i, gds, {}) {}
     Property(unsigned int i, const Property &other) : Property(i, other.goods, other.businesses) {}
     Property(const Save::Property *ppt, const Property &other);
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b) const;
@@ -73,10 +74,14 @@ public:
     }
     void create(unsigned int gId, double amt);
     void create(unsigned int iId, unsigned int oId, double amt);
+    void build(const Business &bsn, double a);
+    void demolish(const Business &bsn, double a);
     void update(unsigned int elTm);
     void reset();
-    void goodButtons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn);
+    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
+                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) const;
+    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
+                 const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) const;
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d);
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d);
     void saveFrequencies(unsigned long ppl, std::string &u) const;

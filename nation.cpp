@@ -39,6 +39,4 @@ void Nation::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn)
     property.setConsumption(gdsCnsptn);
 }
 
-void Nation::setFrequencies(const std::vector<double> &frqcs) {
-    property.setFrequencies(frqcs);
-}
+void Nation::setFrequencies(const std::vector<double> &frqcs) { property.setFrequencies(frqcs); }

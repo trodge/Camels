@@ -99,8 +99,14 @@ public:
     void addNeighbor(Town *t) { neighbors.push_back(t); }
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);
     void connectRoutes();
-    void goodButtons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) { property.goodButtons(pgr, rt, bI, pr, fn); }
+    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
+                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) {
+        property.buttons(pgr, rt, bI, pr, fn);
+    }
+    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
+                 const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) {
+        property.buttons(pgr, rt, bI, pr, fn);
+    }
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
         property.adjustAreas(rBs, d * static_cast<double>(population) / 5000);
     }

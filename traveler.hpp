@@ -83,11 +83,11 @@ class Traveler {
     double longitude, latitude;
     bool moving;
     int px, py;
-    double portion;                                  // portion of goods offered in next trade
-    std::vector<Good> offer, request;                // goods offered and requested in next trade
+    double portion;                                        // portion of goods offered in next trade
+    std::vector<Good> offer, request;                      // goods offered and requested in next trade
     std::unordered_map<unsigned int, Property> properties; // owned goods and businesses by town id, 0 for carried goods
-    std::array<unsigned int, 5> stats;               // strength, endurance, agility, intelligence, charisma
-    std::array<unsigned int, 6> parts;               // head, torso, left arm, right arm, left leg, right leg
+    std::array<unsigned int, 5> stats;                     // strength, endurance, agility, intelligence, charisma
+    std::array<unsigned int, 6> parts;                     // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
     std::vector<Traveler *> agents;     // travelers employed
     std::unique_ptr<Contract> contract; // contract with employer, if any
@@ -106,6 +106,7 @@ class Traveler {
     void makeTrade();
     void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
     void updateTradeButtons(std::vector<Pager> &pgrs);
+    Property &property(unsigned int tId);
     void deposit(Good &g);
     void withdraw(Good &g);
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);

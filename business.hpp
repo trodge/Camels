@@ -28,6 +28,7 @@
 #include "good.hpp"
 #include "property.hpp"
 
+class Property;
 class Good;
 
 class Business {

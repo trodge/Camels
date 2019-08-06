@@ -377,12 +377,12 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
 
 struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_TOWNID = 4,
+    VT_ID = 4,
     VT_GOODS = 6,
     VT_BUSINESSES = 8
   };
-  uint32_t townId() const {
-    return GetField<uint32_t>(VT_TOWNID, 0);
+  uint32_t id() const {
+    return GetField<uint32_t>(VT_ID, 0);
   }
   const flatbuffers::Vector<flatbuffers::Offset<Good>> *goods() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_GOODS);
@@ -392,7 +392,7 @@ struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_TOWNID) &&
+           VerifyField<uint32_t>(verifier, VT_ID) &&
            VerifyOffset(verifier, VT_GOODS) &&
            verifier.VerifyVector(goods()) &&
            verifier.VerifyVectorOfTables(goods()) &&
@@ -406,8 +406,8 @@ struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct PropertyBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_townId(uint32_t townId) {
-    fbb_.AddElement<uint32_t>(Property::VT_TOWNID, townId, 0);
+  void add_id(uint32_t id) {
+    fbb_.AddElement<uint32_t>(Property::VT_ID, id, 0);
   }
   void add_goods(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods) {
     fbb_.AddOffset(Property::VT_GOODS, goods);
@@ -429,26 +429,26 @@ struct PropertyBuilder {
 
 inline flatbuffers::Offset<Property> CreateProperty(
     flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t townId = 0,
+    uint32_t id = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Business>>> businesses = 0) {
   PropertyBuilder builder_(_fbb);
   builder_.add_businesses(businesses);
   builder_.add_goods(goods);
-  builder_.add_townId(townId);
+  builder_.add_id(id);
   return builder_.Finish();
 }
 
 inline flatbuffers::Offset<Property> CreatePropertyDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t townId = 0,
+    uint32_t id = 0,
     const std::vector<flatbuffers::Offset<Good>> *goods = nullptr,
     const std::vector<flatbuffers::Offset<Business>> *businesses = nullptr) {
   auto goods__ = goods ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*goods) : 0;
   auto businesses__ = businesses ? _fbb.CreateVector<flatbuffers::Offset<Business>>(*businesses) : 0;
   return Save::CreateProperty(
       _fbb,
-      townId,
+      id,
       goods__,
       businesses__);
 }

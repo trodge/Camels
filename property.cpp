@@ -1,6 +1,6 @@
 #include "property.hpp"
 
-Property::Property(const Save::Property *ppt, const Property &other) id(ppt->id()) {
+Property::Property(const Save::Property *ppt, const Property &other) : id(ppt->id()) {
     auto ldGds = ppt->goods();
     for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.push_back(Good(*lGI));
     for (size_t i = 0; i < goods.size(); ++i) goods[i].setImage(other.goods[i].getImage());
@@ -21,9 +21,8 @@ void Property::setConsumption(const std::vector<std::array<double, 3>> &gdsCnspt
     for (size_t i = 0; i < goods.size(); ++i) goods[i].setConsumption(gdsCnsptn[i]);
 }
 
-void Property::setFrequencies(const std::vector<double> &frqcs);
-{
-    for (size_t i = 0; i < fqs.size(); ++i) businesses[i].setFrequency(fqs[i]);
+void Property::setFrequencies(const std::vector<double> &frqcs) {
+    for (size_t i = 0; i < frqcs.size(); ++i) businesses[i].setFrequency(frqcs[i]);
 }
 
 void Property::setMaximums() {
@@ -61,7 +60,8 @@ void Property::setAreas(bool ctl, unsigned long ppl, unsigned int tT,
             auto fFI = fFs.lower_bound(tTBI);
             if (fFI != end(fFs) && fFI->first == tTBI) fF = fFI->second;
             bsn.setArea(static_cast<double>(ppl) * fq * fF);
-        }
+        } else
+            bsn.setArea(0);
     }
 }
 
@@ -71,23 +71,24 @@ std::vector<Good> Property::take(unsigned int gId, double amt) {
         std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) { return t + g.second->getAmount(); });
     std::vector<Good> transfer;
     std::for_each(gdRng.first, gdRng.second, [amt, total, &transfer](auto g) {
-        transfer.push_back(Good(g->getFullId(), amt * g->getAmount() / total));
-        g->take(transfer.back());
+        transfer.push_back(Good(g.second->getFullId(), amt * g.second->getAmount() / total));
+        g.second->take(transfer.back());
     });
+    return transfer;
 }
 
 void Property::use(unsigned int gId, double amt) {
     auto gdRng = byGoodId.equal_range(gId);
     double total =
         std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) { return t + g.second->getAmount(); });
-    std::for_each(gdRng.first, gdRng.second, [amt, total](Good *g) { g->use(amt / total); });
+    std::for_each(gdRng.first, gdRng.second, [amt, total](auto g) { g.second->use(amt / total); });
 }
 
 void Property::create(unsigned int gId, double amt) {
     // Create the given amount of the lowest indexed material of the given good id.
     auto gdRng = byGoodId.equal_range(gId);
-    std::min_element(gdRng.first, gdRng.second, [](const Good *a, const Good *b) {
-        return a->getMaterialId() < b->getMaterialId();
+    std::min_element(gdRng.first, gdRng.second, [](auto a, auto b) {
+        return a.second->getMaterialId() < b.second->getMaterialId();
     })->second->create(amt);
 }
 
@@ -101,7 +102,30 @@ void Property::create(unsigned int iId, unsigned int oId, double amt) {
         opIt->second->create(amt * ipIt->second->getAmount() / inputTotal);
 }
 
-void Property::update(unsigned int elTm, std::vector<Business> &businesses) {
+void Property::build(const Business &bsn, double a) {
+    // Build the given area of the given business. Check requirements before calling.
+    auto bsnsIt = std::lower_bound(begin(businesses), end(businesses), bsn);
+    if (bsnsIt == end(businesses) || *bsnsIt != bsn) {
+        // Insert new business into properties and set its area.
+        auto nwBsns = businesses.insert(bsnsIt, Business(bsn));
+        nwBsns->takeRequirements(*this, a);
+        nwBsns->setArea(a);
+    } else {
+        // Business already exists, grow it.
+        bsnsIt->takeRequirements(*this, a);
+        bsnsIt->changeArea(a);
+    }
+}
+
+void Property::demolish(const Business &bsn, double a) {
+    // Demolish the given area of the given business. Check area before calling.
+    auto bsnIt = std::lower_bound(begin(businesses), end(businesses), bsn);
+    bsnIt->changeArea(-a);
+    bsnIt->reclaim(*this, a);
+    if (bsnIt->getArea() == 0) businesses.erase(bsnIt);
+}
+
+void Property::update(unsigned int elTm) {
     // Update goods and run businesses for given elapsed time.
     for (auto &gd : goods) gd.update(elTm);
     std::vector<unsigned int> conflicts(goods.size(), 0); // number of businesses that need more of each good than we have
@@ -127,25 +151,55 @@ void Property::reset() {
         for (auto &ip : b.getInputs())
             if (ip == b.getOutputs().back())
                 // Input good is also output, create full amount.
-                property.create(ip.getGoodId(), ip.getAmount());
+                create(ip.getGoodId(), ip.getAmount());
             else
                 // Create only enough for one cycle.
-                property.create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessRunTime() /
-                                                    static_cast<double>(Settings::getDayLength() * kDaysPerYear));
+                create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessRunTime() /
+                                           static_cast<double>(Settings::getDayLength() * kDaysPerYear));
 }
 
-void Property::goodButtons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                       const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) {
+void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
+                       const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) const {
     // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
     pgr.setBounds(rt);
     int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(),
         dy = (rt.h + m) / Settings::getGoodButtonRows();
     bI.rect = {rt.x, rt.y, dx - m, dy - m};
     std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
-    for (auto &g : goods) {
-        if (true || (g.getAmount() >= 0.01 && g.getSplit()) || (g.getAmount() >= 1.)) {
-            bI.onClick = fn(g);
-            bxs.push_back(g.button(true, bI, pr));
+    for (auto &gd : goods) {
+        if (true || (gd.getAmount() >= 0.01 && gd.getSplit()) || (gd.getAmount() >= 1.)) {
+            bI.onClick = fn(gd);
+            bxs.push_back(gd.button(true, bI, pr));
+            bI.rect.x += dx;
+            if (bI.rect.x + bI.rect.w > rt.x + rt.w) {
+                // Go back to left and down one row upon reaching right.
+                bI.rect.x = rt.x;
+                bI.rect.y += dy;
+                if (bI.rect.y + bI.rect.h > rt.y + rt.h) {
+                    // Go back to top and flush current page upon reaching bottom.
+                    bI.rect.y = rt.y;
+                    pgr.addPage(bxs);
+                }
+            }
+        }
+    }
+    if (bxs.size())
+        // Flush remaining boxes to new page.
+        pgr.addPage(bxs);
+}
+
+void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
+                       const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) const {
+    // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
+    pgr.setBounds(rt);
+    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getBusinessButtonColumns(),
+        dy = (rt.h + m) / Settings::getBusinessButtonRows();
+    bI.rect = {rt.x, rt.y, dx - m, dy - m};
+    std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
+    for (auto &bsn : businesses) {
+        if (true || (bsn.getArea() >= 0.01)) {
+            bI.onClick = fn(bsn);
+            bxs.push_back(bsn.button(true, bI, pr));
             bI.rect.x += dx;
             if (bI.rect.x + bI.rect.w > rt.x + rt.w) {
                 // Go back to left and down one row upon reaching right.

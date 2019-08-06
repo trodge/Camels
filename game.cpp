@@ -195,6 +195,7 @@ void Game::loadData(sqlite3 *cn) {
     // Load from goods table.
     std::vector<Good> basicGoods;
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM goods");
+    q = quer.get();
     if (sqlite3_step(q) != SQLITE_DONE) std::cout << sqlite3_errmsg(cn);
     basicGoods.reserve(sqlite3_column_int(q, 0));
     quer = sql::makeQuery(cn, "SELECT good_id, name, measure, shoots FROM goods");
@@ -325,6 +326,7 @@ void Game::loadData(sqlite3 *cn) {
     bIt->setInputs(inputs);
     // Load outputs.
     quer = sql::makeQuery(cn, "SELECT business_id, mode, good_id, amount FROM outputs");
+    q = quer.get();
     std::vector<Good> outputs;
     bIt = begin(businesses);
     while (sqlite3_step(q) != SQLITE_DONE) {

@@ -73,14 +73,15 @@ public:
     Good(unsigned int gId, const std::string &gNm, const std::string &msr, unsigned int aId)
         : goodId(gId), goodName(gNm), measure(msr), ammoId(aId) {} // constructor for loading from goods table
     Good(const Good &gd, const Good &mt, unsigned int fId, double pr, double cr)
-        : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName),
-          materialName(mt.goodName), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
+        : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName), materialName(mt.goodName),
+          perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
         setFullName();
-    }                                                                // constructor for loading from materials table
-    Good(const Good &gd, double amt) : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {}
+    } // constructor for loading from materials table
+    Good(const Good &gd, double amt)
+        : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {}
     Good(unsigned int fId, const std::string &fNm, double amt, const std::vector<CombatStat> &cSs, SDL_Surface *img)
         : fullId(fId), fullName(fNm), amount(amt), combatStats(cSs), image(img) {} // constructor for equipment
-    Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {} // constructor for transfer goods
+    Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {}               // constructor for transfer goods
     Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
         : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
     Good(const Save::Good *svG)
@@ -121,14 +122,6 @@ public:
     double quantity(double prc) const;
     double quantum(double c) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
-    double buyScore(double p, double b) const {
-        if (p != 0) return b / p;
-        return 0;
-    } // score selling at price p
-    double sellScore(double p, double s) const {
-        if (s != 0) return p / s;
-        return 0;
-    } // score buying at price p
     SDL_Surface *getImage() const { return image; }
     void setAmount(double a) { amount = a; }
     void setCombatStats(const std::vector<CombatStat> &cSs) { combatStats = cSs; }

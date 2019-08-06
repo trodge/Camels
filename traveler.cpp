@@ -23,7 +23,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
       moving(false), portion(1), gameData(gD) {
     // Copy goods vector from nation.
-    properties.emplace(nullptr, Property(t->getNation()->getProperty().getGoods()));
+    properties.emplace(0, Property(0, t->getNation()->getProperty().getGoods()));
     // Equip fists.
     equip(2);
     equip(3);
@@ -44,7 +44,7 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     auto &nPpt = nation->getProperty();
     auto lProperties = t->properties();
     for (auto lPI = lProperties->begin(); lPI != lProperties->end(); ++lPI)
-        properties.emplace(lPI->townId(), Property(*lPI, nPpt));
+        properties.emplace(lPI->id(), Property(*lPI, nPpt));
     auto lStats = t->stats();
     for (size_t i = 0; i < stats.size(); ++i) stats[i] = lStats->Get(static_cast<unsigned int>(i));
     auto lParts = t->parts();
@@ -60,9 +60,8 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     std::vector<unsigned int> propertyIds;
     propertyIds.reserve(properties.size());
     for (auto &ppt : properties) propertyIds.push_back(ppt.second.getId());
-    auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(properties.size(), [this, &b, &propertyIds](size_t i) {
-        return properties.find(propertyIds[i])->second.save(b);
-    });
+    auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(
+        properties.size(), [this, &b, &propertyIds](size_t i) { return properties.find(propertyIds[i])->second.save(b); });
     auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
     auto sParts = b.CreateVector(std::vector<unsigned int>(begin(parts), end(parts)));
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
@@ -75,7 +74,9 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
                                     latitude, sProperties, sStats, sParts, sEquipment, 0, moving);
 }
 
-double Traveler::weight() const { return properties.find(0)->second.weight() + static_cast<double>(stats[0]) * kTravelerCarry; }
+double Traveler::weight() const {
+    return properties.find(0)->second.weight() + static_cast<double>(stats[0]) * kTravelerCarry;
+}
 
 std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
     // Return forward list of towns on shortest path to t, excluding current town.
@@ -250,15 +251,13 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
                     .border = Settings::getTradeBorder(),
                     .radius = Settings::getTradeRadius(),
                     .fontSize = Settings::getTradeFontSize()};
-    properties.find(0)->second.goodButtons(pgrs[1], rt, boxInfo, pr, [this, &pgrs](const Good &) {
-        return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
-    });
+    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr,
+                        [this, &pgrs](const Good &) { return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); }; });
     rt.x = sR.w - m - rt.w;
     boxInfo.foreground = toTown->getNation()->getForeground();
     boxInfo.background = toTown->getNation()->getBackground();
-    toTown->goodButtons(pgrs[2], rt, boxInfo, pr, [this, &pgrs](const Good &) {
-        return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
-    });
+    toTown->buttons(pgrs[2], rt, boxInfo, pr,
+                    [this, &pgrs](const Good &) { return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); }; });
 }
 
 void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
@@ -312,23 +311,24 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     if (offer.size()) divideExcess(excess);
 }
 
+Property &Traveler::property(unsigned int tId) {
+    // Returns a reference to property in the given town id, or carried property if 0.
+    auto pptIt = properties.find(tId);
+    if (pptIt == end(properties))
+        // Property has not been created yet.
+        pptIt = properties.emplace(tId, Property(tId, toTown->getNation()->getProperty().getGoods())).first;
+    return pptIt->second;
+}
+
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
-    auto tId = toTown->getId();
-    auto pptIt = properties.find(tId);
-    if (pptIt == end(properties)) {
-        // Storage has not been created yet.
-        pptIt = properties.emplace(tId, Property(toTown->getNation()->getProperty().getGoods())).first;
-    }
     properties.find(0)->second.take(g);
-    pptIt->second.put(g);
+    property(toTown->getId()).put(g);
 }
 
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
-    auto pptIt = properties.find(toTown->getId());
-    if (pptIt == end(properties)) return; // Cannot withdraw from nonexistant storage.
-    pptIt->second.take(g);
+    property(toTown->getId()).take(g);
     properties.find(0)->second.put(g);
 }
 
@@ -364,11 +364,10 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
                     .border = Settings::getTradeBorder(),
                     .radius = Settings::getTradeRadius(),
                     .fontSize = Settings::getTradeFontSize()};
-    createGoodButtons(pgrs[1], goods, rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
-        return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-            double amt = m.getAmount() * portion;
-            Good dG(g.getId(), amt);
-            dG.addMaterial(Material(m.getId(), amt));
+    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
+            double amt = g.getAmount() * portion;
+            Good dG(g.getFullId(), amt);
             deposit(dG);
             refreshStorageButtons(pgrs, fB, pr);
         };
@@ -376,41 +375,24 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     rt.x = sR.w - m - rt.w;
     boxInfo.foreground = toTown->getNation()->getForeground();
     boxInfo.background = toTown->getNation()->getBackground();
-    createGoodButtons(pgrs[2], properties[toTown->getId() - 1].storage, rt, boxInfo, pr,
-                      [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
-                          return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-                              double amt = m.getAmount() * portion;
-                              Good dG(g.getId(), amt);
-                              dG.addMaterial(Material(m.getId(), amt));
-                              withdraw(dG);
-                              refreshStorageButtons(pgrs, fB, pr);
-                          };
-                      });
+    property(toTown->getId()).buttons(pgrs[2], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
+            double amt = g.getAmount() * portion;
+            Good wG(g.getFullId(), amt);
+            withdraw(wG);
+            refreshStorageButtons(pgrs, fB, pr);
+        };
+    });
 }
 
 void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before calling.
-    auto &businesses = properties[toTown->getId() - 1].businesses;
-    auto bsnsIt = std::lower_bound(begin(businesses), end(businesses), bsn);
-    if (bsnsIt == end(businesses) || *bsnsIt != bsn) {
-        // Insert new business into properties and set its area.
-        auto nwBsns = businesses.insert(bsnsIt, Business(bsn));
-        nwBsns->takeRequirements(goods, a);
-        nwBsns->setArea(a);
-    } else {
-        // Business already exists, grow it.
-        bsnsIt->takeRequirements(goods, a);
-        bsnsIt->changeArea(a);
-    }
+    property(toTown->getId()).build(bsn, a);
 }
 
 void Traveler::demolish(const Business &bsn, double a) {
     // Demolish the given area of the given business. Check area before calling.
-    auto &oBsns = properties[toTown->getId() - 1].businesses;
-    auto oBsnIt = std::lower_bound(begin(oBsns), end(oBsns), bsn);
-    oBsnIt->changeArea(-a);
-    oBsnIt->reclaim(goods, a);
-    if (oBsnIt->getArea() == 0) oBsns.erase(oBsnIt);
+    property(toTown->getId()).demolish(bsn, a);
 }
 
 void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
@@ -423,96 +405,64 @@ void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
 void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for managing businesses.
     const SDL_Rect &sR = Settings::getScreenRect();
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(),
-                    &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
-    int tB = Settings::getTradeBorder(), tR = Settings::getTradeRadius(), tFS = Settings::getTradeFontSize();
+    const SDL_Color &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     // Create buttons for demolishing businesses.
-    std::vector<Business> &oBsns = properties[toTown->getId() - 1].businesses;
     int m = Settings::getButtonMargin();
     SDL_Rect rt = {m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
     pgrs[1].setBounds(rt);
-    int dx = (rt.w + m) / Settings::getBusinessButtonColumns(), dy = (rt.h + m) / Settings::getBusinessButtonRows();
-    BoxInfo boxInfo{
-        .rect = {rt.x, rt.y, dx - m, dy - m}, .foreground = fgr, .background = bgr, .border = tB, .radius = tR, .fontSize = tFS};
-    std::vector<std::unique_ptr<TextBox>> bxs;
-    for (auto &bsn : oBsns) {
-        boxInfo.onClick = [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
+    BoxInfo boxInfo{.rect = {rt.x, rt.y, (rt.w + m) / Settings::getBusinessButtonColumns() - m,
+                             (rt.h + m) / Settings::getBusinessButtonRows() - m},
+                    .foreground = nation->getForeground(),
+                    .background = nation->getBackground(),
+                    .border = Settings::getTradeBorder(),
+                    .radius = Settings::getTradeRadius(),
+                    .fontSize = Settings::getTradeFontSize()};
+    property(toTown->getId()).buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
+        return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             demolish(bsn, bsn.getArea() * portion);
             refreshBuildButtons(pgrs, fB, pr);
         };
-        bxs.push_back(bsn.button(true, boxInfo, pr));
-        boxInfo.rect.x += dx;
-        if (boxInfo.rect.x + boxInfo.rect.w > rt.x + rt.w) {
-            // Reached end of line, carriage return.
-            boxInfo.rect.x = rt.x;
-            boxInfo.rect.y += dy;
-            if (boxInfo.rect.y + boxInfo.rect.h > rt.y + rt.h) {
-                // Reached rt.y + rt.h of page, flush vector.
-                pgrs[1].addPage(bxs);
-                boxInfo.rect.y = rt.y;
-            }
-        }
-    }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[1].addPage(bxs);
-    auto &tBsns = toTown->getBusinesses();
+    });
     rt.x = sR.w - m - rt.w;
-    pgrs[2].setBounds(rt);
     boxInfo.rect.x = rt.x;
     boxInfo.rect.y = rt.y;
     boxInfo.foreground = tFgr;
     boxInfo.background = tBgr;
-    for (auto &bsn : tBsns) {
-        boxInfo.onClick = [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
+    toTown->getProperty().buttons(pgrs[2], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
+        return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             // Determine buildable area based on portion.
             double buildable = std::numeric_limits<double>::max();
             for (auto &rq : bsn.getRequirements())
-                buildable = std::min(buildable, goods[rq.getId()].getAmount() * portion / rq.getAmount());
+                buildable = std::min(buildable, properties.find(0)->second.getAmount(rq.getGoodId()) * portion / rq.getAmount());
             if (buildable > 0) build(bsn, buildable);
             refreshBuildButtons(pgrs, fB, pr);
         };
-        bxs.push_back(bsn.button(true, boxInfo, pr));
-        boxInfo.rect.x += dx;
-        if (boxInfo.rect.x + boxInfo.rect.w > rt.x + rt.w) {
-            // Reached end of line, carriage return.
-            boxInfo.rect.x = rt.x;
-            boxInfo.rect.y += dy;
-            if (boxInfo.rect.y + boxInfo.rect.h > rt.y + rt.h) {
-                // Reached rt.y + rt.h of page, flush vector.
-                pgrs[2].addPage(bxs);
-                boxInfo.rect.y = rt.y;
-            }
-        }
-    }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgrs[2].addPage(bxs);
+    });
 }
 
 void Traveler::unequip(unsigned int pI) {
     // Unequip all equipment using the given part id.
     auto unused = [pI](const Good &e) {
-        auto &eSs = e.getMaterial().getCombatStats();
+        auto &eSs = e.getCombatStats();
         return std::find_if(begin(eSs), end(eSs), [pI](const CombatStat &s) { return s.partId == pI; }) == end(eSs);
     };
     auto uEI = std::partition(begin(equipment), end(equipment), unused);
     // Put equipment back in goods.
     for (auto eI = uEI; eI != end(equipment); ++eI)
-        if (eI->getAmount() > 0) goods[eI->getId()].put(*eI);
+        if (eI->getAmount() > 0) properties.find(0)->second.put(*eI);
     equipment.erase(uEI, end(equipment));
 }
 
 void Traveler::equip(Good &g) {
     // Equip the given good.
-    auto &ss = g.getMaterial().getCombatStats();
+    auto &ss = g.getCombatStats();
     std::vector<unsigned int> pIs; // part ids used by this equipment
     pIs.reserve(ss.size());
     for (auto &s : ss)
         if (pIs.empty() || pIs.back() != s.partId) pIs.push_back(s.partId);
     for (auto pI : pIs) unequip(pI);
     // Take good out of goods.
-    goods[g.getId()].take(g);
+    properties.find(0)->second.take(g);
     // Put good in equipment container.
     equipment.push_back(g);
 }
@@ -521,21 +471,15 @@ void Traveler::equip(unsigned int pI) {
     // Equip fists if nothing is equipped in part.
     // Look for equipment in part.
     for (auto &e : equipment)
-        for (auto &s : e.getMaterial().getCombatStats())
+        for (auto &s : e.getCombatStats())
             if (s.partId == pI) return;
     if (pI == 2) {
         // Add left fist to equipment.
-        Good fist = Good(0, "fist");
-        Material fM(2, "left");
-        fM.setCombatStats({{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}});
-        fist.addMaterial(fM);
+        Good fist = Good(0, "left fist", 1, {{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}}, nullptr);
         equipment.push_back(fist);
     } else if (pI == 3) {
         // Add right fist to equipment.
-        Good fist = Good(0, "fist");
-        Material fM(3, "right");
-        fM.setCombatStats({{1, 3, 1, 1, 0, {{1, 1, 1}}}, {2, 3, 0, 1, 1, {{1, 1, 1}}}});
-        fist.addMaterial(fM);
+        Good fist = Good(0, "right fist", 1, {{1, 3, 1, 1, 0, {{1, 1, 1}}}, {2, 3, 0, 1, 1, {{1, 1, 1}}}}, nullptr);
         equipment.push_back(fist);
     }
 }
@@ -562,19 +506,15 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
                     .fontSize = Settings::getEquipFontSize()};
     std::array<std::vector<Good>, kPartsCount> equippable;
     // array of vectors corresponding to parts that can hold equipment
-    for (auto &g : goods)
-        for (auto &m : g.getMaterials()) {
-            auto &ss = m.getCombatStats();
-            if (!ss.empty() && m.getAmount() >= 1) {
-                // This good has combat stats and we have at least one of it.
-                size_t i = ss.front().partId;
-                Good e(g.getId(), g.getName(), 1);
-                Material eM(m.getId(), m.getName(), 1, m.getImage());
-                eM.setCombatStats(ss);
-                e.addMaterial(eM);
-                equippable[i].push_back(e);
-            }
+    for (auto &g : properties.find(0)->second.getGoods()) {
+        auto &ss = g.getCombatStats();
+        if (!ss.empty() && g.getAmount() >= 1) {
+            // This good has combat stats and we have at least one of it.
+            size_t i = ss.front().partId;
+            Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
+            equippable[i].push_back(e);
         }
+    }
     // Create buttons for equipping equipment.
     for (auto &eP : equippable) {
         for (auto &e : eP) {
@@ -595,7 +535,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     boxInfo.rect.x = rt.x;
     boxInfo.rect.y = rt.y;
     for (auto &e : equipment) {
-        auto &ss = e.getMaterial().getCombatStats();
+        auto &ss = e.getCombatStats();
         unsigned int pI = ss.front().partId;
         boxInfo.rect.x = rt.x + static_cast<int>(pI) * dx;
         boxInfo.onClick = [this, e, &pgrs, pI, &ss, &fB, &pr](MenuButton *) {
@@ -620,7 +560,7 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
                     .border = Settings::getTradeBorder(),
                     .radius = Settings::getTradeRadius(),
                     .fontSize = Settings::getTradeFontSize()};
-    createGoodButtons(pgrs[1], goods, rt, boxInfo, pr, [](const Good &, const Material &) { return [](MenuButton *) {}; });
+    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [](const Good &) { return [](MenuButton *) {}; });
     auto &bids = toTown->getBids();
     std::vector<std::string> names;
     for (auto &bd : bids) names.push_back(bd->party->name);
@@ -632,7 +572,7 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
                                                           .radius = Settings::getBigBoxRadius(),
                                                           .fontSize = Settings::getBigBoxFontSize(),
                                                           .onClick =
-                                                              [this](MenuButton *btn) {
+                                                              [](MenuButton *) {
 
                                                               },
                                                           .scroll = true},
@@ -719,11 +659,11 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
     // Find first hit of this traveler on t.
     std::array<unsigned int, 3> defense{};
     for (auto &e : t.equipment)
-        for (auto &s : e.getMaterial().getCombatStats())
+        for (auto &s : e.getCombatStats())
             for (size_t i = 0; i < defense.size(); ++i) defense[i] += s.defense[i] * t.stats[s.statId];
     CombatHit first = {std::numeric_limits<double>::max(), 0, 0, ""};
     for (auto &e : equipment) {
-        auto &ss = e.getMaterial().getCombatStats();
+        auto &ss = e.getCombatStats();
         if (ss.front().attack) {
             // e is a weapon.
             unsigned int attack = 0, type = ss.front().type, speed = 0;
@@ -758,7 +698,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
                     }
                     ++sCI;
                 }
-                first.weapon = e.getMaterial().getName() + " " + e.getName();
+                first.weapon = e.getFullName();
             }
         }
     }
@@ -767,12 +707,12 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
 
 void Traveler::useAmmo(double t) {
     for (auto &e : equipment) {
-        unsigned int sId = e.getShoots();
+        unsigned int sId = e.getAmmoId();
         if (sId) {
             unsigned int speed = 0;
-            for (auto &s : e.getMaterial().getCombatStats()) speed += s.speed * stats[s.statId];
+            for (auto &s : e.getCombatStats()) speed += s.speed * stats[s.statId];
             unsigned int n = static_cast<unsigned int>(t * speed);
-            goods[sId].use(n);
+            properties.find(0)->second.use(sId, n);
         }
     }
 }
@@ -900,13 +840,15 @@ void Traveler::updateFightBoxes(Pager &pgr) {
 
 void Traveler::loot(Good &g) {
     // Take the given good from the given traveler.
-    unsigned int gId = g.getId();
-    target->goods[gId].take(g);
-    goods[gId].put(g);
+    target->properties.find(0)->second.take(g);
+    properties.find(0)->second.put(g);
 }
 
 void Traveler::loot() {
-    for (auto g : target->goods) loot(g);
+    for (auto g : target->properties.find(0)->second.getGoods()) {
+        Good lG(g);
+        loot(lG);
+    }
 }
 
 void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
@@ -924,11 +866,10 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
                     .border = Settings::getTradeBorder(),
                     .radius = Settings::getTradeRadius(),
                     .fontSize = Settings::getTradeFontSize()};
-    createGoodButtons(pgrs[1], goods, rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
-        return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-            double amt = m.getAmount() * portion;
-            Good lG(g.getId(), amt);
-            lG.addMaterial(Material(m.getId(), amt));
+    // Create buttons for leaving goods behind.
+    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
+            Good lG(g.getFullId(), g.getAmount() * portion);
             target->loot(lG);
             refreshLootButtons(pgrs, fB, pr);
         };
@@ -936,11 +877,10 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
     rt.x = sR.w - m - rt.w;
     boxInfo.foreground = target->nation->getForeground();
     boxInfo.background = target->nation->getBackground();
-    createGoodButtons(pgrs[2], target->goods, rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g, const Material &m) {
-        return [this, &g, &m, &pgrs, &fB, &pr](MenuButton *) {
-            double amt = m.getAmount() * portion;
-            Good lG(g.getId(), amt);
-            lG.addMaterial(Material(m.getId(), amt));
+    // Create buttons for looting goods.
+    target->properties.find(0)->second.buttons(pgrs[2], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
+            Good lG(g.getFullId(), g.getAmount() * portion);
             loot(lG);
             refreshLootButtons(pgrs, fB, pr);
         };
@@ -949,7 +889,6 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
 
 void Traveler::startAI() {
     // Initialize variables for running a new AI.
-
     aI = std::make_unique<AI>(*this);
 }
 

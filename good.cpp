@@ -32,7 +32,7 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
                                combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
                                combatStats[i].defense[2]);
     });
-    return Save::CreateGood(b, goodId, materialId, index, svGoodName, svMaterialName, amount, perish, carry, svMeasure,
+    return Save::CreateGood(b, goodId, materialId, fullId, svGoodName, svMaterialName, amount, perish, carry, svMeasure,
                             consumptionRate, demandSlope, demandIntercept, svPerishCounters, svCombatStats, ammoId);
 }
 
@@ -53,7 +53,7 @@ std::string Good::businessText() const {
     return bsnTx;
 }
 
-void Good::setFullName() { fullName = goodName == materialName ? goodName : goodName + " " + materialName; }
+void Good::setFullName() { fullName = goodName == materialName ? goodName : materialName + " " + goodName; }
 
 std::string Good::logEntry() const {
     std::string logText = std::to_string(amount);
@@ -252,7 +252,7 @@ void Good::update(unsigned int elTm) {
 
 std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo bI, Printer &pr) const {
     bI.text = {fullName};
-    bI.id = index;
+    bI.id = fullId;
     if (image) bI.images = {{image, {2 * bI.border, bI.rect.h / 2 - image->h / 2, image->w, image->h}}};
     if (aS) {
         // Button will have amount shown.
@@ -290,10 +290,16 @@ void Good::updateButton(double oV, unsigned int rC, TextBox *btn) const {
     updateButton(amountText, btn);
 }
 
-void Good::adjustDemandSlope(double dDS) {
+void Good::adjustDemand(double dDS) {
     // Change demand slope by parameter * demandIntercept.
     demandSlope += dDS * demandIntercept;
     demandSlope = std::max(0., demandSlope);
+}
+
+void Good::fixDemand(double m) {
+    // Check if price goes too low when good is at maximum.
+    if (demandIntercept - demandSlope * m < minPrice)
+        demandSlope = (demandIntercept - minPrice) / m;
 }
 
 void Good::saveDemand(unsigned long ppl, std::string &u) const {
