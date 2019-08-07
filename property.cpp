@@ -19,18 +19,12 @@ flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilde
 
 double Property::amount(unsigned int gId) const {
     auto gdRng = byGoodId.equal_range(gId);
-    double amt = std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) {
-        std::cout << "t " << t << " g.second->getAmount() " << g.second->getAmount() << std::endl;
-        return t + g.second->getAmount(); 
-    });
-    if (amt < 0)
-        std::cout << amt << gdRng.first->second->getFullName() << id;
-    return amt;
+    return std::accumulate(gdRng.first, gdRng.second, 0., [](double t, auto g) { return t + g.second->getAmount(); });
 }
 
 double Property::maximum(unsigned int gId) const {
     auto gdRng = byGoodId.equal_range(gId);
-    return std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) { return t + g.second->getMaximum(); });
+    return std::accumulate(gdRng.first, gdRng.second, 0., [](double t, auto g) { return t + g.second->getMaximum(); });
 }
 
 void Property::mapGoods() {
