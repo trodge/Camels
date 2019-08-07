@@ -66,7 +66,7 @@ public:
         for (auto &gd : goods) gd.create();
     }
     void create(unsigned int gId, double amt);
-    void create(unsigned int iId, unsigned int oId, double amt);
+    void create(unsigned int gId, unsigned int iId, double amt);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void update(unsigned int elTm);

@@ -58,24 +58,16 @@ class Good {
         bool operator<(const PerishCounter &b) const { return time < b.time; }
     };
     std::deque<PerishCounter> perishCounters;
-    void setFullName();
+    std::string completeName() { return goodName == materialName ? goodName : materialName + " " + goodName; }
     void updateButton(std::string &aT, TextBox *btn) const;
     void enforceMaximum();
 
 public:
-    Good(unsigned int gId, unsigned int mId, unsigned int fId, const std::string &gNm, const std::string &mNm,
-         double amt, double prR, double crW, const std::string &msW, double csR, double dmS, double dmI, SDL_Surface *img)
-        : goodId(gId), materialId(mId), fullId(fId), goodName(gNm), materialName(mNm), amount(amt), perish(prR),
-          carry(crW), measure(msW), split(!msW.empty()), consumptionRate(csR), demandSlope(dmS), demandIntercept(dmI),
-          minPrice(dmI / Settings::getMinPriceDivisor()), lastAmount(amt), image(img) {
-        setFullName();
-    }
     Good(unsigned int gId, const std::string &gNm, const std::string &msr, unsigned int aId)
         : goodId(gId), goodName(gNm), measure(msr), ammoId(aId) {} // constructor for loading from goods table
     Good(const Good &gd, const Good &mt, unsigned int fId, double pr, double cr)
         : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName), materialName(mt.goodName),
-          perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
-        setFullName();
+          fullName(completeName()), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
     } // constructor for loading from materials table
     Good(const Good &gd, double amt)
         : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {}
@@ -86,11 +78,10 @@ public:
         : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
     Good(const Save::Good *svG)
         : goodId(svG->goodId()), materialId(svG->materialId()), fullId(svG->fullId()), goodName(svG->goodName()->str()),
-          materialName(svG->materialName()->str()), amount(svG->amount()), perish(svG->perish()), carry(svG->carry()),
+          materialName(svG->materialName()->str()), fullName(completeName()), amount(svG->amount()), perish(svG->perish()), carry(svG->carry()),
           measure(svG->measure()->str()), split(!measure.empty()), consumptionRate(svG->consumptionRate()),
           demandSlope(svG->demandSlope()), demandIntercept(svG->demandIntercept()),
           minPrice(demandIntercept / Settings::getMinPriceDivisor()), lastAmount(amount) {
-        setFullName();
     }
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Good &other) const { return goodId == other.goodId and materialId == other.materialId; }

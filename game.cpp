@@ -199,7 +199,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> basicGoods;
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM goods");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_DONE) std::cout << sqlite3_errmsg(cn);
+    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
     basicGoods.reserve(sqlite3_column_int(q, 0));
     quer = sql::makeQuery(cn, "SELECT good_id, name, measure, shoots FROM goods");
     q = quer.get();
@@ -212,7 +212,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> goods;
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM materials");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_DONE) std::cout << sqlite3_errmsg(cn);
+    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
     goods.reserve(sqlite3_column_int(q, 0));
     quer = sql::makeQuery(cn, "SELECT good_id, material_id, perish, carry FROM materials");
     q = quer.get();
@@ -421,7 +421,7 @@ void Game::loadData(sqlite3 *cn) {
 void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     auto quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM towns");
     auto q = quer.get();
-    sqlite3_step(q);
+    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
     // Game data holds town count for traveler properties.
     gameData.townCount = static_cast<unsigned int>(sqlite3_column_int(q, 0));
     // Store number of towns as double for progress bar purposes.
@@ -454,7 +454,7 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     // Load routes.
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM routes");
     q = quer.get();
-    sqlite3_step(q);
+    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
     unsigned int routeCount = sqlite3_column_int(q, 0);
     routes.reserve(routeCount);
     double rC = routeCount;

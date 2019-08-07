@@ -53,8 +53,6 @@ std::string Good::businessText() const {
     return bsnTx;
 }
 
-void Good::setFullName() { fullName = goodName == materialName ? goodName : materialName + " " + goodName; }
-
 std::string Good::logEntry() const {
     std::string logText = std::to_string(amount);
     dropTrail(logText, split ? 3 : 0);
@@ -188,12 +186,8 @@ void Good::put(Good &gd) {
 
 void Good::use(double amt) {
     // Uses up the given amount of this good.
-    if (amt > 0) {
-        if (amount >= amt)
-            amount -= amt;
-        else
-            amount = 0;
-    }
+    if (amt < 0) return;
+    amount = std::max(amount - amt, 0.);
     while (amt > 0 && !perishCounters.empty()) {
         // Amount is going down.
         PerishCounter pC = perishCounters.back();

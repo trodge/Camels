@@ -108,6 +108,7 @@ void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv
     for (auto &ip : inputs) {
         auto gId = ip.getGoodId();
         double mF = inv.amount(gId) / ip.getAmount(); // max factor
+        if (mF < 0) std::cout << "mF " << mF << " inv.amount(" << gId << ") " << inv.amount(gId) << " ip.getAmount() " << ip.getAmount() << std::endl;
         if (ip == outputs.back() && mF < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             factor *= mF;
@@ -116,7 +117,7 @@ void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv
             ++cfts[gId];
         }
     }
-    if (factor < 0) std::cout << "Negative factor for " << name << std::endl;
+    if (factor < 0) std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
 }
 
 void Business::handleConflicts(std::vector<unsigned int> &cfts) {
@@ -131,11 +132,11 @@ void Business::run(Property &inv) {
         auto lastInputId = inputs.back().getGoodId(); // inputs which determine material
         for (auto &op : outputs) {
             auto outputId = op.getGoodId();
-            if (!keepMaterial || outputId == lastInputId)
-                // Materials are not kept or last input and output are the same, ignore materials.
-                inv.create(lastInputId, op.getAmount() * factor);
+            if (keepMaterial && outputId != lastInputId)
+                inv.create(outputId, lastInputId, op.getAmount() * factor);
             else
-                inv.create(lastInputId, outputId, op.getAmount() * factor);
+                // Materials are not kept or last input and output are the same, ignore materials.
+                inv.create(outputId, op.getAmount() * factor);
         }
         for (auto &ip : inputs) inv.use(ip.getGoodId(), ip.getAmount() * factor);
     }

@@ -19,7 +19,13 @@ flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilde
 
 double Property::amount(unsigned int gId) const {
     auto gdRng = byGoodId.equal_range(gId);
-    return std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) { return t + g.second->getAmount(); });
+    double amt = std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) {
+        std::cout << "t " << t << " g.second->getAmount() " << g.second->getAmount() << std::endl;
+        return t + g.second->getAmount(); 
+    });
+    if (amt < 0)
+        std::cout << amt << gdRng.first->second->getFullName() << id;
+    return amt;
 }
 
 double Property::maximum(unsigned int gId) const {
@@ -85,7 +91,7 @@ void Property::scale(bool ctl, unsigned long ppl, unsigned int tT) {
         fn = [](auto &b) { return b.getFrequency() == 0; };
     else
         fn = [](auto &b) { return b.getRequireCoast() || b.getFrequency() == 0; };
-    businesses.erase(std::remove_if(begin(businesses), end(businesses), fn));
+    businesses.erase(std::remove_if(begin(businesses), end(businesses), fn), end(businesses));
     for (auto &bsn : businesses) bsn.scale(ppl, tT);
     setMaximums();
     reset();
@@ -118,14 +124,14 @@ void Property::create(unsigned int gId, double amt) {
     })->second->create(amt);
 }
 
-void Property::create(unsigned int iId, unsigned int oId, double amt) {
+void Property::create(unsigned int gId, unsigned int iId, double amt) {
     // Create the given amount of the second good id based on inputs of the first good id.
+    auto gdRng = byGoodId.equal_range(gId);
     auto ipRng = byGoodId.equal_range(iId);
-    auto opRng = byGoodId.equal_range(oId);
     double inputTotal =
         std::accumulate(ipRng.first, ipRng.second, 0, [](double tA, auto g) { return tA + g.second->getAmount(); });
-    for (auto ipIt = ipRng.first, opIt = opRng.first; ipIt != ipRng.second && opIt != opRng.second; ++ipIt, ++opIt)
-        opIt->second->create(amt * ipIt->second->getAmount() / inputTotal);
+    for (auto gdIt = gdRng.first, ipIt = ipRng.first; gdIt != gdRng.second && ipIt != ipRng.second; ++gdIt, ++ipIt)
+        gdIt->second->create(amt * ipIt->second->getAmount() / inputTotal);
 }
 
 void Property::build(const Business &bsn, double a) {
