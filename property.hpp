@@ -64,7 +64,8 @@ public:
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();
-    void setAreas(bool ctl, unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs);
+    void reset();
+    void scale(bool ctl, unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs);
     std::vector<Good> take(unsigned int gId, double amt);
     void take(Good &gd) { goods[gd.getFullId()].take(gd); }
     void put(Good &gd) { goods[gd.getFullId()].put(gd); }
@@ -77,7 +78,6 @@ public:
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void update(unsigned int elTm);
-    void reset();
     void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
                  const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) const;
     void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,

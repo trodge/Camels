@@ -79,14 +79,17 @@ Game::Game()
 }
 
 Game::~Game() {
+    player = nullptr;
+    aITravelers.clear();
+    towns.clear();
     std::cout << "Freeing Map Surface" << std::endl;
     mapSurface = nullptr;
     std::cout << "Freeing Map Textures" << std::endl;
-    for (auto &mT : mapTextures) mT = nullptr;
+    mapTextures.clear();
     std::cout << "Freeing Map Texture" << std::endl;
     mapTexture = nullptr;
     std::cout << "Freeing Good Images" << std::endl;
-    for (auto &gI : goodImages) gI = nullptr;
+    goodImages.clear();
     std::cout << "Destroying Screen" << std::endl;
     screen = nullptr;
     std::cout << "Destroying Window" << std::endl;

@@ -113,12 +113,10 @@ void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv
 }
 
 void Business::handleConflicts(std::vector<unsigned int> &cfts) {
-    int gc = 0;
-    for (auto &ip : inputs) {
-        int c = cfts[static_cast<size_t>(ip.getGoodId())];
-        if (c > gc) gc = c;
-    }
-    if (gc) factor /= gc;
+    unsigned int grCft = 0;
+    for (auto &ip : inputs)
+        grCft = std::max(cfts[ip.getGoodId()], grCft);
+    if (grCft) factor /= static_cast<double>(grCft);
 }
 
 void Business::run(Property &inv) {

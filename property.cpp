@@ -50,8 +50,25 @@ void Property::setMaximums() {
     }
 }
 
-void Property::setAreas(bool ctl, unsigned long ppl, unsigned int tT,
+void Property::reset() {
+    // Reset goods to starting amounts.
+    for (auto &gd : goods) gd.use();
+    for (auto &b : businesses)
+        for (auto &ip : b.getInputs())
+            if (ip == b.getOutputs().back())
+                // Input good is also output, create full amount.
+                create(ip.getGoodId(), ip.getAmount());
+            else
+                // Create only enough for one cycle.
+                create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessRunTime() /
+                                           static_cast<double>(Settings::getDayLength() * kDaysPerYear));
+}
+
+void Property::scale(bool ctl, unsigned long ppl, unsigned int tT,
                         const std::map<std::pair<unsigned int, unsigned int>, double> &fFs) {
+    for (auto &gd : goods) {
+        gd.scaleConsumption(ppl);
+    }
     for (auto &bsn : businesses) {
         double fq = bsn.getFrequency();
         if (fq != 0 && (ctl || !bsn.getRequireCoast())) {
@@ -63,6 +80,9 @@ void Property::setAreas(bool ctl, unsigned long ppl, unsigned int tT,
         } else
             bsn.setArea(0);
     }
+    businesses.erase(std::remove_if(begin(businesses), end(businesses), [](auto &b) { return b.getArea() == 0; }));
+    setMaximums();
+    reset();
 }
 
 std::vector<Good> Property::take(unsigned int gId, double amt) {
@@ -128,7 +148,7 @@ void Property::demolish(const Business &bsn, double a) {
 void Property::update(unsigned int elTm) {
     // Update goods and run businesses for given elapsed time.
     for (auto &gd : goods) gd.update(elTm);
-    std::vector<unsigned int> conflicts(goods.size(), 0); // number of businesses that need more of each good than we have
+    std::vector<unsigned int> conflicts(byGoodId.bucket_count(), 0); // number of businesses that need more of each good than we have
     auto dayLength = Settings::getDayLength();
     for (auto &b : businesses) {
         // For each business, start by setting factor to business run time.
@@ -142,20 +162,6 @@ void Property::update(unsigned int elTm) {
         // Run businesses on town's goods.
         b.run(*this);
     }
-}
-
-void Property::reset() {
-    // Reset goods to starting amounts.
-    for (auto &gd : goods) gd.use();
-    for (auto &b : businesses)
-        for (auto &ip : b.getInputs())
-            if (ip == b.getOutputs().back())
-                // Input good is also output, create full amount.
-                create(ip.getGoodId(), ip.getAmount());
-            else
-                // Create only enough for one cycle.
-                create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessRunTime() /
-                                           static_cast<double>(Settings::getDayLength() * kDaysPerYear));
 }
 
 void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,

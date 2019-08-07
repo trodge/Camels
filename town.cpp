@@ -33,8 +33,7 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
                                            pr)},
       nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty()) {
     // Create new town based on parameters.
-    property.setAreas(ctl, ppl, tT, fFs);
-    property.setMaximums();
+    property.scale(ctl, ppl, tT, fFs);
     // Start with enough inputs for one run cycle.
     property.reset();
     // Randomize business run counter.

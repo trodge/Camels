@@ -140,13 +140,14 @@ void Good::setConsumption(const std::array<double, 3> &cnsptn) {
 
 void Good::scaleConsumption(unsigned long ppl) {
     // Assign consumption to match given population.
-    demandSlope /= static_cast<double>(ppl);
-    consumptionRate *= static_cast<double>(ppl);
+    double dPpl = static_cast<double>(ppl);
+    demandSlope /= dPpl;
+    consumptionRate *= dPpl;
 }
 
 void Good::enforceMaximum() {
     // Removes materials in excess of max
-    if (maximum > 0 && amount > maximum) { amount = maximum; }
+    if (maximum > 0) { amount = std::max(maximum, amount); }
 }
 
 void Good::take(Good &gd) {
