@@ -21,17 +21,17 @@
 
 Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl, unsigned long ppl,
            unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS, Printer &pr)
-    : id(i), box{std::make_unique<TextBox>(BoxInfo{.text = nms,
-                                                   .foreground = nt->getForeground(),
-                                                   .background = nt->getBackground(),
-                                                   .id = nt->getId(),
-                                                   .isNation = true,
-                                                   .canFocus = true,
-                                                   .border = 1,
-                                                   .radius = 1,
-                                                   .fontSize = fS},
-                                           pr)},
-      nation(nt), longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty()) {
+    : id(i), nation(nt), box(std::make_unique<TextBox>(BoxInfo{.text = nms,
+                                                               .foreground = nt->getForeground(),
+                                                               .background = nt->getBackground(),
+                                                               .id = nt->getId(),
+                                                               .isNation = true,
+                                                               .canFocus = true,
+                                                               .border = 1,
+                                                               .radius = 1,
+                                                               .fontSize = fS},
+                                                       pr)),
+      longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty().getGoods()) {
     // Create new town based on parameters.
     property.scale(ctl, ppl, tT, fFs);
     // Start with enough inputs for one run cycle.
@@ -42,16 +42,8 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
 }
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
-    : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]), longitude(t->longitude()),
-      latitude(t->latitude()), coastal(t->coastal()), population(static_cast<unsigned long>(t->population())),
-      townType(t->townType()), property(t->property(), nation->getProperty()), businessCounter(t->businessCounter()) {
-    // Load a town from the given flatbuffers save object.
-    SDL_Rect rt = {0, 0, 0, 0};
-    auto lNames = t->names();
-    std::vector<std::string> names;
-    names.push_back(lNames->Get(0)->str());
-    names.push_back(lNames->Get(1)->str());
-    box = std::make_unique<TextBox>(BoxInfo{.text = names,
+    : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
+      box(std::make_unique<TextBox>(BoxInfo{.text = {t->names()->Get(0)->str(), t->names()->Get(1)->str()},
                                             .foreground = nation->getForeground(),
                                             .background = nation->getBackground(),
                                             .id = nation->getId(),
@@ -59,8 +51,11 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
                                             .border = 1,
                                             .radius = 1,
                                             .fontSize = fS},
-                                    pr);
-    // Copy image pointers from nation's goods.
+                                    pr)),
+      longitude(t->longitude()), latitude(t->latitude()), coastal(t->coastal()),
+      population(static_cast<unsigned long>(t->population())), townType(t->townType()),
+      property(t->property(), nation->getProperty()), businessCounter(t->businessCounter()) {
+    // Load a town from the given flatbuffers save object. Copy image pointers from nation's goods.
     property.setMaximums();
 }
 

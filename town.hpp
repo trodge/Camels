@@ -43,8 +43,8 @@ class Traveler;
 
 class Town {
     unsigned int id;
-    std::unique_ptr<TextBox> box;
     const Nation *nation = nullptr;
+    std::unique_ptr<TextBox> box;
     double longitude, latitude;
     bool coastal;
     unsigned long population;
