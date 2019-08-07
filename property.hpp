@@ -33,10 +33,11 @@ class Property {
     std::vector<Good> goods;
     std::unordered_multimap<unsigned int, Good *> byGoodId;
     std::vector<Business> businesses;
+    std::vector<unsigned int> conflicts;
 
 public:
     Property(unsigned int i, const std::vector<Good> &gds, const std::vector<Business> &bsns)
-        : id(i), goods(gds), businesses(bsns) {
+        : id(i), goods(gds), businesses(bsns), conflicts(gds.back().getGoodId()) {
         mapGoods();
     }
     Property(unsigned int i, const std::vector<Good> &gds) : Property(i, gds, {}) {}
@@ -45,27 +46,18 @@ public:
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b) const;
     unsigned int getId() const { return id; }
     unsigned int getGoodId(unsigned int fId) const { return goods[fId].getGoodId(); }
-    double getAmount(unsigned int gId) const {
-        auto gdRng = byGoodId.equal_range(gId);
-        return std::accumulate(gdRng.first, gdRng.second, 0, [](double tA, auto g) { return tA + g.second->getAmount(); });
-    }
-    double getMaximum(unsigned int gId) const {
-        auto gdRng = byGoodId.equal_range(gId);
-        return std::accumulate(gdRng.first, gdRng.second, 0,
-                               [](double tA, auto g) { return tA + g.second->getMaximum(); });
-    }
+    double amount(unsigned int gId) const;
+    double maximum(unsigned int gId) const;
     const std::vector<Good> &getGoods() const { return goods; }
     double weight() const {
-        return std::accumulate(begin(goods), end(goods), 0, [](double d, const auto &g) { return d + g.weight(); });
+        return std::accumulate(begin(goods), end(goods), 0, [](double w, const auto &g) { return w + g.weight(); });
     }
-    void mapGoods() {
-        for (auto &gd : goods) byGoodId.emplace(gd.getGoodId(), &gd);
-    }
+    void mapGoods();
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();
     void reset();
-    void scale(bool ctl, unsigned long ppl, unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs);
+    void scale(bool ctl, unsigned long ppl, unsigned int tT);
     std::vector<Good> take(unsigned int gId, double amt);
     void take(Good &gd) { goods[gd.getFullId()].take(gd); }
     void put(Good &gd) { goods[gd.getFullId()].put(gd); }

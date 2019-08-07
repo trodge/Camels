@@ -19,8 +19,10 @@
 
 #include "business.hpp"
 
-Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM)
-    : id(i), mode(m), name(nm), area(1), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1) {}
+Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,
+                   const std::array<double, 3> &fFs)
+    : id(i), mode(m), name(nm), area(1), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1),
+      frequencyFactors(fFs) {}
 
 Business::Business(const Save::Business *b)
     : id(b->id()), mode(b->mode()), name(b->name()->str()), area(b->area()), canSwitch(b->canSwitch()),
@@ -56,6 +58,11 @@ void Business::setArea(double a) {
         for (auto &op : outputs) op.setAmount(op.getAmount() * a / area);
         area = a;
     }
+}
+
+void Business::scale(unsigned long ppl, unsigned int tT) {
+    // Set area according to given population and town type.
+    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[tT - 1]);
 }
 
 void Business::takeRequirements(Property &inv, double a) {
@@ -95,12 +102,12 @@ void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv
     bool space = false;
     for (auto &op : outputs) {
         auto gId = op.getGoodId();
-        if (inv.getAmount(gId) < inv.getMaximum(gId)) space = true;
+        if (inv.amount(gId) < inv.maximum(gId)) space = true;
     }
     if (!space) factor = 0;
     for (auto &ip : inputs) {
         auto gId = ip.getGoodId();
-        double mF = inv.getAmount(gId) / ip.getAmount(); // max factor
+        double mF = inv.amount(gId) / ip.getAmount(); // max factor
         if (ip == outputs.back() && mF < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             factor *= mF;
@@ -114,8 +121,7 @@ void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv
 
 void Business::handleConflicts(std::vector<unsigned int> &cfts) {
     unsigned int grCft = 0;
-    for (auto &ip : inputs)
-        grCft = std::max(cfts[ip.getGoodId()], grCft);
+    for (auto &ip : inputs) grCft = std::max(cfts[ip.getGoodId()], grCft);
     if (grCft) factor /= static_cast<double>(grCft);
 }
 

@@ -17,6 +17,20 @@ flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilde
     return Save::CreateProperty(b, id, svGoods, svBusinesses);
 }
 
+double Property::amount(unsigned int gId) const {
+    auto gdRng = byGoodId.equal_range(gId);
+    return std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) { return t + g.second->getAmount(); });
+}
+
+double Property::maximum(unsigned int gId) const {
+    auto gdRng = byGoodId.equal_range(gId);
+    return std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto g) { return t + g.second->getMaximum(); });
+}
+
+void Property::mapGoods() {
+    for (auto &gd : goods) byGoodId.emplace(gd.getGoodId(), &gd);
+}
+
 void Property::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {
     for (size_t i = 0; i < goods.size(); ++i) goods[i].setConsumption(gdsCnsptn[i]);
 }
@@ -64,23 +78,15 @@ void Property::reset() {
                                            static_cast<double>(Settings::getDayLength() * kDaysPerYear));
 }
 
-void Property::scale(bool ctl, unsigned long ppl, unsigned int tT,
-                        const std::map<std::pair<unsigned int, unsigned int>, double> &fFs) {
-    for (auto &gd : goods) {
-        gd.scaleConsumption(ppl);
-    }
-    for (auto &bsn : businesses) {
-        double fq = bsn.getFrequency();
-        if (fq != 0 && (ctl || !bsn.getRequireCoast())) {
-            double fF = 1;
-            auto tTBI = std::make_pair(tT, bsn.getId());
-            auto fFI = fFs.lower_bound(tTBI);
-            if (fFI != end(fFs) && fFI->first == tTBI) fF = fFI->second;
-            bsn.setArea(static_cast<double>(ppl) * fq * fF);
-        } else
-            bsn.setArea(0);
-    }
-    businesses.erase(std::remove_if(begin(businesses), end(businesses), [](auto &b) { return b.getArea() == 0; }));
+void Property::scale(bool ctl, unsigned long ppl, unsigned int tT) {
+    for (auto &gd : goods) { gd.scaleConsumption(ppl); }
+    std::function<bool(const Business &b)> fn;
+    if (ctl)
+        fn = [](auto &b) { return b.getFrequency() == 0; };
+    else
+        fn = [](auto &b) { return b.getRequireCoast() || b.getFrequency() == 0; };
+    businesses.erase(std::remove_if(begin(businesses), end(businesses), fn));
+    for (auto &bsn : businesses) bsn.scale(ppl, tT);
     setMaximums();
     reset();
 }
@@ -148,7 +154,6 @@ void Property::demolish(const Business &bsn, double a) {
 void Property::update(unsigned int elTm) {
     // Update goods and run businesses for given elapsed time.
     for (auto &gd : goods) gd.update(elTm);
-    std::vector<unsigned int> conflicts(byGoodId.bucket_count(), 0); // number of businesses that need more of each good than we have
     auto dayLength = Settings::getDayLength();
     for (auto &b : businesses) {
         // For each business, start by setting factor to business run time.

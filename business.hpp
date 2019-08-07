@@ -37,17 +37,18 @@ class Business {
     double area;    // in uncia
     bool canSwitch; // whether able to switch between modes
     bool requireCoast;
-    bool keepMaterial;              // whether outputs get input as material
-    std::vector<Good> requirements; // goods needed to start
-    std::vector<Good> reclaimables; // goods which will be reclaimed when business is demolished
-    std::vector<Good> inputs;       // goods needed every production cycle
-    std::vector<Good> outputs;      // goods created every production cycle
-    double factor;                  // factor based on area and available inputs for production
-    double frequency = 0;           // area of business per unit of population
-    double reclaimFactor = 0.7;     // portion of requirements that can be reclaimed
+    bool keepMaterial;                      // whether outputs get input as material
+    std::vector<Good> requirements;         // goods needed to start
+    std::vector<Good> reclaimables;         // goods which will be reclaimed when business is demolished
+    std::vector<Good> inputs;               // goods needed every production cycle
+    std::vector<Good> outputs;              // goods created every production cycle
+    double factor;                          // factor based on area and available inputs for production
+    double frequency = 0;                   // area of business per unit of population
+    std::array<double, 3> frequencyFactors; // factors for frequency in different town types
+    double reclaimFactor = 0.7;             // portion of requirements that can be reclaimed
 
 public:
-    Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM);
+    Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM, const std::array<double, 3> &fFs);
     Business(const Save::Business *b);
     flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
@@ -67,6 +68,7 @@ public:
     double getFrequency() const { return frequency; }
     void setArea(double a);
     void changeArea(double a) { setArea(area + a); }
+    void scale(unsigned long ppl, unsigned int tT);
     void setRequirements(const std::vector<Good> &rqs) { requirements = rqs; }
     void setInputs(const std::vector<Good> &ips) { inputs = ips; }
     void setOutputs(const std::vector<Good> &ops) { outputs = ops; }

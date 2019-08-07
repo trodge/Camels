@@ -251,8 +251,9 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
                     .border = Settings::getTradeBorder(),
                     .radius = Settings::getTradeRadius(),
                     .fontSize = Settings::getTradeFontSize()};
-    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr,
-                        [this, &pgrs](const Good &) { return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); }; });
+    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs](const Good &) {
+        return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
+    });
     rt.x = sR.w - m - rt.w;
     boxInfo.foreground = toTown->getNation()->getForeground();
     boxInfo.background = toTown->getNation()->getBackground();
@@ -405,7 +406,6 @@ void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
 void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for managing businesses.
     const SDL_Rect &sR = Settings::getScreenRect();
-    const SDL_Color &tFgr = toTown->getNation()->getForeground(), &tBgr = toTown->getNation()->getBackground();
     // Create buttons for demolishing businesses.
     int m = Settings::getButtonMargin();
     SDL_Rect rt = {m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
@@ -426,14 +426,14 @@ void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     rt.x = sR.w - m - rt.w;
     boxInfo.rect.x = rt.x;
     boxInfo.rect.y = rt.y;
-    boxInfo.foreground = tFgr;
-    boxInfo.background = tBgr;
+    boxInfo.foreground = toTown->getNation()->getForeground();
+    boxInfo.background = toTown->getNation()->getBackground();
     toTown->getProperty().buttons(pgrs[2], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
         return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             // Determine buildable area based on portion.
             double buildable = std::numeric_limits<double>::max();
             for (auto &rq : bsn.getRequirements())
-                buildable = std::min(buildable, properties.find(0)->second.getAmount(rq.getGoodId()) * portion / rq.getAmount());
+                buildable = std::min(buildable, properties.find(0)->second.amount(rq.getGoodId()) * portion / rq.getAmount());
             if (buildable > 0) build(bsn, buildable);
             refreshBuildButtons(pgrs, fB, pr);
         };

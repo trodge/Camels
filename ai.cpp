@@ -211,8 +211,8 @@ void AI::attack() {
         able.erase(std::remove_if(begin(able), end(able),
                                   [this, ourEquipScore](const Traveler *a) {
                                       return decisionCriteria[4] < Settings::getCriteriaMax() / 3 ||
-                                             lootScore(a->properties.find(0)->second.getGoods()) * ourEquipScore * decisionCriteria[4] /
-                                                     equipScore(a->equipment, a->stats) <
+                                             lootScore(a->properties.find(0)->second.getGoods()) * ourEquipScore *
+                                                     decisionCriteria[4] / equipScore(a->equipment, a->stats) <
                                                  Settings::getAIAttackThreshold();
                                   }),
                    end(able));
@@ -329,8 +329,8 @@ void AI::setLimits() {
     for (auto &g : gs) {
         // Loop through goods.
         bool hasGood = g.getAmount() > 0; // Traveler has non-zero amount of material j
-        std::vector<double> prices;            // prices for this material of this good in
-                                                // all nearby towns that sell it
+        std::vector<double> prices;       // prices for this material of this good in
+                                          // all nearby towns that sell it
         prices.reserve(nC);
         for (auto &n : nearby) {
             // Loop through nearby towns to collect price info.

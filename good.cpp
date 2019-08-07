@@ -299,8 +299,7 @@ void Good::adjustDemand(double dDS) {
 
 void Good::fixDemand(double m) {
     // Check if price goes too low when good is at maximum.
-    if (demandIntercept - demandSlope * m < minPrice)
-        demandSlope = (demandIntercept - minPrice) / m;
+    if (demandIntercept - demandSlope * m < minPrice) demandSlope = (demandIntercept - minPrice) / m;
 }
 
 void Good::saveDemand(unsigned long ppl, std::string &u) const {

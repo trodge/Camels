@@ -19,8 +19,8 @@
 
 #include "town.hpp"
 
-Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl, unsigned long ppl,
-           unsigned int tT, const std::map<std::pair<unsigned int, unsigned int>, double> &fFs, int fS, Printer &pr)
+Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
+           unsigned long ppl, unsigned int tT, int fS, Printer &pr)
     : id(i), nation(nt), box(std::make_unique<TextBox>(BoxInfo{.text = nms,
                                                                .foreground = nt->getForeground(),
                                                                .background = nt->getBackground(),
@@ -31,9 +31,9 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
                                                                .radius = 1,
                                                                .fontSize = fS},
                                                        pr)),
-      longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty().getGoods()) {
+      longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty()) {
     // Create new town based on parameters.
-    property.scale(ctl, ppl, tT, fFs);
+    property.scale(ctl, ppl, tT);
     // Start with enough inputs for one run cycle.
     property.reset();
     // Randomize business run counter.

@@ -62,12 +62,8 @@ class AI {
     Role role; // behavior for this ai
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
-    double buyScore(double p, double b) const {
-        return p == 0 ? 0 : b / p;
-    } // score selling at price p
-    double sellScore(double p, double s) const {
-        return s == 0 ? 0 : p / s;
-    } // score buying at price p
+    double buyScore(double p, double b) const { return p == 0 ? 0 : b / p; }  // score selling at price p
+    double sellScore(double p, double s) const { return s == 0 ? 0 : p / s; } // score buying at price p
     double equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
     double lootScore(const std::vector<Good> &tGs) const;
