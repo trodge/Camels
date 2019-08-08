@@ -40,7 +40,7 @@ public:
     std::vector<TextBox *> getVisible();
     std::vector<TextBox *> getAll();
     size_t pageCount() const { return indices.size(); }
-    int visibleCount() const { return visible[1] - visible[0]; }
+    size_t visibleCount() const { return visible[1] - visible[0]; }
     const SDL_Rect &getBounds() { return bounds; }
     void setBounds(const SDL_Rect &bnds) { bounds = bnds; }
     void setBounds();

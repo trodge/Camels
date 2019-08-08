@@ -92,8 +92,11 @@ void loadColor(const std::string &n, SDL_Color &c, const SDL_Color &d, const pt:
 
 template <class OutputIt, class T>
 void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const pt::ptree &t) {
-    for (auto dfIt = begin(dfs), oIt = out; dfIt != end(dfs); ++dfIt, ++oIt)
-        *oIt = t.get(n + "_" + std::to_string(oIt - out), *dfIt);
+    auto oIt = out;
+    for (auto &df : dfs) {
+		*oIt = t.get(n + "_" + std::to_string(oIt - out), df);
+        ++oIt;
+	}
 }
 
 void Settings::load(const fs::path &p) {

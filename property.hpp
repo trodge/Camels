@@ -19,6 +19,7 @@
 #ifndef PROPERTY_H
 #define PROPERTY_H
 
+#include <numeric>
 #include <unordered_map>
 #include <vector>
 

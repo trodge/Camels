@@ -81,7 +81,7 @@ void TextBox::setClicked(bool c) {
 }
 
 void TextBox::toggleFocus() {
-    isFocus = not isFocus;
+    isFocus = !isFocus;
     if (isFocus)
         setBorder(border * 2);
     else {

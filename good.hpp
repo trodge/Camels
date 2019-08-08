@@ -21,6 +21,7 @@
 #define GOOD_H
 
 #include <algorithm>
+#include <numeric>
 #include <unordered_map>
 #include <vector>
 
@@ -84,8 +85,8 @@ public:
           minPrice(demandIntercept / Settings::getMinPriceDivisor()), lastAmount(amount) {
     }
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
-    bool operator==(const Good &other) const { return goodId == other.goodId and materialId == other.materialId; }
-    bool operator!=(const Good &other) const { return goodId != other.goodId or materialId != other.materialId; }
+    bool operator==(const Good &other) const { return goodId == other.goodId && materialId == other.materialId; }
+    bool operator!=(const Good &other) const { return goodId != other.goodId || materialId != other.materialId; }
     bool operator<(const Good &other) const { return fullId < other.fullId; }
     unsigned int getGoodId() const { return goodId; }
     unsigned int getMaterialId() const { return materialId; }
