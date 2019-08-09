@@ -125,7 +125,7 @@ void Material::setConsumption(const std::array<double, 3> &c) {
     demandIntercept = c[2];
 }
 
-void Material::scaleConsumption(unsigned long p) {
+void Material::scale(unsigned long p) {
     // Assign consumption to match given population.
     demandSlope /= static_cast<double>(p);
     consumption *= static_cast<double>(p);

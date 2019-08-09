@@ -136,7 +136,7 @@ void Good::setConsumption(const std::array<double, 3> &cnsptn) {
     demandIntercept = cnsptn[2];
 }
 
-void Good::scaleConsumption(unsigned long ppl) {
+void Good::scale(unsigned long ppl) {
     // Assign consumption to match given population.
     double dPpl = static_cast<double>(ppl);
     demandSlope /= dPpl;

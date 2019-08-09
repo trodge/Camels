@@ -29,8 +29,9 @@ const double kPi = boost::math::constants::pi<double>();
 const double kShowPlayerPadding = 0.2; // Portion of screen to pad around player when map zooms to player
 const int kDaysPerYear = 365;
 const double kTravelerCarry = -16;
-const size_t kPartsCount = 6; // number of parts travelers have
+const size_t kPartCount = 6; // number of parts travelers have
 const size_t kFontCount = 5;  // number of fonts used to display text
 const int kMaxGoodImageSize = 51;
+
 
 #endif

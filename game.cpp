@@ -20,7 +20,7 @@
 #include "game.hpp"
 
 Game::Game()
-    : screenRect(Settings::getScreenRect()), mapRect(Settings::getMapRect()), offsetX(Settings::getOffsetX()),
+    : screenRect(Settings::getScreenRect()), mapView(Settings::getMapView()), offsetX(Settings::getOffsetX()),
       offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
       window(sdl::makeWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
                              SDL_WINDOW_BORDERLESS)),
@@ -40,33 +40,34 @@ Game::Game()
     // screenInfo.max_texture_height = 64;
     // screenInfo.max_texture_width = 64;
     std::cout << "Loading Map" << std::endl;
-    mapSurface = sdl::loadImage(fs::path("images/map-scaled.png").string().c_str());
-    mapTexture = sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapRect.w, mapRect.h);
+    auto mapSurface = sdl::loadImage(fs::path("images/map-scaled.png").string().c_str());
     if (!mapSurface) std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
+    mapRect = {0, 0, mapSurface->w, mapSurface->h};
+    mapTexture = sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapView.w, mapView.h);
     SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
-    mapTextureColumnCount = mapSurface->w / rt.w + (mapSurface->w % rt.w != 0);
-    mapTextureRowCount = mapSurface->h / rt.h + (mapSurface->h % rt.h != 0);
+    mapTextureColumnCount = mapRect.w / rt.w + (mapRect.w % rt.w != 0);
+    mapTextureRowCount = mapRect.h / rt.h + (mapRect.h % rt.h != 0);
     mapTextures.reserve(static_cast<size_t>(mapTextureColumnCount * mapTextureRowCount));
-    for (; rt.y + rt.h <= mapSurface->h; rt.y += rt.h) {
+    for (; rt.y + rt.h <= mapRect.h; rt.y += rt.h) {
         // Loop from top to bottom.
-        for (rt.x = 0; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
+        for (rt.x = 0; rt.x + rt.w <= mapRect.w; rt.x += rt.w)
             // Loop from left to right.
             mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
-        if (rt.x < mapSurface->w) {
+        if (rt.x < mapRect.w) {
             // Fill right side rectangles of map.
-            rt.w = mapSurface->w - rt.x;
+            rt.w = mapRect.w - rt.x;
             mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
             rt.w = screenInfo.max_texture_width;
         }
     }
-    if (rt.y < mapSurface->h) {
+    if (rt.y < mapRect.h) {
         // Fill in bottom side rectangles of map.
-        rt.h = mapSurface->h - rt.y;
-        for (; rt.x + rt.w <= mapSurface->w; rt.x += rt.w)
+        rt.h = mapRect.h - rt.y;
+        for (; rt.x + rt.w <= mapRect.w; rt.x += rt.w)
             mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
-        if (rt.x < mapSurface->w) {
+        if (rt.x < mapRect.w) {
             // Fill bottom right corner of map.
-            rt.w = mapSurface->w - rt.x;
+            rt.w = mapRect.w - rt.x;
             mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
         }
     }
@@ -82,8 +83,6 @@ Game::~Game() {
     player = nullptr;
     aITravelers.clear();
     towns.clear();
-    std::cout << "Freeing Map Surface" << std::endl;
-    mapSurface = nullptr;
     std::cout << "Freeing Map Textures" << std::endl;
     mapTextures.clear();
     std::cout << "Freeing Map Texture" << std::endl;
@@ -108,9 +107,9 @@ void Game::run() {
 
 void Game::renderMapTexture() {
     // Construct map texture for drawing from matrix of map textures.
-    int left = mapRect.x / screenInfo.max_texture_width, top = mapRect.y / screenInfo.max_texture_height,
-        right = (mapRect.x + mapRect.w) / screenInfo.max_texture_width,
-        bottom = (mapRect.y + mapRect.h) / screenInfo.max_texture_height;
+    int left = mapView.x / screenInfo.max_texture_width, top = mapView.y / screenInfo.max_texture_height,
+        right = (mapView.x + mapView.w) / screenInfo.max_texture_width,
+        bottom = (mapView.y + mapView.h) / screenInfo.max_texture_height;
     SDL_Rect sR = {0, 0, 0, 0}, dR = {0, 0, 0, 0};
     if (SDL_SetRenderTarget(screen.get(), mapTexture.get()) < 0)
         std::cout << "Failed to set render target, SDL Error: " << SDL_GetError() << std::endl;
@@ -118,12 +117,12 @@ void Game::renderMapTexture() {
         dR.y = 0;
         dR.h = 0;
         for (int r = top; r <= bottom; ++r) {
-            sR = {std::max(mapRect.x - c * screenInfo.max_texture_width, 0),
-                  std::max(mapRect.y - r * screenInfo.max_texture_height, 0),
-                  std::min(std::min((c + 1) * screenInfo.max_texture_width - mapRect.x, screenInfo.max_texture_width),
-                           mapRect.w),
-                  std::min(std::min((r + 1) * screenInfo.max_texture_height - mapRect.y, screenInfo.max_texture_height),
-                           mapRect.h)};
+            sR = {std::max(mapView.x - c * screenInfo.max_texture_width, 0),
+                  std::max(mapView.y - r * screenInfo.max_texture_height, 0),
+                  std::min(std::min((c + 1) * screenInfo.max_texture_width - mapView.x, screenInfo.max_texture_width),
+                           mapView.w),
+                  std::min(std::min((r + 1) * screenInfo.max_texture_height - mapView.y, screenInfo.max_texture_height),
+                           mapView.h)};
             dR.y += dR.h;
             dR.w = sR.w;
             dR.h = sR.h;
@@ -146,10 +145,10 @@ void Game::place() {
 
 void Game::moveView(int dx, int dy) {
     // Move view around world map.
-    SDL_Rect m = {mapRect.x + dx, mapRect.y + dy, mapSurface->w, mapSurface->h};
-    if (m.x > 0 && m.x < m.w - mapRect.w && m.y > 0 && m.y < m.h - mapRect.h) {
-        mapRect.x = m.x;
-        mapRect.y = m.y;
+    SDL_Rect m = {mapView.x + dx, mapView.y + dy, mapRect.w, mapRect.h};
+    if (m.x > 0 && m.x < m.w - mapView.w && m.y > 0 && m.y < m.h - mapView.h) {
+        mapView.x = m.x;
+        mapView.y = m.y;
         offsetX -= dx;
         offsetY -= dy;
         renderMapTexture();
@@ -259,7 +258,7 @@ void Game::loadData(sqlite3 *cn) {
                                         static_cast<unsigned int>(sqlite3_column_int(q, 1))};
         if (gdIt->getGoodId() != ids[0] || gdIt->getMaterialId() != ids[1]) {
             gdIt->setCombatStats(combatStats);
-            gdIt = std::lower_bound(gdIt, end(goods), ids, [](const Good &g, auto a) {
+            gdIt = std::lower_bound(gdIt, end(goods), ids, [](auto g, auto a) {
                 auto gId = g.getGoodId();
                 return gId < a[0] || (gId == a[0] && g.getMaterialId() < a[1]);
             });
@@ -521,7 +520,7 @@ void Game::newGame() {
         SDL_RenderPresent(screen.get());
     }
     std::uniform_int_distribution<> dis(-Settings::getTravelersCheckTime(), 0);
-    travelersCheckCounter = dis(Settings::getRng());
+    travelersCheckCounter = dis(Settings::rng);
 }
 
 void Game::loadGame(const fs::path &p) {
@@ -600,14 +599,14 @@ void Game::handleEvents() {
         switch (event.type) {
         case SDL_MOUSEBUTTONDOWN:
             // Print r g b values at clicked coordinates
-            mx = event.button.x + mapRect.x;
-            my = event.button.y + mapRect.y;
-            mw = mapSurface->w;
-            mh = mapSurface->h;
-            if (mx >= 0 && mx < mw && my >= 0 && my < mh) {
+            mx = event.button.x + mapView.x;
+            my = event.button.y + mapView.y;
+            mw = mapView.w;
+            mh = mapView.h;
+            /*if (mx >= 0 && mx < mw && my >= 0 && my < mh) {
                 SDL_GetRGB(getAt(mapSurface.get(), mx, my), mapSurface->format, &r, &g, &b);
                 std::cout << "Clicked Color: (" << int(r) << ", " << int(g) << ", " << int(b) << ")" << std::endl;
-            }
+            }*/
             break;
         }
         player->handleEvent(event);
@@ -660,13 +659,14 @@ void Game::generateRoutes() {
                             .fontSize = Settings::getLoadBarFontSize(),
                             .outsideRect = {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}},
                     printer);
+    /*
     // Have each town find its nearest neighbors.
     for (auto &t : towns) {
-        t.findNeighbors(towns, mapSurface.get(), mapRect.x, mapRect.y);
+        t.findNeighbors(towns, mapSurface.get(), mapView.x, mapView.y);
         loadBar.progress(1 / static_cast<double>(towns.size()));
         loadBar.draw(screen.get());
         SDL_RenderPresent(screen.get());
-    }
+    }*/
     // Link every route both ways.
     for (auto &t : towns) t.connectRoutes();
     // Re-fill routes.

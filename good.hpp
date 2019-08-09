@@ -116,10 +116,10 @@ public:
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
     SDL_Surface *getImage() const { return image; }
     void setAmount(double a) { amount = a; }
+    void setConsumption(const std::array<double, 3> &cnsptn);
     void setCombatStats(const std::vector<CombatStat> &cSs) { combatStats = cSs; }
     void setImage(SDL_Surface *img) { image = img; }
-    void setConsumption(const std::array<double, 3> &cnsptn);
-    void scaleConsumption(unsigned long ppl);
+    void scale(unsigned long ppl);
     void take(Good &gd);
     void put(Good &gd);
     void use(double amt);
@@ -138,6 +138,7 @@ public:
     void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void adjustDemandSlope(double dDS);
+    friend class Property;
 };
 
 void dropTrail(std::string &tx, unsigned int dK);

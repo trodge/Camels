@@ -78,7 +78,7 @@ class Traveler {
     std::string name;
     Town *toTown, *fromTown;
     const Nation *nation;
-    std::unordered_map<Nation *, int> reputation;
+    std::unordered_map<unsigned int, int> reputation;       // reputation mapped by nation id
     std::vector<std::string> logText;
     double longitude, latitude;
     bool moving;

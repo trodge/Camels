@@ -34,11 +34,9 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
       longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty()) {
     // Create new town based on parameters.
     property.scale(ctl, ppl, tT);
-    // Start with enough inputs for one run cycle.
-    property.reset();
     // Randomize business run counter.
     static std::uniform_int_distribution<> dis(-Settings::getBusinessRunTime(), 0);
-    businessCounter = dis(Settings::getRng());
+    businessCounter = dis(Settings::rng);
 }
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
@@ -111,10 +109,10 @@ void Town::take(Good &g) { property.take(g); }
 void Town::put(Good &g) { property.put(g); }
 
 void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts) {
-    // Create a random number of travelers from this town, weighted down
+    // Create a random number of travelers from this town, weighted down.
     std::uniform_int_distribution<> tvlrsDis{Settings::getTravelersMin(),
                                              static_cast<int>(pow(population, Settings::getTravelersExponent()))};
-    int n = tvlrsDis(Settings::getRng());
+    int n = tvlrsDis(Settings::rng);
     if (n < 0) n = 0;
     ts.reserve(ts.size() + static_cast<size_t>(n));
     for (int i = 0; i < n; ++i) ts.push_back(std::make_unique<Traveler>(nation->randomName(), this, gD));

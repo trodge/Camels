@@ -35,8 +35,11 @@ class Town;
 
 class Traveler;
 
+
+static std::uniform_real_distribution<double> lFDis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
+
 struct GoodInfo {
-    double limitFactor = 0; // factor controlling value based on min/max price
+    double limitFactor = lFDis(Settings::rng); // factor controlling value based on min/max price
     double minPrice = 0,
            maxPrice = 0; // minimum and maximum price of material nearby
     double value = 0, buy = 0,
@@ -52,12 +55,12 @@ struct TownInfo {
  * AI which updates non-player travelers
  */
 class AI {
-    Traveler &traveler;                     // the traveler this AI controls
-    int decisionCounter;                    // counter for updatening AI
-    std::array<double, 8> decisionCriteria; /* buy/sell score weight, weapon/armor
-    equip score, tendency to fight/run/yield, looting greed */
-    std::vector<GoodInfo> goodsInfo;        // known information about each good
-    std::vector<TownInfo> nearby;           // known information about nearby towns
+    Traveler &traveler;                                   // the traveler this AI controls
+    int decisionCounter;                                  // counter for updatening AI
+    std::array<double, 8> decisionCriteria;               /* buy/sell score weight, weapon/armor
+                  equip score, tendency to fight/run/yield, looting greed */
+    std::unordered_map<unsigned int, GoodInfo> goodsInfo; // known information about each good by full id
+    std::vector<TownInfo> nearby;                         // known information about nearby towns
     enum Role { trader, soldier, bandit, agent, guard, thug };
     Role role; // behavior for this ai
     void setNearby(const Town *t, const Town *tT, unsigned int i);

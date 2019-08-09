@@ -98,7 +98,7 @@ void Business::reclaim(Property &inv, double a) {
     }
 }
 
-void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv) {
+void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts, const Property &inv) {
     bool space = false;
     for (auto &op : outputs) {
         auto gId = op.getGoodId();
@@ -120,7 +120,7 @@ void Business::addConflicts(std::vector<unsigned int> &cfts, const Property &inv
     if (factor < 0) std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
 }
 
-void Business::handleConflicts(std::vector<unsigned int> &cfts) {
+void Business::handleConflicts(std::unordered_map<unsigned int, unsigned int> &cfts) {
     unsigned int grCft = 0;
     for (auto &ip : inputs) grCft = std::max(cfts[ip.getGoodId()], grCft);
     if (grCft) factor /= static_cast<double>(grCft);

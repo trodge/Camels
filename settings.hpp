@@ -56,7 +56,7 @@ struct BoxInfo {
 
 class Settings {
     static SDL_Rect screenRect;
-    static SDL_Rect mapRect;
+    static SDL_Rect mapView;
     static SDL_Color uIForeground;
     static SDL_Color uIBackground;
     static SDL_Color uIHighlight;
@@ -107,12 +107,12 @@ class Settings {
     static unsigned int aITownRange;
     static double limitFactorMin, limitFactorMax;
     static double aIAttackThreshold;
-    static std::mt19937 rng;
 
 public:
+    static std::mt19937 rng;
     static void load(const fs::path &p);
     static const SDL_Rect &getScreenRect() { return screenRect; }
-    static const SDL_Rect &getMapRect() { return mapRect; }
+    static const SDL_Rect &getMapView() { return mapView; }
     static const SDL_Color &getUiForeground() { return uIForeground; }
     static const SDL_Color &getUiBackground() { return uIBackground; }
     static const SDL_Color &getUiHighlight() { return uIHighlight; }
@@ -168,7 +168,6 @@ public:
     static double getLimitFactorMin() { return limitFactorMin; }
     static double getLimitFactorMax() { return limitFactorMax; }
     static double getAIAttackThreshold() { return aIAttackThreshold; }
-    static std::mt19937 &getRng() { return rng; }
     static void save(const fs::path &p);
     static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
                               std::function<void(MenuButton *)> fn, bool scl);

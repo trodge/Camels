@@ -23,13 +23,13 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
       moving(false), portion(1), gameData(gD) {
     // Copy goods vector from nation.
-    properties.emplace(0, Property(0, t->getNation()->getProperty().getGoods()));
+    properties.emplace(0, Property(0u, t->getNation()->getProperty()));
     // Equip fists.
     equip(2);
     equip(3);
     // Randomize stats.
     static std::uniform_int_distribution<unsigned int> dis(1, Settings::getStatMax());
-    for (auto &s : stats) s = dis(Settings::getRng());
+    for (auto &s : stats) s = dis(Settings::rng);
     // Set parts status to normal.
     parts.fill(0);
 }
@@ -232,7 +232,7 @@ void Traveler::divideExcess(double ec) {
     ec /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         // Convert value to quantity of this good.
-        auto &tG = toTown->getProperty().getGoods()[of.getFullId()]; // town good
+        auto &tG = toTown->getProperty().good(of.getFullId()); // town good
         double q = tG.quantity(ec / Settings::getTownProfit());
         if (!tG.getSplit()) q = floor(q);
         // Reduce quantity.
@@ -317,7 +317,7 @@ Property &Traveler::property(unsigned int tId) {
     auto pptIt = properties.find(tId);
     if (pptIt == end(properties))
         // Property has not been created yet.
-        pptIt = properties.emplace(tId, Property(tId, toTown->getNation()->getProperty().getGoods())).first;
+        pptIt = properties.emplace(tId, Property(tId, toTown->getNation()->getProperty())).first;
     return pptIt->second;
 }
 
@@ -497,14 +497,14 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     int m = Settings::getButtonMargin();
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
     pgrs[1].setBounds(rt);
-    int dx = (rt.w + m) / kPartsCount, dy = (rt.h + m) / Settings::getGoodButtonRows();
+    int dx = (rt.w + m) / kPartCount, dy = (rt.h + m) / Settings::getGoodButtonRows();
     BoxInfo boxInfo{.rect = {rt.x, rt.y, dx - m, dy - m},
                     .foreground = nation->getForeground(),
                     .background = nation->getBackground(),
                     .border = Settings::getEquipBorder(),
                     .radius = Settings::getEquipRadius(),
                     .fontSize = Settings::getEquipFontSize()};
-    std::array<std::vector<Good>, kPartsCount> equippable;
+    std::array<std::vector<Good>, kPartCount> equippable;
     // array of vectors corresponding to parts that can hold equipment
     for (auto &g : properties.find(0)->second.getGoods()) {
         auto &ss = g.getCombatStats();
@@ -673,7 +673,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
             }
             auto cO = gameData.odds[type - 1];
             // Calculate number of swings before hit happens.
-            double r = d(Settings::getRng());
+            double r = d(Settings::rng);
             double p = static_cast<double>(attack) / cO.hitOdds / static_cast<double>(defense[type - 1]);
             double time;
             if (p < 1)
@@ -683,10 +683,10 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
             if (time < first.time) {
                 first.time = time;
                 // Pick a random part.
-                first.partId = static_cast<unsigned int>(d(Settings::getRng()) * static_cast<double>(parts.size()));
+                first.partId = static_cast<unsigned int>(d(Settings::rng) * static_cast<double>(parts.size()));
                 // Start status at part's current status.
                 first.status = t.parts[first.partId];
-                r = d(Settings::getRng());
+                r = d(Settings::rng);
                 auto sCI = begin(cO.statusChances);
                 while (r > 0 && sCI != end(cO.statusChances)) {
                     // Find status such that part becomes more damaged.
@@ -947,7 +947,7 @@ void Traveler::update(unsigned int e) {
             case FightChoice::run:
                 // Check if target escapes.
                 escapeChance = Settings::getEscapeChance() * target->speed() / speed();
-                if (dis(Settings::getRng()) > escapeChance) {
+                if (dis(Settings::rng) > escapeChance) {
                     // Target is caught, fight.
                     target->choice = FightChoice::fight;
                     fight(*target, e, dis);

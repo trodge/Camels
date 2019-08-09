@@ -669,7 +669,7 @@ void Player::update(unsigned int e) {
     int scrollX = 0, scrollY = 0;
     double sS = Settings::getScroll() * modMultiplier;
     if (show) {
-        const SDL_Rect &mR = game.getMapRect();
+        const SDL_Rect &mR = game.getMapView();
         if (traveler->getPX() < int(mR.w * kShowPlayerPadding)) scrollX = -sS;
         if (traveler->getPY() < int(mR.h * kShowPlayerPadding)) scrollY = -sS;
         if (traveler->getPX() > int(mR.w * (1 - kShowPlayerPadding))) scrollX = sS;

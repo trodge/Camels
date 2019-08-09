@@ -31,6 +31,7 @@
 #include "property.hpp"
 
 class Good;
+class Property;
 
 class Nation {
     unsigned int id;

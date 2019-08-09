@@ -23,6 +23,17 @@
 #include <unordered_map>
 #include <vector>
 
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index_container.hpp>
+
+namespace mi = boost::multi_index;
+
+struct GoodId {};
+struct MaterialId {};
+struct FullId {};
+
 #include "business.hpp"
 #include "good.hpp"
 #include "pager.hpp"
@@ -30,44 +41,49 @@
 class Business;
 
 class Property {
+    using GdId = mi::member<Good, unsigned int, &Good::goodId>;
+    using MtId = mi::member<Good, unsigned int, &Good::materialId>;
+    using FlId = mi::member<Good, unsigned int, &Good::fullId>;
+    using GdIdx = mi::hashed_non_unique<mi::tag<GoodId>, GdId>;
+    using MtIdx = mi::hashed_unique<mi::tag<MaterialId>, mi::composite_key<Good, GdId, MtId>>;
+    using FlIdx = mi::hashed_unique<mi::tag<FullId>, FlId>;
+    using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<mi::sequenced<>, GdIdx, MtIdx, FlIdx>>;
     unsigned int id;
-    std::vector<Good> goods;
-    std::unordered_multimap<unsigned int, Good *> byGoodId;
+    const Property &source;
+    GoodContainer goods;
     std::vector<Business> businesses;
-    std::vector<unsigned int> conflicts;
+    std::unordered_map<unsigned int, unsigned int> conflicts;
 
 public:
+    Property(unsigned int i, const Property &src) : id(i), source(src) {}
     Property(unsigned int i, const std::vector<Good> &gds, const std::vector<Business> &bsns)
-        : id(i), goods(gds), businesses(bsns), conflicts(gds.back().getGoodId()) {
-        mapGoods();
-    }
-    Property(unsigned int i, const std::vector<Good> &gds) : Property(i, gds, {}) {}
-    Property(unsigned int i, const Property &other) : Property(i, other.goods, other.businesses) {}
-    Property(const Save::Property *ppt, const Property &other);
+        : id(i), goods(begin(gds), end(gds)), businesses(bsns), source(*this) {}
+    Property(const Save::Property *ppt, const Property &src);
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b) const;
     unsigned int getId() const { return id; }
-    unsigned int getGoodId(unsigned int fId) const { return goods[fId].getGoodId(); }
+    const GoodContainer &getGoods() const { return goods; }
+    const Good &good(unsigned int fId) const { return *goods.get<FullId>().find(fId); }
+    const Good &good(boost::tuple<unsigned int, unsigned int> gMId) const {
+        return *goods.get<MaterialId>().find(gMId);
+    }
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
-    const std::vector<Good> &getGoods() const { return goods; }
     double weight() const {
         return std::accumulate(begin(goods), end(goods), 0, [](double w, const auto &g) { return w + g.weight(); });
     }
-    void mapGoods();
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();
     void reset();
     void scale(bool ctl, unsigned long ppl, unsigned int tT);
     std::vector<Good> take(unsigned int gId, double amt);
-    void take(Good &gd) { goods[gd.getFullId()].take(gd); }
-    void put(Good &gd) { goods[gd.getFullId()].put(gd); }
+    void take(Good &gd);
+    void put(Good &gd);
+    void use();
     void use(unsigned int gId, double amt);
-    void create() {
-        for (auto &gd : goods) gd.create();
-    }
-    void create(unsigned int gId, double amt);
-    void create(unsigned int gId, unsigned int iId, double amt);
+    void create();
+    void create(unsigned int opId, double amt);
+    void create(unsigned int opId, unsigned int ipId, double amt);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void update(unsigned int elTm);

@@ -70,12 +70,12 @@ class Player;
 class Nation;
 
 class Game {
-    SDL_Rect screenRect, mapRect;
+    SDL_Rect screenRect, mapView, mapRect;
     int offsetX, offsetY;
     double scale;
     sdl::WindowPtr window;
     sdl::RendererPtr screen;
-    sdl::SurfacePtr mapSurface; // surface of entire map loaded from image
+    //sdl::SurfacePtr mapSurface; // surface of entire map loaded from image
     SDL_RendererInfo screenInfo;
     Printer printer;
     std::vector<sdl::TexturePtr> mapTextures;      // textures for map broken down to maximum size for graphics card
@@ -108,7 +108,7 @@ public:
     void loadGame(const fs::path &p);
     void saveData();
     void generateRoutes();
-    const SDL_Rect &getMapRect() const { return mapRect; }
+    const SDL_Rect &getMapView() const { return mapView; }
     const std::vector<Nation> &getNations() { return nations; }
     const std::vector<Town> &getTowns() { return towns; }
     std::vector<TextBox *> getTownBoxes() const;

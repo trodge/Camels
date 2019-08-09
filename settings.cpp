@@ -20,7 +20,7 @@
 #include "settings.hpp"
 
 SDL_Rect Settings::screenRect;
-SDL_Rect Settings::mapRect;
+SDL_Rect Settings::mapView;
 SDL_Color Settings::uIForeground;
 SDL_Color Settings::uIBackground;
 SDL_Color Settings::uIHighlight;
@@ -73,8 +73,7 @@ int Settings::criteriaMax;
 unsigned int Settings::aITownRange;
 double Settings::limitFactorMin, Settings::limitFactorMax;
 double Settings::aIAttackThreshold;
-
-std::mt19937 Settings::rng(static_cast<unsigned long>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+std::mt19937 Settings::rng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
 void loadRect(const std::string &n, SDL_Rect &r, const SDL_Rect &d, const pt::ptree &t) {
     r.x = t.get(n + "_x", d.x);
@@ -109,7 +108,7 @@ void Settings::load(const fs::path &p) {
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
     loadRect("ui.screenRect", screenRect, {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
-    loadRect("ui.mapRect", mapRect, {3330, 2250, screenRect.w, screenRect.h}, tree);
+    loadRect("ui.mapView", mapView, {3330, 2250, screenRect.w, screenRect.h}, tree);
     loadColor("ui.foreground", uIForeground, {0, 0, 0, 255}, tree);
     loadColor("ui.background", uIBackground, {109, 109, 109, 255}, tree);
     loadColor("ui.highlight", uIHighlight, {0, 127, 251, 255}, tree);
@@ -186,7 +185,7 @@ template <class InputIt> void saveRange(const std::string &n, InputIt bgn, Input
 
 void Settings::save(const fs::path &p) {
     pt::ptree tree;
-    saveRect("ui.mapRect", mapRect, tree);
+    saveRect("ui.mapView", mapView, tree);
     saveColor("ui.foreground", uIForeground, tree);
     saveColor("ui.background", uIBackground, tree);
     saveColor("ui.highlight", uIHighlight, tree);

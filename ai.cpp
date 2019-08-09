@@ -21,16 +21,10 @@
 
 AI::AI(Traveler &tvl) : traveler(tvl) {
     // Initialize variables for running a new AI based on starting goods and current town.
-    auto &rng = Settings::getRng();
+    auto &rng = Settings::rng;
     auto &rWs = Settings::getAIRoleWeights();
     std::discrete_distribution<> rlDis(begin(rWs), end(rWs));
     role = static_cast<Role>(rlDis(rng));
-    // Randomize factors which will be used to choose buy and sell limits for each material.
-    auto &gs = traveler.properties.find(0)->second.getGoods();
-    // Total count of materials across all goods, including labor.
-    goodsInfo = std::vector<GoodInfo>(gs.size());
-    static std::uniform_real_distribution<double> lFDis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
-    for (auto &gI : goodsInfo) gI.limitFactor = lFDis(rng);
     // Randomize decision criteria.
     static std::uniform_real_distribution<double> dcCrtDis(1, Settings::getCriteriaMax());
     for (auto &c : decisionCriteria) c = dcCrtDis(rng);
@@ -111,7 +105,7 @@ void AI::trade() {
         double gWgt = g.weight();
         if (!overWeight || gWgt > 0) {
             // Either we are not over weight or given material doesn't help carry.
-            auto &tG = tGs[g.getFullId()];
+            auto &tG = *tGs.get<FullId>.find(g.getFullId());
             amount = g.getAmount();
             if (amount > 0) {
                 if (gWgt < 0 && weight > gWgt)
@@ -316,50 +310,40 @@ void AI::setNearby(const Town *t, const Town *tT, unsigned int i) {
 
 void AI::setLimits() {
     // Sets buy and sell limits and min/max prices to reflect current nearby towns. Also updates buy and sell scores.
-    size_t nC = nearby.size(); // nearby town count
-    // Reset buy/sell scores
+    size_t nearbyCount = nearby.size(); // nearby town count
     for (auto &n : nearby) {
+        // Reset buy/sell scores
         n.buyScore = 0;
         n.sellScore = 0;
+        // Find minimum and maximum price for each good in nearby towns.
+        auto &nGs = n.town->getProperty().getGoods();
+        for (auto &nG : nGs) {
+            auto &gI = goodsInfo[nG.getFullId()];
+            double price = nG.price();
+            gI.minPrice = std::min(gI.minPrice, price);
+            gI.maxPrice = std::max(gI.maxPrice, price);
+        }
+    }
+    // Set value and buy and sell based on min and max prices.
+    for (auto &gI : goodsInfo) {
+        gI.second.value = gI.second.minPrice + gI.second.limitFactor * (gI.second.maxPrice - gI.second.minPrice);
+        gI.second.buy = gI.second.value * Settings::getTownProfit();
+        gI.second.sell = gI.second.value / Settings::getTownProfit();
     }
     auto &gs = traveler.properties.find(0)->second.getGoods();
-    size_t gC = gs.size();       // good count
-    auto gII = begin(goodsInfo); // material info iterator
-    // Find minimum and maximum price for each material of each good in nearby towns.
-    for (auto &g : gs) {
-        // Loop through goods.
-        bool hasGood = g.getAmount() > 0; // Traveler has non-zero amount of material j
-        std::vector<double> prices;       // prices for this material of this good in
-                                          // all nearby towns that sell it
-        prices.reserve(nC);
-        for (auto &n : nearby) {
-            // Loop through nearby towns to collect price info.
-            auto &nG = n.town->getProperty().getGoods()[g.getFullId()];
+    // Loop through nearby towns again now that info has been gathered.
+    for (auto &n : nearby)
+        for (auto &nG : n.town->getProperty().getGoods()) {
             double price = nG.price();
-            if (price > 0)
-                // Good i material j is sold in nearby town k.
-                prices.push_back(price);
-        }
-        if (!prices.empty()) {
-            auto mMP = std::minmax_element(begin(prices), end(prices));
-            gII->minPrice = *mMP.first;
-            gII->maxPrice = *mMP.second;
-            gII->value = *mMP.first + gII->limitFactor * (*mMP.second - *mMP.first);
-            gII->buy = gII->value * Settings::getTownProfit();
-            gII->sell = gII->value / Settings::getTownProfit();
-        }
-        for (auto &n : nearby) {
-            // Loop through nearby towns again now that material info has been gathered.
-            auto &nG = n.town->getProperty().getGoods()[g.getFullId()];
-            double price = nG.price();
-            if (hasGood && price > 0)
-                n.sellScore = std::max(sellScore(price, gII->sell), n.sellScore);
+            auto &byFullId = gs.get<FullId>();
+            auto fId = nG.getFullId();
+            if (byFullId.find(fId) != end(byFullId) && price > 0)
+                // We have the good and it is worth something in the town.
+                n.sellScore = std::max(sellScore(price, goodsInfo[fId].sell), n.sellScore);
             else
-                // Only score buying materials not already owned.
-                n.buyScore = std::max(buyScore(price, gII->buy), n.buyScore);
+                // Only score buying goods not already owned.
+                n.buyScore = std::max(buyScore(price, goodsInfo[fId].buy), n.buyScore);
         }
-        ++gII;
-    }
 }
 
 void AI::update(unsigned int e) {
@@ -370,8 +354,8 @@ void AI::update(unsigned int e) {
             trade();
             equip();
             attack();
-            size_t nC = nearby.size();
-            std::vector<double> townScores(nC); // scores for going to each town
+            size_t nearbyCount = nearby.size();
+            std::vector<double> townScores(nearbyCount); // scores for going to each town
             // Set scores based on buying and selling prices in each town.
             std::transform(begin(nearby), end(nearby), begin(townScores), [this](const TownInfo &tI) {
                 return tI.buyScore * decisionCriteria[0] + tI.sellScore * decisionCriteria[1];

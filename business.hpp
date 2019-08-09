@@ -76,8 +76,8 @@ public:
     void setFrequency(double fq) { frequency = fq; }
     void takeRequirements(Property &inv, double a);
     void reclaim(Property &inv, double a);
-    void addConflicts(std::vector<unsigned int> &cfts, const Property &inv);
-    void handleConflicts(std::vector<unsigned int> &cfts);
+    void addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts, const Property &inv);
+    void handleConflicts(std::unordered_map<unsigned int, unsigned int> &cfts);
     void run(Property &inv);
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void saveFrequency(unsigned long p, std::string &u) const;
