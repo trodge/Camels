@@ -1,6 +1,6 @@
 #include "property.hpp"
 
-Property::Property(const Save::Property *ppt, const Property &src) : id(ppt->id()), source(src) {
+Property::Property(const Save::Property *ppt, const Town *tn) : town(tn) {
     auto ldGds = ppt->goods();
     for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.push_back(Good(*lGI));
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
@@ -12,7 +12,7 @@ Property::Property(const Save::Property *ppt, const Property &src) : id(ppt->id(
 flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilder &b) const {
     std::vector<Good> gds(begin(goods), end(goods));
     auto svGoods = b.CreateVector<flatbuffers::Offset<Save::Good>>(
-        goods.size(), [this, &b, &gds](size_t i) { return gds[i].save(b); });
+        goods.size(), [&b, &gds](size_t i) { return gds[i].save(b); });
     auto svBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
         businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
     return Save::CreateProperty(b, id, svGoods, svBusinesses);
@@ -66,7 +66,7 @@ void Property::setMaximums() {
                 byGoodId.modify(gdIt, [max](auto &gd) { gd.setMaximum(max); });
         }
         for (auto &op : ops) {
-            auto gdRng = goods.get<GoodId>().equal_range(op.getGoodId());
+            auto gdRng = byGoodId.equal_range(op.getGoodId());
             max = op.getAmount() * Settings::getOutputSpaceFactor();
             for (auto gdIt = gdRng.first; gdIt != gdRng.second; ++gdIt)
                 byGoodId.modify(gdIt, [max](auto &gd) { gd.setMaximum(max); });
@@ -77,7 +77,7 @@ void Property::setMaximums() {
 void Property::reset() {
     // Reset goods to starting amounts.
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
-    for (auto &b : businesses)
+    for (auto &b : businesses) {
         for (auto &ip : b.getInputs())
             if (ip == b.getOutputs().back())
                 // Input good is also output, create full amount.
@@ -85,10 +85,12 @@ void Property::reset() {
             else
                 // Create only enough for head start.
                 create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessHeadStart() / (Settings::getDayLength() * kDaysPerYear));
+    }
 }
 
 void Property::scale(bool ctl, unsigned long ppl, unsigned int tT) {
     // Copy businesses from source that exist in this town.
+    auto &source = town->getNation()->getProperty();
     std::copy_if(begin(source.businesses), end(source.businesses), std::back_inserter(businesses),
                  [ctl](auto &bsn) { return bsn.getFrequency() > 0 && (!bsn.getRequireCoast() || ctl); });
     // Scale business areas according to town population and type.
@@ -129,7 +131,8 @@ void Property::put(Good &gd) {
     auto rGdIt = byFullId.find(fId);
     if (rGdIt == end(byFullId)) {
         // Good does not exist, copy from source.
-        goods.push_back(Good(source.good(fId)));
+        auto &source = town->getNation()->getProperty();
+        goods.push_back(source.good(fId));
         rGdIt = byFullId.find(fId);
     }
     byFullId.modify(rGdIt, [&gd](auto &rGd) { rGd.put(gd); });
@@ -156,8 +159,9 @@ void Property::create(unsigned int opId, double amt) {
     auto lowest = [](auto &gA, auto &gB) { return gA.getMaterialId() < gB.getMaterialId(); };
     if (opRng.first == opRng.second) {
         // Output good doesn't exist, copy from nation.
+        auto &source = town->getNation()->getProperty();
         auto srRng = source.goods.get<GoodId>().equal_range(opId);
-        goods.push_back(Good(*std::min_element(srRng.first, srRng.second, lowest)));
+        goods.push_back(*std::min_element(srRng.first, srRng.second, lowest));
         opRng = goods.get<GoodId>().equal_range(opId);
     }
     byGoodId.modify(std::min_element(opRng.first, opRng.second, lowest), [amt](auto &gd) { gd.create(amt); });
@@ -173,17 +177,19 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
         return;
     double inputTotal =
         std::accumulate(ipRng.first, ipRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
-    auto opRng = byGoodId.equal_range(opId);
+    // Store input material ids in vector because iterators will invalidate on emplace.
+    std::vector<unsigned int> ipMIds;
+    for (; ipRng.first != ipRng.second; ++ipRng.first)
+        ipMIds.push_back(ipRng.first->getMaterialId());
     // Find needed output goods that don't exist.
-    for (; ipRng.first != ipRng.second; ++ipRng.first) {
+    for (auto &ipMId : ipMIds) {
         // Search for good with output good id and input material id.
-        auto opGMId = boost::make_tuple(opId, ipRng.first->getMaterialId());
+        auto opGMId = boost::make_tuple(opId, ipMId);
         auto opIt = byMaterialId.find(opGMId);
         if (opIt == end(byMaterialId)) {
             // Output good doesn't exist, copy from source.
-            auto &srGd = source.good(opGMId);
-            std::cout << srGd.getFullName() << std::endl;
-            opIt = byMaterialId.emplace(srGd).first;
+            opIt = byMaterialId.insert(source.good(opGMId)).first;
+            byMaterialId.modify(opIt, [](auto &gd) { gd.setMaximum(); });
         }
         // Create good.
         byMaterialId.modify(opIt, [amount = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(amount); });

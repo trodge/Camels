@@ -102,13 +102,13 @@ void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts
     bool space = false;
     for (auto &op : outputs) {
         auto gId = op.getGoodId();
-        if (inv.amount(gId) < inv.maximum(gId)) space = true;
+        auto amt = inv.amount(gId);
+        if (amt < inv.maximum(gId) || amt == 0) space = true;
     }
     if (!space) factor = 0;
     for (auto &ip : inputs) {
         auto gId = ip.getGoodId();
         double mF = inv.amount(gId) / ip.getAmount(); // max factor
-        std::cout << "gId " << gId << " mF " << mF << std::endl;
         if (ip == outputs.back() && mF < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             factor *= mF;
@@ -117,7 +117,6 @@ void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts
             ++cfts[gId];
         }
     }
-    std::cout << "factor " << factor << std::endl;
     if (factor < 0)
         std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
 }

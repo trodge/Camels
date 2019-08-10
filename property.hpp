@@ -35,6 +35,7 @@ namespace mi = boost::multi_index;
 #include "business.hpp"
 #include "good.hpp"
 #include "pager.hpp"
+#include "town.hpp"
 
 class Business;
 
@@ -46,19 +47,17 @@ class Property {
     using MtIdx = mi::hashed_unique<mi::tag<struct MaterialId>, mi::composite_key<Good, GdId, MtId>>;
     using FlIdx = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
     using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<mi::sequenced<>, GdIdx, MtIdx, FlIdx>>;
-    unsigned int id;
-    const Property &source;
+    const Town *town = nullptr;
     GoodContainer goods;
     std::vector<Business> businesses;
     std::unordered_map<unsigned int, unsigned int> conflicts;
 
 public:
-    Property(unsigned int i, const Property &src) : id(i), source(src) {}
-    Property(unsigned int i, const std::vector<Good> &gds, const std::vector<Business> &bsns)
-        : id(i), goods(begin(gds), end(gds)), businesses(bsns), source(*this) {}
-    Property(const Save::Property *ppt, const Property &src);
+    Property(const Town *tn);
+    Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
+        : goods(begin(gds), end(gds)), businesses(bsns) {}
+    Property(const Save::Property *ppt, const Town *tn);
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b) const;
-    unsigned int getId() const { return id; }
     bool hasGood(unsigned int fId) const;
     const Good &good(unsigned int fId) const { return *goods.get<FullId>().find(fId); }
     const Good &good(boost::tuple<unsigned int, unsigned int> gMId) const {

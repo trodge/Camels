@@ -39,7 +39,7 @@ struct CombatStat {
 };
 
 class Good {
-    unsigned int goodId, materialId = goodId, fullId = 0;
+    unsigned int goodId, materialId = 0, fullId = 0;
     std::string goodName, materialName, fullName;
     double amount = 0, perish = 0, carry = 0;
     std::string measure;
