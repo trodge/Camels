@@ -269,13 +269,13 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     // Loop through all offer buttons.
     std::vector<TextBox *> bxs = pgrs[1].getAll();
     for (auto bx : bxs) {
-        auto &gd = properties.find(0)->second.getGoods()[bx->getId()]; // good corresponding to bIt
+        auto &gd = properties.find(0)->second.good(bx->getId()); // good corresponding to bx
         gd.updateButton(bx);
         if (bx->getClicked()) {
             // Button was clicked, so add corresponding good to offer.
             double amount = gd.getAmount() * portion;
             if (!gd.getSplit()) amount = floor(amount);
-            auto &tG = toTown->getProperty().getGoods()[gd.getFullId()]; // town good
+            auto &tG = toTown->getProperty().good(gd.getFullId()); // town good
             double p = tG.price(amount);
             if (p > 0) {
                 offerValue += p;
@@ -292,7 +292,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     double excess = 0; // excess value of offer over value needed for request
     // Loop through request buttons.
     for (auto bx : bxs) {
-        auto &tG = toTown->getProperty().getGoods()[bx->getId()]; // good in town corresponding to bx
+        auto &tG = toTown->getProperty().good(bx->getId()); // good in town corresponding to bx
         if (offer.empty())
             tG.updateButton(bx);
         else {
@@ -506,15 +506,15 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
                     .fontSize = Settings::getEquipFontSize()};
     std::array<std::vector<Good>, kPartCount> equippable;
     // array of vectors corresponding to parts that can hold equipment
-    for (auto &g : properties.find(0)->second.getGoods()) {
+    properties.find(0)->second.queryGoods([&equippable](const Good &g) {
         auto &ss = g.getCombatStats();
         if (!ss.empty() && g.getAmount() >= 1) {
             // This good has combat stats and we have at least one of it.
-            size_t i = ss.front().partId;
+            unsigned int pId = ss.front().partId;
             Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
-            equippable[i].push_back(e);
+            equippable[pId].push_back(e);
         }
-    }
+    });
     // Create buttons for equipping equipment.
     for (auto &eP : equippable) {
         for (auto &e : eP) {
@@ -845,10 +845,10 @@ void Traveler::loot(Good &g) {
 }
 
 void Traveler::loot() {
-    for (auto g : target->properties.find(0)->second.getGoods()) {
+    target->getProperty().queryGoods([this](const Good &g) {
         Good lG(g);
         loot(lG);
-    }
+    });
 }
 
 void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {

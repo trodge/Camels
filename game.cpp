@@ -288,7 +288,7 @@ void Game::loadData(sqlite3 *cn) {
                          std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
                          static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
                          static_cast<bool>(sqlite3_column_int(q, 5)),
-                         {sqlite3_column_double(q, 7), sqlite3_column_double(q, 6), sqlite3_column_double(q, 8)}));
+                         {sqlite3_column_double(q, 6), sqlite3_column_double(q, 7), sqlite3_column_double(q, 8)}));
     // Load requirements.
     quer = sql::makeQuery(cn, "SELECT business_id, good_id, amount FROM requirements");
     q = quer.get();

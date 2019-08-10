@@ -16,11 +16,12 @@ struct CombatStat {
     stabDefense:uint;
 }
 
-struct MaterialInfo {
+struct GoodInfo {
+    fullId:uint;
     limitFactor:double;
     minPrice:double;
     maxPrice:double;
-    value:double;
+    estimate:double;
     buy:double;
     sell:double;
 }
@@ -53,7 +54,7 @@ table Property {
 table AI {
     decisionCounter:int;
     decisionCriteria:[double];
-    materialInfo:[MaterialInfo];
+    goodsInfo:[GoodInfo];
 }
 
 table Traveler {

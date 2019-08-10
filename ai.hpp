@@ -26,6 +26,7 @@
 #include "save_generated.h"
 
 #include "traveler.hpp"
+#include "property.hpp"
 
 enum class FightChoice;
 
@@ -36,13 +37,11 @@ class Town;
 class Traveler;
 
 
-static std::uniform_real_distribution<double> lFDis(Settings::getLimitFactorMin(), Settings::getLimitFactorMax());
-
 struct GoodInfo {
-    double limitFactor = lFDis(Settings::rng); // factor controlling value based on min/max price
+    double limitFactor = 0; // factor controlling value based on min/max price
     double minPrice = 0,
            maxPrice = 0; // minimum and maximum price of material nearby
-    double value = 0, buy = 0,
+    double estimate = 0, buy = 0,
            sell = 0; // estimated value, maximum buy price, and minimum sell price
 };
 
@@ -69,7 +68,7 @@ class AI {
     double sellScore(double p, double s) const { return s == 0 ? 0 : p / s; } // score buying at price p
     double equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
-    double lootScore(const std::vector<Good> &tGs) const;
+    double lootScore(const Property &ppt) const;
     void trade();
     void equip();
     void attack();

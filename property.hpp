@@ -25,14 +25,12 @@
 
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index_container.hpp>
 
-namespace mi = boost::multi_index;
 
-struct GoodId {};
-struct MaterialId {};
-struct FullId {};
+namespace mi = boost::multi_index;
 
 #include "business.hpp"
 #include "good.hpp"
@@ -41,12 +39,12 @@ struct FullId {};
 class Business;
 
 class Property {
-    using GdId = mi::member<Good, unsigned int, &Good::goodId>;
-    using MtId = mi::member<Good, unsigned int, &Good::materialId>;
-    using FlId = mi::member<Good, unsigned int, &Good::fullId>;
-    using GdIdx = mi::hashed_non_unique<mi::tag<GoodId>, GdId>;
-    using MtIdx = mi::hashed_unique<mi::tag<MaterialId>, mi::composite_key<Good, GdId, MtId>>;
-    using FlIdx = mi::hashed_unique<mi::tag<FullId>, FlId>;
+    using GdId = mi::const_mem_fun<Good, unsigned int, &Good::getGoodId>;
+    using MtId = mi::const_mem_fun<Good, unsigned int, &Good::getMaterialId>;
+    using FlId = mi::const_mem_fun<Good, unsigned int, &Good::getFullId>;
+    using GdIdx = mi::hashed_non_unique<mi::tag<struct GoodId>, GdId>;
+    using MtIdx = mi::hashed_unique<mi::tag<struct MaterialId>, mi::composite_key<Good, GdId, MtId>>;
+    using FlIdx = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
     using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<mi::sequenced<>, GdIdx, MtIdx, FlIdx>>;
     unsigned int id;
     const Property &source;
@@ -61,15 +59,16 @@ public:
     Property(const Save::Property *ppt, const Property &src);
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b) const;
     unsigned int getId() const { return id; }
-    const GoodContainer &getGoods() const { return goods; }
+    bool hasGood(unsigned int fId) const;
     const Good &good(unsigned int fId) const { return *goods.get<FullId>().find(fId); }
     const Good &good(boost::tuple<unsigned int, unsigned int> gMId) const {
         return *goods.get<MaterialId>().find(gMId);
     }
+    void queryGoods(const std::function<void(const Good &gd)> &fn) const;
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const {
-        return std::accumulate(begin(goods), end(goods), 0, [](double w, const auto &g) { return w + g.weight(); });
+        return std::accumulate(begin(goods), end(goods), 0, [](double w, const auto &gd) { return w + gd.weight(); });
     }
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);

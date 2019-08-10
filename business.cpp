@@ -108,7 +108,7 @@ void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts
     for (auto &ip : inputs) {
         auto gId = ip.getGoodId();
         double mF = inv.amount(gId) / ip.getAmount(); // max factor
-        if (mF < 0) std::cout << "mF " << mF << " inv.amount(" << gId << ") " << inv.amount(gId) << " ip.getAmount() " << ip.getAmount() << std::endl;
+        std::cout << "gId " << gId << " mF " << mF << std::endl;
         if (ip == outputs.back() && mF < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             factor *= mF;
@@ -117,7 +117,9 @@ void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts
             ++cfts[gId];
         }
     }
-    if (factor < 0) std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
+    std::cout << "factor " << factor << std::endl;
+    if (factor < 0)
+        std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
 }
 
 void Business::handleConflicts(std::unordered_map<unsigned int, unsigned int> &cfts) {
@@ -150,6 +152,7 @@ std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) c
         std::string areaText = std::to_string(area);
         dropTrail(areaText, 2);
         bI.text.push_back("Area: " + areaText + " uncia");
+        bI.text.push_back("Factor: " + std::to_string(factor));
         unitText = " per annum";
     } else
         unitText = " per uncia anum";

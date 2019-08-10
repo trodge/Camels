@@ -237,6 +237,11 @@ void Settings::save(const fs::path &p) {
     pt::write_ini(p.string(), tree);
 }
 
+double Settings::getLimitFactor() {
+    static std::uniform_real_distribution<double> lfDis(limitFactorMin, limitFactorMax);
+    return lfDis(rng);
+}
+
 BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
                              std::function<void(MenuButton *)> fn, bool scl) {
     if (iBg)

@@ -39,7 +39,7 @@ struct CombatStat {
 };
 
 class Good {
-    unsigned int goodId, materialId, fullId;
+    unsigned int goodId, materialId = goodId, fullId = 0;
     std::string goodName, materialName, fullName;
     double amount = 0, perish = 0, carry = 0;
     std::string measure;
@@ -76,14 +76,14 @@ public:
         : fullId(fId), fullName(fNm), amount(amt), combatStats(cSs), image(img) {} // constructor for equipment
     Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {}               // constructor for transfer goods
     Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
-        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
+        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {
+    } // constructor for trade goods
     Good(const Save::Good *svG)
         : goodId(svG->goodId()), materialId(svG->materialId()), fullId(svG->fullId()), goodName(svG->goodName()->str()),
-          materialName(svG->materialName()->str()), fullName(completeName()), amount(svG->amount()), perish(svG->perish()), carry(svG->carry()),
-          measure(svG->measure()->str()), split(!measure.empty()), consumptionRate(svG->consumptionRate()),
-          demandSlope(svG->demandSlope()), demandIntercept(svG->demandIntercept()),
-          minPrice(demandIntercept / Settings::getMinPriceDivisor()), lastAmount(amount) {
-    }
+          materialName(svG->materialName()->str()), fullName(completeName()), amount(svG->amount()),
+          perish(svG->perish()), carry(svG->carry()), measure(svG->measure()->str()), split(!measure.empty()),
+          consumptionRate(svG->consumptionRate()), demandSlope(svG->demandSlope()), demandIntercept(svG->demandIntercept()),
+          minPrice(demandIntercept / Settings::getMinPriceDivisor()), lastAmount(amount) {}
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Good &other) const { return goodId == other.goodId && materialId == other.materialId; }
     bool operator!=(const Good &other) const { return goodId != other.goodId || materialId != other.materialId; }
@@ -110,6 +110,7 @@ public:
     double price(double qtt) const;
     double price() const;
     double cost(double qtt) const;
+    double value() const { return price() * amount; }
     double quantity(double prc, double &elTm) const;
     double quantity(double prc) const;
     double quantum(double c) const;
@@ -138,7 +139,6 @@ public:
     void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void adjustDemandSlope(double dDS);
-    friend class Property;
 };
 
 void dropTrail(std::string &tx, unsigned int dK);

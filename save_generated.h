@@ -12,7 +12,7 @@ struct PerishCounter;
 
 struct CombatStat;
 
-struct MaterialInfo;
+struct GoodInfo;
 
 struct Good;
 
@@ -107,26 +107,34 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) CombatStat FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(CombatStat, 32);
 
-FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) MaterialInfo FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) GoodInfo FLATBUFFERS_FINAL_CLASS {
  private:
+  uint32_t fullId_;
+  int32_t padding0__;
   double limitFactor_;
   double minPrice_;
   double maxPrice_;
-  double value_;
+  double estimate_;
   double buy_;
   double sell_;
 
  public:
-  MaterialInfo() {
-    memset(static_cast<void *>(this), 0, sizeof(MaterialInfo));
+  GoodInfo() {
+    memset(static_cast<void *>(this), 0, sizeof(GoodInfo));
   }
-  MaterialInfo(double _limitFactor, double _minPrice, double _maxPrice, double _value, double _buy, double _sell)
-      : limitFactor_(flatbuffers::EndianScalar(_limitFactor)),
+  GoodInfo(uint32_t _fullId, double _limitFactor, double _minPrice, double _maxPrice, double _estimate, double _buy, double _sell)
+      : fullId_(flatbuffers::EndianScalar(_fullId)),
+        padding0__(0),
+        limitFactor_(flatbuffers::EndianScalar(_limitFactor)),
         minPrice_(flatbuffers::EndianScalar(_minPrice)),
         maxPrice_(flatbuffers::EndianScalar(_maxPrice)),
-        value_(flatbuffers::EndianScalar(_value)),
+        estimate_(flatbuffers::EndianScalar(_estimate)),
         buy_(flatbuffers::EndianScalar(_buy)),
         sell_(flatbuffers::EndianScalar(_sell)) {
+    (void)padding0__;
+  }
+  uint32_t fullId() const {
+    return flatbuffers::EndianScalar(fullId_);
   }
   double limitFactor() const {
     return flatbuffers::EndianScalar(limitFactor_);
@@ -137,8 +145,8 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) MaterialInfo FLATBUFFERS_FINAL_CLASS {
   double maxPrice() const {
     return flatbuffers::EndianScalar(maxPrice_);
   }
-  double value() const {
-    return flatbuffers::EndianScalar(value_);
+  double estimate() const {
+    return flatbuffers::EndianScalar(estimate_);
   }
   double buy() const {
     return flatbuffers::EndianScalar(buy_);
@@ -147,7 +155,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) MaterialInfo FLATBUFFERS_FINAL_CLASS {
     return flatbuffers::EndianScalar(sell_);
   }
 };
-FLATBUFFERS_STRUCT_END(MaterialInfo, 48);
+FLATBUFFERS_STRUCT_END(GoodInfo, 56);
 
 struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -457,7 +465,7 @@ struct AI FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_DECISIONCOUNTER = 4,
     VT_DECISIONCRITERIA = 6,
-    VT_MATERIALINFO = 8
+    VT_GOODSINFO = 8
   };
   int32_t decisionCounter() const {
     return GetField<int32_t>(VT_DECISIONCOUNTER, 0);
@@ -465,16 +473,16 @@ struct AI FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<double> *decisionCriteria() const {
     return GetPointer<const flatbuffers::Vector<double> *>(VT_DECISIONCRITERIA);
   }
-  const flatbuffers::Vector<const MaterialInfo *> *materialInfo() const {
-    return GetPointer<const flatbuffers::Vector<const MaterialInfo *> *>(VT_MATERIALINFO);
+  const flatbuffers::Vector<const GoodInfo *> *goodsInfo() const {
+    return GetPointer<const flatbuffers::Vector<const GoodInfo *> *>(VT_GOODSINFO);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, VT_DECISIONCOUNTER) &&
            VerifyOffset(verifier, VT_DECISIONCRITERIA) &&
            verifier.VerifyVector(decisionCriteria()) &&
-           VerifyOffset(verifier, VT_MATERIALINFO) &&
-           verifier.VerifyVector(materialInfo()) &&
+           VerifyOffset(verifier, VT_GOODSINFO) &&
+           verifier.VerifyVector(goodsInfo()) &&
            verifier.EndTable();
   }
 };
@@ -488,8 +496,8 @@ struct AIBuilder {
   void add_decisionCriteria(flatbuffers::Offset<flatbuffers::Vector<double>> decisionCriteria) {
     fbb_.AddOffset(AI::VT_DECISIONCRITERIA, decisionCriteria);
   }
-  void add_materialInfo(flatbuffers::Offset<flatbuffers::Vector<const MaterialInfo *>> materialInfo) {
-    fbb_.AddOffset(AI::VT_MATERIALINFO, materialInfo);
+  void add_goodsInfo(flatbuffers::Offset<flatbuffers::Vector<const GoodInfo *>> goodsInfo) {
+    fbb_.AddOffset(AI::VT_GOODSINFO, goodsInfo);
   }
   explicit AIBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -507,9 +515,9 @@ inline flatbuffers::Offset<AI> CreateAI(
     flatbuffers::FlatBufferBuilder &_fbb,
     int32_t decisionCounter = 0,
     flatbuffers::Offset<flatbuffers::Vector<double>> decisionCriteria = 0,
-    flatbuffers::Offset<flatbuffers::Vector<const MaterialInfo *>> materialInfo = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<const GoodInfo *>> goodsInfo = 0) {
   AIBuilder builder_(_fbb);
-  builder_.add_materialInfo(materialInfo);
+  builder_.add_goodsInfo(goodsInfo);
   builder_.add_decisionCriteria(decisionCriteria);
   builder_.add_decisionCounter(decisionCounter);
   return builder_.Finish();
@@ -519,14 +527,14 @@ inline flatbuffers::Offset<AI> CreateAIDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     int32_t decisionCounter = 0,
     const std::vector<double> *decisionCriteria = nullptr,
-    const std::vector<MaterialInfo> *materialInfo = nullptr) {
+    const std::vector<GoodInfo> *goodsInfo = nullptr) {
   auto decisionCriteria__ = decisionCriteria ? _fbb.CreateVector<double>(*decisionCriteria) : 0;
-  auto materialInfo__ = materialInfo ? _fbb.CreateVectorOfStructs<MaterialInfo>(*materialInfo) : 0;
+  auto goodsInfo__ = goodsInfo ? _fbb.CreateVectorOfStructs<GoodInfo>(*goodsInfo) : 0;
   return Save::CreateAI(
       _fbb,
       decisionCounter,
       decisionCriteria__,
-      materialInfo__);
+      goodsInfo__);
 }
 
 struct Traveler FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

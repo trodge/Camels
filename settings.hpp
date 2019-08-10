@@ -111,6 +111,7 @@ class Settings {
 public:
     static std::mt19937 rng;
     static void load(const fs::path &p);
+    static void save(const fs::path &p);
     static const SDL_Rect &getScreenRect() { return screenRect; }
     static const SDL_Rect &getMapView() { return mapView; }
     static const SDL_Color &getUiForeground() { return uIForeground; }
@@ -165,10 +166,8 @@ public:
     static const std::array<double, 6> &getAIRoleWeights() { return aIRoleWeights; }
     static int getCriteriaMax() { return criteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
-    static double getLimitFactorMin() { return limitFactorMin; }
-    static double getLimitFactorMax() { return limitFactorMax; }
+    static double getLimitFactor();
     static double getAIAttackThreshold() { return aIAttackThreshold; }
-    static void save(const fs::path &p);
     static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
                               std::function<void(MenuButton *)> fn, bool scl);
     static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,

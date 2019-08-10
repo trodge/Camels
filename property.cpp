@@ -4,7 +4,7 @@ Property::Property(const Save::Property *ppt, const Property &src) : id(ppt->id(
     auto ldGds = ppt->goods();
     for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.push_back(Good(*lGI));
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
-        goods.modify(gdIt, [srGd = src.good(gdIt->fullId)](auto &g) { g.image = srGd.image; });
+        goods.modify(gdIt, [srGd = src.good(gdIt->getFullId())](auto &gd) { gd.setImage(srGd.getImage()); });
     auto ldBsns = ppt->businesses();
     for (auto lBI = ldBsns->begin(); lBI != ldBsns->end(); ++lBI) businesses.push_back(Business(*lBI));
 }
@@ -18,19 +18,28 @@ flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilde
     return Save::CreateProperty(b, id, svGoods, svBusinesses);
 }
 
+bool Property::hasGood(unsigned int fId) const {
+    auto &byFullId = goods.get<FullId>();
+    return byFullId.find(fId) != end(byFullId);
+}
+
+void Property::queryGoods(const std::function<void(const Good &gd)> &fn) const {
+    for (auto &gd : goods) { fn(gd); }
+}
+
 double Property::amount(unsigned int gId) const {
     auto gdRng = goods.get<GoodId>().equal_range(gId);
-    return std::accumulate(gdRng.first, gdRng.second, 0., [](double t, auto gI) { return t + gI.second->getAmount(); });
+    return std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
 }
 
 double Property::maximum(unsigned int gId) const {
     auto gdRng = goods.get<GoodId>().equal_range(gId);
-    return std::accumulate(gdRng.first, gdRng.second, 0., [](double t, auto gI) { return t + gI.second->getMaximum(); });
+    return std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getMaximum(); });
 }
 
 void Property::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
-        goods.modify(gdIt, [cnsptn = gdsCnsptn[gdIt->fullId]](auto &g) { g.setConsumption(cnsptn); });
+        goods.modify(gdIt, [cnsptn = gdsCnsptn[gdIt->getFullId()]](auto &gd) { gd.setConsumption(cnsptn); });
 }
 
 void Property::setFrequencies(const std::vector<double> &frqcs) {
@@ -38,8 +47,8 @@ void Property::setFrequencies(const std::vector<double> &frqcs) {
 }
 
 void Property::setMaximums() {
-    // Set maximum good amounts for given businesses.
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &g) { g.setMaximum(); });
+    // Set maximum good amounts given businesses.
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.setMaximum(); });
     // Set good maximums for businesses.
     auto &byGoodId = goods.get<GoodId>();
     for (auto &b : businesses) {
@@ -54,115 +63,133 @@ void Property::setMaximums() {
             else
                 max = ip.getAmount() * Settings::getInputSpaceFactor();
             for (auto gdIt = gdRng.first; gdIt != gdRng.second; ++gdIt)
-                byGoodId.modify(gdIt, [max](auto &g) { g.setMaximum(max); });
+                byGoodId.modify(gdIt, [max](auto &gd) { gd.setMaximum(max); });
         }
         for (auto &op : ops) {
             auto gdRng = goods.get<GoodId>().equal_range(op.getGoodId());
             max = op.getAmount() * Settings::getOutputSpaceFactor();
             for (auto gdIt = gdRng.first; gdIt != gdRng.second; ++gdIt)
-                byGoodId.modify(gdIt, [max](auto &g) { g.setMaximum(max); });
+                byGoodId.modify(gdIt, [max](auto &gd) { gd.setMaximum(max); });
         }
     }
 }
 
 void Property::reset() {
     // Reset goods to starting amounts.
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &g) { g.use(); });
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
     for (auto &b : businesses)
         for (auto &ip : b.getInputs())
             if (ip == b.getOutputs().back())
                 // Input good is also output, create full amount.
                 create(ip.getGoodId(), ip.getAmount());
             else
-                // Create only enough for one cycle.
-                create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessRunTime() /
-                                           static_cast<double>(Settings::getDayLength() * kDaysPerYear));
+                // Create only enough for head start.
+                create(ip.getGoodId(), ip.getAmount() * Settings::getBusinessHeadStart() / (Settings::getDayLength() * kDaysPerYear));
 }
 
 void Property::scale(bool ctl, unsigned long ppl, unsigned int tT) {
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
-        goods.modify(gdIt, [ppl](auto &g) { g.scale(ppl); });
-    for (auto &bsn : source.businesses)
-        if (bsn.getFrequency() > 0 && (!bsn.getRequireCoast() || ctl)) businesses.push_back(Business(bsn));
+    // Copy businesses from source that exist in this town.
+    std::copy_if(begin(source.businesses), end(source.businesses), std::back_inserter(businesses),
+                 [ctl](auto &bsn) { return bsn.getFrequency() > 0 && (!bsn.getRequireCoast() || ctl); });
+    // Scale business areas according to town population and type.
     for (auto &bsn : businesses) bsn.scale(ppl, tT);
-    setMaximums();
+    // Create starting input goods.
     reset();
+    // Scale good consumption data.
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [ppl](auto &gd) { gd.scale(ppl); });
+    // Set max amounts for goods.
+    setMaximums();
 }
 
 std::vector<Good> Property::take(unsigned int gId, double amt) {
     // Take away the given amount of the given good id. Return transfer goods.
-    auto gdRng = goods.get<GoodId>().equal_range(gId);
-    double total =
-        std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto gI) { return t + g.second->getAmount(); });
+    auto &byGoodId = goods.get<GoodId>();
+    auto gdRng = byGoodId.equal_range(gId);
+    double total = std::accumulate(gdRng.first, gdRng.second, 0, [](double tt, auto &gd) { return tt + gd.getAmount(); });
     std::vector<Good> transfer;
-    std::for_each(gdRng.first, gdRng.second, [amt, total, &transfer](auto gI) {
-        transfer.push_back(Good(gI.second->getFullId(), amt * gI.second->getAmount() / total));
-        goods.modify(gI, [tG = transfer.back()](auto &g) { g->take(transfer.back()); });
-    });
+    for (auto gdIt = gdRng.first; gdIt != gdRng.second; ++gdIt) {
+        transfer.push_back(Good(gdIt->getFullId(), amt * gdIt->getAmount() / total));
+        byGoodId.modify(gdIt, [&tG = transfer.back()](auto &gd) { gd.take(tG); });
+    }
     return transfer;
 }
 
 void Property::take(Good &gd) {
+    // Take the given good from this property.
     auto &byFullId = goods.get<FullId>();
-    auto rGd = byFullId.find(gd.getFullId());
-    if (rGd == end(byFullId)) return gd.use();
-    byFullId.modify(rGd, [gd](auto &g) { g.take(gd); });
+    auto rGdIt = byFullId.find(gd.getFullId());
+    if (rGdIt == end(byFullId)) return gd.use();
+    byFullId.modify(rGdIt, [&gd](auto &rGd) { rGd.take(gd); });
 }
 
 void Property::put(Good &gd) {
-    auto fId = gd.fullId;
+    // Put the given good in this property.
+    auto fId = gd.getFullId();
     auto &byFullId = goods.get<FullId>();
-    auto rGd = byFullId.find(fId);
-    if (rGd == end(byFullId)) {
+    auto rGdIt = byFullId.find(fId);
+    if (rGdIt == end(byFullId)) {
         // Good does not exist, copy from source.
-        goods.push_back(Good(*source.good(fId)));
-        rGd = byFullId.find(fId);
+        goods.push_back(Good(source.good(fId)));
+        rGdIt = byFullId.find(fId);
     }
-    byFullId.modify(rGd, [gd](auto &g) { g.put(gd); });
+    byFullId.modify(rGdIt, [&gd](auto &rGd) { rGd.put(gd); });
 }
 
 void Property::use(unsigned int gId, double amt) {
-    auto gdRng = goods.get<GoodId>().equal_range(gId);
-    double total =
-        std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto gI) { return t + gI.second->getAmount(); });
-    std::for_each(gdRng.first, gdRng.second, [amt, total](auto g) { g.second->use(amt / total); });
+    // Use the given amount of the given good id.
+    auto &byGoodId = goods.get<GoodId>();
+    auto gdRng = byGoodId.equal_range(gId);
+    double total = std::accumulate(gdRng.first, gdRng.second, 0, [](double t, auto &gd) { return t + gd.getAmount(); });
+    for (; gdRng.first != gdRng.second; ++gdRng.first)
+        byGoodId.modify(gdRng.first, [amt, total](auto &gd) { gd.use(amt * gd.getAmount() / total); });
+}
+
+void Property::use() {
+    // Use current amount of all goods.
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
 }
 
 void Property::create(unsigned int opId, double amt) {
     // Create the given amount of the lowest indexed material of the given good id.
     auto &byGoodId = goods.get<GoodId>();
     auto opRng = byGoodId.equal_range(opId);
-    auto lowest = [](auto &a, auto &b) { return a.materialId < b.materialId; };
+    auto lowest = [](auto &gA, auto &gB) { return gA.getMaterialId() < gB.getMaterialId(); };
     if (opRng.first == opRng.second) {
         // Output good doesn't exist, copy from nation.
         auto srRng = source.goods.get<GoodId>().equal_range(opId);
         goods.push_back(Good(*std::min_element(srRng.first, srRng.second, lowest)));
         opRng = goods.get<GoodId>().equal_range(opId);
     }
-    byGoodId.modify(std::min_element(opRng.first, opRng.second, lowest), [amt](auto &g) { g.create(amt); });
+    byGoodId.modify(std::min_element(opRng.first, opRng.second, lowest), [amt](auto &gd) { gd.create(amt); });
 }
 
 void Property::create(unsigned int opId, unsigned int ipId, double amt) {
-    // Create the given amount of the second good id based on inputs of the first good id.
+    // Create the given amount of the first good id based on inputs of the second good id.
     auto &byGoodId = goods.get<GoodId>();
     auto &byMaterialId = goods.get<MaterialId>();
     auto ipRng = byGoodId.equal_range(ipId);
     if (ipRng.first == ipRng.second)
         // Input goods don't exist.
         return;
-    double inputTotal = std::accumulate(ipRng.first, ipRng.second, 0., [](double t, auto &g) { return t + g.amount; });
+    double inputTotal =
+        std::accumulate(ipRng.first, ipRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
     auto opRng = byGoodId.equal_range(opId);
     // Find needed output goods that don't exist.
-    for (auto ipIt = ipRng.first; ipIt != ipRng.second; ++ipIt) {
+    for (; ipRng.first != ipRng.second; ++ipRng.first) {
         // Search for good with output good id and input material id.
-        auto opGMId = boost::make_tuple(opId, ipIt->materialId);
+        auto opGMId = boost::make_tuple(opId, ipRng.first->getMaterialId());
         auto opIt = byMaterialId.find(opGMId);
         if (opIt == end(byMaterialId))
-            // Good doesn't exist, copy from source.
+            // Output good doesn't exist, copy from source.
             opIt = byMaterialId.emplace(Good(source.good(opGMId))).first;
         // Create good.
-        byMaterialId.modify(opIt, [a = amt * ipIt->amount / inputTotal](auto &g) { g.create(a); });
+        byMaterialId.modify(opIt, [amount = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(amount); });
     }
+}
+
+void Property::create() {
+    // Create maximum amount of all goods.
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.create(); });
 }
 
 void Property::build(const Business &bsn, double a) {
@@ -190,7 +217,8 @@ void Property::demolish(const Business &bsn, double a) {
 
 void Property::update(unsigned int elTm) {
     // Update goods and run businesses for given elapsed time.
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [elTm](auto &g) { g.update(elTm); });
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
+        goods.modify(gdIt, [elTm](auto &gd) { gd.update(elTm); });
     auto dayLength = Settings::getDayLength();
     for (auto &b : businesses) {
         // For each business, start by setting factor to business run time.
@@ -283,7 +311,7 @@ void Property::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
                     }
                 }
                 for (auto &op : b.getOutputs()) {
-                    if ((!rB->getId() || op.getGoodId() == goods.get<FullId>().find(rB->getId())->goodId) &&
+                    if ((!rB->getId() || op.getGoodId() == goods.get<FullId>().find(rB->getId())->getGoodId()) &&
                         (!b.getKeepMaterial() || inputMatch)) {
                         go = true;
                         break;
@@ -302,7 +330,7 @@ void Property::adjustDemand(const std::vector<MenuButton *> &rBs, double d) {
     for (auto &rB : rBs)
         if (rB->getClicked()) {
             std::string rBN = rB->getText()[0];
-            byFullId.modify(byFullId.find(rB->getId()), [d](auto &g) { g.adjustDemand(d); });
+            byFullId.modify(byFullId.find(rB->getId()), [d](auto &gd) { gd.adjustDemand(d); });
         }
 }
 
