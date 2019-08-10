@@ -179,9 +179,12 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
         // Search for good with output good id and input material id.
         auto opGMId = boost::make_tuple(opId, ipRng.first->getMaterialId());
         auto opIt = byMaterialId.find(opGMId);
-        if (opIt == end(byMaterialId))
+        if (opIt == end(byMaterialId)) {
             // Output good doesn't exist, copy from source.
-            opIt = byMaterialId.emplace(Good(source.good(opGMId))).first;
+            auto &srGd = source.good(opGMId);
+            std::cout << srGd.getFullName() << std::endl;
+            opIt = byMaterialId.emplace(srGd).first;
+        }
         // Create good.
         byMaterialId.modify(opIt, [amount = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(amount); });
     }
