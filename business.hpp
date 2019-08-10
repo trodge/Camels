@@ -58,6 +58,7 @@ public:
     }
     unsigned int getId() const { return id; }
     unsigned int getMode() const { return mode; }
+    const std::string &getName() const { return name; }
     double getArea() const { return area; }
     bool getCanSwitch() const { return canSwitch; }
     bool getRequireCoast() const { return requireCoast; }

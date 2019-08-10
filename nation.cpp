@@ -25,7 +25,7 @@ Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::s
       dot({static_cast<Uint8>((fgr.r + bgr.r) / 2), static_cast<Uint8>((fgr.g + bgr.g) / 2),
            static_cast<Uint8>((fgr.b + bgr.b) / 2), 255}),
       highlight({static_cast<Uint8>(255 - dot.r), static_cast<Uint8>(255 - dot.g), static_cast<Uint8>(255 - dot.b), 255}),
-      religion(rlg), property(i, gds, bsns) {}
+      religion(rlg), property(gds, bsns) {}
 
 bool Nation::operator==(const Nation &other) const { return id == other.id; }
 
@@ -39,4 +39,6 @@ void Nation::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn)
     property.setConsumption(gdsCnsptn);
 }
 
-void Nation::setFrequencies(const std::vector<double> &frqcs) { property.setFrequencies(frqcs); }
+void Nation::setFrequencies(const std::vector<double> &frqcs) {
+    property.setFrequencies(frqcs);
+}

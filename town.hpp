@@ -46,13 +46,8 @@ class Town {
     const Nation *nation = nullptr;
     std::unique_ptr<TextBox> box;
     double longitude, latitude;
-    bool coastal;
-    unsigned long population;
-    unsigned int townType;
     Property property;
     std::vector<Town *> neighbors;
-    int businessCounter;
-    bool maxGoods = false; // town creates maximum goods for testing purposes
     std::vector<Traveler *> travelers;
     std::vector<std::unique_ptr<Contract>> bids;
     int dpx, dpy;
@@ -60,8 +55,8 @@ class Town {
     double dist(int x, int y) const;
 
 public:
-    Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
-         long unsigned int ppl, unsigned int tT, int fS, Printer &pr);
+    Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, unsigned int tT,
+         bool ctl, long unsigned int ppl, int fS, Printer &pr);
     Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr);
     flatbuffers::Offset<Save::Town> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Town &other) const;
@@ -71,8 +66,6 @@ public:
     const Nation *getNation() const { return nation; }
     double getLongitude() const { return longitude; }
     double getLatitude() const { return latitude; }
-    unsigned long getPopulation() const { return population; }
-    unsigned int getTownType() const { return townType; }
     const Property &getProperty() const { return property; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<Traveler *> &getTravelers() const { return travelers; }
@@ -85,7 +78,7 @@ public:
     std::unique_ptr<Contract> removeBid(size_t idx);
     void addBid(std::unique_ptr<Contract> &&bd) { bids.push_back(std::move(bd)); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
-    void toggleMaxGoods() { maxGoods = !maxGoods; }
+    void toggleMaxGoods() { property.toggleMaxGoods(); }
     void placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s);
     void placeText(std::vector<SDL_Rect> &drawn) { box->place(dpx, dpy, drawn); }
     void draw(SDL_Renderer *s);
@@ -106,13 +99,9 @@ public:
                  const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) {
         property.buttons(pgr, rt, bI, pr, fn);
     }
-    void adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
-        property.adjustAreas(rBs, d * static_cast<double>(population) / 5000);
-    }
+    void adjustAreas(const std::vector<MenuButton *> &rBs, double d) { property.adjustAreas(rBs, d); }
     void saveFrequencies(std::string &u) const;
-    void adjustDemand(const std::vector<MenuButton *> &rBs, double d) {
-        property.adjustDemand(rBs, d / static_cast<double>(population) / 1000);
-    }
+    void adjustDemand(const std::vector<MenuButton *> &rBs, double d) { property.adjustDemand(rBs, d); }
     void saveDemand(std::string &u) const;
 };
 

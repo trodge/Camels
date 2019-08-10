@@ -2,16 +2,16 @@
  * This file is part of Camels.
  *
  * Camels is free software: you can redistribute it and/or modify
- * it under the terms of the gNU general Public License as published by
+ * it under the terms of the GNU general Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * Camels is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * gNU general Public License for more details.
+ * GNU general Public License for more details.
  *
- * You should have received a copy of the gNU general Public License
+ * You should have received a copy of the GNU general Public License
  * along with Camels.  If not, see <https://www.gnu.org/licenses/>.
  *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
@@ -54,8 +54,8 @@ int Settings::goodButtonRows;
 int Settings::businessButtonColumns;
 int Settings::businessButtonRows;
 int Settings::dayLength;
-unsigned int Settings::businessHeadStart;
-int Settings::businessRunTime;
+unsigned int Settings::townHeadStart;
+int Settings::propertyUpdateTime;
 int Settings::travelersCheckTime;
 int Settings::aIDecisionTime;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
@@ -142,8 +142,8 @@ void Settings::load(const fs::path &p) {
     businessButtonColumns = tree.get("ui.businessButtonColumns", 3);
     businessButtonRows = tree.get("ui.businessButtonRows", 3);
     dayLength = tree.get("time.dayLength", 5000);
-    businessHeadStart = static_cast<unsigned int>(tree.get("time.businessHeadStart", 15000));
-    businessRunTime = tree.get("time.businessRunTime", 1500);
+    townHeadStart = static_cast<unsigned int>(tree.get("time.townHeadStart", 15000));
+    propertyUpdateTime = tree.get("time.propertyUpdateTime", 1500);
     travelersCheckTime = tree.get("time.travelersCheckTime", 4500);
     aIDecisionTime = tree.get("time.aIDecisionTime", 12000);
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
@@ -212,8 +212,8 @@ void Settings::save(const fs::path &p) {
     tree.put("ui.businessButtonColumns", businessButtonColumns);
     tree.put("ui.businessButtonRows", businessButtonRows);
     tree.put("time.dayLength", dayLength);
-    tree.put("time.businessHeadStart", businessHeadStart);
-    tree.put("time.businessRunTime", businessRunTime);
+    tree.put("time.townHeadStart", townHeadStart);
+    tree.put("time.propertyUpdateTime", propertyUpdateTime);
     tree.put("time.travelersCheckTime", travelersCheckTime);
     tree.put("time.aIDecisionTime", aIDecisionTime);
     tree.put("goods.consumptionSpaceFactor", consumptionSpaceFactor);

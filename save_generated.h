@@ -385,12 +385,25 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
 
 struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ID = 4,
-    VT_GOODS = 6,
-    VT_BUSINESSES = 8
+    VT_TOWNID = 4,
+    VT_TOWNTYPE = 6,
+    VT_COASTAL = 8,
+    VT_POPULATION = 10,
+    VT_GOODS = 12,
+    VT_BUSINESSES = 14,
+    VT_UPDATECOUNTER = 16
   };
-  uint32_t id() const {
-    return GetField<uint32_t>(VT_ID, 0);
+  uint32_t townId() const {
+    return GetField<uint32_t>(VT_TOWNID, 0);
+  }
+  uint32_t townType() const {
+    return GetField<uint32_t>(VT_TOWNTYPE, 0);
+  }
+  bool coastal() const {
+    return GetField<uint8_t>(VT_COASTAL, 0) != 0;
+  }
+  uint64_t population() const {
+    return GetField<uint64_t>(VT_POPULATION, 0);
   }
   const flatbuffers::Vector<flatbuffers::Offset<Good>> *goods() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Good>> *>(VT_GOODS);
@@ -398,15 +411,22 @@ struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<flatbuffers::Offset<Business>> *businesses() const {
     return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<Business>> *>(VT_BUSINESSES);
   }
+  int32_t updateCounter() const {
+    return GetField<int32_t>(VT_UPDATECOUNTER, 0);
+  }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_ID) &&
+           VerifyField<uint32_t>(verifier, VT_TOWNID) &&
+           VerifyField<uint32_t>(verifier, VT_TOWNTYPE) &&
+           VerifyField<uint8_t>(verifier, VT_COASTAL) &&
+           VerifyField<uint64_t>(verifier, VT_POPULATION) &&
            VerifyOffset(verifier, VT_GOODS) &&
            verifier.VerifyVector(goods()) &&
            verifier.VerifyVectorOfTables(goods()) &&
            VerifyOffset(verifier, VT_BUSINESSES) &&
            verifier.VerifyVector(businesses()) &&
            verifier.VerifyVectorOfTables(businesses()) &&
+           VerifyField<int32_t>(verifier, VT_UPDATECOUNTER) &&
            verifier.EndTable();
   }
 };
@@ -414,14 +434,26 @@ struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
 struct PropertyBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_id(uint32_t id) {
-    fbb_.AddElement<uint32_t>(Property::VT_ID, id, 0);
+  void add_townId(uint32_t townId) {
+    fbb_.AddElement<uint32_t>(Property::VT_TOWNID, townId, 0);
+  }
+  void add_townType(uint32_t townType) {
+    fbb_.AddElement<uint32_t>(Property::VT_TOWNTYPE, townType, 0);
+  }
+  void add_coastal(bool coastal) {
+    fbb_.AddElement<uint8_t>(Property::VT_COASTAL, static_cast<uint8_t>(coastal), 0);
+  }
+  void add_population(uint64_t population) {
+    fbb_.AddElement<uint64_t>(Property::VT_POPULATION, population, 0);
   }
   void add_goods(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods) {
     fbb_.AddOffset(Property::VT_GOODS, goods);
   }
   void add_businesses(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Business>>> businesses) {
     fbb_.AddOffset(Property::VT_BUSINESSES, businesses);
+  }
+  void add_updateCounter(int32_t updateCounter) {
+    fbb_.AddElement<int32_t>(Property::VT_UPDATECOUNTER, updateCounter, 0);
   }
   explicit PropertyBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -437,28 +469,44 @@ struct PropertyBuilder {
 
 inline flatbuffers::Offset<Property> CreateProperty(
     flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t id = 0,
+    uint32_t townId = 0,
+    uint32_t townType = 0,
+    bool coastal = false,
+    uint64_t population = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods = 0,
-    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Business>>> businesses = 0) {
+    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Business>>> businesses = 0,
+    int32_t updateCounter = 0) {
   PropertyBuilder builder_(_fbb);
+  builder_.add_population(population);
+  builder_.add_updateCounter(updateCounter);
   builder_.add_businesses(businesses);
   builder_.add_goods(goods);
-  builder_.add_id(id);
+  builder_.add_townType(townType);
+  builder_.add_townId(townId);
+  builder_.add_coastal(coastal);
   return builder_.Finish();
 }
 
 inline flatbuffers::Offset<Property> CreatePropertyDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t id = 0,
+    uint32_t townId = 0,
+    uint32_t townType = 0,
+    bool coastal = false,
+    uint64_t population = 0,
     const std::vector<flatbuffers::Offset<Good>> *goods = nullptr,
-    const std::vector<flatbuffers::Offset<Business>> *businesses = nullptr) {
+    const std::vector<flatbuffers::Offset<Business>> *businesses = nullptr,
+    int32_t updateCounter = 0) {
   auto goods__ = goods ? _fbb.CreateVector<flatbuffers::Offset<Good>>(*goods) : 0;
   auto businesses__ = businesses ? _fbb.CreateVector<flatbuffers::Offset<Business>>(*businesses) : 0;
   return Save::CreateProperty(
       _fbb,
-      id,
+      townId,
+      townType,
+      coastal,
+      population,
       goods__,
-      businesses__);
+      businesses__,
+      updateCounter);
 }
 
 struct AI FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -958,11 +1006,7 @@ struct Town FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_NATION = 8,
     VT_LONGITUDE = 10,
     VT_LATITUDE = 12,
-    VT_COASTAL = 14,
-    VT_POPULATION = 16,
-    VT_TOWNTYPE = 18,
-    VT_PROPERTY = 20,
-    VT_BUSINESSCOUNTER = 22
+    VT_PROPERTY = 14
   };
   uint32_t id() const {
     return GetField<uint32_t>(VT_ID, 0);
@@ -979,20 +1023,8 @@ struct Town FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   double latitude() const {
     return GetField<double>(VT_LATITUDE, 0.0);
   }
-  bool coastal() const {
-    return GetField<uint8_t>(VT_COASTAL, 0) != 0;
-  }
-  uint64_t population() const {
-    return GetField<uint64_t>(VT_POPULATION, 0);
-  }
-  uint32_t townType() const {
-    return GetField<uint32_t>(VT_TOWNTYPE, 0);
-  }
   const Property *property() const {
     return GetPointer<const Property *>(VT_PROPERTY);
-  }
-  int32_t businessCounter() const {
-    return GetField<int32_t>(VT_BUSINESSCOUNTER, 0);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1003,12 +1035,8 @@ struct Town FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyField<uint32_t>(verifier, VT_NATION) &&
            VerifyField<double>(verifier, VT_LONGITUDE) &&
            VerifyField<double>(verifier, VT_LATITUDE) &&
-           VerifyField<uint8_t>(verifier, VT_COASTAL) &&
-           VerifyField<uint64_t>(verifier, VT_POPULATION) &&
-           VerifyField<uint32_t>(verifier, VT_TOWNTYPE) &&
            VerifyOffset(verifier, VT_PROPERTY) &&
            verifier.VerifyTable(property()) &&
-           VerifyField<int32_t>(verifier, VT_BUSINESSCOUNTER) &&
            verifier.EndTable();
   }
 };
@@ -1031,20 +1059,8 @@ struct TownBuilder {
   void add_latitude(double latitude) {
     fbb_.AddElement<double>(Town::VT_LATITUDE, latitude, 0.0);
   }
-  void add_coastal(bool coastal) {
-    fbb_.AddElement<uint8_t>(Town::VT_COASTAL, static_cast<uint8_t>(coastal), 0);
-  }
-  void add_population(uint64_t population) {
-    fbb_.AddElement<uint64_t>(Town::VT_POPULATION, population, 0);
-  }
-  void add_townType(uint32_t townType) {
-    fbb_.AddElement<uint32_t>(Town::VT_TOWNTYPE, townType, 0);
-  }
   void add_property(flatbuffers::Offset<Property> property) {
     fbb_.AddOffset(Town::VT_PROPERTY, property);
-  }
-  void add_businessCounter(int32_t businessCounter) {
-    fbb_.AddElement<int32_t>(Town::VT_BUSINESSCOUNTER, businessCounter, 0);
   }
   explicit TownBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -1065,22 +1081,14 @@ inline flatbuffers::Offset<Town> CreateTown(
     uint32_t nation = 0,
     double longitude = 0.0,
     double latitude = 0.0,
-    bool coastal = false,
-    uint64_t population = 0,
-    uint32_t townType = 0,
-    flatbuffers::Offset<Property> property = 0,
-    int32_t businessCounter = 0) {
+    flatbuffers::Offset<Property> property = 0) {
   TownBuilder builder_(_fbb);
-  builder_.add_population(population);
   builder_.add_latitude(latitude);
   builder_.add_longitude(longitude);
-  builder_.add_businessCounter(businessCounter);
   builder_.add_property(property);
-  builder_.add_townType(townType);
   builder_.add_nation(nation);
   builder_.add_names(names);
   builder_.add_id(id);
-  builder_.add_coastal(coastal);
   return builder_.Finish();
 }
 
@@ -1091,11 +1099,7 @@ inline flatbuffers::Offset<Town> CreateTownDirect(
     uint32_t nation = 0,
     double longitude = 0.0,
     double latitude = 0.0,
-    bool coastal = false,
-    uint64_t population = 0,
-    uint32_t townType = 0,
-    flatbuffers::Offset<Property> property = 0,
-    int32_t businessCounter = 0) {
+    flatbuffers::Offset<Property> property = 0) {
   auto names__ = names ? _fbb.CreateVector<flatbuffers::Offset<flatbuffers::String>>(*names) : 0;
   return Save::CreateTown(
       _fbb,
@@ -1104,11 +1108,7 @@ inline flatbuffers::Offset<Town> CreateTownDirect(
       nation,
       longitude,
       latitude,
-      coastal,
-      population,
-      townType,
-      property,
-      businessCounter);
+      property);
 }
 
 struct Route FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

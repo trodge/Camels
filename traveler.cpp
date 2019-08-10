@@ -23,7 +23,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
       moving(false), portion(1), gameData(gD) {
     // Copy goods vector from nation.
-    properties.emplace(0, Property(0u, t->getNation()->getProperty()));
+    properties.emplace(0, Property(false, t->getNation()->getProperty()));
     // Equip fists.
     equip(2);
     equip(3);
@@ -44,7 +44,7 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     auto &nPpt = nation->getProperty();
     auto lProperties = t->properties();
     for (auto lPI = lProperties->begin(); lPI != lProperties->end(); ++lPI)
-        properties.emplace(lPI->id(), Property(*lPI, nPpt));
+        properties.emplace(lPI->townId(), Property(*lPI, nPpt));
     auto lStats = t->stats();
     for (size_t i = 0; i < stats.size(); ++i) stats[i] = lStats->Get(static_cast<unsigned int>(i));
     auto lParts = t->parts();
@@ -57,11 +57,9 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     // Return a flatbuffers save object for this traveler.
     auto sName = b.CreateString(name);
     auto sLog = b.CreateVectorOfStrings(logText);
-    std::vector<unsigned int> propertyIds;
-    propertyIds.reserve(properties.size());
-    for (auto &ppt : properties) propertyIds.push_back(ppt.second.getId());
+    std::vector<std::pair<unsigned int, Property>> vPpts(begin(properties), end(properties));
     auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(
-        properties.size(), [this, &b, &propertyIds](size_t i) { return properties.find(propertyIds[i])->second.save(b); });
+        properties.size(), [this, &b, &vPpts](size_t i) { return vPpts[i].second.save(b, vPpts[i].first); });
     auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
     auto sParts = b.CreateVector(std::vector<unsigned int>(begin(parts), end(parts)));
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
@@ -317,7 +315,10 @@ Property &Traveler::property(unsigned int tId) {
     auto pptIt = properties.find(tId);
     if (pptIt == end(properties))
         // Property has not been created yet.
-        pptIt = properties.emplace(tId, Property(tId, toTown->getNation()->getProperty())).first;
+        pptIt = properties
+                    .emplace(std::piecewise_construct, std::forward_as_tuple(tId),
+                             std::forward_as_tuple(toTown->getProperty().getCoastal(), toTown->getNation()->getProperty()))
+                    .first;
     return pptIt->second;
 }
 
@@ -924,9 +925,10 @@ void Traveler::update(unsigned int e) {
             fromTown = toTown;
             moving = false;
             logText.push_back(name + " has arrived in the " +
-                              gameData.populationAdjectives.lower_bound(toTown->getPopulation())->second + " " +
-                              toTown->getNation()->getAdjective() + " " +
-                              gameData.townTypeNouns[toTown->getTownType() - 1] + " of " + toTown->getName() + ".");
+                              gameData.populationAdjectives.lower_bound(toTown->getProperty().getPopulation())->second +
+                              " " + toTown->getNation()->getAdjective() + " " +
+                              gameData.townTypeNouns[toTown->getProperty().getTownType() - 1] + " of " +
+                              toTown->getName() + ".");
         }
     } else if (aI) {
         aI->update(e);
@@ -968,6 +970,10 @@ void Traveler::update(unsigned int e) {
         }
     }
 }
+
+void Traveler::toggleMaxGoods() { toTown->toggleMaxGoods(); }
+
+void Traveler::resetTown() { toTown->reset(); }
 
 void Traveler::adjustAreas(Pager &pgr, double mM) {
     std::vector<MenuButton *> requestButtons;

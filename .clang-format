@@ -28,7 +28,7 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 NamespaceIndentation: None
 PenaltyBreakBeforeFirstCallParameter: 1
 PenaltyBreakComment: 300
-PenaltyBreakFirstLessLess: 120
+PenaltyBreakFirstLessLess: 113
 PenaltyBreakString: 1000
 PenaltyBreakTemplateDeclaration: 1
 PenaltyExcessCharacter: 1

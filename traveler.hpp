@@ -172,6 +172,8 @@ public:
     void startAI();
     void startAI(const Traveler &p);
     void update(unsigned int e);
+    void toggleMaxGoods();
+    void resetTown();
     void adjustAreas(Pager &pgr, double mM);
     void adjustDemand(Pager &pgr, double mM);
     friend class AI;

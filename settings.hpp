@@ -88,8 +88,8 @@ class Settings {
     static int businessButtonColumns;      // number of columns of business buttons
     static int businessButtonRows;         // number of rows of business buttons
     static int dayLength;                  // length of a day in milliseconds
-    static unsigned int businessHeadStart; // number of milliseconds to run before game starts on new game
-    static int businessRunTime;            // time between business cycles in milliseconds
+    static unsigned int townHeadStart; // number of milliseconds to run before game starts on new game
+    static int propertyUpdateTime;            // time between business cycles in milliseconds
     static int travelersCheckTime;         // time between checks of dead travelers in milliseconds
     static int aIDecisionTime;             // time between AI cycles in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
@@ -147,8 +147,8 @@ public:
     static int getBusinessButtonColumns() { return businessButtonColumns; }
     static int getBusinessButtonRows() { return businessButtonRows; }
     static int getDayLength() { return dayLength; }
-    static unsigned int getBusinessHeadStart() { return businessHeadStart; }
-    static int getBusinessRunTime() { return businessRunTime; }
+    static unsigned int getTownHeadStart() { return townHeadStart; }
+    static int getPropertyUpdateTime() { return propertyUpdateTime; }
     static int getTravelersCheckTime() { return travelersCheckTime; }
     static int getAIDecisionTime() { return aIDecisionTime; }
     static double getConsumptionSpaceFactor() { return consumptionSpaceFactor; }

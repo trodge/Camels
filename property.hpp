@@ -29,13 +29,11 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index_container.hpp>
 
-
 namespace mi = boost::multi_index;
 
 #include "business.hpp"
 #include "good.hpp"
 #include "pager.hpp"
-#include "town.hpp"
 
 class Business;
 
@@ -47,17 +45,25 @@ class Property {
     using MtIdx = mi::hashed_unique<mi::tag<struct MaterialId>, mi::composite_key<Good, GdId, MtId>>;
     using FlIdx = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
     using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<mi::sequenced<>, GdIdx, MtIdx, FlIdx>>;
-    const Town *town = nullptr;
+    unsigned int townType;
+    bool coastal;
+    unsigned long population;
     GoodContainer goods;
     std::vector<Business> businesses;
     std::unordered_map<unsigned int, unsigned int> conflicts;
+    int updateCounter;
+    bool maxGoods = false;
+    const Property &source;
 
 public:
-    Property(const Town *tn);
-    Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
-        : goods(begin(gds), end(gds)), businesses(bsns) {}
-    Property(const Save::Property *ppt, const Town *tn);
-    flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b) const;
+    Property(unsigned int tT, bool ctl, unsigned long ppl, const Property &src); // constructor for town
+    Property(bool ctl, const Property &src) : coastal(ctl), source(src) {} // constructor for traveler
+    Property(const std::vector<Good> &gds, const std::vector<Business> &bsns);
+    Property(const Save::Property *ppt, const Property &src);
+    flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b, unsigned int tId) const;
+    unsigned int getTownType() const { return townType; }
+    bool getCoastal() const { return coastal; }
+    unsigned long getPopulation() const { return population; }
     bool hasGood(unsigned int fId) const;
     const Good &good(unsigned int fId) const { return *goods.get<FullId>().find(fId); }
     const Good &good(boost::tuple<unsigned int, unsigned int> gMId) const {
@@ -72,8 +78,9 @@ public:
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();
+    void toggleMaxGoods() { maxGoods = !maxGoods; }
+    void scale(Good &gd);
     void reset();
-    void scale(bool ctl, unsigned long ppl, unsigned int tT);
     std::vector<Good> take(unsigned int gId, double amt);
     void take(Good &gd);
     void put(Good &gd);
@@ -91,8 +98,8 @@ public:
                  const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) const;
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d);
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d);
-    void saveFrequencies(unsigned long ppl, std::string &u) const;
-    void saveDemand(unsigned long ppl, std::string &u) const;
+    void saveFrequencies(std::string &u) const;
+    void saveDemand(std::string &u) const;
 };
 
 #endif // INVENTORY_H

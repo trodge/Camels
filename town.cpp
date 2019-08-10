@@ -19,8 +19,8 @@
 
 #include "town.hpp"
 
-Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, bool ctl,
-           unsigned long ppl, unsigned int tT, int fS, Printer &pr)
+Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat,
+           unsigned int tT, bool ctl, unsigned long ppl, int fS, Printer &pr)
     : id(i), nation(nt), box(std::make_unique<TextBox>(BoxInfo{.text = nms,
                                                                .foreground = nt->getForeground(),
                                                                .background = nt->getBackground(),
@@ -31,13 +31,7 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
                                                                .radius = 1,
                                                                .fontSize = fS},
                                                        pr)),
-      longitude(lng), latitude(lat), coastal(ctl), population(ppl), townType(tT), property(i, nt->getProperty()) {
-    // Create new town based on parameters.
-    property.scale(ctl, ppl, tT);
-    // Randomize business run counter.
-    static std::uniform_int_distribution<> dis(-Settings::getBusinessRunTime(), 0);
-    businessCounter = dis(Settings::rng);
-}
+      longitude(lng), latitude(lat), property(tT, ctl, ppl, nt->getProperty()) {}
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
     : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
@@ -50,17 +44,13 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
                                             .radius = 1,
                                             .fontSize = fS},
                                     pr)),
-      longitude(t->longitude()), latitude(t->latitude()), coastal(t->coastal()),
-      population(static_cast<unsigned long>(t->population())), townType(t->townType()),
-      property(t->property(), nation->getProperty()), businessCounter(t->businessCounter()) {
+      longitude(t->longitude()), latitude(t->latitude()), property(t->property(), nation->getProperty()) {
     // Load a town from the given flatbuffers save object. Copy image pointers from nation's goods.
-    property.setMaximums();
 }
 
 flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) const {
     auto svNames = b.CreateVectorOfStrings(box->getText());
-    return Save::CreateTown(b, id, svNames, nation->getId(), longitude, latitude, coastal, population, townType,
-                            property.save(b), businessCounter);
+    return Save::CreateTown(b, id, svNames, nation->getId(), longitude, latitude, property.save(b, id));
 }
 
 bool Town::operator==(const Town &other) const { return id == other.id; }
@@ -92,17 +82,7 @@ void Town::draw(SDL_Renderer *s) {
     drawCircle(s, dpx, dpy, 3, dC, true);
 }
 
-void Town::update(unsigned int e) {
-    businessCounter += e;
-    if (businessCounter > 0) {
-        auto businessRunTime = Settings::getBusinessRunTime();
-        if (maxGoods)
-            // Towns create as many goods as possible for testing purposes.
-            property.create();
-        property.update(businessRunTime);
-        businessCounter -= businessRunTime;
-    }
-}
+void Town::update(unsigned int e) { property.update(e); }
 
 void Town::take(Good &g) { property.take(g); }
 
@@ -111,7 +91,7 @@ void Town::put(Good &g) { property.put(g); }
 void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts) {
     // Create a random number of travelers from this town, weighted down.
     std::uniform_int_distribution<> tvlrsDis{Settings::getTravelersMin(),
-                                             static_cast<int>(pow(population, Settings::getTravelersExponent()))};
+                                             static_cast<int>(pow(property.getPopulation(), Settings::getTravelersExponent()))};
     int n = tvlrsDis(Settings::rng);
     if (n < 0) n = 0;
     ts.reserve(ts.size() + static_cast<size_t>(n));
@@ -183,13 +163,13 @@ void Town::connectRoutes() {
 }
 
 void Town::saveFrequencies(std::string &u) const {
-    property.saveFrequencies(population, u);
+    property.saveFrequencies(u);
     u.append(" ELSE frequency END WHERE nation_id = ");
     u.append(std::to_string(nation->getId()));
 }
 
 void Town::saveDemand(std::string &u) const {
-    property.saveDemand(population, u);
+    property.saveDemand(u);
     u.append(" ELSE demand_slope END WHERE nation_id = ");
     u.append(std::to_string(nation->getId()));
 }

@@ -46,9 +46,13 @@ table Good {
 }
 
 table Property {
-    id:uint;
+    townId:uint;
+    townType:uint;
+    coastal:bool;
+    population:ulong;
     goods:[Good];
     businesses:[Business];
+    updateCounter:int;
 }
 
 table AI {
@@ -95,11 +99,7 @@ table Town {
     nation:uint;
     longitude:double;
     latitude:double;
-    coastal:bool;
-    population:ulong;
-    townType:uint;
     property:Property;
-    businessCounter:int;
 }
 
 table Route {

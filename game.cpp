@@ -426,25 +426,23 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     // Store number of towns as double for progress bar purposes.
     double tC = static_cast<double>(gameData.townCount);
 
-    quer = sql::makeQuery(cn,
-                          "SELECT town_id, eng, lang, nation_id, latitude, "
-                          "longitude, coastal, population,"
-                          "town_type FROM towns");
+    quer = sql::makeQuery(
+        cn, "SELECT town_id, eng, lang, nation_id, latitude, longitude, town_type, coastal, population FROM towns");
     q = quer.get();
     towns.reserve(gameData.townCount);
     std::cout << "Loading towns" << std::endl;
     size_t mT = Settings::getMaxTowns();
     while (sqlite3_step(q) != SQLITE_DONE && towns.size() < mT) {
         SDL_RenderCopy(screen.get(), frzTx, nullptr, nullptr);
-        std::vector<std::string> names = {std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))),
-                                          std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2)))};
-        towns.push_back(Town(static_cast<unsigned int>(sqlite3_column_int(q, 0)), names,
+        towns.push_back(Town(static_cast<unsigned int>(sqlite3_column_int(q, 0)),
+                             {std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))),
+                              std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2)))},
                              &nations[static_cast<size_t>(sqlite3_column_int(q, 3) - 1)], sqlite3_column_double(q, 5),
                              sqlite3_column_double(q, 4), static_cast<bool>(sqlite3_column_int(q, 6)),
                              static_cast<unsigned long>(sqlite3_column_int(q, 7)),
                              static_cast<unsigned int>(sqlite3_column_int(q, 8)), Settings::getTownFontSize(), printer));
         // Let town run for some business cyles before game starts.
-        towns.back().update(Settings::getBusinessHeadStart());
+        towns.back().update(Settings::getTownHeadStart());
         ldBr.progress(1 / tC);
         ldBr.draw(screen.get());
         SDL_RenderPresent(screen.get());

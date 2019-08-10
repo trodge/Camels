@@ -490,10 +490,10 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                 case UIState::trading:
                     if (developer) switch (k.keysym.sym) {
                         case SDLK_z:
-                            traveler->toTown->reset();
+                            traveler->resetTown();
                             break;
                         case SDLK_x:
-                            traveler->toTown->toggleMaxGoods();
+                            traveler->toggleMaxGoods();
                             break;
                         case SDLK_v:
                             traveler->adjustDemand(pagers[2], -modMultiplier);
