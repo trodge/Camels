@@ -15,8 +15,7 @@ Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property 
 }
 
 Property::Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
-    : goods(begin(gds), end(gds)), businesses(bsns) {
-} // constructor for nation
+    : goods(begin(gds), end(gds)), businesses(bsns) {} // constructor for nation
 
 Property::Property(const Save::Property *ppt, const Property *src)
     : townType(ppt->townType()), coastal(ppt->coastal()), population(ppt->population()),
@@ -182,12 +181,12 @@ void Property::use() {
 
 void Property::create(unsigned int opId, double amt) {
     // Create the given amount of the lowest indexed material of the given good id.
+    if (amt < 0)
+        std::cout << opId << " " << amt << std::endl;
     auto &byGoodId = goods.get<GoodId>();
     auto opRng = byGoodId.equal_range(opId);
     auto lowest = [](auto &gA, auto &gB) { return gA.getMaterialId() < gB.getMaterialId(); };
-    auto createGood = [amt](auto &gd) {
-                         gd.create(amt);
-                    };
+    auto createGood = [amt](auto &gd) { gd.create(amt); };
     if (opRng.first == opRng.second) {
         // Output good doesn't exist, copy from nation.
         auto srRng = source->goods.get<GoodId>().equal_range(opId);
@@ -265,8 +264,7 @@ void Property::update(unsigned int elTm) {
             create();
         // Update goods and run businesses for update time.
         auto updateGood = [updateTime, yearLength](auto &gd) { gd.update(updateTime, yearLength); };
-        for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
-            goods.modify(gdIt, updateGood);
+        for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, updateGood);
         for (auto &b : businesses) {
             // Start by setting factor to business run time.
             b.setFactor(updateTime / yearLength);
@@ -285,7 +283,7 @@ void Property::update(unsigned int elTm) {
 
 void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
                        const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) const {
-    // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
+    // Create buttons on the given pager using the given function to generate on click functions.
     pgr.setBounds(rt);
     int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(),
         dy = (rt.h + m) / Settings::getGoodButtonRows();
@@ -315,7 +313,7 @@ void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
 
 void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
                        const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) const {
-    // Create buttons on the given pager for the given set of goods using the given function to generate on click functions.
+    // Create buttons on the given pager using the given function to generate on click functions.
     pgr.setBounds(rt);
     int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getBusinessButtonColumns(),
         dy = (rt.h + m) / Settings::getBusinessButtonRows();
@@ -392,4 +390,3 @@ void Property::saveFrequencies(std::string &u) const {
 void Property::saveDemand(std::string &u) const {
     for (auto &gd : goods) gd.saveDemand(population, u);
 }
-

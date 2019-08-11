@@ -71,13 +71,13 @@ public:
           fullName(completeName()), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
     } // constructor for loading from materials table
     Good(const Good &gd, double amt)
-        : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {} // constructor for business inputs and outputs
+        : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {
+    } // constructor for business inputs and outputs
     Good(unsigned int fId, const std::string &fNm, double amt, const std::vector<CombatStat> &cSs, SDL_Surface *img)
         : fullId(fId), fullName(fNm), amount(amt), combatStats(cSs), image(img) {} // constructor for equipment
     Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {}               // constructor for transfer goods
     Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
-        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {
-    } // constructor for trade goods
+        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
     Good(const Save::Good *svG)
         : goodId(svG->goodId()), materialId(svG->materialId()), fullId(svG->fullId()), goodName(svG->goodName()->str()),
           materialName(svG->materialName()->str()), fullName(completeName()), amount(svG->amount()),

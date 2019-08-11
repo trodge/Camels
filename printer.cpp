@@ -82,7 +82,8 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     sdl::RendererPtr swRdr(sdl::makeSoftwareRenderer(p.get()));
     // Draw border.
     SDL_Rect dR = {0, 0, rt.w, rt.h};
-    if (true) { drawRoundedRectangle(swRdr.get(), r, &dR, foreground); }
+    if (b) drawRoundedRectangle(swRdr.get(), r, &dR, foreground);
+    // Draw background.
     dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
     drawRoundedRectangle(swRdr.get(), r, &dR, background);
     Alignment justify = center;

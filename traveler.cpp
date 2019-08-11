@@ -23,7 +23,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
       moving(false), portion(1), gameData(gD) {
     // Copy goods vector from nation.
-    properties.emplace(std::piecewise_construct, std::forward_as_tuple(0), 
+    properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
                        std::forward_as_tuple(false, &t->getNation()->getProperty()));
     // Equip fists.
     equip(2);
@@ -45,8 +45,7 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     auto nPpt = &nation->getProperty();
     auto lProperties = t->properties();
     for (auto lPI = lProperties->begin(); lPI != lProperties->end(); ++lPI)
-        properties.emplace(std::piecewise_construct, std::forward_as_tuple((*lPI)->townId()), 
-                           std::forward_as_tuple(*lPI, nPpt));
+        properties.emplace(std::piecewise_construct, std::forward_as_tuple((*lPI)->townId()), std::forward_as_tuple(*lPI, nPpt));
     auto lStats = t->stats();
     for (size_t i = 0; i < stats.size(); ++i) stats[i] = lStats->Get(static_cast<unsigned int>(i));
     auto lParts = t->parts();

@@ -93,9 +93,9 @@ template <class OutputIt, class T>
 void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const pt::ptree &t) {
     auto oIt = out;
     for (auto &df : dfs) {
-		*oIt = t.get(n + "_" + std::to_string(oIt - out), df);
+        *oIt = t.get(n + "_" + std::to_string(oIt - out), df);
         ++oIt;
-	}
+    }
 }
 
 void Settings::load(const fs::path &p) {

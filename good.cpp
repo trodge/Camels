@@ -144,7 +144,7 @@ void Good::scale(double ppl) {
 
 void Good::enforceMaximum() {
     // Removes materials in excess of max
-    if (maximum > 0) { amount = std::min(maximum, amount); }
+    if (maximum > 0 && maximum < amount) { use(amount - maximum); }
 }
 
 void Good::take(Good &gd) {
@@ -188,7 +188,7 @@ void Good::use(double amt) {
     if (amt < 0) return;
     amount = std::max(amount - amt, 0.);
     while (amt > 0 && !perishCounters.empty()) {
-        // Amount is going down.
+        // Amount and amt will count down as perish counters are used.
         PerishCounter pC = perishCounters.back();
         perishCounters.pop_back();
         if (pC.amount > amt) {

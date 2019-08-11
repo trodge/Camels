@@ -25,8 +25,8 @@
 
 #include "save_generated.h"
 
-#include "traveler.hpp"
 #include "property.hpp"
+#include "traveler.hpp"
 
 enum class FightChoice;
 
@@ -35,7 +35,6 @@ class Good;
 class Town;
 
 class Traveler;
-
 
 struct GoodInfo {
     double limitFactor = 0; // factor controlling value based on min/max price

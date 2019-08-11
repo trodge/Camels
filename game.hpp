@@ -75,7 +75,7 @@ class Game {
     double scale;
     sdl::WindowPtr window;
     sdl::RendererPtr screen;
-    //sdl::SurfacePtr mapSurface; // surface of entire map loaded from image
+    // sdl::SurfacePtr mapSurface; // surface of entire map loaded from image
     SDL_RendererInfo screenInfo;
     Printer printer;
     std::vector<sdl::TexturePtr> mapTextures;      // textures for map broken down to maximum size for graphics card

@@ -82,16 +82,16 @@ class Settings {
     static int tradeBorder;
     static int tradeRadius;
     static int tradeFontSize;
-    static int buttonMargin;               // margin between good and business buttons in pixels
-    static int goodButtonColumns;          // number of columns of good buttons
-    static int goodButtonRows;             // number of rows of good buttons
-    static int businessButtonColumns;      // number of columns of business buttons
-    static int businessButtonRows;         // number of rows of business buttons
-    static int dayLength;                  // length of a day in milliseconds
+    static int buttonMargin;           // margin between good and business buttons in pixels
+    static int goodButtonColumns;      // number of columns of good buttons
+    static int goodButtonRows;         // number of rows of good buttons
+    static int businessButtonColumns;  // number of columns of business buttons
+    static int businessButtonRows;     // number of rows of business buttons
+    static int dayLength;              // length of a day in milliseconds
     static unsigned int townHeadStart; // number of milliseconds to run before game starts on new game
-    static int propertyUpdateTime;            // time between business cycles in milliseconds
-    static int travelersCheckTime;         // time between checks of dead travelers in milliseconds
-    static int aIDecisionTime;             // time between AI cycles in milliseconds
+    static int propertyUpdateTime;     // time between business cycles in milliseconds
+    static int travelersCheckTime;     // time between checks of dead travelers in milliseconds
+    static int aIDecisionTime;         // time between AI cycles in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static int minPriceDivisor;
     static double townProfit;
