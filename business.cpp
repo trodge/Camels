@@ -103,7 +103,11 @@ void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts
     for (auto &op : outputs) {
         auto gId = op.getGoodId();
         auto amt = inv.amount(gId);
-        if (amt < inv.maximum(gId) || amt == 0) space = true;
+        auto max = inv.maximum(gId);
+        if (amt < max || max == 0) {
+            space = true;
+            break;
+        }
     }
     if (!space) factor = 0;
     for (auto &ip : inputs) {

@@ -31,7 +31,7 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
                                                                .radius = 1,
                                                                .fontSize = fS},
                                                        pr)),
-      longitude(lng), latitude(lat), property(tT, ctl, ppl, nt->getProperty()) {}
+      longitude(lng), latitude(lat), property(tT, ctl, ppl, &nt->getProperty()) {}
 
 Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
     : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
@@ -44,7 +44,7 @@ Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &
                                             .radius = 1,
                                             .fontSize = fS},
                                     pr)),
-      longitude(t->longitude()), latitude(t->latitude()), property(t->property(), nation->getProperty()) {
+      longitude(t->longitude()), latitude(t->latitude()), property(t->property(), &nation->getProperty()) {
     // Load a town from the given flatbuffers save object. Copy image pointers from nation's goods.
 }
 
@@ -82,7 +82,7 @@ void Town::draw(SDL_Renderer *s) {
     drawCircle(s, dpx, dpy, 3, dC, true);
 }
 
-void Town::update(unsigned int e) { property.update(e); }
+void Town::update(unsigned int elTm) { property.update(elTm); }
 
 void Town::take(Good &g) { property.take(g); }
 

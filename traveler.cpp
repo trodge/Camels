@@ -23,7 +23,8 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
       moving(false), portion(1), gameData(gD) {
     // Copy goods vector from nation.
-    properties.emplace(0, Property(false, t->getNation()->getProperty()));
+    properties.emplace(std::piecewise_construct, std::forward_as_tuple(0), 
+                       std::forward_as_tuple(false, &t->getNation()->getProperty()));
     // Equip fists.
     equip(2);
     equip(3);
@@ -41,10 +42,11 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     auto lLog = t->log();
     for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI) logText.push_back(lLI->str());
     // Copy good image pointers from nation's goods to traveler's goods.
-    auto &nPpt = nation->getProperty();
+    auto nPpt = &nation->getProperty();
     auto lProperties = t->properties();
     for (auto lPI = lProperties->begin(); lPI != lProperties->end(); ++lPI)
-        properties.emplace(lPI->townId(), Property(*lPI, nPpt));
+        properties.emplace(std::piecewise_construct, std::forward_as_tuple((*lPI)->townId()), 
+                           std::forward_as_tuple(*lPI, nPpt));
     auto lStats = t->stats();
     for (size_t i = 0; i < stats.size(); ++i) stats[i] = lStats->Get(static_cast<unsigned int>(i));
     auto lParts = t->parts();
@@ -59,7 +61,7 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto sLog = b.CreateVectorOfStrings(logText);
     std::vector<std::pair<unsigned int, Property>> vPpts(begin(properties), end(properties));
     auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(
-        properties.size(), [this, &b, &vPpts](size_t i) { return vPpts[i].second.save(b, vPpts[i].first); });
+        properties.size(), [&b, &vPpts](size_t i) { return vPpts[i].second.save(b, vPpts[i].first); });
     auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
     auto sParts = b.CreateVector(std::vector<unsigned int>(begin(parts), end(parts)));
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
@@ -317,7 +319,7 @@ Property &Traveler::property(unsigned int tId) {
         // Property has not been created yet.
         pptIt = properties
                     .emplace(std::piecewise_construct, std::forward_as_tuple(tId),
-                             std::forward_as_tuple(toTown->getProperty().getCoastal(), toTown->getNation()->getProperty()))
+                             std::forward_as_tuple(toTown->getProperty().getCoastal(), &toTown->getNation()->getProperty()))
                     .first;
     return pptIt->second;
 }

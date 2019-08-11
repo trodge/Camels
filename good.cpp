@@ -136,16 +136,15 @@ void Good::setConsumption(const std::array<double, 3> &cnsptn) {
     demandIntercept = cnsptn[2];
 }
 
-void Good::scale(unsigned long ppl) {
+void Good::scale(double ppl) {
     // Assign consumption to match given population.
-    double dPpl = static_cast<double>(ppl);
-    demandSlope /= dPpl;
-    consumptionRate *= dPpl;
+    demandSlope /= ppl;
+    consumptionRate *= ppl;
 }
 
 void Good::enforceMaximum() {
     // Removes materials in excess of max
-    if (maximum > 0) { amount = std::max(maximum, amount); }
+    if (maximum > 0) { amount = std::min(maximum, amount); }
 }
 
 void Good::take(Good &gd) {
@@ -211,18 +210,21 @@ void Good::create(double amt) {
     enforceMaximum();
 }
 
-void Good::update(unsigned int elTm) {
+void Good::update(unsigned int elTm, double yrLn) {
     // Remove consumed goods and perished goods over elapsed time.
     lastAmount = amount;
-    double consumption = consumptionRate * elTm / kDaysPerYear / Settings::getDayLength();
-    if (consumption > amount) consumption = amount;
+    double consumption = consumptionRate * static_cast<double>(elTm) / yrLn;
+    // Ensure we don't consume more than current amount.
+    consumption = std::min(amount, consumption);
     if (consumption > 0)
+        // Positive consumptin uses goods.
         use(consumption);
     else if (consumption < 0)
+        // Negative consumption creates goods.
         create(-consumption);
     if (perish == 0) return;
     // Find the first perish counter that will expire.
-    PerishCounter exPC = {int(perish * Settings::getDayLength() * kDaysPerYear - elTm), 0};
+    PerishCounter exPC = {int(perish * yrLn - elTm), 0};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
     // Remove expired amounts from amount and total them.
     double amt =

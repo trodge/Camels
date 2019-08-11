@@ -71,7 +71,7 @@ public:
           fullName(completeName()), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
     } // constructor for loading from materials table
     Good(const Good &gd, double amt)
-        : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {}
+        : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {} // constructor for business inputs and outputs
     Good(unsigned int fId, const std::string &fNm, double amt, const std::vector<CombatStat> &cSs, SDL_Surface *img)
         : fullId(fId), fullName(fNm), amount(amt), combatStats(cSs), image(img) {} // constructor for equipment
     Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {}               // constructor for transfer goods
@@ -120,14 +120,14 @@ public:
     void setConsumption(const std::array<double, 3> &cnsptn);
     void setCombatStats(const std::vector<CombatStat> &cSs) { combatStats = cSs; }
     void setImage(SDL_Surface *img) { image = img; }
-    void scale(unsigned long ppl);
+    void scale(double ppl);
     void take(Good &gd);
     void put(Good &gd);
     void use(double amt);
     void use() { use(amount); }
     void create(double amt);
     void create() { create(maximum); }
-    void update(unsigned int elTm);
+    void update(unsigned int elTm, double yrLn);
     void updateButton(TextBox *btn) const;
     void updateButton(double oV, unsigned int rC, TextBox *btn) const;
     void adjustDemand(double d);

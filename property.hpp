@@ -25,6 +25,7 @@
 
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index_container.hpp>
@@ -41,10 +42,11 @@ class Property {
     using GdId = mi::const_mem_fun<Good, unsigned int, &Good::getGoodId>;
     using MtId = mi::const_mem_fun<Good, unsigned int, &Good::getMaterialId>;
     using FlId = mi::const_mem_fun<Good, unsigned int, &Good::getFullId>;
-    using GdIdx = mi::hashed_non_unique<mi::tag<struct GoodId>, GdId>;
-    using MtIdx = mi::hashed_unique<mi::tag<struct MaterialId>, mi::composite_key<Good, GdId, MtId>>;
-    using FlIdx = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
-    using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<mi::sequenced<>, GdIdx, MtIdx, FlIdx>>;
+    using GdIdHsh = mi::hashed_non_unique<mi::tag<struct GoodId>, GdId>;
+    using MtIdHsh = mi::hashed_unique<mi::tag<struct MaterialId>, mi::composite_key<Good, GdId, MtId>>;
+    using FlIdHsh = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
+    using FlIdOdr = mi::ordered_unique<mi::tag<struct IdOrder>, FlId>;
+    using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<FlIdOdr, GdIdHsh, MtIdHsh, FlIdHsh>>;
     unsigned int townType;
     bool coastal;
     unsigned long population;
@@ -53,13 +55,14 @@ class Property {
     std::unordered_map<unsigned int, unsigned int> conflicts;
     int updateCounter;
     bool maxGoods = false;
-    const Property &source;
+    const Property *source = nullptr;
+    void addGood(const Good &srGd, const std::function<void(Good &)> &fn);
 
 public:
-    Property(unsigned int tT, bool ctl, unsigned long ppl, const Property &src); // constructor for town
-    Property(bool ctl, const Property &src) : coastal(ctl), source(src) {} // constructor for traveler
+    Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src); // constructor for town
+    Property(bool ctl, const Property *src) : coastal(ctl), source(src) {} // constructor for traveler
     Property(const std::vector<Good> &gds, const std::vector<Business> &bsns);
-    Property(const Save::Property *ppt, const Property &src);
+    Property(const Save::Property *ppt, const Property *src);
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b, unsigned int tId) const;
     unsigned int getTownType() const { return townType; }
     bool getCoastal() const { return coastal; }

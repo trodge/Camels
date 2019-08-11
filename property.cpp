@@ -1,34 +1,30 @@
 #include "property.hpp"
 
-Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property &src)
+Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src)
     : townType(tT), coastal(ctl), population(ppl), source(src) {
     // Copy businesses from source that exist in this town
-    std::copy_if(begin(source.businesses), end(source.businesses), std::back_inserter(businesses),
+    std::copy_if(begin(source->businesses), end(source->businesses), std::back_inserter(businesses),
                  [ctl](auto &bsn) { return bsn.getFrequency() > 0 && (!bsn.getRequireCoast() || ctl); });
     // Scale business areas according to town population and type.
     for (auto &bsn : businesses) bsn.scale(ppl, tT);
     // Create starting input goods.
     reset();
-    // Scale good consumption data.
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [ppl](auto &gd) { gd.scale(ppl); });
-    // Set max amounts for goods.
-    setMaximums();
     // Randomize business run counter.
     static std::uniform_int_distribution<> dis(-Settings::getPropertyUpdateTime(), 0);
     updateCounter = dis(Settings::rng);
 }
 
 Property::Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
-    : goods(begin(gds), end(gds)), businesses(bsns), source(*this) {
+    : goods(begin(gds), end(gds)), businesses(bsns) {
 } // constructor for nation
 
-Property::Property(const Save::Property *ppt, const Property &src)
+Property::Property(const Save::Property *ppt, const Property *src)
     : townType(ppt->townType()), coastal(ppt->coastal()), population(ppt->population()),
       updateCounter(ppt->updateCounter()), source(src) {
     auto ldGds = ppt->goods();
-    for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.push_back(Good(*lGI));
+    for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.insert(Good(*lGI));
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
-        goods.modify(gdIt, [srGd = source.good(gdIt->getFullId())](auto &gd) { gd.setImage(srGd.getImage()); });
+        goods.modify(gdIt, [srGd = source->good(gdIt->getFullId())](auto &gd) { gd.setImage(srGd.getImage()); });
     auto ldBsns = ppt->businesses();
     for (auto lBI = ldBsns->begin(); lBI != ldBsns->end(); ++lBI) businesses.push_back(Business(*lBI));
     setMaximums();
@@ -99,25 +95,31 @@ void Property::setMaximums() {
     }
 }
 
-void Property::scale(Good &gd) {
-    gd.scale(population);
-    gd.setMaximum();
-    auto gId = gd.getGoodId();
-    auto same = [gId](const Good &gd) { return gd.getGoodId() == gId; };
-    auto ipSpF = Settings::getInputSpaceFactor();
-    auto opSpF = Settings::getOutputSpaceFactor();
-    for (auto &bsn : businesses) {
-        auto &ips = bsn.getInputs();
-        auto &ops = bsn.getOutputs();
-        auto ipIt = std::find_if(begin(ips), end(ips), same);
-        auto opIt = std::find_if(begin(ops), end(ops), same);
-        if (ipIt != end(ips)) gd.setMaximum(ipIt->getAmount() * ipSpF);
-        if (opIt != end(ips)) gd.setMaximum(opIt->getAmount() * opSpF);
-    }
+void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) {
+    // Add a new good to this property, scale it, set its maximum, then call parameter function on it.
+    goods.modify(goods.insert(goods.lower_bound(srGd.getFullId()), srGd), [this, &fn](auto &gd) {
+        gd.scale(population);
+        gd.setMaximum();
+        auto gId = gd.getGoodId();
+        auto same = [gId](const Good &gd) { return gd.getGoodId() == gId; };
+        auto ipSpF = Settings::getInputSpaceFactor();
+        auto opSpF = Settings::getOutputSpaceFactor();
+        for (auto &bsn : businesses) {
+            auto &ips = bsn.getInputs();
+            auto &ops = bsn.getOutputs();
+            auto ipIt = std::find_if(begin(ips), end(ips), same);
+            auto opIt = std::find_if(begin(ops), end(ops), same);
+            if (ipIt != end(ips)) gd.setMaximum(ipIt->getAmount() * ipSpF);
+            if (opIt != end(ips)) gd.setMaximum(opIt->getAmount() * opSpF);
+        }
+        fn(gd);
+    });
 }
 
 void Property::reset() {
     // Reset goods to starting amounts.
+    double updateTime = Settings::getPropertyUpdateTime();
+    double yearLength = Settings::getDayLength() * kDaysPerYear;
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
     for (auto &b : businesses) {
         for (auto &ip : b.getInputs())
@@ -126,7 +128,7 @@ void Property::reset() {
                 create(ip.getGoodId(), ip.getAmount());
             else
                 // Create only enough for one cycle.
-                create(ip.getGoodId(), ip.getAmount() * Settings::getPropertyUpdateTime() / (Settings::getDayLength() * kDaysPerYear));
+                create(ip.getGoodId(), ip.getAmount() * updateTime / yearLength);
     }
 }
 
@@ -156,12 +158,12 @@ void Property::put(Good &gd) {
     auto fId = gd.getFullId();
     auto &byFullId = goods.get<FullId>();
     auto rGdIt = byFullId.find(fId);
+    auto putGood = [&gd](auto &rGd) { rGd.put(gd); };
     if (rGdIt == end(byFullId)) {
         // Good does not exist, copy from source.
-        goods.push_back(source.good(fId));
-        rGdIt = byFullId.find(fId);
-    }
-    byFullId.modify(rGdIt, [&gd](auto &rGd) { rGd.put(gd); });
+        addGood(source->good(fId), putGood);
+    } else
+        byFullId.modify(rGdIt, putGood);
 }
 
 void Property::use(unsigned int gId, double amt) {
@@ -183,14 +185,15 @@ void Property::create(unsigned int opId, double amt) {
     auto &byGoodId = goods.get<GoodId>();
     auto opRng = byGoodId.equal_range(opId);
     auto lowest = [](auto &gA, auto &gB) { return gA.getMaterialId() < gB.getMaterialId(); };
+    auto createGood = [amt](auto &gd) {
+                         gd.create(amt);
+                    };
     if (opRng.first == opRng.second) {
         // Output good doesn't exist, copy from nation.
-        auto srRng = source.goods.get<GoodId>().equal_range(opId);
-        goods.modify(goods.push_back(*std::min_element(srRng.first, srRng.second, lowest)).first,
-                     [this](auto &gd) { scale(gd); });
-        opRng = byGoodId.equal_range(opId);
-    }
-    byGoodId.modify(std::min_element(opRng.first, opRng.second, lowest), [amt](auto &gd) { gd.create(amt); });
+        auto srRng = source->goods.get<GoodId>().equal_range(opId);
+        addGood(*std::min_element(srRng.first, srRng.second, lowest), createGood);
+    } else
+        byGoodId.modify(std::min_element(opRng.first, opRng.second, lowest), createGood);
 }
 
 void Property::create(unsigned int opId, unsigned int ipId, double amt) {
@@ -209,17 +212,17 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
         auto ipMId = ipRng.first->getMaterialId();
         auto opGMId = boost::make_tuple(opId, ipMId);
         auto opIt = byMaterialId.find(opGMId);
+        auto createGood = [amount = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(amount); };
         if (opIt == end(byMaterialId)) {
             // Output good doesn't exist, copy from source.
-            opIt = byMaterialId.insert(source.good(opGMId)).first;
-            byMaterialId.modify(opIt, [this](auto &gd) { scale(gd); });
+            addGood(source->good(opGMId), createGood);
             // Refresh input iterators because insert invalidates them.
             ipRng = byGoodId.equal_range(ipId);
             // Advance first iterator to position of current input material.
             while (ipRng.first->getMaterialId() != ipMId) ++ipRng.first;
-        }
-        // Create good.
-        byMaterialId.modify(opIt, [amount = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(amount); });
+        } else
+            // Create good.
+            byMaterialId.modify(opIt, createGood);
     }
 }
 
@@ -254,17 +257,19 @@ void Property::demolish(const Business &bsn, double a) {
 void Property::update(unsigned int elTm) {
     updateCounter += elTm;
     if (updateCounter > 0) {
-        auto updateTime = Settings::getPropertyUpdateTime();
+        int updateTime = Settings::getPropertyUpdateTime();
+        updateTime += updateCounter - updateCounter % updateTime;
+        double yearLength = Settings::getDayLength() * kDaysPerYear;
         if (maxGoods)
             // Property creates as many goods as possible for testing purposes.
             create();
         // Update goods and run businesses for update time.
+        auto updateGood = [updateTime, yearLength](auto &gd) { gd.update(updateTime, yearLength); };
         for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
-            goods.modify(gdIt, [updateTime](auto &gd) { gd.update(updateTime); });
-        auto dayLength = Settings::getDayLength();
+            goods.modify(gdIt, updateGood);
         for (auto &b : businesses) {
-            // For each business, start by setting factor to business run time.
-            b.setFactor(updateTime / static_cast<double>(kDaysPerYear * dayLength));
+            // Start by setting factor to business run time.
+            b.setFactor(updateTime / yearLength);
             // Count conflicts of businesses for available goods.
             b.addConflicts(conflicts, *this);
         }
@@ -387,3 +392,4 @@ void Property::saveFrequencies(std::string &u) const {
 void Property::saveDemand(std::string &u) const {
     for (auto &gd : goods) gd.saveDemand(population, u);
 }
+
