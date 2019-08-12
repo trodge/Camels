@@ -123,7 +123,7 @@ void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, uns
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             maxFactor *= inputFactor;
         else if (factor > inputFactor) {
-            // Not livestock and this business will use up input.
+            // This business will use up input.
             maxFactor = std::min(inputFactor, maxFactor);
             cfts[gId].first = true;
         }
