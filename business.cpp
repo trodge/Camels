@@ -98,7 +98,7 @@ void Business::reclaim(Property &inv, double a) {
     }
 }
 
-void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts, const Property &inv) {
+void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts, const Property &inv) {
     bool space = false;
     for (auto &op : outputs) {
         auto gId = op.getGoodId();
@@ -110,24 +110,30 @@ void Business::addConflicts(std::unordered_map<unsigned int, unsigned int> &cfts
         }
     }
     if (!space) factor = 0;
+    auto maxFactor = factor; // max factor possible given all inputs
     for (auto &ip : inputs) {
         auto gId = ip.getGoodId();
-        double mF = inv.amount(gId) / ip.getAmount(); // max factor
-        if (ip == outputs.back() && mF < 1)
+        auto inputFactor = inv.amount(gId) / ip.getAmount(); // max factor possible given this input
+        if (ip == outputs.back() && inputFactor < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
-            factor *= mF;
-        else if (factor > mF) {
-            factor = mF;
-            ++cfts[gId];
+            maxFactor *= inputFactor;
+        else if (factor > inputFactor) {
+            maxFactor = std::min(inputFactor, maxFactor);
+            cfts[gId].first = true;
         }
+        ++cfts[gId].second;
     }
+    factor = maxFactor;
     if (factor < 0)
         std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
 }
 
-void Business::handleConflicts(std::unordered_map<unsigned int, unsigned int> &cfts) {
+void Business::handleConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts) {
     unsigned int grCft = 0;
-    for (auto &ip : inputs) grCft = std::max(cfts[ip.getGoodId()], grCft);
+    for (auto &ip : inputs) {
+        auto &cft = cfts[ip.getGoodId()];
+        if (cft.first) grCft = std::max(cft.second, grCft);
+    }
     if (grCft) factor /= static_cast<double>(grCft);
 }
 

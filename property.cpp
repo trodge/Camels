@@ -96,23 +96,23 @@ void Property::setMaximums() {
 
 void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) {
     // Add a new good to this property, scale it, set its maximum, then call parameter function on it.
-    goods.modify(goods.insert(goods.lower_bound(srGd.getFullId()), srGd), [this, &fn](auto &gd) {
-        gd.scale(population);
-        gd.setMaximum();
-        auto gId = gd.getGoodId();
-        auto same = [gId](const Good &gd) { return gd.getGoodId() == gId; };
-        auto ipSpF = Settings::getInputSpaceFactor();
-        auto opSpF = Settings::getOutputSpaceFactor();
-        for (auto &bsn : businesses) {
-            auto &ips = bsn.getInputs();
-            auto &ops = bsn.getOutputs();
-            auto ipIt = std::find_if(begin(ips), end(ips), same);
-            auto opIt = std::find_if(begin(ops), end(ops), same);
-            if (ipIt != end(ips)) gd.setMaximum(ipIt->getAmount() * ipSpF);
-            if (opIt != end(ips)) gd.setMaximum(opIt->getAmount() * opSpF);
-        }
-        fn(gd);
-    });
+    auto gd = Good(srGd);
+    gd.scale(population);
+    gd.setMaximum();
+    auto gId = gd.getGoodId();
+    auto same = [gId](const Good &gd) { return gd.getGoodId() == gId; };
+    auto ipSpF = Settings::getInputSpaceFactor();
+    auto opSpF = Settings::getOutputSpaceFactor();
+    for (auto &bsn : businesses) {
+        auto &ips = bsn.getInputs();
+        auto &ops = bsn.getOutputs();
+        auto ipIt = std::find_if(begin(ips), end(ips), same);
+        auto opIt = std::find_if(begin(ops), end(ops), same);
+        if (ipIt != end(ips)) gd.setMaximum(ipIt->getAmount() * ipSpF);
+        if (opIt != end(ips)) gd.setMaximum(opIt->getAmount() * opSpF);
+    }
+    fn(gd);
+    goods.insert(goods.lower_bound(gd.getFullId()), std::move(gd));
 }
 
 void Property::reset() {
@@ -181,8 +181,6 @@ void Property::use() {
 
 void Property::create(unsigned int opId, double amt) {
     // Create the given amount of the lowest indexed material of the given good id.
-    if (amt < 0)
-        std::cout << opId << " " << amt << std::endl;
     auto &byGoodId = goods.get<GoodId>();
     auto opRng = byGoodId.equal_range(opId);
     auto lowest = [](auto &gA, auto &gB) { return gA.getMaterialId() < gB.getMaterialId(); };
@@ -211,7 +209,7 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
         auto ipMId = ipRng.first->getMaterialId();
         auto opGMId = boost::make_tuple(opId, ipMId);
         auto opIt = byMaterialId.find(opGMId);
-        auto createGood = [amount = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(amount); };
+        auto createGood = [cAmt = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(cAmt); };
         if (opIt == end(byMaterialId)) {
             // Output good doesn't exist, copy from source.
             addGood(source->good(opGMId), createGood);
@@ -261,7 +259,10 @@ void Property::update(unsigned int elTm) {
         double yearLength = Settings::getDayLength() * kDaysPerYear;
         if (maxGoods)
             // Property creates as many goods as possible for testing purposes.
-            create();
+            create();/*
+        auto &byFullId = goods.get<FullId>();
+        auto dbIt = byFullId.find(87);
+        const Good *debug = dbIt == end(byFullId) ? nullptr : &*dbIt;*/
         // Update goods and run businesses for update time.
         auto updateGood = [updateTime, yearLength](auto &gd) { gd.update(updateTime, yearLength); };
         for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, updateGood);

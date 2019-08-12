@@ -80,19 +80,24 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
 
     sdl::SurfacePtr p(sdl::makeSurface(rt.w, rt.h));
     sdl::RendererPtr swRdr(sdl::makeSoftwareRenderer(p.get()));
-    // Draw border.
     SDL_Rect dR = {0, 0, rt.w, rt.h};
-    if (b) drawRoundedRectangle(swRdr.get(), r, &dR, foreground);
+    if (b) {
+        // Draw border.
+        drawRoundedRectangle(swRdr.get(), r, &dR, foreground);
+        dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
+    }
     // Draw background.
-    dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
     drawRoundedRectangle(swRdr.get(), r, &dR, background);
     Alignment justify = center;
     for (auto &img : imgs) {
         // Blit image onto its rectangle on printing surface.
         dR = img.rect;
         if (dR.x + dR.w / 2 < rt.w / 2)
-            // Found an image on the left side, justify text right
+            // Image is on the left side, justify text right.
             justify = right;
+        else
+            // Image is on right side, justify text left.
+            justify = left;
         SDL_BlitSurface(img.surface, nullptr, p.get(), &dR);
     }
     // Center text vertically.
