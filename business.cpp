@@ -116,10 +116,11 @@ void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, uns
         return;
     }
     auto maxFactor = factor;
+    auto &lastOutput = outputs.back();
     for (auto &ip : inputs) {
         auto gId = ip.getGoodId();
         auto inputFactor = inv.amount(gId) / ip.getAmount(); // max factor possible given this input
-        if (ip == outputs.back() && inputFactor < 1)
+        if (ip == lastOutput && inputFactor < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             maxFactor *= inputFactor;
         else if (factor > inputFactor) {
