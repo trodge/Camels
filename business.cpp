@@ -99,6 +99,7 @@ void Business::reclaim(Property &inv, double a) {
 }
 
 void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts, const Property &inv) {
+    // Counts number of businesses using each good and determines if good will run out this cycle.
     bool space = false;
     for (auto &op : outputs) {
         auto gId = op.getGoodId();
@@ -109,8 +110,12 @@ void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, uns
             break;
         }
     }
-    if (!space) factor = 0;
-    auto maxFactor = factor; // max factor possible given all inputs
+    if (!space) {
+        // No space exists for outputs.
+        factor = 0;
+        return;
+    }
+    auto maxFactor = factor;
     for (auto &ip : inputs) {
         auto gId = ip.getGoodId();
         auto inputFactor = inv.amount(gId) / ip.getAmount(); // max factor possible given this input
@@ -118,6 +123,7 @@ void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, uns
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             maxFactor *= inputFactor;
         else if (factor > inputFactor) {
+            // Not livestock and this business will use up input.
             maxFactor = std::min(inputFactor, maxFactor);
             cfts[gId].first = true;
         }

@@ -38,11 +38,6 @@ namespace mi = boost::multi_index;
 
 class Business;
 
-struct Conflict {
-    bool willEmpty = false;
-    unsigned int count = 0;
-};
-
 class Property {
     using GdId = mi::const_mem_fun<Good, unsigned int, &Good::getGoodId>;
     using MtId = mi::const_mem_fun<Good, unsigned int, &Good::getMaterialId>;
@@ -57,7 +52,6 @@ class Property {
     unsigned long population;
     GoodContainer goods;
     std::vector<Business> businesses;
-    std::unordered_map<unsigned int, std::pair<bool, unsigned int>> conflicts;
     int updateCounter;
     bool maxGoods = false;
     const Property *source = nullptr;

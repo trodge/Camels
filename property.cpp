@@ -121,8 +121,9 @@ void Property::reset() {
     double yearLength = Settings::getDayLength() * kDaysPerYear;
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
     for (auto &b : businesses) {
+        auto &lastOutput = b.getOutputs().back();
         for (auto &ip : b.getInputs())
-            if (ip == b.getOutputs().back())
+            if (ip == lastOutput)
                 // Input good is also output, create full amount.
                 create(ip.getGoodId(), ip.getAmount());
             else
@@ -259,13 +260,14 @@ void Property::update(unsigned int elTm) {
         double yearLength = Settings::getDayLength() * kDaysPerYear;
         if (maxGoods)
             // Property creates as many goods as possible for testing purposes.
-            create();/*
-        auto &byFullId = goods.get<FullId>();
-        auto dbIt = byFullId.find(87);
-        const Good *debug = dbIt == end(byFullId) ? nullptr : &*dbIt;*/
+            create(); /*
+         auto &byFullId = goods.get<FullId>();
+         auto dbIt = byFullId.find(87);
+         const Good *debug = dbIt == end(byFullId) ? nullptr : &*dbIt;*/
         // Update goods and run businesses for update time.
         auto updateGood = [updateTime, yearLength](auto &gd) { gd.update(updateTime, yearLength); };
         for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, updateGood);
+        std::unordered_map<unsigned int, std::pair<bool, unsigned int>> conflicts;
         for (auto &b : businesses) {
             // Start by setting factor to business run time.
             b.setFactor(updateTime / yearLength);

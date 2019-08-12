@@ -69,6 +69,8 @@ class Player {
     std::vector<Pager>::iterator currentPager;
     TextBox *portionBox = nullptr;
     Game &game;
+    SDL_Rect screenRect;
+    int smallBoxFontHeight;
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false, developer = false;
     enum Direction { left, right, up, down };
@@ -84,7 +86,6 @@ class Player {
     void focus(int f, FocusGroup g);
     void focusPrev(FocusGroup g);
     void focusNext(FocusGroup g);
-    void createBoxes(UIState::State s);
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);
