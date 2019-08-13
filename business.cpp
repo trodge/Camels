@@ -100,18 +100,14 @@ void Business::reclaim(Property &inv, double a) {
 
 void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts, const Property &inv) {
     // Counts number of businesses using each good and determines if good will run out this cycle.
-    bool space = false;
-    for (auto &op : outputs) {
+    if (std::find_if(begin(outputs), end(outputs), [&inv](auto &op) {
+        // Return true if there is space for this output.
         auto gId = op.getGoodId();
         auto amt = inv.amount(gId);
-        auto max = inv.maximum(gId);
-        if (amt < max || max == 0) {
-            space = true;
-            break;
-        }
-    }
-    if (!space) {
-        // No space exists for outputs.
+        auto max = inv.maximum(gId); // zero if good doesn't exist
+        return amt < max || max == 0;
+    }) == end(outputs)) {
+        // No space exists for any output.
         factor = 0;
         return;
     }
