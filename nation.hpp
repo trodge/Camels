@@ -29,6 +29,7 @@
 #include "business.hpp"
 #include "good.hpp"
 #include "property.hpp"
+#include "settings.hpp"
 
 class Good;
 class Property;
@@ -37,7 +38,8 @@ class Nation {
     unsigned int id;
     std::vector<std::string> names;
     std::string adjective;
-    SDL_Color foreground, background, dot, highlight;
+    ColorScheme colors;
+    SDL_Color dotColor;
     std::string religion;
     std::vector<std::string> travelerNames;
     Property property;
@@ -49,10 +51,8 @@ public:
     unsigned int getId() const { return id; }
     const std::vector<std::string> getNames() const { return names; }
     const std::string getAdjective() const { return adjective; }
-    const SDL_Color &getForeground() const { return foreground; }
-    const SDL_Color &getBackground() const { return background; }
-    const SDL_Color &getHighlight() const { return highlight; }
-    const SDL_Color &getDotColor() const { return dot; }
+    const ColorScheme &getColors() const { return colors; }
+    const SDL_Color &getDotColor() const { return dotColor; }
     const Property &getProperty() const { return property; }
     void setTravelerNames(const std::vector<std::string> &tNms) { travelerNames = tNms; }
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);

@@ -250,7 +250,7 @@ void Good::update(unsigned int elTm, double yrLn) {
 std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo bI, Printer &pr) const {
     bI.text = {fullName};
     bI.id = fullId;
-    if (image) bI.images = {{image, {2 * bI.border, bI.rect.h / 2 - image->h / 2, image->w, image->h}}};
+    if (image) bI.images = {{image, {2 * bI.size.border, bI.rect.h / 2 - image->h / 2, image->w, image->h}}};
     if (aS) {
         // Button will have amount shown.
         std::string amountText = std::to_string(amount);
@@ -267,7 +267,7 @@ void Good::updateButton(std::string &aT, TextBox *btn) const {
     std::string changeText = std::to_string(amount - lastAmount);
     dropTrail(changeText, 5);
     dropTrail(aT, split ? 3 : 0);
-    btn->setText({btn->getText(0u), aT, changeText});
+    btn->setText({btn->getText(0), aT, changeText});
 }
 
 void Good::updateButton(TextBox *btn) const {

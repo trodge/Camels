@@ -19,9 +19,7 @@
 
 #include "scrollbox.hpp"
 
-ScrollBox::ScrollBox(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), highlight(bI.highlight), items(bI.text) {
-    canFocus = true;
-}
+ScrollBox::ScrollBox(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), highlight(bI.colors.highlight), items(bI.text) { }
 
 void ScrollBox::setText() {
     printer.setHighlightLine(highlightLine - static_cast<int>(scroll));

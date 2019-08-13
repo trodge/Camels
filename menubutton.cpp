@@ -19,9 +19,7 @@
 
 #include "menubutton.hpp"
 
-MenuButton::MenuButton(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), key(bI.key), onClick(bI.onClick) {
-    canFocus = true;
-}
+MenuButton::MenuButton(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), key(bI.key), onClick(bI.onClick) {}
 
 bool MenuButton::keyCaptured(const SDL_KeyboardEvent &k) const {
     switch (k.keysym.sym) {

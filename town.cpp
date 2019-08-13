@@ -20,29 +20,16 @@
 #include "town.hpp"
 
 Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat,
-           unsigned int tT, bool ctl, unsigned long ppl, int fS, Printer &pr)
-    : id(i), nation(nt), box(std::make_unique<TextBox>(BoxInfo{.text = nms,
-                                                               .foreground = nt->getForeground(),
-                                                               .background = nt->getBackground(),
-                                                               .id = nt->getId(),
-                                                               .isNation = true,
-                                                               .canFocus = true,
-                                                               .border = 1,
-                                                               .radius = 1,
-                                                               .fontSize = fS},
-                                                       pr)),
+           unsigned int tT, bool ctl, unsigned long ppl, Printer &pr)
+    : id(i), nation(nt),
+      box(std::make_unique<TextBox>(
+          Settings::boxInfo({0, 0, 0, 0}, nms, nt->getColors(), nt->getId(), true, true, false, BoxSize::town), pr)),
       longitude(lng), latitude(lat), property(tT, ctl, ppl, &nt->getProperty()) {}
 
-Town::Town(const Save::Town *t, const std::vector<Nation> &ns, int fS, Printer &pr)
+Town::Town(const Save::Town *t, const std::vector<Nation> &ns, Printer &pr)
     : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
-      box(std::make_unique<TextBox>(BoxInfo{.text = {t->names()->Get(0)->str(), t->names()->Get(1)->str()},
-                                            .foreground = nation->getForeground(),
-                                            .background = nation->getBackground(),
-                                            .id = nation->getId(),
-                                            .isNation = true,
-                                            .border = 1,
-                                            .radius = 1,
-                                            .fontSize = fS},
+      box(std::make_unique<TextBox>(Settings::boxInfo({0, 0, 0, 0}, {t->names()->Get(0)->str(), t->names()->Get(1)->str()},
+                                                      nation->getColors(), nation->getId(), true, true, false, BoxSize::town),
                                     pr)),
       longitude(t->longitude()), latitude(t->latitude()), property(t->property(), &nation->getProperty()) {
     // Load a town from the given flatbuffers save object. Copy image pointers from nation's goods.
@@ -75,7 +62,7 @@ void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
 void Town::draw(SDL_Renderer *s) {
     const SDL_Rect &bR = box->getRect();
     SDL_Rect lR = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
-    const SDL_Color &fg = nation->getForeground();
+    const SDL_Color &fg = nation->getColors().foreground;
     SDL_SetRenderDrawColor(s, fg.r, fg.g, fg.b, fg.a);
     SDL_RenderFillRect(s, &lR);
     const SDL_Color &dC = nation->getDotColor();
