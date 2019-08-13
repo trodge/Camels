@@ -220,8 +220,8 @@ void Game::loadData(sqlite3 *cn) {
                              sqlite3_column_double(q, 2), sqlite3_column_double(q, 3)));
     // Load good images.
     int m = Settings::getButtonMargin();
-    int imageSize =
-        std::min(kMaxGoodImageSize, (screenRect.h + m) / Settings::getGoodButtonRows() - m - 2 * Settings::getTradeBorder());
+    int imageSize = std::min(kMaxGoodImageSize, (screenRect.h + m) / Settings::getGoodButtonRows() - m -
+                                                    2 * Settings::boxSize(BoxSize::trade).border);
     SDL_Rect rt = {0, 0, imageSize, imageSize};
     goodImages.reserve(goods.size());
     for (auto &g : goods) {
@@ -440,7 +440,7 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
                              &nations[static_cast<size_t>(sqlite3_column_int(q, 3) - 1)], sqlite3_column_double(q, 5),
                              sqlite3_column_double(q, 4), static_cast<bool>(sqlite3_column_int(q, 6)),
                              static_cast<unsigned long>(sqlite3_column_int(q, 7)),
-                             static_cast<unsigned int>(sqlite3_column_int(q, 8)), Settings::getTownFontSize(), printer));
+                             static_cast<unsigned int>(sqlite3_column_int(q, 8)), printer));
         // Let town run for some business cyles before game starts.
         towns.back().update(Settings::getTownHeadStart());
         ldBr.progress(1 / tC);
@@ -479,14 +479,8 @@ void Game::newGame() {
     loadData(conn.get());
 
     // Load towns from sqlite database.
-    LoadBar loadBar(BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
-                            .text = {"Loading towns..."},
-                            .foreground = Settings::getLoadBarColor(),
-                            .background = Settings::getUiForeground(),
-                            .border = Settings::getBigBoxBorder(),
-                            .radius = Settings::getBigBoxRadius(),
-                            .fontSize = Settings::getLoadBarFontSize(),
-                            .outsideRect = {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}},
+    LoadBar loadBar(Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Loading towns..."},
+                                      {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
                     printer);
     // Create a texture for keeping the current screen frozen behind load bar.
     sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
@@ -541,23 +535,16 @@ void Game::loadGame(const fs::path &p) {
         size_t townCount = lTowns->size();
         towns.reserve(townCount);
         double tC = townCount;
-        LoadBar loadBar(
-            BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
-                    .text = {"Loading towns..."},
-                    .foreground = Settings::getLoadBarColor(),
-                    .background = Settings::getUiForeground(),
-                    .border = Settings::getBigBoxBorder(),
-                    .radius = Settings::getBigBoxRadius(),
-                    .fontSize = Settings::getLoadBarFontSize(),
-                    .outsideRect = {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}},
-            printer);
+        LoadBar loadBar(Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Loading towns..."},
+                                          {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
+                        printer);
         sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
         SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
         sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
         freezeSurface = nullptr;
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
             SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-            towns.push_back(Town(*lTI, nations, Settings::getTownFontSize(), printer));
+            towns.push_back(Town(*lTI, nations, printer));
             loadBar.progress(1 / tC);
             loadBar.draw(screen.get());
             SDL_RenderPresent(screen.get());
@@ -648,14 +635,8 @@ void Game::draw() {
 
 void Game::generateRoutes() {
     // Recalculate routes between towns and save new routes to database.
-    LoadBar loadBar(BoxInfo{.rect = {screenRect.w / 2, screenRect.h / 2, 0, 0},
-                            .text = {"Finding routes..."},
-                            .foreground = Settings::getLoadBarColor(),
-                            .background = Settings::getUiForeground(),
-                            .border = Settings::getBigBoxBorder(),
-                            .radius = Settings::getBigBoxRadius(),
-                            .fontSize = Settings::getLoadBarFontSize(),
-                            .outsideRect = {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}},
+    LoadBar loadBar(Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Finding routes..."},
+                                      {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
                     printer);
     /*
     // Have each town find its nearest neighbors.

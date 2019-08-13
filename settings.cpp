@@ -21,10 +21,7 @@
 
 SDL_Rect Settings::screenRect;
 SDL_Rect Settings::mapView;
-SDL_Color Settings::uIForeground;
-SDL_Color Settings::uIBackground;
-SDL_Color Settings::uIHighlight;
-SDL_Color Settings::loadBarColor;
+std::unordered_map<ColorScheme::Scheme, ColorScheme> Settings::colorSchemes;
 SDL_Color Settings::routeColor;
 SDL_Color Settings::waterColor;
 SDL_Color Settings::playerColor;
@@ -33,21 +30,7 @@ int Settings::scroll;
 int Settings::offsetX;
 int Settings::offsetY;
 double Settings::scale;
-int Settings::bigBoxBorder;
-int Settings::bigBoxRadius;
-int Settings::bigBoxFontSize;
-int Settings::loadBarFontSize;
-int Settings::smallBoxBorder;
-int Settings::smallBoxRadius;
-int Settings::smallBoxFontSize;
-int Settings::fightFontSize;
-int Settings::equipBorder;
-int Settings::equipRadius;
-int Settings::equipFontSize;
-int Settings::townFontSize;
-int Settings::tradeBorder;
-int Settings::tradeRadius;
-int Settings::tradeFontSize;
+std::unordered_map<BoxSize::Size, BoxSize> Settings::boxSizes;
 int Settings::buttonMargin;
 int Settings::goodButtonColumns;
 int Settings::goodButtonRows;
@@ -75,27 +58,30 @@ double Settings::limitFactorMin, Settings::limitFactorMax;
 double Settings::aIAttackThreshold;
 std::mt19937 Settings::rng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
-void loadRect(const std::string &n, SDL_Rect &r, const SDL_Rect &d, const pt::ptree &t) {
-    r.x = t.get(n + "_x", d.x);
-    r.y = t.get(n + "_y", d.y);
-    r.w = t.get(n + "_w", d.w);
-    r.h = t.get(n + "_h", d.h);
+SDL_Rect loadRect(const std::string &n, const SDL_Rect &d, const pt::ptree &t) {
+    return {t.get(n + "_x", d.x), t.get(n + "_y", d.y), t.get(n + "_w", d.w), t.get(n + "_h", d.h)};
 }
 
-void loadColor(const std::string &n, SDL_Color &c, const SDL_Color &d, const pt::ptree &t) {
-    c.r = t.get(n + "_r", d.r);
-    c.g = t.get(n + "_g", d.g);
-    c.b = t.get(n + "_b", d.b);
-    c.a = t.get(n + "_a", d.a);
+SDL_Color loadColor(const std::string &n, const SDL_Color &d, const pt::ptree &t) {
+    return {t.get(n + "_r", d.r), t.get(n + "_g", d.g), t.get(n + "_b", d.b), t.get(n + "_a", d.a)};
+}
+
+ColorScheme loadColorScheme(const std::string &n, const ColorScheme &d, const pt::ptree &t) {
+    return {loadColor(n + "_foreground", d.foreground, t), loadColor(n + "_background", d.background, t),
+            loadColor(n + "_highlight", d.highlight, t)};
+}
+
+BoxSize loadBoxSize(const std::string &n, const BoxSize &d, const pt::ptree &t) {
+    return {t.get(n + "_border", d.border), t.get(n + "_radius", d.radius), t.get(n + "_fontSize", d.fontSize)};
 }
 
 template <class OutputIt, class T>
 void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const pt::ptree &t) {
     auto oIt = out;
     for (auto &df : dfs) {
-		*oIt = t.get(n + "_" + std::to_string(oIt - out), df);
+        *oIt = t.get(n + "_" + std::to_string(oIt - out), df);
         ++oIt;
-	}
+    }
 }
 
 void Settings::load(const fs::path &p) {
@@ -107,35 +93,33 @@ void Settings::load(const fs::path &p) {
     pt::read_ini(p.string(), tree);
     SDL_DisplayMode current;
     SDL_GetCurrentDisplayMode(0, &current);
-    loadRect("ui.screenRect", screenRect, {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
-    loadRect("ui.mapView", mapView, {3330, 2250, screenRect.w, screenRect.h}, tree);
-    loadColor("ui.foreground", uIForeground, {0, 0, 0, 255}, tree);
-    loadColor("ui.background", uIBackground, {109, 109, 109, 255}, tree);
-    loadColor("ui.highlight", uIHighlight, {0, 127, 251, 255}, tree);
-    loadColor("ui.loadBarColor", loadBarColor, {0, 255, 0, 255}, tree);
-    loadColor("ui.routeColor", routeColor, {97, 97, 97, 255}, tree);
-    loadColor("ui.waterColor", waterColor, {29, 109, 149, 255}, tree);
-    loadColor("ui.playerColor", playerColor, {255, 255, 255, 255}, tree);
-    loadColor("ui.aIColor", aIColor, {191, 191, 191, 255}, tree);
+    screenRect = loadRect("ui.screenRect", {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
+    mapView = loadRect("ui.mapView", {3330, 2250, screenRect.w, screenRect.h}, tree);
+    colorSchemes.insert({ColorScheme::ui,
+                         loadColorScheme("ui.colors", {{0, 0, 0, 255}, {109, 109, 109, 255}, {0, 127, 251, 255}}, tree)});
+    colorSchemes.insert(
+        {ColorScheme::load, loadColorScheme("ui.loadColors", {{0, 255, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 0}}, tree)});
+    routeColor = loadColor("ui.routeColor", {97, 97, 97, 255}, tree);
+    waterColor = loadColor("ui.waterColor", {29, 109, 149, 255}, tree);
+    playerColor = loadColor("ui.playerColor", {255, 255, 255, 255}, tree);
+    aIColor = loadColor("ui.aIColor", {191, 191, 191, 255}, tree);
     scroll = tree.get("ui.scroll", 64);
     offsetX = tree.get("ui.offsetX", -3197);
     offsetY = tree.get("ui.offsetY", 4731);
     scale = tree.get("ui.scale", 112.5);
-    bigBoxBorder = tree.get("ui.bigBoxBorder", current.h * 4 / 1080);
-    bigBoxRadius = tree.get("ui.bigBoxRadius", current.h * 13 / 1080);
-    bigBoxFontSize = tree.get("ui.bigBoxFontSize", current.h * 48 / 1080);
-    loadBarFontSize = tree.get("ui.loadBarFontSize", current.h * 36 / 1080);
-    smallBoxBorder = tree.get("ui.smallBoxBorder", current.h * 3 / 1080);
-    smallBoxRadius = tree.get("ui.smallBoxRadius", current.h * 7 / 1080);
-    smallBoxFontSize = tree.get("ui.smallBoxFontSize", current.h * 24 / 1080);
-    fightFontSize = tree.get("ui.fightFontSize", current.h * 20 / 1080);
-    equipBorder = tree.get("ui.equipBorder", current.h * 5 / 1080);
-    equipRadius = tree.get("ui.equipRadius", current.h * 7 / 1080);
-    equipFontSize = tree.get("ui.equipFontSize", current.h * 20 / 1080);
-    townFontSize = tree.get("ui.townFontSize", current.h * 18 / 1080);
-    tradeBorder = tree.get("ui.tradeBorder", current.h * 2 / 1080);
-    tradeRadius = tree.get("ui.tradeRadius", current.h * 5 / 1080);
-    tradeFontSize = tree.get("ui.tradeFontSize", current.h * 16 / 1080);
+    boxSizes.insert({BoxSize::big,
+                     loadBoxSize("ui.big", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 48 / 1080}, tree)});
+    boxSizes.insert({BoxSize::load,
+                     loadBoxSize("ui.load", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 36 / 1080}, tree)});
+    boxSizes.insert({BoxSize::small,
+                     loadBoxSize("ui.small", {current.h * 3 / 1080, current.h * 7 / 1080, current.h * 24 / 1080}, tree)});
+    boxSizes.insert({BoxSize::town, loadBoxSize("ui.town", {current.h / 1080, current.h / 1080, current.h * 18 / 1080}, tree)});
+    boxSizes.insert({BoxSize::trade,
+                     loadBoxSize("ui.trade", {current.h * 2 / 1080, current.h * 5 / 1080, current.h * 16 / 1080}, tree)});
+    boxSizes.insert({BoxSize::equip,
+                     loadBoxSize("ui.equip", {current.h * 5 / 1080, current.h * 7 / 1080, current.h * 20 / 1080}, tree)});
+    boxSizes.insert({BoxSize::fight,
+                     loadBoxSize("ui.fight", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 20 / 1080}, tree)});
     buttonMargin = tree.get("ui.buttonMargin", 3);
     goodButtonColumns = tree.get("ui.goodButtonColumns", 6);
     goodButtonRows = tree.get("ui.goodButtonRows", 11);
@@ -179,6 +163,17 @@ void saveColor(const std::string &n, const SDL_Color &c, pt::ptree &t) {
     t.put(n + "_b", c.b);
 }
 
+void saveColorScheme(const std::string &n, const ColorScheme &s, pt::ptree &t) {
+    saveColor(n + "_foreground", s.foreground, t), saveColor(n + "_background", s.background, t),
+        saveColor(n + "_highlight", s.highlight, t);
+}
+
+void saveBoxSize(const std::string &n, const BoxSize &s, pt::ptree &t) {
+    t.put(n + "_border", s.border);
+    t.put(n + "_radius", s.radius);
+    t.put(n + "_fontSize", s.fontSize);
+}
+
 template <class InputIt> void saveRange(const std::string &n, InputIt bgn, InputIt end, pt::ptree &t) {
     for (auto it = bgn; it != end; ++it) t.put(n + "_" + std::to_string(it - bgn), *it);
 }
@@ -186,9 +181,8 @@ template <class InputIt> void saveRange(const std::string &n, InputIt bgn, Input
 void Settings::save(const fs::path &p) {
     pt::ptree tree;
     saveRect("ui.mapView", mapView, tree);
-    saveColor("ui.foreground", uIForeground, tree);
-    saveColor("ui.background", uIBackground, tree);
-    saveColor("ui.highlight", uIHighlight, tree);
+    saveColorScheme("ui.colors", colorSchemes[ColorScheme::ui], tree);
+    saveColorScheme("ui.loadColors", colorSchemes[ColorScheme::load], tree);
     saveColor("ui.routeColor", routeColor, tree);
     saveColor("ui.waterColor", waterColor, tree);
     saveColor("ui.playerColor", playerColor, tree);
@@ -197,15 +191,13 @@ void Settings::save(const fs::path &p) {
     tree.put("ui.offsetX", offsetX);
     tree.put("ui.offsetY", offsetY);
     tree.put("ui.scale", scale);
-    tree.put("ui.bigBoxFontSize", bigBoxFontSize);
-    tree.put("ui.bigBoxBorder", bigBoxBorder);
-    tree.put("ui.loadBarFontSize", loadBarFontSize);
-    tree.put("ui.smallBoxFontSize", smallBoxFontSize);
-    tree.put("ui.smallBoxBorder", smallBoxBorder);
-    tree.put("ui.fightFontSize", fightFontSize);
-    tree.put("ui.equipFontSize", equipFontSize);
-    tree.put("ui.townFontSize", townFontSize);
-    tree.put("ui.tradeFontSize", tradeFontSize);
+    saveBoxSize("ui.big", boxSizes[BoxSize::big], tree);
+    saveBoxSize("ui.load", boxSizes[BoxSize::load], tree);
+    saveBoxSize("ui.small", boxSizes[BoxSize::small], tree);
+    saveBoxSize("ui.town", boxSizes[BoxSize::town], tree);
+    saveBoxSize("ui.trade", boxSizes[BoxSize::trade], tree);
+    saveBoxSize("ui.equip", boxSizes[BoxSize::equip], tree);
+    saveBoxSize("ui.fight", boxSizes[BoxSize::fight], tree);
     tree.put("ui.buttonMargin", buttonMargin);
     tree.put("ui.goodButtonColumns", goodButtonColumns);
     tree.put("ui.goodButtonRows", goodButtonRows);
@@ -237,27 +229,13 @@ void Settings::save(const fs::path &p) {
     pt::write_ini(p.string(), tree);
 }
 
-double Settings::getLimitFactor() {
+double Settings::limitFactor() {
     static std::uniform_real_distribution<double> lfDis(limitFactorMin, limitFactorMax);
     return lfDis(rng);
 }
 
-BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
-                             std::function<void(MenuButton *)> fn, bool scl) {
-    if (iBg)
-        return {rt,    tx,           uIForeground, uIBackground,   uIHighlight, 0,  false, true,
-                false, bigBoxBorder, bigBoxRadius, bigBoxFontSize, {},          ky, fn,    scl};
-    else
-        return {rt,   tx,    uIForeground,   uIBackground,   uIHighlight,      0,  false,
-                true, false, smallBoxBorder, smallBoxRadius, smallBoxFontSize, {}, ky,
-                fn,   scl};
-}
-
-BoxInfo Settings::getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, bool cE) {
-    if (iBg)
-        return {rt,    tx, uIForeground, uIBackground, uIHighlight,  0,
-                false, cE, cE,           bigBoxBorder, bigBoxRadius, bigBoxFontSize};
-    else
-        return {rt,    tx, uIForeground, uIBackground,   uIHighlight,    0,
-                false, cE, cE,           smallBoxBorder, smallBoxRadius, smallBoxFontSize};
+BoxInfo Settings::boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
+                          bool iN, bool cF, bool cE, BoxSize::Size sz, SDL_Keycode ky,
+                          const std::function<void(MenuButton *)> &fn, bool scl, const SDL_Rect &oR) {
+    return {rt, tx, sm, i, iN, cF, cE, boxSizes[sz], {}, ky, fn, scl, oR};
 }

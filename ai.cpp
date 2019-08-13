@@ -326,7 +326,7 @@ void AI::setLimits() {
             if (gII == end(goodsInfo))
                 gII = goodsInfo
                           .insert(std::make_pair(
-                              fId, GoodInfo{.limitFactor = Settings::getLimitFactor(), .minPrice = price, .maxPrice = price}))
+                              fId, GoodInfo{.limitFactor = Settings::limitFactor(), .minPrice = price, .maxPrice = price}))
                           .first;
             else {
                 gII->second.minPrice = std::min(gII->second.minPrice, price);

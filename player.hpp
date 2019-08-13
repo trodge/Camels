@@ -69,6 +69,8 @@ class Player {
     std::vector<Pager>::iterator currentPager;
     TextBox *portionBox = nullptr;
     Game &game;
+    SDL_Rect screenRect;
+    int smallBoxFontHeight;
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false, developer = false;
     enum Direction { left, right, up, down };

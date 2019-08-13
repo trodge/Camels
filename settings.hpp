@@ -40,13 +40,23 @@ struct Image {
     SDL_Rect rect;
 };
 
+struct ColorScheme {
+    SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
+    enum Scheme { ui, load };
+};
+
+struct BoxSize {
+    int border = 0, radius = 0, fontSize = 0;
+    enum Size { big, load, small, town, trade, equip, fight };
+};
+
 struct BoxInfo {
     SDL_Rect rect{0, 0, 0, 0};
     std::vector<std::string> text;
-    SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
+    ColorScheme colors;
     unsigned int id = 0;
     bool isNation = false, canFocus = false, canEdit = false;
-    int border = 0, radius = 0, fontSize = 0;
+    BoxSize size;
     std::vector<Image> images;
     SDL_Keycode key = SDLK_UNKNOWN;
     std::function<void(MenuButton *)> onClick = nullptr;
@@ -57,41 +67,24 @@ struct BoxInfo {
 class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapView;
-    static SDL_Color uIForeground;
-    static SDL_Color uIBackground;
-    static SDL_Color uIHighlight;
-    static SDL_Color loadBarColor;
+    static std::unordered_map<ColorScheme::Scheme, ColorScheme> colorSchemes;
     static SDL_Color routeColor;
     static SDL_Color waterColor;
     static SDL_Color playerColor;
     static SDL_Color aIColor;
     static int scroll, offsetX, offsetY;
     static double scale;
-    static int bigBoxBorder;
-    static int bigBoxRadius;
-    static int bigBoxFontSize;
-    static int loadBarFontSize;
-    static int smallBoxBorder;
-    static int smallBoxRadius;
-    static int smallBoxFontSize;
-    static int fightFontSize;
-    static int equipBorder;
-    static int equipRadius;
-    static int equipFontSize;
-    static int townFontSize;
-    static int tradeBorder;
-    static int tradeRadius;
-    static int tradeFontSize;
-    static int buttonMargin;               // margin between good and business buttons in pixels
-    static int goodButtonColumns;          // number of columns of good buttons
-    static int goodButtonRows;             // number of rows of good buttons
-    static int businessButtonColumns;      // number of columns of business buttons
-    static int businessButtonRows;         // number of rows of business buttons
-    static int dayLength;                  // length of a day in milliseconds
+    static std::unordered_map<BoxSize::Size, BoxSize> boxSizes;
+    static int buttonMargin;           // margin between good and business buttons in pixels
+    static int goodButtonColumns;      // number of columns of good buttons
+    static int goodButtonRows;         // number of rows of good buttons
+    static int businessButtonColumns;  // number of columns of business buttons
+    static int businessButtonRows;     // number of rows of business buttons
+    static int dayLength;              // length of a day in milliseconds
     static unsigned int townHeadStart; // number of milliseconds to run before game starts on new game
-    static int propertyUpdateTime;            // time between business cycles in milliseconds
-    static int travelersCheckTime;         // time between checks of dead travelers in milliseconds
-    static int aIDecisionTime;             // time between AI cycles in milliseconds
+    static int propertyUpdateTime;     // time between business cycles in milliseconds
+    static int travelersCheckTime;     // time between checks of dead travelers in milliseconds
+    static int aIDecisionTime;         // time between AI cycles in milliseconds
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static int minPriceDivisor;
     static double townProfit;
@@ -114,10 +107,6 @@ public:
     static void save(const fs::path &p);
     static const SDL_Rect &getScreenRect() { return screenRect; }
     static const SDL_Rect &getMapView() { return mapView; }
-    static const SDL_Color &getUiForeground() { return uIForeground; }
-    static const SDL_Color &getUiBackground() { return uIBackground; }
-    static const SDL_Color &getUiHighlight() { return uIHighlight; }
-    static const SDL_Color &getLoadBarColor() { return loadBarColor; }
     static const SDL_Color &getRouteColor() { return routeColor; }
     static const SDL_Color &getWaterColor() { return waterColor; }
     static const SDL_Color &getPlayerColor() { return playerColor; }
@@ -126,21 +115,6 @@ public:
     static int getOffsetX() { return offsetX; }
     static int getOffsetY() { return offsetY; }
     static double getScale() { return scale; }
-    static int getBigBoxBorder() { return bigBoxBorder; }
-    static int getBigBoxRadius() { return bigBoxRadius; }
-    static int getBigBoxFontSize() { return bigBoxFontSize; }
-    static int getLoadBarFontSize() { return loadBarFontSize; }
-    static int getSmallBoxBorder() { return smallBoxBorder; }
-    static int getSmallBoxRadius() { return smallBoxRadius; }
-    static int getSmallBoxFontSize() { return smallBoxFontSize; }
-    static int getFightFontSize() { return fightFontSize; }
-    static int getEquipBorder() { return equipBorder; }
-    static int getEquipRadius() { return equipRadius; }
-    static int getEquipFontSize() { return equipFontSize; }
-    static int getTownFontSize() { return townFontSize; }
-    static int getTradeBorder() { return tradeBorder; }
-    static int getTradeRadius() { return tradeRadius; }
-    static int getTradeFontSize() { return tradeFontSize; }
     static int getButtonMargin() { return buttonMargin; }
     static int getGoodButtonColumns() { return goodButtonColumns; }
     static int getGoodButtonRows() { return goodButtonRows; }
@@ -166,18 +140,69 @@ public:
     static const std::array<double, 6> &getAIRoleWeights() { return aIRoleWeights; }
     static int getCriteriaMax() { return criteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
-    static double getLimitFactor();
     static double getAIAttackThreshold() { return aIAttackThreshold; }
-    static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
-                              std::function<void(MenuButton *)> fn, bool scl);
-    static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, SDL_Keycode ky,
-                              std::function<void(MenuButton *)> fn) {
-        return getBoxInfo(iBg, rt, tx, ky, fn, false);
-    }
-    static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx, bool cE);
-    static BoxInfo getBoxInfo(bool iBg, const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return getBoxInfo(iBg, rt, tx, false);
-    }
+    static double limitFactor();
+    static BoxSize boxSize(BoxSize::Size sz) { return boxSizes[sz]; }
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
+                           bool iN, bool cF, bool cE, BoxSize::Size sz, SDL_Keycode ky,
+                           const std::function<void(MenuButton *)> &fn, bool scl,
+                           const SDL_Rect &oR); // any box
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i, bool iN,
+                           BoxSize::Size sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn, bool scl) {
+        return boxInfo(rt, tx, sm, i, iN, true, false, sz, ky, fn, scl, {0, 0, 0, 0});
+    } // any button
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz,
+                           SDL_Keycode ky, const std::function<void(MenuButton *)> &fn, bool scl) {
+        return boxInfo(rt, tx, sm, 0, false, sz, ky, fn, scl);
+    } // select button with scheme
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
+                           bool iN, BoxSize::Size sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+        return boxInfo(rt, tx, sm, i, iN, sz, ky, fn, false);
+    } // button with color scheme and id
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz,
+                           SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+        return boxInfo(rt, tx, sm, 0, false, sz, ky, fn, false);
+    } // button with color scheme
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, SDL_Keycode ky,
+                           const std::function<void(MenuButton *)> &fn, bool scl) {
+        return boxInfo(rt, tx, colorSchemes[ColorScheme::ui], 0, false, sz, ky, fn, scl);
+    } // ui select button
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, SDL_Keycode ky,
+                           const std::function<void(MenuButton *)> &fn) {
+        return boxInfo(rt, tx, sz, ky, fn, false);
+    } // ui menu button
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
+                           bool iN, bool cF, bool cE, BoxSize::Size sz, bool scl, const SDL_Rect &oR) {
+        return boxInfo(rt, tx, sm, i, iN, cF, cE, sz, SDLK_UNKNOWN, nullptr, scl, oR);
+    } // any text box
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Rect &oR) {
+        return boxInfo(rt, tx, colorSchemes[ColorScheme::load], 0, false, false, false, BoxSize::load, false, oR);
+    } // load bar
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
+                           bool iN, bool cF, bool cE, BoxSize::Size sz, bool scl) {
+        return boxInfo(rt, tx, sm, 0, false, cF, cE, sz, scl, {0, 0, 0, 0});
+    } // any non-load bar text box
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, bool cE,
+                           BoxSize::Size sz, bool scl) {
+        return boxInfo(rt, tx, sm, 0, false, true, cE, sz, scl);
+    } // scroll box with color scheme
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
+                           bool iN, bool cF, bool cE, BoxSize::Size sz) {
+        return boxInfo(rt, tx, sm, i, iN, cF, cE, sz, false);
+    } // box with color scheme and id
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, bool cF, bool cE,
+                           BoxSize::Size sz) {
+        return boxInfo(rt, tx, sm, 0, false, cF, cE, sz);
+    } // box with color scheme
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz) {
+        return boxInfo(rt, tx, sm, 0, false, false, false, sz);
+    } // box with color scheme
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, bool cE) {
+        return boxInfo(rt, tx, colorSchemes[ColorScheme::ui], cE, cE, sz);
+    } // editable ui box
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz) {
+        return boxInfo(rt, tx, sz, false);
+    } // ui box
 };
 
 #endif // SETTINGS_H

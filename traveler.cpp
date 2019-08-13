@@ -23,7 +23,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
       moving(false), portion(1), gameData(gD) {
     // Copy goods vector from nation.
-    properties.emplace(std::piecewise_construct, std::forward_as_tuple(0), 
+    properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
                        std::forward_as_tuple(false, &t->getNation()->getProperty()));
     // Equip fists.
     equip(2);
@@ -45,8 +45,7 @@ Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::ve
     auto nPpt = &nation->getProperty();
     auto lProperties = t->properties();
     for (auto lPI = lProperties->begin(); lPI != lProperties->end(); ++lPI)
-        properties.emplace(std::piecewise_construct, std::forward_as_tuple((*lPI)->townId()), 
-                           std::forward_as_tuple(*lPI, nPpt));
+        properties.emplace(std::piecewise_construct, std::forward_as_tuple((*lPI)->townId()), std::forward_as_tuple(*lPI, nPpt));
     auto lStats = t->stats();
     for (size_t i = 0; i < stats.size(); ++i) stats[i] = lStats->Get(static_cast<unsigned int>(i));
     auto lParts = t->parts();
@@ -246,18 +245,13 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     int m = Settings::getButtonMargin();
     // Create the offer buttons for the player.
     SDL_Rect rt = {m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo boxInfo{.foreground = nation->getForeground(),
-                    .background = nation->getBackground(),
-                    .border = Settings::getTradeBorder(),
-                    .radius = Settings::getTradeRadius(),
-                    .fontSize = Settings::getTradeFontSize()};
-    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs](const Good &) {
+    BoxInfo bxInf = boxInfo();
+    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs](const Good &) {
         return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
     });
     rt.x = sR.w - m - rt.w;
-    boxInfo.foreground = toTown->getNation()->getForeground();
-    boxInfo.background = toTown->getNation()->getBackground();
-    toTown->buttons(pgrs[2], rt, boxInfo, pr,
+    bxInf.colors = toTown->getNation()->getColors();
+    toTown->buttons(pgrs[2], rt, bxInf, pr,
                     [this, &pgrs](const Good &) { return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); }; });
 }
 
@@ -363,12 +357,8 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     int m = Settings::getButtonMargin();
     // Create the offer buttons for the player.
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo boxInfo{.foreground = nation->getForeground(),
-                    .background = nation->getBackground(),
-                    .border = Settings::getTradeBorder(),
-                    .radius = Settings::getTradeRadius(),
-                    .fontSize = Settings::getTradeFontSize()};
-    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+    BoxInfo bxInf = boxInfo();
+    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
         return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
             double amt = g.getAmount() * portion;
             Good dG(g.getFullId(), amt);
@@ -377,9 +367,8 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
         };
     });
     rt.x = sR.w - m - rt.w;
-    boxInfo.foreground = toTown->getNation()->getForeground();
-    boxInfo.background = toTown->getNation()->getBackground();
-    property(toTown->getId()).buttons(pgrs[2], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+    bxInf.colors = toTown->getNation()->getColors();
+    property(toTown->getId()).buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
         return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
             double amt = g.getAmount() * portion;
             Good wG(g.getFullId(), amt);
@@ -413,25 +402,18 @@ void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     int m = Settings::getButtonMargin();
     SDL_Rect rt = {m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
     pgrs[1].setBounds(rt);
-    BoxInfo boxInfo{.rect = {rt.x, rt.y, (rt.w + m) / Settings::getBusinessButtonColumns() - m,
-                             (rt.h + m) / Settings::getBusinessButtonRows() - m},
-                    .foreground = nation->getForeground(),
-                    .background = nation->getBackground(),
-                    .border = Settings::getTradeBorder(),
-                    .radius = Settings::getTradeRadius(),
-                    .fontSize = Settings::getTradeFontSize()};
-    property(toTown->getId()).buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
+    BoxInfo bxInf = boxInfo();
+    property(toTown->getId()).buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
         return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             demolish(bsn, bsn.getArea() * portion);
             refreshBuildButtons(pgrs, fB, pr);
         };
     });
     rt.x = sR.w - m - rt.w;
-    boxInfo.rect.x = rt.x;
-    boxInfo.rect.y = rt.y;
-    boxInfo.foreground = toTown->getNation()->getForeground();
-    boxInfo.background = toTown->getNation()->getBackground();
-    toTown->getProperty().buttons(pgrs[2], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
+    bxInf.rect.x = rt.x;
+    bxInf.rect.y = rt.y;
+    bxInf.colors = toTown->getNation()->getColors();
+    toTown->getProperty().buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
         return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             // Determine buildable area based on portion.
             double buildable = std::numeric_limits<double>::max();
@@ -501,12 +483,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
     pgrs[1].setBounds(rt);
     int dx = (rt.w + m) / kPartCount, dy = (rt.h + m) / Settings::getGoodButtonRows();
-    BoxInfo boxInfo{.rect = {rt.x, rt.y, dx - m, dy - m},
-                    .foreground = nation->getForeground(),
-                    .background = nation->getBackground(),
-                    .border = Settings::getEquipBorder(),
-                    .radius = Settings::getEquipRadius(),
-                    .fontSize = Settings::getEquipFontSize()};
+    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSize::equip);
     std::array<std::vector<Good>, kPartCount> equippable;
     // array of vectors corresponding to parts that can hold equipment
     properties.find(0)->second.queryGoods([&equippable](const Good &g) {
@@ -521,34 +498,34 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     // Create buttons for equipping equipment.
     for (auto &eP : equippable) {
         for (auto &e : eP) {
-            boxInfo.onClick = [this, e, &pgrs, &fB, &pr](MenuButton *) mutable {
+            bxInf.onClick = [this, e, &pgrs, &fB, &pr](MenuButton *) mutable {
                 equip(e);
                 // Refresh buttons.
                 refreshEquipButtons(pgrs, fB, pr);
             };
-            pgrs[1].addBox(e.button(false, boxInfo, pr));
-            boxInfo.rect.y += dy;
+            pgrs[1].addBox(e.button(false, bxInf, pr));
+            bxInf.rect.y += dy;
         }
-        boxInfo.rect.y = rt.y;
-        boxInfo.rect.x += dx;
+        bxInf.rect.y = rt.y;
+        bxInf.rect.x += dx;
     }
     // Create buttons for unequipping equipment.
     rt.x = sR.w - m - rt.w;
     pgrs[2].setBounds(rt);
-    boxInfo.rect.x = rt.x;
-    boxInfo.rect.y = rt.y;
+    bxInf.rect.x = rt.x;
+    bxInf.rect.y = rt.y;
     for (auto &e : equipment) {
         auto &ss = e.getCombatStats();
         unsigned int pI = ss.front().partId;
-        boxInfo.rect.x = rt.x + static_cast<int>(pI) * dx;
-        boxInfo.onClick = [this, e, &pgrs, pI, &ss, &fB, &pr](MenuButton *) {
+        bxInf.rect.x = rt.x + static_cast<int>(pI) * dx;
+        bxInf.onClick = [this, e, &pgrs, pI, &ss, &fB, &pr](MenuButton *) {
             unequip(pI);
             // Equip fists.
             for (auto &s : ss) equip(s.partId);
             // Refresh buttons.
             refreshEquipButtons(pgrs, fB, pr);
         };
-        pgrs[1].addBox(e.button(false, boxInfo, pr));
+        pgrs[1].addBox(e.button(false, bxInf, pr));
     }
 }
 
@@ -558,27 +535,18 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
     int m = Settings::getButtonMargin();
     // Create the offer buttons for the player.
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo boxInfo{.foreground = nation->getForeground(),
-                    .background = nation->getBackground(),
-                    .border = Settings::getTradeBorder(),
-                    .radius = Settings::getTradeRadius(),
-                    .fontSize = Settings::getTradeFontSize()};
-    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [](const Good &) { return [](MenuButton *) {}; });
+    BoxInfo bxInf = boxInfo();
+    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [](const Good &) { return [](MenuButton *) {}; });
     auto &bids = toTown->getBids();
     std::vector<std::string> names;
     for (auto &bd : bids) names.push_back(bd->party->name);
-    pgrs[2].addBox(std::make_unique<SelectButton>(BoxInfo{.rect = {sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31},
-                                                          .text = names,
-                                                          .foreground = toTown->getNation()->getForeground(),
-                                                          .background = toTown->getNation()->getBackground(),
-                                                          .border = Settings::getBigBoxBorder(),
-                                                          .radius = Settings::getBigBoxRadius(),
-                                                          .fontSize = Settings::getBigBoxFontSize(),
-                                                          .onClick =
-                                                              [](MenuButton *) {
+    pgrs[2].addBox(std::make_unique<SelectButton>(Settings::boxInfo(
+                                                      {sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31},
+                                                      names, toTown->getNation()->getColors(), BoxSize::big, SDLK_h,
+                                                      [](MenuButton *) {
 
-                                                              },
-                                                          .scroll = true},
+                                                      },
+                                                      true),
                                                   pr));
 }
 
@@ -625,26 +593,25 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
     names.reserve(able.size());
     std::transform(begin(able), end(able), std::back_inserter(names), [](const Traveler *t) { return t->getName(); });
     // Create attack button.
-    pgr.addBox(std::make_unique<SelectButton>(BoxInfo{.rect = {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2},
-                                                      .text = names,
-                                                      .foreground = nation->getForeground(),
-                                                      .background = nation->getBackground(),
-                                                      .highlight = nation->getHighlight(),
-                                                      .border = Settings::getBigBoxBorder(),
-                                                      .radius = Settings::getBigBoxRadius(),
-                                                      .fontSize = Settings::getFightFontSize(),
-                                                      .key = SDLK_f,
-                                                      .onClick =
-                                                          [this, able, sSF](MenuButton *btn) {
-                                                              int i = btn->getHighlightLine();
-                                                              if (i > -1) {
-                                                                  attack(able[static_cast<size_t>(i)]);
-                                                                  sSF();
-                                                              } else
-                                                                  btn->setClicked(false);
-                                                          },
-                                                      .scroll = true},
+    pgr.addBox(std::make_unique<SelectButton>(boxInfo(
+                                                  {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSize::fight, SDLK_f,
+                                                  [this, able, sSF](MenuButton *btn) {
+                                                      int i = btn->getHighlightLine();
+                                                      if (i > -1) {
+                                                          attack(able[static_cast<size_t>(i)]);
+                                                          sSF();
+                                                      } else
+                                                          btn->setClicked(false);
+                                                  },
+                                                  true),
                                               pr));
+}
+
+void Traveler::createLogBox(Pager &pgr, Printer &pr) {
+    // Create log box.
+    const SDL_Rect &sR = Settings::getScreenRect();
+    pgr.addBox(std::make_unique<ScrollBox>(
+        boxInfo({sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15}, logText, BoxSize::small), pr));
 }
 
 void Traveler::loseTarget() {
@@ -768,45 +735,22 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &t) {
 void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
     // Create buttons and text boxes for combat.
     const SDL_Rect &sR = Settings::getScreenRect();
-    auto tgt = target;
-    const SDL_Color &fgr = nation->getForeground(), &bgr = nation->getBackground(), &hgl = nation->getHighlight(),
-                    &tFgr = tgt->nation->getForeground(), &tBgr = tgt->nation->getBackground(),
-                    &tHgl = tgt->nation->getHighlight();
-    int b = Settings::getBigBoxBorder(), r = Settings::getBigBoxRadius(), fS = Settings::getFightFontSize();
-    auto ourBox = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{
-            .rect = rt, .text = tx, .foreground = fgr, .background = bgr, .highlight = hgl, .border = b, .radius = r, .fontSize = fS};
-    };
-    auto theirBox = [&tFgr, &tBgr, &tHgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return BoxInfo{
-            .rect = rt, .text = tx, .foreground = tFgr, .background = tBgr, .highlight = tHgl, .border = b, .radius = r, .fontSize = fS};
-    };
-    auto selectButton = [&fgr, &bgr, &hgl, b, r, fS](const SDL_Rect &rt, const std::vector<std::string> &tx,
-                                                     SDL_Keycode ky, std::function<void(MenuButton *)> fn) {
-        return BoxInfo{.rect = rt,
-                       .text = tx,
-                       .foreground = fgr,
-                       .background = bgr,
-                       .highlight = hgl,
-                       .border = b,
-                       .radius = r,
-                       .fontSize = fS,
-                       .key = ky,
-                       .onClick = fn,
-                       .scroll = true};
-    };
-    pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + tgt->getName() + "..."}), pr));
-    pgr.addBox(std::make_unique<TextBox>(ourBox({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));
-    pgr.addBox(std::make_unique<TextBox>(theirBox({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));
+    pgr.addBox(std::make_unique<TextBox>(
+        boxInfo({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + target->getName() + "..."}, BoxSize::fight), pr));
+    pgr.addBox(std::make_unique<TextBox>(boxInfo({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSize::fight), pr));
+    pgr.addBox(std::make_unique<TextBox>(
+        target->boxInfo({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSize::fight), pr));
     pgr.addBox(std::make_unique<SelectButton>(
-        selectButton({sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3}, {"Fight", "Run", "Yield"}, SDLK_c,
-                     [this, &p](MenuButton *btn) {
-                         int hl = btn->getHighlightLine();
-                         if (hl > -1) {
-                             choice = static_cast<FightChoice>(hl);
-                             p = false;
-                         }
-                     }),
+        boxInfo(
+            {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3}, {"Fight", "Run", "Yield"}, BoxSize::fight, SDLK_c,
+            [this, &p](MenuButton *btn) {
+                int hl = btn->getHighlightLine();
+                if (hl > -1) {
+                    choice = static_cast<FightChoice>(hl);
+                    p = false;
+                }
+            },
+            true),
         pr));
 }
 
@@ -864,13 +808,9 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
     const SDL_Rect &sR = Settings::getScreenRect();
     int m = Settings::getButtonMargin();
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo boxInfo{.foreground = nation->getForeground(),
-                    .background = nation->getBackground(),
-                    .border = Settings::getTradeBorder(),
-                    .radius = Settings::getTradeRadius(),
-                    .fontSize = Settings::getTradeFontSize()};
+    BoxInfo bxInf = boxInfo();
     // Create buttons for leaving goods behind.
-    properties.find(0)->second.buttons(pgrs[1], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
         return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
             Good lG(g.getFullId(), g.getAmount() * portion);
             target->loot(lG);
@@ -878,10 +818,9 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
         };
     });
     rt.x = sR.w - m - rt.w;
-    boxInfo.foreground = target->nation->getForeground();
-    boxInfo.background = target->nation->getBackground();
+    bxInf.colors = target->nation->getColors();
     // Create buttons for looting goods.
-    target->properties.find(0)->second.buttons(pgrs[2], rt, boxInfo, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+    target->properties.find(0)->second.buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
         return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
             Good lG(g.getFullId(), g.getAmount() * portion);
             loot(lG);
