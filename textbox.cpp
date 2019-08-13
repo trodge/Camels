@@ -21,8 +21,8 @@
 
 TextBox::TextBox(const BoxInfo &bI, Printer &pr)
     : rect(bI.rect), fixedSize(rect.w && rect.h), canFocus(bI.canFocus), canEdit(bI.canEdit), text(bI.text),
-      foreground(bI.colors.foreground), background(bI.colors.background), id(bI.id), isNation(bI.isNation), border(bI.size.border),
-      radius(bI.size.radius), fontSize(bI.size.fontSize), images(bI.images), printer(pr) {
+      foreground(bI.colors.foreground), background(bI.colors.background), id(bI.id), isNation(bI.isNation),
+      border(bI.size.border), radius(bI.size.radius), fontSize(bI.size.fontSize), images(bI.images), printer(pr) {
     setText();
 }
 

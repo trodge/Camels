@@ -346,14 +346,15 @@ void Player::setState(UIState::State s) {
         portionBox = pagers[0].getVisible().back();
         traveler->updatePortionBox(portionBox);
         pagers[0].addBox(std::make_unique<MenuButton>(
-            Settings::boxInfo({screenRect.w / 9, screenRect.h - (smallBoxFontHeight + bBB) * 2, 0, 0}, {"(S)et Portion"}, BoxSize::small, SDLK_s,
-                                 [this](MenuButton *btn) {
-                                     double p;
-                                     std::stringstream{portionBox->getText(0)} >> p;
-                                     traveler->setPortion(p);
-                                     traveler->updatePortionBox(portionBox);
-                                     btn->setClicked(false);
-                                 }),
+            Settings::boxInfo({screenRect.w / 9, screenRect.h - (smallBoxFontHeight + bBB) * 2, 0, 0},
+                              {"(S)et Portion"}, BoxSize::small, SDLK_s,
+                              [this](MenuButton *btn) {
+                                  double p;
+                                  std::stringstream{portionBox->getText(0)} >> p;
+                                  traveler->setPortion(p);
+                                  traveler->updatePortionBox(portionBox);
+                                  btn->setClicked(false);
+                              }),
             printer));
         // Create page switching buttons.
         std::array<SDL_Keycode, 4> keys{SDLK_MINUS, SDLK_EQUALS, SDLK_LEFTBRACKET, SDLK_RIGHTBRACKET};
@@ -363,31 +364,31 @@ void Player::setState(UIState::State s) {
             // Create label.
             auto typeText = s == UIState::building ? "Businesses" : "Goods";
             pagers[0].addBox(std::make_unique<TextBox>(
-                Settings::boxInfo(
-                    {bnds.x + bnds.w / 2, bnds.y - smallBoxFontHeight, 0, 0},
-                    {pgIt == begin(pagers) + 1 ?
-                         traveler->getName() + "'s " + typeText :
-                         s == UIState::storing ?
-                         "Goods in " + traveler->toTown->getName() :
-                         (s == UIState::looting ? traveler->target->getName() : traveler->toTown->getName()) + "'s " + typeText}, BoxSize::small),
+                Settings::boxInfo({bnds.x + bnds.w / 2, bnds.y - smallBoxFontHeight, 0, 0},
+                                  {pgIt == begin(pagers) + 1 ?
+                                       traveler->getName() + "'s " + typeText :
+                                       s == UIState::storing ?
+                                       "Goods in " + traveler->toTown->getName() :
+                                       (s == UIState::looting ? traveler->target->getName() : traveler->toTown->getName()) + "'s " + typeText},
+                                  BoxSize::small),
                 printer));
             if (pgIt->pageCount() > 1) {
                 // Create page buttons.
                 pagers[0].addBox(std::make_unique<MenuButton>(
                     Settings::boxInfo({bnds.x + bnds.w / 6, bnds.y + bnds.h + smallBoxFontHeight, 0, 0},
-                                         {"Previous Page"}, BoxSize::small, *kyIt++,
-                                         [pgIt](MenuButton *btn) {
-                                             pgIt->recedePage();
-                                             btn->setClicked(false);
-                                         }),
+                                      {"Previous Page"}, BoxSize::small, *kyIt++,
+                                      [pgIt](MenuButton *btn) {
+                                          pgIt->recedePage();
+                                          btn->setClicked(false);
+                                      }),
                     printer));
                 pagers[0].addBox(std::make_unique<MenuButton>(
                     Settings::boxInfo({bnds.x + bnds.w * 5 / 6, bnds.y + bnds.h + smallBoxFontHeight, 0, 0},
-                                         {"Next Page"}, BoxSize::small, *kyIt++,
-                                         [pgIt](MenuButton *btn) {
-                                             pgIt->advancePage();
-                                             btn->setClicked(false);
-                                         }),
+                                      {"Next Page"}, BoxSize::small, *kyIt++,
+                                      [pgIt](MenuButton *btn) {
+                                          pgIt->advancePage();
+                                          btn->setClicked(false);
+                                      }),
                     printer));
             } else
                 kyIt += 2;
