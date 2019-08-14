@@ -118,7 +118,7 @@ void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) 
 void Property::reset() {
     // Reset goods to starting amounts.
     double updateTime = Settings::getPropertyUpdateTime();
-    double yearLength = Settings::getDayLength() * kDaysPerYear;
+    double dayLength = Settings::getDayLength();
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
     for (auto &b : businesses) {
         auto &lastOutput = b.getOutputs().back();
@@ -128,7 +128,7 @@ void Property::reset() {
                 create(ip.getGoodId(), ip.getAmount());
             else
                 // Create only enough for one cycle.
-                create(ip.getGoodId(), ip.getAmount() * updateTime / yearLength);
+                create(ip.getGoodId(), ip.getAmount() * updateTime / dayLength);
     }
 }
 
@@ -257,7 +257,7 @@ void Property::update(unsigned int elTm) {
     if (updateCounter > 0) {
         int updateTime = Settings::getPropertyUpdateTime();
         updateTime += updateCounter - updateCounter % updateTime;
-        double yearLength = Settings::getDayLength() * kDaysPerYear;
+        double dayLength = Settings::getDayLength();
         if (maxGoods)
             // Property creates as many goods as possible for testing purposes.
             create(); /*
@@ -265,12 +265,12 @@ void Property::update(unsigned int elTm) {
          auto dbIt = byFullId.find(87);
          const Good *debug = dbIt == end(byFullId) ? nullptr : &*dbIt;*/
         // Update goods and run businesses for update time.
-        auto updateGood = [updateTime, yearLength](auto &gd) { gd.update(updateTime, yearLength); };
+        auto updateGood = [updateTime, dayLength](Good &gd) { gd.update(updateTime, dayLength); };
         for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, updateGood);
         std::unordered_map<unsigned int, std::pair<bool, unsigned int>> conflicts;
         for (auto &b : businesses) {
             // Start by setting factor to business run time.
-            b.setFactor(updateTime / yearLength);
+            b.setFactor(updateTime / dayLength);
             // Count conflicts of businesses for available goods.
             b.addConflicts(conflicts, *this);
         }

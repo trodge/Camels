@@ -42,20 +42,20 @@ class Good {
     unsigned int goodId, materialId = 0, fullId = 0;
     std::string goodName, materialName, fullName;
     double amount = 0, perish = 0, carry = 0;
-    std::string measure;
-    bool split;
-    double maximum = 0;
-    double consumptionRate;
-    double demandSlope;
-    double demandIntercept;
-    double minPrice;
+    std::string measure; // word used to measure good
+    bool split; // whether good can be split
+    double maximum = 0; // maximum allowable amont of good, or 0 if no maximum
+    double consumptionRate; // units of good consumed per day
+    double demandSlope; // reduction in price per unit of good
+    double demandIntercept; // price per unit when amount is 0
+    double minPrice; // price per unit when amount is maximum
     unsigned int ammoId = 0; // good id of good this good shoots
     std::vector<CombatStat> combatStats;
     double lastAmount = 0;
     SDL_Surface *image = nullptr;
     struct PerishCounter {
-        int time;
-        double amount;
+        int time; // time until counter expires
+        double amount; // amount of good counter handles
         bool operator<(const PerishCounter &b) const { return time < b.time; }
     };
     std::deque<PerishCounter> perishCounters;
@@ -127,7 +127,7 @@ public:
     void use() { use(amount); }
     void create(double amt);
     void create() { create(maximum); }
-    void update(unsigned int elTm, double yrLn);
+    void update(unsigned int elTm, double dyLn);
     void updateButton(TextBox *btn) const;
     void updateButton(double oV, unsigned int rC, TextBox *btn) const;
     void adjustDemand(double d);

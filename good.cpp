@@ -210,10 +210,10 @@ void Good::create(double amt) {
     enforceMaximum();
 }
 
-void Good::update(unsigned int elTm, double yrLn) {
+void Good::update(unsigned int elTm, double dyLn) {
     // Remove consumed goods and perished goods over elapsed time.
     lastAmount = amount;
-    double consumption = consumptionRate * static_cast<double>(elTm) / yrLn;
+    double consumption = consumptionRate * static_cast<double>(elTm) / dyLn;
     // Ensure we don't consume more than current amount.
     consumption = std::min(amount, consumption);
     if (consumption > 0)
@@ -224,7 +224,7 @@ void Good::update(unsigned int elTm, double yrLn) {
         create(-consumption);
     if (perish == 0) return;
     // Find the first perish counter that will expire.
-    PerishCounter exPC = {int(perish * yrLn - elTm), 0};
+    PerishCounter exPC = {int(perish * dyLn - elTm), 0};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
     // Remove expired amounts from amount and total them.
     double amt =
