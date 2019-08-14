@@ -86,7 +86,7 @@ public:
     void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
-    void generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts);
+    void generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &tvlrs);
     double dist(const Town *t) const;
     void addNeighbor(Town *t) { neighbors.push_back(t); }
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);

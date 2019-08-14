@@ -1,7 +1,7 @@
 #include "property.hpp"
 
 Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src)
-    : townType(tT), coastal(ctl), population(ppl), source(src) {
+    : townType(tT), coastal(ctl), population(ppl), updateCounter(Settings::propertyUpdateCounter()), source(src) {
     // Copy businesses from source that can exist here given coastal.
     std::copy_if(begin(source->businesses), end(source->businesses), std::back_inserter(businesses),
                  [ctl](auto &bsn) { return bsn.getFrequency() > 0 && (!bsn.getRequireCoast() || ctl); });
@@ -9,14 +9,11 @@ Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property 
     for (auto &bsn : businesses) bsn.scale(ppl, tT);
     // Create starting goods.
     reset();
-    // Randomize business run counter.
-    static std::uniform_int_distribution<> dis(-Settings::getPropertyUpdateTime(), 0);
-    updateCounter = dis(Settings::rng);
 }
 
 Property::Property(const Save::Property *ppt, const Property *src)
-    : townType(ppt->townType()), coastal(ppt->coastal()),
-      population(ppt->population()), updateCounter(ppt->updateCounter()), source(src) {
+    : townType(ppt->townType()), coastal(ppt->coastal()), population(ppt->population()),
+      updateCounter(ppt->updateCounter()), source(src) {
     auto ldGds = ppt->goods();
     for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.insert(Good(*lGI));
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
@@ -89,7 +86,8 @@ void Property::setMaximums() {
                 byGoodId.modify(gdIt, [max](auto &gd) { gd.setMaximum(max); });
         }
     }
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.setDemandSlope(); });
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
+        goods.modify(gdIt, [](auto &gd) { gd.setDemandSlope(); });
 }
 
 void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) {
@@ -153,9 +151,7 @@ void Property::take(Good &gd) {
     auto &byFullId = goods.get<FullId>();
     auto rGdIt = byFullId.find(gd.getFullId());
     if (rGdIt == end(byFullId)) return gd.use();
-    byFullId.modify(rGdIt, [&gd](auto &rGd) { 
-        rGd.take(gd);
-    });
+    byFullId.modify(rGdIt, [&gd](auto &rGd) { rGd.take(gd); });
 }
 
 void Property::put(Good &gd) {
@@ -163,9 +159,7 @@ void Property::put(Good &gd) {
     auto fId = gd.getFullId();
     auto &byFullId = goods.get<FullId>();
     auto rGdIt = byFullId.find(fId);
-    auto putGood = [&gd](auto &rGd) {
-        rGd.put(gd);
-    };
+    auto putGood = [&gd](auto &rGd) { rGd.put(gd); };
     if (rGdIt == end(byFullId)) {
         // Good does not exist, copy from source.
         addGood(source->good(fId), putGood);
@@ -271,19 +265,15 @@ void Property::update(unsigned int elTm) {
             // Property creates as many goods as possible for testing purposes.
             create();
         // Update goods and run businesses for update time.
-        auto updateGood = [updateTime, dayLength](Good &gd) {
-            gd.update(updateTime, dayLength);
-        };
+        auto updateGood = [updateTime, dayLength](Good &gd) { gd.update(updateTime, dayLength); };
         for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, updateGood);
         std::unordered_map<unsigned int, Conflict> conflicts;
-        for (auto &b : businesses) {
+        for (auto &b : businesses)
             // Start by setting factor to business run time.
             b.setFactor(updateTime / dayLength, *this, conflicts);
-        }
-        for (auto &b : businesses) {
+        for (auto &b : businesses)
             // Handle conflicts on inputs by reducing factors.
             b.run(*this, conflicts);
-        }
         updateCounter -= updateTime;
     }
 }

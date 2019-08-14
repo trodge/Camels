@@ -229,9 +229,61 @@ void Settings::save(const fs::path &p) {
     pt::write_ini(p.string(), tree);
 }
 
-double Settings::limitFactor() {
-    static std::uniform_real_distribution<double> lfDis(limitFactorMin, limitFactorMax);
-    return lfDis(rng);
+double Settings::random() {
+    static std::uniform_real_distribution<double> rDis(0, 1);
+    return rDis(rng);
+}
+
+int Settings::propertyUpdateCounter() {
+    // Randomize business run counter.
+    static std::uniform_int_distribution<> uCDis(-propertyUpdateTime, 0);
+    return uCDis(rng);
+}
+
+int Settings::travelerCount(unsigned long ppl) {
+    // Randomize traveler count in town with given population.
+    std::uniform_int_distribution<> tCDis(travelersMin, static_cast<int>(pow(ppl, travelersExponent)));
+    int n = tCDis(rng);
+    return std::max(n, 0);
+}
+
+int Settings::travelersCheckCounter() {
+    // Randomize travelers check counter.
+    static std::uniform_int_distribution<> tCTDis(-travelersCheckTime, 0);
+    return tCTDis(rng);
+}
+
+std::array<unsigned int, kStatCount> Settings::travelerStats() {
+    // Randomize traveler stats.
+    static std::uniform_int_distribution<unsigned int> stDis(1, statMax);
+    std::array<unsigned int, kStatCount> stats;
+    for (auto &stat : stats) stat = stDis(rng);
+    return stats;
+}
+
+int Settings::aIRole() {
+    // Randomize ai role.
+    static std::discrete_distribution<> rlDis(begin(aIRoleWeights), end(aIRoleWeights));
+    return rlDis(rng);
+}
+
+std::array<double, kDecisionCriteriaCount> Settings::aIDecisionCriteria() {
+    // Randomize decision criteria.
+    static std::uniform_real_distribution<double> dcCrtDis(1, criteriaMax);
+    std::array<double, kDecisionCriteriaCount> dcCrt;
+    for (auto &dC : dcCrt) dC = dcCrtDis(rng);
+    return dcCrt;
+}
+
+double Settings::aIDecisionCounter() {
+    // Randomize decision counter.
+    static std::uniform_int_distribution<> dcCntDis(-aIDecisionTime, 0);
+    return dcCntDis(rng);
+}
+
+double Settings::aILimitFactor() {
+    static std::uniform_real_distribution<double> lFDis(limitFactorMin, limitFactorMax);
+    return lFDis(rng);
 }
 
 BoxInfo Settings::boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,

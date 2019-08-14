@@ -32,10 +32,7 @@ Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::s
 
 bool Nation::operator==(const Nation &other) const { return id == other.id; }
 
-std::string Nation::randomName() const {
-    std::uniform_int_distribution<size_t> dis(0, travelerNames.size() - 1);
-    return travelerNames[dis(Settings::rng)];
-}
+std::string Nation::randomName() const { return Settings::randomChoice(travelerNames); }
 
 void Nation::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {
     // Takes a vector of consumption rates, demand slopes, and demand intercepts for this nation's goods' materials

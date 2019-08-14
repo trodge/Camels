@@ -202,8 +202,7 @@ void Good::use(double amt) {
             amt -= pC.amount;
         }
     }
-    if (std::isnan(amount))
-        std::cout << fullName << std::endl;
+    if (std::isnan(amount)) throw std::runtime_error(fullName + " amount is " + std::to_string(amount));
 }
 
 void Good::create(double amt) {
@@ -211,8 +210,7 @@ void Good::create(double amt) {
     amount += amt;
     if (amt > 0 && perish != 0) perishCounters.push_front({0, amt});
     enforceMaximum();
-    if (std::isnan(amount))
-        std::cout << fullName << std::endl;
+    if (std::isnan(amount)) throw std::runtime_error(fullName + " amount is " + std::to_string(amount));
 }
 
 void Good::update(unsigned int elTm, double dyLn) {

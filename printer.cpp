@@ -23,9 +23,10 @@ void Printer::setSize(unsigned int sz) {
     fontSizeIt = std::lower_bound(begin(fontSizes), end(fontSizes), sz); // iterator to correct font size
     if (fontSizeIt == end(fontSizes) || fontSizeIt->size != sz) {
         fontSizeIt = fontSizes.insert(
-            fontSizeIt, {{sdl::openFont("DejaVuSerif.ttf", sz), sdl::openFont("DejaVuSans.ttf", sz),
-                          sdl::openFont("NotoSerifDevanagari-Regular.ttf", sz),
-                          sdl::openFont("wqy-microhei-lite.ttc", sz), sdl::openFont("NotoSerifBengali-Regular.ttf", sz)},
+            fontSizeIt, {{sdl::Font(TTF_OpenFont("DejaVuSerif.ttf", sz)), sdl::Font(TTF_OpenFont("DejaVuSans.ttf", sz)),
+                          sdl::Font(TTF_OpenFont("NotoSerifDevanagari-Regular.ttf", sz)),
+                          sdl::Font(TTF_OpenFont("wqy-microhei-lite.ttc", sz)),
+                          sdl::Font(TTF_OpenFont("NotoSerifBengali-Regular.ttf", sz))},
                          sz});
     }
 }
@@ -36,7 +37,7 @@ int Printer::getFontWidth(const std::string &tx) {
     return w;
 }
 
-sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs) {
+sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs) {
     // Create a new SDL_Surface with the given text printed on it. Nation ID used to determine fonts.
     size_t numLines = tx.size();
     std::vector<int> tWs, tHs;      // Widths and heights for each line of text.
@@ -44,9 +45,9 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     tWs.reserve(numLines);
     tHs.reserve(numLines);
     tSs.reserve(numLines);
-    int mW = 0;                                                                   // Minimum width to fit text.
-    int mH = 0;                                                                   // Minimum height to fit text.
-    std::array<sdl::FontPtr, kFontCount>::iterator fI = begin(fontSizeIt->fonts); // Font to use.
+    int mW = 0;                                                                // Minimum width to fit text.
+    int mH = 0;                                                                // Minimum height to fit text.
+    std::array<sdl::Font, kFontCount>::iterator fI = begin(fontSizeIt->fonts); // Font to use.
     for (auto &t : tx) {
         // Render lines of text.
         if (t.empty())
@@ -78,8 +79,8 @@ sdl::SurfacePtr Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt,
     if (!rt.w) rt.w = mW + 2 * b;
     if (!rt.h) rt.h = mH + 2 * b;
 
-    sdl::SurfacePtr p(sdl::makeSurface(rt.w, rt.h));
-    sdl::RendererPtr swRdr(sdl::makeSoftwareRenderer(p.get()));
+    sdl::Surface p(SDL_CreateRGBSurface(surfaceFlags, rt.w, rt.h, bitDepth, rmask, gmask, bmask, amask));
+    sdl::Renderer swRdr(SDL_CreateSoftwareRenderer(p.get()));
     SDL_Rect dR = {0, 0, rt.w, rt.h};
     if (b) {
         // Draw border.

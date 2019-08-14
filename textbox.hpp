@@ -42,8 +42,8 @@ protected:
     bool isNation = false;
     int border = 0, radius = 0, fontSize = -1, lineHeight = -1; // radius of rounded corner circles
     bool invColors = false, clicked = false;
-    sdl::SurfacePtr surface;
-    sdl::TexturePtr texture;
+    sdl::Surface surface;
+    sdl::Texture texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface
     std::vector<Image> images;
     Printer &printer;

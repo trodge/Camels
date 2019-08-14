@@ -21,16 +21,9 @@
 
 AI::AI(Traveler &tvl) : traveler(tvl) {
     // Initialize variables for running a new AI based on starting goods and current town.
-    auto &rng = Settings::rng;
-    auto &rWs = Settings::getAIRoleWeights();
-    std::discrete_distribution<> rlDis(begin(rWs), end(rWs));
-    role = static_cast<Role>(rlDis(rng));
-    // Randomize decision criteria.
-    static std::uniform_real_distribution<double> dcCrtDis(1, Settings::getCriteriaMax());
-    for (auto &c : decisionCriteria) c = dcCrtDis(rng);
-    // Randomize decision counter.
-    static std::uniform_int_distribution<> dcCntDis(-Settings::getAIDecisionTime(), 0);
-    decisionCounter = dcCntDis(rng);
+    role = static_cast<Role>(Settings::aIRole());
+    decisionCriteria = Settings::aIDecisionCriteria();
+    decisionCounter = Settings::aIDecisionCounter();
     auto toTown = traveler.getTown();
     setNearby(toTown, toTown, Settings::getAITownRange());
     setLimits();
@@ -326,7 +319,7 @@ void AI::setLimits() {
             if (gII == end(goodsInfo))
                 gII = goodsInfo
                           .insert(std::make_pair(
-                              fId, GoodInfo{.limitFactor = Settings::limitFactor(), .minPrice = price, .maxPrice = price}))
+                              fId, GoodInfo{.limitFactor = Settings::aILimitFactor(), .minPrice = price, .maxPrice = price}))
                           .first;
             else {
                 gII->second.minPrice = std::min(gII->second.minPrice, price);

@@ -22,14 +22,15 @@
 Game::Game()
     : screenRect(Settings::getScreenRect()), mapView(Settings::getMapView()), offsetX(Settings::getOffsetX()),
       offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
-      window(sdl::makeWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
-                             SDL_WINDOW_BORDERLESS)),
-      screen(sdl::makeRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)) {
+      window(SDL_CreateWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
+                              SDL_WINDOW_BORDERLESS)),
+      screen(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)),
+      travelersCheckCounter(Settings::travelersCheckCounter()) {
     player = std::make_unique<Player>(*this);
     player->setState(UIState::starting);
     std::cout << "Creating Game" << std::endl;
     if (!window.get()) std::cout << "Window creation failed, SDL Error:" << SDL_GetError() << std::endl;
-    sdl::SurfacePtr icon = sdl::loadImage(fs::path("images/icon.png").string().c_str());
+    sdl::Surface icon(IMG_Load(fs::path("images/icon.png").string().c_str()));
     if (!icon.get()) std::cout << "Failed to load icon, IMG Error:" << IMG_GetError() << std::endl;
     SDL_SetWindowIcon(window.get(), icon.get());
     icon = nullptr;
@@ -40,10 +41,10 @@ Game::Game()
     // screenInfo.max_texture_height = 64;
     // screenInfo.max_texture_width = 64;
     std::cout << "Loading Map" << std::endl;
-    auto mapSurface = sdl::loadImage(fs::path("images/map-scaled.png").string().c_str());
+    sdl::Surface mapSurface(IMG_Load(fs::path("images/map-scaled.png").string().c_str()));
     if (!mapSurface) std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
     mapRect = {0, 0, mapSurface->w, mapSurface->h};
-    mapTexture = sdl::makeTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapView.w, mapView.h);
+    mapTexture.reset(SDL_CreateTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapView.w, mapView.h));
     SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
     mapTextureColumnCount = mapRect.w / rt.w + (mapRect.w % rt.w != 0);
     mapTextureRowCount = mapRect.h / rt.h + (mapRect.h % rt.h != 0);
@@ -52,11 +53,11 @@ Game::Game()
         // Loop from top to bottom.
         for (rt.x = 0; rt.x + rt.w <= mapRect.w; rt.x += rt.w)
             // Loop from left to right.
-            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::textureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
         if (rt.x < mapRect.w) {
             // Fill right side rectangles of map.
             rt.w = mapRect.w - rt.x;
-            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::textureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
             rt.w = screenInfo.max_texture_width;
         }
     }
@@ -64,11 +65,11 @@ Game::Game()
         // Fill in bottom side rectangles of map.
         rt.h = mapRect.h - rt.y;
         for (; rt.x + rt.w <= mapRect.w; rt.x += rt.w)
-            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::textureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
         if (rt.x < mapRect.w) {
             // Fill bottom right corner of map.
             rt.w = mapRect.w - rt.x;
-            mapTextures.push_back(sdl::makeTextureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
+            mapTextures.push_back(sdl::textureFromSurfaceSection(screen.get(), mapSurface.get(), rt));
         }
     }
     renderMapTexture();
@@ -234,9 +235,9 @@ void Game::loadData(sqlite3 *cn) {
         fs::path imagePath("images/" + name + ".png");
         if (fs::exists(imagePath)) {
             // Load image from file.
-            sdl::SurfacePtr original(sdl::loadImage(imagePath.string().c_str()));
+            sdl::Surface original(IMG_Load(imagePath.string().c_str()));
             // Put empty surface in vector.
-            goodImages.push_back(sdl::makeSurface(rt.w, rt.h));
+            goodImages.emplace_back(SDL_CreateRGBSurface(surfaceFlags, rt.w, rt.h, bitDepth, rmask, gmask, bmask, amask));
             // Store raw pointer to empty surface.
             auto image = goodImages.back().get();
             // Scale image into empty surface.
@@ -483,9 +484,9 @@ void Game::newGame() {
                                       {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
                     printer);
     // Create a texture for keeping the current screen frozen behind load bar.
-    sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
+    sdl::Surface freezeSurface(SDL_CreateRGBSurface(surfaceFlags, screenRect.w, screenRect.h, bitDepth, rmask, gmask, bmask, amask));
     SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
-    sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
+    sdl::Texture freezeTexture(SDL_CreateTextureFromSurface(screen.get(), freezeSurface.get()));
     freezeSurface = nullptr;
     loadTowns(conn.get(), loadBar, freezeTexture.get());
     conn = nullptr;
@@ -511,8 +512,6 @@ void Game::newGame() {
         loadBar.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
-    std::uniform_int_distribution<> dis(-Settings::getTravelersCheckTime(), 0);
-    travelersCheckCounter = dis(Settings::rng);
 }
 
 void Game::loadGame(const fs::path &p) {
@@ -538,9 +537,10 @@ void Game::loadGame(const fs::path &p) {
         LoadBar loadBar(Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Loading towns..."},
                                           {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
                         printer);
-        sdl::SurfacePtr freezeSurface = sdl::makeSurface(screenRect.w, screenRect.h);
+        sdl::Surface freezeSurface(
+            SDL_CreateRGBSurface(surfaceFlags, screenRect.w, screenRect.h, bitDepth, rmask, gmask, bmask, amask));
         SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
-        sdl::TexturePtr freezeTexture = sdl::makeTextureFromSurface(screen.get(), freezeSurface.get());
+        sdl::Texture freezeTexture(SDL_CreateTextureFromSurface(screen.get(), freezeSurface.get()));
         freezeSurface = nullptr;
         for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
             SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);

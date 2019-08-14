@@ -29,8 +29,7 @@ Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
     equip(2);
     equip(3);
     // Randomize stats.
-    static std::uniform_int_distribution<unsigned int> dis(1, Settings::getStatMax());
-    for (auto &s : stats) s = dis(Settings::rng);
+    stats = Settings::travelerStats();
     // Set parts status to normal.
     parts.fill(0);
 }
@@ -623,7 +622,7 @@ void Traveler::loseTarget() {
     target = nullptr;
 }
 
-CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double> &d) {
+CombatHit Traveler::firstHit(Traveler &t) {
     // Find first hit of this traveler on t.
     std::array<unsigned int, 3> defense{};
     for (auto &e : t.equipment)
@@ -641,7 +640,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
             }
             auto cO = gameData.odds[type - 1];
             // Calculate number of swings before hit happens.
-            double r = d(Settings::rng);
+            double r = Settings::random();
             double p = static_cast<double>(attack) / cO.hitOdds / static_cast<double>(defense[type - 1]);
             double time;
             if (p < 1)
@@ -651,10 +650,10 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
             if (time < first.time) {
                 first.time = time;
                 // Pick a random part.
-                first.partId = static_cast<unsigned int>(d(Settings::rng) * static_cast<double>(parts.size()));
+                first.partId = Settings::randomInt(parts.size() - 1);
                 // Start status at part's current status.
                 first.status = t.parts[first.partId];
-                r = d(Settings::rng);
+                r = Settings::random();
                 auto sCI = begin(cO.statusChances);
                 while (r > 0 && sCI != end(cO.statusChances)) {
                     // Find status such that part becomes more damaged.
@@ -685,36 +684,36 @@ void Traveler::useAmmo(double t) {
     }
 }
 
-void Traveler::fight(Traveler &t, unsigned int e, std::uniform_real_distribution<double> &d) {
-    // Fight t for e milliseconds.
-    fightTime += e;
+void Traveler::fight(Traveler &tgt, unsigned int elTm) {
+    // Fight tgt for e milliseconds.
+    fightTime += elTm;
     // Prevent fight from happening twice.
-    t.fightTime -= static_cast<double>(e);
+    tgt.fightTime -= static_cast<double>(elTm);
     // Keep fighting until one side dies, runs, or yields or time runs out.
-    while (alive() && t.alive() && choice == FightChoice::fight && t.choice == FightChoice::fight && fightTime > 0) {
-        CombatHit ourFirst = firstHit(t, d), theirFirst = t.firstHit(*this, d);
+    while (alive() && tgt.alive() && choice == FightChoice::fight && tgt.choice == FightChoice::fight && fightTime > 0) {
+        CombatHit ourFirst = firstHit(tgt), theirFirst = tgt.firstHit(*this);
         if (ourFirst.time < theirFirst.time) {
             // Our hit happens first.
-            t.takeHit(ourFirst, *this);
+            tgt.takeHit(ourFirst, *this);
             fightTime -= ourFirst.time;
             useAmmo(ourFirst.time);
-            t.useAmmo(ourFirst.time);
+            tgt.useAmmo(ourFirst.time);
         } else if (theirFirst.time < ourFirst.time) {
             // Their hit happens first.
-            takeHit(theirFirst, t);
+            takeHit(theirFirst, tgt);
             fightTime -= theirFirst.time;
             useAmmo(theirFirst.time);
-            t.useAmmo(theirFirst.time);
+            tgt.useAmmo(theirFirst.time);
         } else {
             // Both hits happen at the same time.
-            takeHit(theirFirst, t);
-            t.takeHit(ourFirst, *this);
+            takeHit(theirFirst, tgt);
+            tgt.takeHit(ourFirst, *this);
             fightTime -= ourFirst.time;
             useAmmo(ourFirst.time);
-            t.useAmmo(ourFirst.time);
+            tgt.useAmmo(ourFirst.time);
         }
         if (aI) aI->choose();
-        if (t.aI) t.aI->choose();
+        if (tgt.aI) tgt.aI->choose();
     }
 }
 
@@ -837,10 +836,10 @@ void Traveler::startAI(const Traveler &p) {
     aI = std::make_unique<AI>(*this, *p.aI);
 }
 
-void Traveler::update(unsigned int e) {
+void Traveler::update(unsigned int elTm) {
     // Move traveler toward destination and perform combat with target.
     if (moving) {
-        double t = static_cast<double>(e) / static_cast<double>(Settings::getDayLength());
+        double t = static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength());
         // Take a step toward town.
         double dlt = toTown->getLatitude() - latitude;
         double dlg = toTown->getLongitude() - longitude;
@@ -870,7 +869,7 @@ void Traveler::update(unsigned int e) {
                               toTown->getName() + ".");
         }
     } else if (aI) {
-        aI->update(e);
+        aI->update(elTm);
     }
     if (target) {
         if (fightWon() && aI) {
@@ -879,19 +878,18 @@ void Traveler::update(unsigned int e) {
             return;
         }
         if (choice == FightChoice::fight) {
-            static std::uniform_real_distribution<double> dis(0, 1);
             double escapeChance;
             switch (target->choice) {
             case FightChoice::fight:
-                fight(*target, e, dis);
+                fight(*target, elTm);
                 break;
             case FightChoice::run:
                 // Check if target escapes.
                 escapeChance = Settings::getEscapeChance() * target->speed() / speed();
-                if (dis(Settings::rng) > escapeChance) {
+                if (Settings::random() > escapeChance) {
                     // Target is caught, fight.
                     target->choice = FightChoice::fight;
-                    fight(*target, e, dis);
+                    fight(*target, elTm);
                     std::string logEntry = name + " catches up to " + target->name + ".";
                     logText.push_back(logEntry);
                     target->logText.push_back(logEntry);

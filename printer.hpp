@@ -35,7 +35,7 @@ class Printer {
     int highlightLine = -1;
     struct FontSize {
         bool operator<(unsigned int sz) { return size < sz; }
-        std::array<sdl::FontPtr, kFontCount> fonts;
+        std::array<sdl::Font, kFontCount> fonts;
         unsigned int size;
     };
     std::vector<FontSize> fontSizes;
@@ -53,8 +53,8 @@ public:
     void setNationId(unsigned int n) { nationId = n; }
     int getFontHeight() { return TTF_FontHeight(fontSizeIt->fonts.front().get()); }
     int getFontWidth(const std::string &tx);
-    sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs);
-    sdl::SurfacePtr print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
+    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs);
+    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
         return print(tx, rt, b, r, std::vector<Image>());
     }
 };

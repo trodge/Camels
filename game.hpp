@@ -73,19 +73,19 @@ class Game {
     SDL_Rect screenRect, mapView, mapRect;
     int offsetX, offsetY;
     double scale;
-    sdl::WindowPtr window;
-    sdl::RendererPtr screen;
+    sdl::Handle<SDL_Window> window;
+    sdl::Handle<SDL_Renderer> screen;
     // sdl::SurfacePtr mapSurface; // surface of entire map loaded from image
     SDL_RendererInfo screenInfo;
     Printer printer;
-    std::vector<sdl::TexturePtr> mapTextures;      // textures for map broken down to maximum size for graphics card
-    int mapTextureRowCount, mapTextureColumnCount; // number of columns in map textures matrix
-    sdl::TexturePtr mapTexture;                    // texture for drawing map on screen at current position
+    std::vector<sdl::Handle<SDL_Texture>> mapTextures; // textures for map broken down to maximum size for graphics card
+    int mapTextureRowCount, mapTextureColumnCount;     // number of columns in map textures matrix
+    sdl::Texture mapTexture;                           // texture for drawing map on screen at current position
     unsigned int lastTime = 0, currentTime;
     std::vector<Nation> nations;
     std::vector<Town> towns;
     std::vector<Route> routes;
-    std::vector<sdl::SurfacePtr> goodImages;
+    std::vector<sdl::Surface> goodImages;
     GameData gameData;
     std::vector<std::unique_ptr<Traveler>> aITravelers;
     int travelersCheckCounter;

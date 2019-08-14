@@ -116,7 +116,7 @@ void TextBox::move(int dx, int dy) {
 void TextBox::draw(SDL_Renderer *s) {
     // Copy this TextBox's texture onto s, updating texture if necessary.
     if (updateTexture) {
-        texture = sdl::makeTextureFromSurface(s, surface.get());
+        texture.reset(SDL_CreateTextureFromSurface(s, surface.get()));
         updateTexture = false;
     }
     SDL_RenderCopy(s, texture.get(), nullptr, &rect);

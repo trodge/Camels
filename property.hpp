@@ -66,7 +66,7 @@ class Property {
 public:
     Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src); // constructor for town
     Property(bool ctl, const Property *src)
-        : coastal(ctl), source(src) {} // constructor for traveler
+        : coastal(ctl), updateCounter(Settings::propertyUpdateCounter()), source(src) {} // constructor for traveler
     Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
         : goods(begin(gds), end(gds)), businesses(bsns) {}    // constructor for nation
     Property(const Save::Property *ppt, const Property *src); // constructor for loading

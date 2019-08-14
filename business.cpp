@@ -131,8 +131,7 @@ void Business::setFactor(double ft, const Property &inv, std::unordered_map<unsi
             maxFactor = std::min(inputFactor, maxFactor);
     }
     factor = maxFactor;
-    if (factor < 0)
-        std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
+    if (factor < 0) throw std::runtime_error(std::to_string(factor) + " factor for " + name);
 }
 
 void Business::run(Property &inv, const std::unordered_map<unsigned int, Conflict> &cfcts) {
@@ -141,7 +140,8 @@ void Business::run(Property &inv, const std::unordered_map<unsigned int, Conflic
     // Find greatest conflict.
     for (auto &ip : inputs) {
         auto cfctIt = cfcts.find(ip.getGoodId());
-        if (cfctIt != end(cfcts) && cfctIt->second.conflicted) greatestConflict = std::max(cfctIt->second.count, greatestConflict);
+        if (cfctIt != end(cfcts) && cfctIt->second.conflicted)
+            greatestConflict = std::max(cfctIt->second.count, greatestConflict);
     }
     // Divide factor by greatest conflict.
     if (greatestConflict) factor /= static_cast<double>(greatestConflict);

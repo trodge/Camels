@@ -23,6 +23,7 @@
 #include <chrono>
 #include <random>
 #include <unordered_map>
+#include <vector>
 
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -100,9 +101,9 @@ class Settings {
     static unsigned int aITownRange;
     static double limitFactorMin, limitFactorMax;
     static double aIAttackThreshold;
+    static std::mt19937 rng;
 
 public:
-    static std::mt19937 rng;
     static void load(const fs::path &p);
     static void save(const fs::path &p);
     static const SDL_Rect &getScreenRect() { return screenRect; }
@@ -141,7 +142,23 @@ public:
     static int getCriteriaMax() { return criteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
     static double getAIAttackThreshold() { return aIAttackThreshold; }
-    static double limitFactor();
+    template <typename T> static T randomInt(T max) {
+        // Return a random int less than or equal to max.
+        std::uniform_int_distribution<T> iDis(0, max);
+        return iDis(rng);
+    }
+    template <typename T> static auto &randomChoice(const std::vector<T> &options) {
+        return options[randomInt(options.size() - 1)];
+    }
+    static double random();
+    static int propertyUpdateCounter();
+    static int travelerCount(unsigned long ppl);
+    static int travelersCheckCounter();
+    static std::array<unsigned int, kStatCount> travelerStats();
+    static int aIRole();
+    static std::array<double, kDecisionCriteriaCount> aIDecisionCriteria();
+    static double aIDecisionCounter();
+    static double aILimitFactor();
     static BoxSize boxSize(BoxSize::Size sz) { return boxSizes[sz]; }
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
                            bool iN, bool cF, bool cE, BoxSize::Size sz, SDL_Keycode ky,

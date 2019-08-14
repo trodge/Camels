@@ -75,14 +75,11 @@ void Town::take(Good &g) { property.take(g); }
 
 void Town::put(Good &g) { property.put(g); }
 
-void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &ts) {
+void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &tvlrs) {
     // Create a random number of travelers from this town, weighted down.
-    std::uniform_int_distribution<> tvlrsDis{
-        Settings::getTravelersMin(), static_cast<int>(pow(property.getPopulation(), Settings::getTravelersExponent()))};
-    int n = tvlrsDis(Settings::rng);
-    if (n < 0) n = 0;
-    ts.reserve(ts.size() + static_cast<size_t>(n));
-    for (int i = 0; i < n; ++i) ts.push_back(std::make_unique<Traveler>(nation->randomName(), this, gD));
+    size_t n = Settings::travelerCount(property.getPopulation());
+    tvlrs.reserve(tvlrs.size() + n);
+    for (int i = 0; i < n; ++i) tvlrs.push_back(std::make_unique<Traveler>(nation->randomName(), this, gD));
 }
 
 double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }

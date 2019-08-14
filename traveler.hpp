@@ -40,6 +40,7 @@
 #include "pager.hpp"
 #include "scrollbox.hpp"
 #include "selectbutton.hpp"
+#include "settings.hpp"
 #include "textbox.hpp"
 #include "town.hpp"
 
@@ -86,8 +87,8 @@ class Traveler {
     double portion;                                        // portion of goods offered in next trade
     std::vector<Good> offer, request;                      // goods offered and requested in next trade
     std::unordered_map<unsigned int, Property> properties; // owned goods and businesses by town id, 0 for carried goods
-    std::array<unsigned int, 5> stats;                     // strength, endurance, agility, intelligence, charisma
-    std::array<unsigned int, 6> parts;                     // head, torso, left arm, right arm, left leg, right leg
+    std::array<unsigned int, kStatCount> stats;            // strength, endurance, agility, intelligence, charisma
+    std::array<unsigned int, kPartCount> parts;            // head, torso, left arm, right arm, left leg, right leg
     std::vector<Good> equipment;
     std::vector<Traveler *> agents;     // travelers employed
     std::unique_ptr<Contract> contract; // contract with employer, if any
@@ -177,9 +178,9 @@ public:
     void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
     void createLogBox(Pager &pgr, Printer &pr);
     void loseTarget();
-    CombatHit firstHit(Traveler &t, std::uniform_real_distribution<double> &d);
+    CombatHit firstHit(Traveler &t);
     void useAmmo(double t);
-    void fight(Traveler &t, unsigned int e, std::uniform_real_distribution<double> &d);
+    void fight(Traveler &tgt, unsigned int elTm);
     void takeHit(const CombatHit &cH, Traveler &t);
     void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
     void updateFightBoxes(Pager &pgr);

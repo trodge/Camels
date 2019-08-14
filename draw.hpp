@@ -34,6 +34,10 @@
 
 /* SDL interprets each pixel as a 32-bit number, so our masks must depend
    on the endianness (byte order) of the machine */
+const Uint32 surfaceFlags = 0;
+
+const int bitDepth = 32;
+
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
 const Uint32 rmask = 0xff000000;
 const Uint32 gmask = 0x00ff0000;
@@ -56,55 +60,19 @@ struct Deleter {
     void operator()(TTF_Font *font) { TTF_CloseFont(font); }
 };
 
-template <typename Creator, typename... Arguments> auto makeResource(Creator c, Arguments &&... args) {
-    auto r = c(std::forward<Arguments>(args)...);
-    if (!r) { throw std::system_error(errno, std::generic_category()); }
-    return std::unique_ptr<std::decay_t<decltype(*r)>, Deleter>(r);
+template <typename T> using Handle = std::unique_ptr<T, Deleter>;
+
+using Window = Handle<SDL_Window>;
+using Renderer = Handle<SDL_Renderer>;
+using Surface = Handle<SDL_Surface>;
+using Texture = Handle<SDL_Texture>;
+using Font = Handle<TTF_Font>;
+
+inline Texture textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
+    Surface c(SDL_CreateRGBSurfaceWithFormatFrom(static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel,
+                                                 rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
+    return Texture(SDL_CreateTextureFromSurface(rdr, c.get()));
 }
-
-using WindowPtr = std::unique_ptr<SDL_Window, Deleter>;
-using RendererPtr = std::unique_ptr<SDL_Renderer, Deleter>;
-using SurfacePtr = std::unique_ptr<SDL_Surface, Deleter>;
-using TexturePtr = std::unique_ptr<SDL_Texture, Deleter>;
-using FontPtr = std::unique_ptr<TTF_Font, Deleter>;
-
-inline WindowPtr makeWindow(const char *title, int x, int y, int w, int h, Uint32 flags) {
-    return makeResource(SDL_CreateWindow, title, x, y, w, h, flags);
-}
-
-inline RendererPtr makeRenderer(SDL_Window *window, int index, Uint32 flags) {
-    return makeResource(SDL_CreateRenderer, window, index, flags);
-}
-
-inline RendererPtr makeSoftwareRenderer(SDL_Surface *surface) {
-    return makeResource(SDL_CreateSoftwareRenderer, surface);
-}
-
-inline SurfacePtr makeSurface(int width, int height) {
-    return makeResource(SDL_CreateRGBSurface, 0, width, height, 32, rmask, gmask, bmask, amask);
-}
-
-inline SurfacePtr makeSurfaceWithFormatFrom(void *pixels, int width, int height, int depth, int pitch, Uint32 format) {
-    return makeResource(SDL_CreateRGBSurfaceWithFormatFrom, pixels, width, height, depth, pitch, format);
-}
-
-inline SurfacePtr loadImage(const char *file) { return makeResource(IMG_Load, file); }
-
-inline TexturePtr makeTexture(SDL_Renderer *renderer, Uint32 format, int access, int w, int h) {
-    return makeResource(SDL_CreateTexture, renderer, format, access, w, h);
-}
-
-inline TexturePtr makeTextureFromSurface(SDL_Renderer *renderer, SDL_Surface *surface) {
-    return makeResource(SDL_CreateTextureFromSurface, renderer, surface);
-}
-
-inline TexturePtr makeTextureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
-    SurfacePtr c(makeSurfaceWithFormatFrom(static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel,
-                                           rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
-    return makeTextureFromSurface(rdr, c.get());
-}
-
-inline FontPtr openFont(const char *file, int ptsize) { return makeResource(TTF_OpenFont, file, ptsize); }
 } // namespace sdl
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
