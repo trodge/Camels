@@ -51,7 +51,7 @@ rs = c.fetchall()
 c.execute("DELETE FROM names")
 for r in rs:
     c.execute("INSERT INTO names VALUES (?, ?, ?)", (r[0], r[1], r[2]))
-# Adjust livestock outputs for daily counting.
+'''# Adjust livestock outputs for daily counting.
 c.execute('SELECT amount, business_id, mode, good_id FROM outputs WHERE 58 < good_id AND good_id < 66 AND business_id = 4')
 ns = c.fetchall()
 c.execute('SELECT amount FROM inputs WHERE 58 < good_id AND good_id < 66 AND business_id = 4')
@@ -59,6 +59,6 @@ ms = c.fetchall();
 for m, n in zip(ms, ns):
     print(m, n)
     print(m[0] * (n[0] / m[0]) ** (1 / 365))
-    c.execute('UPDATE outputs SET amount = ? WHERE business_id = ? AND mode = ? AND good_id = ?', (m[0] * (n[0] / m[0]) ** (1 / 365), n[1], n[2], n[3]))
+    c.execute('UPDATE outputs SET amount = ? WHERE business_id = ? AND mode = ? AND good_id = ?', (m[0] * (n[0] / m[0]) ** (1 / 365), n[1], n[2], n[3]))'''
 db.commit()
 db.close()
