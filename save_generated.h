@@ -217,7 +217,7 @@ struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<const CombatStat *> *combatStats() const {
     return GetPointer<const flatbuffers::Vector<const CombatStat *> *>(VT_COMBATSTATS);
   }
-  uint32_t ammoId() const {
+  uint32_t shoots() const {
     return GetField<uint32_t>(VT_AMMOID, 0);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
@@ -291,8 +291,8 @@ struct GoodBuilder {
   void add_combatStats(flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats) {
     fbb_.AddOffset(Good::VT_COMBATSTATS, combatStats);
   }
-  void add_ammoId(uint32_t ammoId) {
-    fbb_.AddElement<uint32_t>(Good::VT_AMMOID, ammoId, 0);
+  void add_shoots(uint32_t shoots) {
+    fbb_.AddElement<uint32_t>(Good::VT_AMMOID, shoots, 0);
   }
   explicit GoodBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -322,7 +322,7 @@ inline flatbuffers::Offset<Good> CreateGood(
     double demandIntercept = 0.0,
     flatbuffers::Offset<flatbuffers::Vector<const PerishCounter *>> perishCounters = 0,
     flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats = 0,
-    uint32_t ammoId = 0) {
+    uint32_t shoots = 0) {
   GoodBuilder builder_(_fbb);
   builder_.add_demandIntercept(demandIntercept);
   builder_.add_demandSlope(demandSlope);
@@ -330,7 +330,7 @@ inline flatbuffers::Offset<Good> CreateGood(
   builder_.add_carry(carry);
   builder_.add_perish(perish);
   builder_.add_amount(amount);
-  builder_.add_ammoId(ammoId);
+  builder_.add_shoots(shoots);
   builder_.add_combatStats(combatStats);
   builder_.add_perishCounters(perishCounters);
   builder_.add_measure(measure);
@@ -358,7 +358,7 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
     double demandIntercept = 0.0,
     const std::vector<PerishCounter> *perishCounters = nullptr,
     const std::vector<CombatStat> *combatStats = nullptr,
-    uint32_t ammoId = 0) {
+    uint32_t shoots = 0) {
   auto goodName__ = goodName ? _fbb.CreateString(goodName) : 0;
   auto materialName__ = materialName ? _fbb.CreateString(materialName) : 0;
   auto measure__ = measure ? _fbb.CreateString(measure) : 0;
@@ -380,7 +380,7 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
       demandIntercept,
       perishCounters__,
       combatStats__,
-      ammoId);
+      shoots);
 }
 
 struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {

@@ -42,19 +42,19 @@ class Good {
     unsigned int goodId, materialId = 0, fullId = 0;
     std::string goodName, materialName, fullName;
     double amount = 0, perish = 0, carry = 0;
-    std::string measure; // word used to measure good
-    bool split; // whether good can be split
-    double maximum = 0; // maximum allowable amont of good, or 0 if no maximum
-    double consumptionRate; // units of good consumed per day
-    double demandSlope; // reduction in price per unit of good
-    double demandIntercept; // price per unit when amount is 0
-    double minPrice; // price per unit when amount is maximum
-    unsigned int ammoId = 0; // good id of good this good shoots
+    std::string measure;     // word used to measure good
+    bool split;              // whether good can be split
+    double maximum = 0;      // maximum allowable amont of good, or 0 if no maximum
+    double consumptionRate;  // units of good consumed per day
+    double demandSlope;      // reduction in price per unit of good
+    double demandIntercept;  // price per unit when amount is 0
+    double minPrice;         // price per unit when amount is maximum
+    unsigned int shoots = 0; // good id of good this good shoots
     std::vector<CombatStat> combatStats;
     double lastAmount = 0;
     SDL_Surface *image = nullptr;
     struct PerishCounter {
-        int time; // time until counter expires
+        int time;      // time until counter expires
         double amount; // amount of good counter handles
         bool operator<(const PerishCounter &b) const { return time < b.time; }
     };
@@ -65,7 +65,7 @@ class Good {
 
 public:
     Good(unsigned int gId, const std::string &gNm, const std::string &msr, unsigned int aId)
-        : goodId(gId), goodName(gNm), measure(msr), ammoId(aId) {} // constructor for loading from goods table
+        : goodId(gId), goodName(gNm), measure(msr), shoots(aId) {} // constructor for loading from goods table
     Good(const Good &gd, const Good &mt, unsigned int fId, double pr, double cr)
         : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName), materialName(mt.goodName),
           fullName(completeName()), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
@@ -102,7 +102,7 @@ public:
     const std::string &getMeasure() const { return measure; }
     bool getSplit() const { return split; }
     double getMaximum() const { return maximum; }
-    unsigned int getAmmoId() const { return ammoId; }
+    unsigned int getShoots() const { return shoots; }
     double getConsumptionRate() const { return consumptionRate; }
     double getDemandSlope() const { return demandSlope; }
     double getMaxPrice() const { return demandIntercept; }
@@ -127,7 +127,7 @@ public:
     void use() { use(amount); }
     void create(double amt);
     void create() { create(maximum); }
-    void update(unsigned int elTm, double dyLn);
+    double update(unsigned int elTm, double dyLn);
     void updateButton(TextBox *btn) const;
     void updateButton(double oV, unsigned int rC, TextBox *btn) const;
     void adjustDemand(double d);
@@ -136,7 +136,7 @@ public:
     std::string logEntry() const;
     void setMaximum() { maximum = std::abs(consumptionRate) * Settings::getConsumptionSpaceFactor(); }
     void setMaximum(double max) { maximum = std::max(maximum, max); }
-    void assignConsumption(const std::unordered_map<unsigned int, std::array<double, 3>> &cs);
+    void setDemandSlope() { demandSlope = std::max((demandIntercept - minPrice) / maximum, demandSlope); }
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void adjustDemandSlope(double dDS);
 };

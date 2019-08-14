@@ -98,15 +98,17 @@ void Business::reclaim(Property &inv, double a) {
     }
 }
 
-void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts, const Property &inv) {
+void Business::addNeeded(std::vector<GoodSum> &gdSms) {
     // Counts number of businesses using each good and determines if good will run out this cycle.
-    if (std::find_if(begin(outputs), end(outputs), [&inv](auto &op) {
-        // Return true if there is space for this output.
-        auto gId = op.getGoodId();
-        auto amt = inv.amount(gId);
-        auto max = inv.maximum(gId); // zero if good doesn't exist
-        return amt < max || max == 0;
-    }) == end(outputs)) {
+    if (std::find_if(begin(outputs), end(outputs), [&gdSms](auto &op) {
+            // Return true if there is space for this output.
+            auto gId = op.getGoodId();
+            // Check if good is outside vector bounds.
+            if (gId > gdSms.size()) return true;
+            GoodSum &gdSm = gdSms[gId];
+            // Maximum will be zero for good that hasn't been added yet.
+            return gdSm.amount < gdSm.maximum || gdSm.maximum == 0;
+        }) == end(outputs)) {
         // No space exists for any output.
         factor = 0;
         return;
@@ -114,30 +116,38 @@ void Business::addConflicts(std::unordered_map<unsigned int, std::pair<bool, uns
     auto maxFactor = factor;
     auto &lastOutput = outputs.back();
     for (auto &ip : inputs) {
-        auto gId = ip.getGoodId();
-        auto inputFactor = inv.amount(gId) / ip.getAmount(); // max factor possible given this input
+        auto ipId = ip.getGoodId();
+        if (ipId > gdSms.size()) {
+            // Input is not added yet and factor will be 0.
+            factor = 0;
+            return;
+        }
+        GoodSum &gdSm = gdSms[ipId];
+        ++gdSm.businessCount;
+        auto ipAmt = ip.getAmount();
+        gdSm.needed += ipAmt;
+        auto inputFactor = gdSm.amount / ipAmt; // max factor possible given this input
         if (ip == lastOutput && inputFactor < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             maxFactor *= inputFactor;
-        else if (factor > inputFactor) {
-            // This business will use up input.
+        else if (factor > inputFactor)
+            // Factor is too large for input.
             maxFactor = std::min(inputFactor, maxFactor);
-            cfts[gId].first = true;
-        }
-        ++cfts[gId].second;
     }
     factor = maxFactor;
     if (factor < 0)
         std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
 }
 
-void Business::handleConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts) {
-    unsigned int grCft = 0;
+void Business::handleSums(std::vector<GoodSum> &gdSms) {
+    unsigned int greatestConflict = 0;
     for (auto &ip : inputs) {
-        auto &cft = cfts[ip.getGoodId()];
-        if (cft.first) grCft = std::max(cft.second, grCft);
+        auto ipId = ip.getGoodId();
+        if (ipId > gdSms.size()) return;
+        GoodSum &gdSm = gdSms[ipId];
+        if (gdSm.needed > gdSm.amount) greatestConflict = std::max(gdSm.businessCount, greatestConflict);
     }
-    if (grCft) factor /= static_cast<double>(grCft);
+    if (greatestConflict) factor /= static_cast<double>(greatestConflict);
 }
 
 void Business::run(Property &inv) {
@@ -165,9 +175,9 @@ std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) c
         dropTrail(areaText, 2);
         bI.text.push_back("Area: " + areaText + " uncia");
         bI.text.push_back("Factor: " + std::to_string(factor));
-        unitText = " per annum";
+        unitText = " per diem";
     } else
-        unitText = " per uncia anum";
+        unitText = " per uncia diem";
     bI.text.push_back("Requirements per uncia");
     for (auto &rq : requirements) bI.text.push_back(rq.businessText());
     bI.text.push_back("Inputs" + unitText);

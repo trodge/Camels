@@ -33,7 +33,7 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
                                combatStats[i].defense[2]);
     });
     return Save::CreateGood(b, goodId, materialId, fullId, svGoodName, svMaterialName, amount, perish, carry, svMeasure,
-                            consumptionRate, demandSlope, demandIntercept, svPerishCounters, svCombatStats, ammoId);
+                            consumptionRate, demandSlope, demandIntercept, svPerishCounters, svCombatStats, shoots);
 }
 
 std::string Good::businessText() const {
@@ -179,8 +179,9 @@ void Good::take(Good &gd) {
 void Good::put(Good &gd) {
     // Puts the given good in this good. Transfers perish counters from parameter.
     amount += gd.amount;
-    auto middle = perishCounters.insert(perishCounters.end(), gd.perishCounters.begin(), gd.perishCounters.end());
-    std::inplace_merge(perishCounters.begin(), middle, perishCounters.end());
+    auto middle = perishCounters.insert(end(perishCounters), std::make_move_iterator(begin(gd.perishCounters)),
+                                        std::make_move_iterator(end(gd.perishCounters)));
+    std::inplace_merge(begin(perishCounters), middle, end(perishCounters));
 }
 
 void Good::use(double amt) {
@@ -201,6 +202,7 @@ void Good::use(double amt) {
             amt -= pC.amount;
         }
     }
+    if (std::isnan(amount)) std::cout << fullName;
 }
 
 void Good::create(double amt) {
@@ -208,43 +210,34 @@ void Good::create(double amt) {
     amount += amt;
     if (amt > 0 && perish != 0) perishCounters.push_front({0, amt});
     enforceMaximum();
+    if (std::isnan(amount)) std::cout << fullName;
 }
 
-void Good::update(unsigned int elTm, double dyLn) {
-    // Remove consumed goods and perished goods over elapsed time.
+double Good::update(unsigned int elTm, double dyLn) {
+    // Remove consumed goods and perished goods over elapsed time. Return amount changed.
     lastAmount = amount;
-    double consumption = consumptionRate * static_cast<double>(elTm) / dyLn;
+    double consumed = consumptionRate * static_cast<double>(elTm) / dyLn;
     // Ensure we don't consume more than current amount.
-    consumption = std::min(amount, consumption);
-    if (consumption > 0)
-        // Positive consumptin uses goods.
-        use(consumption);
-    else if (consumption < 0)
+    consumed = std::min(amount, consumed);
+    if (consumed > 0)
+        // Positive consumption uses goods.
+        use(consumed);
+    else if (consumed < 0)
         // Negative consumption creates goods.
-        create(-consumption);
-    if (perish == 0) return;
+        create(-consumed);
+    if (perishCounters.empty()) return amount - lastAmount;
     // Find the first perish counter that will expire.
     PerishCounter exPC = {int(perish * dyLn - elTm), 0};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
-    // Remove expired amounts from amount and total them.
-    double amt =
-        std::accumulate(expired, perishCounters.end(), 0, [](double d, const PerishCounter &pC) { return d + pC.amount; });
+    // Total expired amounts.
+    double perished = std::accumulate(expired, perishCounters.end(), 0, [](double d, auto &pC) { return d + pC.amount; });
     // Erase expired perish counters.
     perishCounters.erase(expired, perishCounters.end());
     // Add elapsed time to remaining counters.
     for (auto &pC : perishCounters) pC.time += elTm;
-    // If too much perished, reduce total by overage.
-    if (amount > amt) {
-        amount -= amt;
-    } else {
-        amt = amount;
-        amount = 0;
-    }
-    if (amount < 0) amount = 0;
-    // Keep demand slopes from being too low or too high
-    if (demandIntercept - demandSlope * maximum < minPrice)
-        // Price goes too low when good is at maximum.
-        demandSlope = (demandIntercept - minPrice) / maximum;
+    perished = std::min(amount, perished);
+    amount -= perished;
+    return amount - lastAmount;
 }
 
 std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo bI, Printer &pr) const {

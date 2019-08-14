@@ -31,6 +31,8 @@
 class Property;
 class Good;
 
+struct GoodSum;
+
 class Business {
     unsigned int id, mode;
     std::string name;
@@ -77,8 +79,8 @@ public:
     void setFrequency(double fq) { frequency = fq; }
     void takeRequirements(Property &inv, double a);
     void reclaim(Property &inv, double a);
-    void addConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts, const Property &inv);
-    void handleConflicts(std::unordered_map<unsigned int, std::pair<bool, unsigned int>> &cfts);
+    void addNeeded(std::vector<GoodSum> &gdSms);
+    void handleSums(std::vector<GoodSum> &gdSms);
     void run(Property &inv);
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void saveFrequency(unsigned long p, std::string &u) const;

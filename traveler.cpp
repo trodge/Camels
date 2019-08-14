@@ -675,7 +675,7 @@ CombatHit Traveler::firstHit(Traveler &t, std::uniform_real_distribution<double>
 
 void Traveler::useAmmo(double t) {
     for (auto &e : equipment) {
-        unsigned int sId = e.getAmmoId();
+        unsigned int sId = e.getShoots();
         if (sId) {
             unsigned int speed = 0;
             for (auto &s : e.getCombatStats()) speed += s.speed * stats[s.statId];

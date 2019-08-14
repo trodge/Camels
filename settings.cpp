@@ -130,9 +130,9 @@ void Settings::load(const fs::path &p) {
     propertyUpdateTime = tree.get("time.propertyUpdateTime", 1500);
     travelersCheckTime = tree.get("time.travelersCheckTime", 4500);
     aIDecisionTime = tree.get("time.aIDecisionTime", 12000);
-    consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 0.036);
-    inputSpaceFactor = tree.get("goods.inputSpaceFactor", 0.054);
-    outputSpaceFactor = tree.get("goods.outputSpaceFactor", 0.054);
+    consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 13.14);
+    inputSpaceFactor = tree.get("goods.inputSpaceFactor", 19.71);
+    outputSpaceFactor = tree.get("goods.outputSpaceFactor", 19.71);
     minPriceDivisor = tree.get("goods.minPriceDivisor", 2047);
     townProfit = tree.get("towns.profit", 0.9);
     maxTowns = static_cast<size_t>(tree.get("towns.max", 500));
