@@ -98,39 +98,35 @@ void Business::reclaim(Property &inv, double a) {
     }
 }
 
-void Business::addNeeded(std::vector<GoodSum> &gdSms) {
-    // Counts number of businesses using each good and determines if good will run out this cycle.
-    if (std::find_if(begin(outputs), end(outputs), [&gdSms](auto &op) {
+void Business::setFactor(double ft, const Property &inv, std::unordered_map<unsigned int, Conflict> &cfcts) {
+    // Sets factor, then counts number of businesses using each input and determines if good will run out this cycle.
+    if (std::find_if(begin(outputs), end(outputs), [&inv](auto &op) {
             // Return true if there is space for this output.
-            auto gId = op.getGoodId();
-            // Check if good is outside vector bounds.
-            if (gId > gdSms.size()) return true;
-            GoodSum &gdSm = gdSms[gId];
+            auto opId = op.getGoodId();
+            auto amt = inv.amount(opId);
+            auto max = inv.maximum(opId);
             // Maximum will be zero for good that hasn't been added yet.
-            return gdSm.amount < gdSm.maximum || gdSm.maximum == 0;
+            return amt < max || max == 0;
         }) == end(outputs)) {
         // No space exists for any output.
         factor = 0;
         return;
     }
-    auto maxFactor = factor;
-    auto &lastOutput = outputs.back();
+    auto maxFactor = ft;
+    auto lastOutputId = outputs.back().getGoodId();
     for (auto &ip : inputs) {
         auto ipId = ip.getGoodId();
-        if (ipId > gdSms.size()) {
-            // Input is not added yet and factor will be 0.
-            factor = 0;
-            return;
-        }
-        GoodSum &gdSm = gdSms[ipId];
-        ++gdSm.businessCount;
+        auto &cfct = cfcts[ipId];
+        ++cfct.count;
         auto ipAmt = ip.getAmount();
-        gdSm.needed += ipAmt;
-        auto inputFactor = gdSm.amount / ipAmt; // max factor possible given this input
-        if (ip == lastOutput && inputFactor < 1)
+        cfct.needed += ipAmt;
+        auto invAmt = inv.amount(ipId);
+        if (cfct.needed > invAmt) cfct.conflicted = true;
+        auto inputFactor = invAmt / ipAmt; // max factor possible given this input
+        if (ipId == lastOutputId && inputFactor < 1)
             // For livestock, max factor is multiplicative when not enough breeding stock are available.
             maxFactor *= inputFactor;
-        else if (factor > inputFactor)
+        else if (ft > inputFactor)
             // Factor is too large for input.
             maxFactor = std::min(inputFactor, maxFactor);
     }
@@ -139,24 +135,23 @@ void Business::addNeeded(std::vector<GoodSum> &gdSms) {
         std::cout << factor << " factor for " << name << " area " << area << " frequency " << frequency << std::endl;
 }
 
-void Business::handleSums(std::vector<GoodSum> &gdSms) {
-    unsigned int greatestConflict = 0;
-    for (auto &ip : inputs) {
-        auto ipId = ip.getGoodId();
-        if (ipId > gdSms.size()) return;
-        GoodSum &gdSm = gdSms[ipId];
-        if (gdSm.needed > gdSm.amount) greatestConflict = std::max(gdSm.businessCount, greatestConflict);
-    }
-    if (greatestConflict) factor /= static_cast<double>(greatestConflict);
-}
-
-void Business::run(Property &inv) {
+void Business::run(Property &inv, const std::unordered_map<unsigned int, Conflict> &cfcts) {
     // Run this business on the given goods.
+    unsigned int greatestConflict = 0;
+    // Find greatest conflict.
+    for (auto &ip : inputs) {
+        auto cfctIt = cfcts.find(ip.getGoodId());
+        if (cfctIt != end(cfcts) && cfctIt->second.conflicted) greatestConflict = std::max(cfctIt->second.count, greatestConflict);
+    }
+    // Divide factor by greatest conflict.
+    if (greatestConflict) factor /= static_cast<double>(greatestConflict);
     if (factor > 0) {
+        // Run business.
         auto lastInputId = inputs.back().getGoodId(); // inputs which determine material
         for (auto &op : outputs) {
             auto outputId = op.getGoodId();
             if (keepMaterial && outputId != lastInputId)
+                // Use materials of last input.
                 inv.create(outputId, lastInputId, op.getAmount() * factor);
             else
                 // Materials are not kept or last input and output are the same, ignore materials.

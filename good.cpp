@@ -202,7 +202,8 @@ void Good::use(double amt) {
             amt -= pC.amount;
         }
     }
-    if (std::isnan(amount)) std::cout << fullName;
+    if (std::isnan(amount))
+        std::cout << fullName << std::endl;
 }
 
 void Good::create(double amt) {
@@ -210,10 +211,11 @@ void Good::create(double amt) {
     amount += amt;
     if (amt > 0 && perish != 0) perishCounters.push_front({0, amt});
     enforceMaximum();
-    if (std::isnan(amount)) std::cout << fullName;
+    if (std::isnan(amount))
+        std::cout << fullName << std::endl;
 }
 
-double Good::update(unsigned int elTm, double dyLn) {
+void Good::update(unsigned int elTm, double dyLn) {
     // Remove consumed goods and perished goods over elapsed time. Return amount changed.
     lastAmount = amount;
     double consumed = consumptionRate * static_cast<double>(elTm) / dyLn;
@@ -225,7 +227,7 @@ double Good::update(unsigned int elTm, double dyLn) {
     else if (consumed < 0)
         // Negative consumption creates goods.
         create(-consumed);
-    if (perishCounters.empty()) return amount - lastAmount;
+    if (perishCounters.empty()) return;
     // Find the first perish counter that will expire.
     PerishCounter exPC = {int(perish * dyLn - elTm), 0};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
@@ -237,7 +239,6 @@ double Good::update(unsigned int elTm, double dyLn) {
     for (auto &pC : perishCounters) pC.time += elTm;
     perished = std::min(amount, perished);
     amount -= perished;
-    return amount - lastAmount;
 }
 
 std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo bI, Printer &pr) const {

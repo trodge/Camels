@@ -29,11 +29,8 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index_container.hpp>
-#include <boost/math/special_functions/relative_difference.hpp>
-#include <boost/math/special_functions/next.hpp>
 
 namespace mi = boost::multi_index;
-namespace mt = boost::math;
 
 #include "business.hpp"
 #include "good.hpp"
@@ -41,11 +38,10 @@ namespace mt = boost::math;
 
 class Business;
 
-struct GoodSum {
-    double amount = 0;              // amount of the good available
-    double maximum = 0;             // total space for this good
-    unsigned int businessCount = 0; // number of businesses using the good
-    double needed = 0;              // sum of the business need for the good
+struct Conflict {
+    unsigned int count = 0; // number of businesses using the good
+    double needed = 0;      // sum of the business need for the good
+    bool conflicted = false;
 };
 
 class Property {
@@ -57,12 +53,10 @@ class Property {
     using MtIdHsh = mi::hashed_unique<mi::tag<struct MaterialId>, mi::composite_key<Good, GdId, MtId>>;
     using FlIdHsh = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
     using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<FlIdOdr, GdIdHsh, MtIdHsh, FlIdHsh>>;
-    double dayLength;
     unsigned int townType;
     bool coastal;
     unsigned long population;
     GoodContainer goods;
-    std::vector<GoodSum> goodSums;
     std::vector<Business> businesses;
     int updateCounter;
     bool maxGoods = false;
@@ -72,7 +66,7 @@ class Property {
 public:
     Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src); // constructor for town
     Property(bool ctl, const Property *src)
-        : dayLength(Settings::getDayLength()), coastal(ctl), source(src) {} // constructor for traveler
+        : coastal(ctl), source(src) {} // constructor for traveler
     Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
         : goods(begin(gds), end(gds)), businesses(bsns) {}    // constructor for nation
     Property(const Save::Property *ppt, const Property *src); // constructor for loading

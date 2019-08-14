@@ -31,7 +31,7 @@
 class Property;
 class Good;
 
-struct GoodSum;
+struct Conflict;
 
 class Business {
     unsigned int id, mode;
@@ -76,12 +76,11 @@ public:
     void setInputs(const std::vector<Good> &ips) { inputs = ips; }
     void setOutputs(const std::vector<Good> &ops) { outputs = ops; }
     void setFactor(double ft) { factor = ft; }
+    void setFactor(double ft, const Property &inv, std::unordered_map<unsigned int, Conflict> &cfcts);
     void setFrequency(double fq) { frequency = fq; }
     void takeRequirements(Property &inv, double a);
     void reclaim(Property &inv, double a);
-    void addNeeded(std::vector<GoodSum> &gdSms);
-    void handleSums(std::vector<GoodSum> &gdSms);
-    void run(Property &inv);
+    void run(Property &inv, const std::unordered_map<unsigned int, Conflict> &cfcts);
     std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
     void saveFrequency(unsigned long p, std::string &u) const;
 };

@@ -1,7 +1,7 @@
 #include "property.hpp"
 
 Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src)
-    : dayLength(Settings::getDayLength()), townType(tT), coastal(ctl), population(ppl), source(src) {
+    : townType(tT), coastal(ctl), population(ppl), source(src) {
     // Copy businesses from source that can exist here given coastal.
     std::copy_if(begin(source->businesses), end(source->businesses), std::back_inserter(businesses),
                  [ctl](auto &bsn) { return bsn.getFrequency() > 0 && (!bsn.getRequireCoast() || ctl); });
@@ -15,7 +15,7 @@ Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property 
 }
 
 Property::Property(const Save::Property *ppt, const Property *src)
-    : dayLength(Settings::getDayLength()), townType(ppt->townType()), coastal(ppt->coastal()),
+    : townType(ppt->townType()), coastal(ppt->coastal()),
       population(ppt->population()), updateCounter(ppt->updateCounter()), source(src) {
     auto ldGds = ppt->goods();
     for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.insert(Good(*lGI));
@@ -90,16 +90,6 @@ void Property::setMaximums() {
         }
     }
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.setDemandSlope(); });
-    // Recount good sum maximums and amounts.
-    for (auto &gdSm : goodSums) {
-        gdSm.maximum = 0;
-        gdSm.amount = 0;
-    }
-    for (auto &gd : goods) {
-        auto gId = gd.getGoodId();
-        goodSums[gId].amount += gd.getAmount();
-        goodSums[gId].maximum += gd.getMaximum();
-    }
 }
 
 void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) {
@@ -122,10 +112,6 @@ void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) 
     gd.setDemandSlope();
     // Call parameter function.
     fn(gd);
-    // Resize good sums vector if this good is outside its size.
-    if (gId >= goodSums.size()) goodSums.resize(gId + 1);
-    // Add good's maximum to good sum maximum.
-    goodSums[gId].maximum += gd.getMaximum();
     // Insert good into container with position determined by full id.
     goods.insert(goods.lower_bound(gd.getFullId()), std::move(gd));
 }
@@ -133,6 +119,7 @@ void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) 
 void Property::reset() {
     // Reset goods to starting amounts.
     double updateTime = Settings::getPropertyUpdateTime();
+    double dayLength = Settings::getDayLength();
     // Use up all remaining goods.
     use();
     // Create goods for business inputs.
@@ -158,9 +145,6 @@ std::vector<Good> Property::take(unsigned int gId, double amt) {
         transfer.push_back(Good(gdIt->getFullId(), amt * gdIt->getAmount() / total));
         byGoodId.modify(gdIt, [&tG = transfer.back()](auto &gd) { gd.take(tG); });
     }
-    // Subtract amount from good sum.
-    auto &sum = goodSums[gId].amount;
-    sum = std::max(sum - amt, 0.);
     return transfer;
 }
 
@@ -169,11 +153,8 @@ void Property::take(Good &gd) {
     auto &byFullId = goods.get<FullId>();
     auto rGdIt = byFullId.find(gd.getFullId());
     if (rGdIt == end(byFullId)) return gd.use();
-    byFullId.modify(rGdIt, [this, &gd](auto &rGd) { 
+    byFullId.modify(rGdIt, [&gd](auto &rGd) { 
         rGd.take(gd);
-        // Subtract good's amount from good sum.
-        auto &sum = goodSums[rGd.getGoodId()].amount;
-        sum = std::max(sum - gd.getAmount(), 0.);
     });
 }
 
@@ -182,12 +163,8 @@ void Property::put(Good &gd) {
     auto fId = gd.getFullId();
     auto &byFullId = goods.get<FullId>();
     auto rGdIt = byFullId.find(fId);
-    auto putGood = [this, &gd](auto &rGd) {
+    auto putGood = [&gd](auto &rGd) {
         rGd.put(gd);
-        // Add good's amount to good sum.
-        auto &gdSm = goodSums[rGd.getGoodId()];
-        auto &sum = gdSm.amount;
-        sum = std::min(sum + gd.getAmount(), gdSm.maximum);
     };
     if (rGdIt == end(byFullId)) {
         // Good does not exist, copy from source.
@@ -204,15 +181,11 @@ void Property::use(unsigned int gId, double amt) {
     if (total == 0) std::cout << gId << std::endl;
     auto useGood = [amt, total](auto &gd) { gd.use(amt * gd.getAmount() / total); };
     for (; gdRng.first != gdRng.second; ++gdRng.first) byGoodId.modify(gdRng.first, useGood);
-    // Subtract used amount from good sum.
-    auto &sum = goodSums[gId].amount;
-    sum = std::max(sum - amt, 0.);
 }
 
 void Property::use() {
     // Use current amount of all goods.
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
-    for (auto &gdSm : goodSums) gdSm.amount = 0;
 }
 
 void Property::create(unsigned int opId, double amt) {
@@ -228,10 +201,6 @@ void Property::create(unsigned int opId, double amt) {
         addGood(*std::min_element(srRng.first, srRng.second, lowest), createGood);
     } else
         byGoodId.modify(std::min_element(opRng.first, opRng.second, lowest), createGood);
-    // Add created amount to good sum.
-    auto &gdSm = goodSums[opId];
-    auto &sum = gdSm.amount;
-    sum = std::min(sum + amt, gdSm.maximum);
 }
 
 void Property::create(unsigned int opId, unsigned int ipId, double amt) {
@@ -262,17 +231,11 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
             // Create good.
             byMaterialId.modify(opIt, createGood);
     }
-    // Add created amount to good sum.
-    auto &gdSm = goodSums[opId];
-    auto &sum = gdSm.amount;
-    sum = std::min(sum + amt, gdSm.maximum);
 }
 
 void Property::create() {
     // Create maximum amount of all goods.
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.create(); });
-    // Set good sum amounts to max.
-    for (auto &gdSm : goodSums) gdSm.amount = gdSm.maximum;
 }
 
 void Property::build(const Business &bsn, double a) {
@@ -303,35 +266,23 @@ void Property::update(unsigned int elTm) {
     if (updateCounter > 0) {
         int updateTime = Settings::getPropertyUpdateTime();
         updateTime += updateCounter - updateCounter % updateTime;
+        double dayLength = Settings::getDayLength();
         if (maxGoods)
             // Property creates as many goods as possible for testing purposes.
             create();
         // Update goods and run businesses for update time.
-        auto updateGood = [this, updateTime](Good &gd) {
-            auto &sum = goodSums[gd.getGoodId()].amount;
-            sum = std::max(sum + gd.update(updateTime, dayLength), 0.);
+        auto updateGood = [updateTime, dayLength](Good &gd) {
+            gd.update(updateTime, dayLength);
         };
         for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, updateGood);
-        // Reset business counts and needed amounts for good sums.
-        for (auto &gdSm : goodSums) {
-            gdSm.businessCount = 0;
-            gdSm.needed = 0;
-        }
-        for (unsigned int i = 0; i < goodSums.size(); ++i) {
-            double amt = amount(i);
-            if (mt::float_distance(goodSums[i].amount, amt) > 1) std::cout << i << " good sum " << goodSums[i].amount << " amount " << amt << std::endl;
-        }
+        std::unordered_map<unsigned int, Conflict> conflicts;
         for (auto &b : businesses) {
             // Start by setting factor to business run time.
-            b.setFactor(updateTime / dayLength);
-            // Sum the needed amounts of and number of businesses using each good.
-            b.addNeeded(goodSums);
+            b.setFactor(updateTime / dayLength, *this, conflicts);
         }
         for (auto &b : businesses) {
             // Handle conflicts on inputs by reducing factors.
-            b.handleSums(goodSums);
-            // Run businesses.
-            b.run(*this);
+            b.run(*this, conflicts);
         }
         updateCounter -= updateTime;
     }

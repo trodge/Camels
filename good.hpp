@@ -127,7 +127,7 @@ public:
     void use() { use(amount); }
     void create(double amt);
     void create() { create(maximum); }
-    double update(unsigned int elTm, double dyLn);
+    void update(unsigned int elTm, double dyLn);
     void updateButton(TextBox *btn) const;
     void updateButton(double oV, unsigned int rC, TextBox *btn) const;
     void adjustDemand(double d);
