@@ -29,20 +29,20 @@ Game::Game()
     player = std::make_unique<Player>(*this);
     player->setState(UIState::starting);
     std::cout << "Creating Game" << std::endl;
-    if (!window.get()) std::cout << "Window creation failed, SDL Error:" << SDL_GetError() << std::endl;
+    if (!window.get()) throw std::runtime_error("Window creation failed, SDL Error:" + std::string(SDL_GetError()));
     sdl::Surface icon(IMG_Load(fs::path("images/icon.png").string().c_str()));
-    if (!icon.get()) std::cout << "Failed to load icon, IMG Error:" << IMG_GetError() << std::endl;
+    if (!icon.get()) throw std::runtime_error("Failed to load icon, IMG Error: " + std::string(IMG_GetError()));
     SDL_SetWindowIcon(window.get(), icon.get());
     icon = nullptr;
-    if (!screen.get()) std::cout << "Failed to create renderer, SDL Error:" << SDL_GetError() << std::endl;
+    if (!screen.get()) throw std::runtime_error("Failed to create renderer, SDL Error:" + std::string(SDL_GetError()));
     if (SDL_GetRendererInfo(screen.get(), &screenInfo) < 0)
-        std::cout << "Failed to get renderer info, SDL Error:" << SDL_GetError() << std::endl;
+         throw std::runtime_error("Failed to get renderer info, SDL Error:" + std::string(SDL_GetError()));
     // For debugging, pretend renderer can't handle textures over 64x64
     // screenInfo.max_texture_height = 64;
     // screenInfo.max_texture_width = 64;
     std::cout << "Loading Map" << std::endl;
     sdl::Surface mapSurface(IMG_Load(fs::path("images/map-scaled.png").string().c_str()));
-    if (!mapSurface) std::cout << "Failed to load map surface, IMG Error:" << IMG_GetError() << std::endl;
+    if (!mapSurface) throw std::runtime_error("Failed to load map surface, IMG Error:" + std::string(IMG_GetError()));
     mapRect = {0, 0, mapSurface->w, mapSurface->h};
     mapTexture.reset(SDL_CreateTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapView.w, mapView.h));
     SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
@@ -113,7 +113,7 @@ void Game::renderMapTexture() {
         bottom = (mapView.y + mapView.h) / screenInfo.max_texture_height;
     SDL_Rect sR = {0, 0, 0, 0}, dR = {0, 0, 0, 0};
     if (SDL_SetRenderTarget(screen.get(), mapTexture.get()) < 0)
-        std::cout << "Failed to set render target, SDL Error: " << SDL_GetError() << std::endl;
+        throw std::runtime_error("Failed to set render target, SDL Error: " + std::string(SDL_GetError()));
     for (int c = left; c <= right; ++c) {
         dR.y = 0;
         dR.h = 0;
@@ -199,7 +199,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> basicGoods;
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM goods");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
+    if (sqlite3_step(q) != SQLITE_ROW) throw std::runtime_error("Error counting goods: " + std::string(sqlite3_errmsg(cn)));
     basicGoods.reserve(sqlite3_column_int(q, 0));
     quer = sql::makeQuery(cn, "SELECT good_id, name, measure, shoots FROM goods");
     q = quer.get();
@@ -212,7 +212,7 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> goods;
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM materials");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
+    if (sqlite3_step(q) != SQLITE_ROW) throw std::runtime_error("Error counting materials: " + std::string(sqlite3_errmsg(cn)));
     goods.reserve(sqlite3_column_int(q, 0));
     quer = sql::makeQuery(cn, "SELECT good_id, material_id, perish, carry FROM materials");
     q = quer.get();
@@ -421,7 +421,7 @@ void Game::loadData(sqlite3 *cn) {
 void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     auto quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM towns");
     auto q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
+    if (sqlite3_step(q) != SQLITE_ROW)throw std::runtime_error("Error counting towns: " + std::string(sqlite3_errmsg(cn)));
     // Game data holds town count for traveler properties.
     gameData.townCount = static_cast<unsigned int>(sqlite3_column_int(q, 0));
     // Store number of towns as double for progress bar purposes.
@@ -452,7 +452,7 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     // Load routes.
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM routes");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW) std::cout << sqlite3_errmsg(cn) << std::endl;
+    if (sqlite3_step(q) != SQLITE_ROW) throw std::runtime_error("Error counting routes: " + std::string(sqlite3_errmsg(cn)));
     unsigned int routeCount = sqlite3_column_int(q, 0);
     routes.reserve(routeCount);
     double rC = routeCount;
@@ -665,19 +665,18 @@ void Game::saveData() {
     sql::StmtPtr comm;
     comm = sql::makeQuery(conn.get(), updates.c_str());
     if (sqlite3_step(comm.get()) != SQLITE_DONE)
-        std::cout << "Error updating frequencies: " << sqlite3_errmsg(conn.get()) << std::endl << updates << std::endl;
+        throw std::runtime_error(updates + " error: " + std::string(sqlite3_errmsg(conn.get())));
     updates = "UPDATE consumption SET demand_slope = CASE";
     player->getTraveler()->getTown()->saveDemand(updates);
     comm = sql::makeQuery(conn.get(), updates.c_str());
     if (sqlite3_step(comm.get()) != SQLITE_DONE)
-        std::cout << "Error updating demand slopes: " << sqlite3_errmsg(conn.get()) << std::endl
-                  << updates << std::endl;
+        throw std::runtime_error(updates + " error: " + std::string(sqlite3_errmsg(conn.get())));
     updates = "INSERT OR IGNORE INTO routes VALUES";
     for (auto &r : routes) r.saveData(updates);
     updates.pop_back();
     comm = sql::makeQuery(conn.get(), updates.c_str());
     if (sqlite3_step(comm.get()) != SQLITE_DONE)
-        std::cout << "Error inserting routes: " << sqlite3_errmsg(conn.get()) << std::endl << updates << std::endl;
+        throw std::runtime_error(updates + " error: " + std::string(sqlite3_errmsg(conn.get())));
     comm = nullptr;
     conn = nullptr;
 }
