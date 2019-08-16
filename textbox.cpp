@@ -20,9 +20,8 @@
 #include "textbox.hpp"
 
 TextBox::TextBox(const BoxInfo &bI, Printer &pr)
-    : rect(bI.rect), fixedSize(rect.w && rect.h), canFocus(bI.canFocus), canEdit(bI.canEdit), text(bI.text),
-      foreground(bI.colors.foreground), background(bI.colors.background), id(bI.id), isNation(bI.isNation),
-      border(bI.size.border), radius(bI.size.radius), fontSize(bI.size.fontSize), images(bI.images), printer(pr) {
+    : rect(bI.rect), fixedSize(rect.w && rect.h), text(bI.text), colors(bI.colors), id(bI.id), size(bI.size),
+      behavior(bI.behavior), images(bI.images), printer(pr) {
     setText();
 }
 
@@ -35,15 +34,12 @@ void TextBox::setText() {
         rect.w = 0;
         rect.h = 0;
     }
-    if (isNation)
-        printer.setNationId(id);
+    if (id.second)
+        printer.setNationId(id.first);
     else
         printer.setNationId(0);
-    if (invColors)
-        printer.setColors(background, foreground);
-    else
-        printer.setColors(foreground, background);
-    printer.setSize(fontSize);
+    printer.setColors(colors);
+    printer.setSize(size);
     lineHeight = printer.getFontHeight();
     lines = text.size();
     if (rect.h && lines > size_t(rect.h / lineHeight)) {
@@ -51,7 +47,7 @@ void TextBox::setText() {
         lines = static_cast<size_t>(rect.h / lineHeight);
         text = std::vector<std::string>(begin(text), begin(text) + static_cast<std::vector<std::string>::difference_type>(lines));
     }
-    surface = printer.print(text, rect, border, radius, images);
+    surface = printer.print(text, rect, images);
     updateTexture = true;
 
     if (!fixedSize) {
@@ -62,16 +58,16 @@ void TextBox::setText() {
 }
 
 void TextBox::setBorder(int bd) {
-    rect.x += (border - bd);
-    rect.y += (border - bd);
-    rect.w += (bd - border) * 2;
-    rect.h += (bd - border) * 2;
-    border = bd;
+    rect.x += (size.border - bd);
+    rect.y += (size.border - bd);
+    rect.w += (bd - size.border) * 2;
+    rect.h += (bd - size.border) * 2;
+    size.border = bd;
     setText();
 }
 
 void TextBox::setInvColors(bool i) {
-    invColors = i;
+    colors.invert = i;
     setText();
 }
 
@@ -82,11 +78,13 @@ void TextBox::setClicked(bool c) {
 
 void TextBox::toggleFocus() {
     isFocus = !isFocus;
-    if (isFocus)
-        setBorder(border * 2);
-    else {
-        invColors = clicked;
-        setBorder(border / 2);
+    if (isFocus) {
+        setBorder(size.border * 2);
+        if (behavior == BoxInfo::edit) SDL_StartTextInput();
+    } else {
+        colors.invert = clicked;
+        setBorder(size.border / 2);
+        if (behavior == BoxInfo::edit) SDL_StopTextInput();
     }
 }
 
@@ -136,7 +134,7 @@ bool TextBox::clickCaptured(const SDL_MouseButtonEvent &b) const {
     SDL_Point mp;
     mp.x = b.x;
     mp.y = b.y;
-    return (canFocus && SDL_PointInRect(&mp, &rect));
+    return (canFocus() && SDL_PointInRect(&mp, &rect));
 }
 
 void TextBox::handleKey(const SDL_KeyboardEvent &k) {
@@ -150,8 +148,7 @@ void TextBox::handleKey(const SDL_KeyboardEvent &k) {
 }
 
 void TextBox::handleTextInput(const SDL_TextInputEvent &tx) {
-    if (!text.empty()) {
-        text.back().append(tx.text);
-        setText();
-    }
+    if (text.empty()) text.push_back("");
+    text.back().append(tx.text);
+    setText();
 }

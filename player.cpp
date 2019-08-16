@@ -20,7 +20,7 @@
 #include "player.hpp"
 
 Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printer(g.getPrinter()) {
-    printer.setSize(Settings::boxSize(BoxSize::small).fontSize);
+    printer.setSize(Settings::boxSize(BoxSize::small));
     smallBoxFontHeight = printer.getFontHeight();
     int bBB = Settings::boxSize(BoxSize::big).border;
     uIStates = {
@@ -36,7 +36,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                                         beginningBoxes.push_back(Settings::boxInfo({
                                                       screenRect.w * (static_cast<int>(nt.getId() - 1) % 3 * 2 + 1) / 6,
                                                       screenRect.h * (static_cast<int>(nt.getId() - 1) / 3 + 2) / 7, 0, 0},
-                                                      nt.getNames(), nt.getColors(), nt.getId(), true, BoxSize::big, SDLK_UNKNOWN,
+                                                      nt.getNames(), nt.getColors(), {nt.getId(), true}, BoxSize::big, SDLK_UNKNOWN,
                                                       [this, nt](MenuButton *) {
                                                         unsigned int nId = nt.getId(); // nation id
                                                         std::string name = pagers[0].getVisible(0)->getText(1);
@@ -53,7 +53,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                                 }),
            Settings::boxInfo({screenRect.w / 7, screenRect.h * 2 / 3, 0, 0}, {"(L)oad Game"}, BoxSize::big, SDLK_l,
                                 [this](MenuButton *) { setState(UIState::loading); })}}},
-        {UIState::beginning, {{Settings::boxInfo({screenRect.w / 2, screenRect.h / 7, 0, 0}, {"Name", ""}, BoxSize::big)}}},
+        {UIState::beginning, {{Settings::boxInfo({screenRect.w / 2, screenRect.h / 7, 0, 0}, {"Name", ""}, BoxSize::big, BoxInfo::edit)}}},
         {UIState::quitting,
          {{Settings::boxInfo({screenRect.w / 2, screenRect.h * 3 / 4, 0, 0}, {""}, BoxSize::big, SDLK_q,
                                 [this](MenuButton *) {
@@ -176,14 +176,12 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
     std::vector<std::string> saves;
     for (auto &file : fs::directory_iterator{path}) saves.push_back(file.path().stem().string());
     uIStates.at(UIState::loading)
-        .boxesInfo.push_back(Settings::boxInfo(
-            {screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7}, saves, BoxSize::big, SDLK_l,
-            [this, &path](MenuButton *btn) {
-                game.loadGame((path / btn->getItem()).replace_extension("sav"));
-                show = true;
-                setState(UIState::traveling);
-            },
-            true));
+        .boxesInfo.push_back(Settings::boxInfo({screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7},
+                                               saves, BoxSize::big, BoxInfo::scroll, SDLK_l, [this, &path](MenuButton *btn) {
+                                                   game.loadGame((path / btn->getItem()).replace_extension("sav"));
+                                                   show = true;
+                                                   setState(UIState::traveling);
+                                               }));
 }
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
@@ -272,7 +270,7 @@ void Player::focusPrev(FocusGroup g) {
     if (i == -1) {
         i = s;
         while (i--)
-            if (fcbls[static_cast<size_t>(i)]->getCanFocus()) break;
+            if (fcbls[static_cast<size_t>(i)]->canFocus()) break;
         if (i < 0)
             // No focusable item found in group.
             return;
@@ -282,7 +280,7 @@ void Player::focusPrev(FocusGroup g) {
         while (--i != j)
             if (i < 0)
                 i = s;
-            else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
+            else if (fcbls[static_cast<size_t>(i)]->canFocus())
                 break;
     }
     fcbls[static_cast<size_t>(i)]->toggleFocus();
@@ -297,7 +295,7 @@ void Player::focusNext(FocusGroup g) {
     if (i == -1) {
         // Nothing was focused, find first focusable item.
         while (++i < s)
-            if (fcbls[static_cast<size_t>(i)]->getCanFocus()) break;
+            if (fcbls[static_cast<size_t>(i)]->canFocus()) break;
         if (i == s) {
             i = -1;
             // No focusable item was found in group.
@@ -310,7 +308,7 @@ void Player::focusNext(FocusGroup g) {
             // Loop until we come back to the same item.
             if (i == s)
                 i = -1;
-            else if (fcbls[static_cast<size_t>(i)]->getCanFocus())
+            else if (fcbls[static_cast<size_t>(i)]->canFocus())
                 break;
     }
     fcbls[static_cast<size_t>(i)]->toggleFocus();
@@ -328,11 +326,11 @@ void Player::setState(UIState::State s) {
     std::vector<std::string> saves;
     // Create boxes for new state.
     for (auto &bI : newState.boxesInfo)
-        if (bI.onClick && bI.scroll)
+        if (bI.onClick && bI.behavior == BoxInfo::scroll)
             pagers[0].addBox(std::make_unique<SelectButton>(bI, printer));
         else if (bI.onClick)
             pagers[0].addBox(std::make_unique<MenuButton>(bI, printer));
-        else if (bI.scroll)
+        else if (bI.behavior == BoxInfo::scroll)
             pagers[0].addBox(std::make_unique<ScrollBox>(bI, printer));
         else
             pagers[0].addBox(std::make_unique<TextBox>(bI, printer));
@@ -342,7 +340,7 @@ void Player::setState(UIState::State s) {
         int bBB = Settings::boxSize(BoxSize::big).border;
         // Create portion box and set portion button.
         pagers[0].addBox(std::make_unique<TextBox>(
-            Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {""}, true, BoxSize::small), printer));
+            Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {""}, BoxSize::small, BoxInfo::edit), printer));
         portionBox = pagers[0].getVisible().back();
         traveler->updatePortionBox(portionBox);
         pagers[0].addBox(std::make_unique<MenuButton>(

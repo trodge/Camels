@@ -161,7 +161,7 @@ void Business::run(Property &inv, const std::unordered_map<unsigned int, Conflic
     }
 }
 
-std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo bI, Printer &pr) const {
+std::unique_ptr<MenuButton> Business::button(bool aS, BoxInfo &bI, Printer &pr) const {
     // Create a button for this business using the given box info.
     bI.text = {name};
     std::string unitText; // Units of input and output post-fix.

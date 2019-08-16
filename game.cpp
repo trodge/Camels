@@ -36,7 +36,7 @@ Game::Game()
     icon = nullptr;
     if (!screen.get()) throw std::runtime_error("Failed to create renderer, SDL Error:" + std::string(SDL_GetError()));
     if (SDL_GetRendererInfo(screen.get(), &screenInfo) < 0)
-         throw std::runtime_error("Failed to get renderer info, SDL Error:" + std::string(SDL_GetError()));
+        throw std::runtime_error("Failed to get renderer info, SDL Error:" + std::string(SDL_GetError()));
     // For debugging, pretend renderer can't handle textures over 64x64
     // screenInfo.max_texture_height = 64;
     // screenInfo.max_texture_width = 64;
@@ -199,7 +199,8 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> basicGoods;
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM goods");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW) throw std::runtime_error("Error counting goods: " + std::string(sqlite3_errmsg(cn)));
+    if (sqlite3_step(q) != SQLITE_ROW)
+        throw std::runtime_error("Error counting goods: " + std::string(sqlite3_errmsg(cn)));
     basicGoods.reserve(sqlite3_column_int(q, 0));
     quer = sql::makeQuery(cn, "SELECT good_id, name, measure, shoots FROM goods");
     q = quer.get();
@@ -212,7 +213,8 @@ void Game::loadData(sqlite3 *cn) {
     std::vector<Good> goods;
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM materials");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW) throw std::runtime_error("Error counting materials: " + std::string(sqlite3_errmsg(cn)));
+    if (sqlite3_step(q) != SQLITE_ROW)
+        throw std::runtime_error("Error counting materials: " + std::string(sqlite3_errmsg(cn)));
     goods.reserve(sqlite3_column_int(q, 0));
     quer = sql::makeQuery(cn, "SELECT good_id, material_id, perish, carry FROM materials");
     q = quer.get();
@@ -421,7 +423,8 @@ void Game::loadData(sqlite3 *cn) {
 void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     auto quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM towns");
     auto q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW)throw std::runtime_error("Error counting towns: " + std::string(sqlite3_errmsg(cn)));
+    if (sqlite3_step(q) != SQLITE_ROW)
+        throw std::runtime_error("Error counting towns: " + std::string(sqlite3_errmsg(cn)));
     // Game data holds town count for traveler properties.
     gameData.townCount = static_cast<unsigned int>(sqlite3_column_int(q, 0));
     // Store number of towns as double for progress bar purposes.
@@ -452,7 +455,8 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     // Load routes.
     quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM routes");
     q = quer.get();
-    if (sqlite3_step(q) != SQLITE_ROW) throw std::runtime_error("Error counting routes: " + std::string(sqlite3_errmsg(cn)));
+    if (sqlite3_step(q) != SQLITE_ROW)
+        throw std::runtime_error("Error counting routes: " + std::string(sqlite3_errmsg(cn)));
     unsigned int routeCount = sqlite3_column_int(q, 0);
     routes.reserve(routeCount);
     double rC = routeCount;

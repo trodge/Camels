@@ -19,16 +19,23 @@
 
 #include "printer.hpp"
 
-void Printer::setSize(unsigned int sz) {
-    fontSizeIt = std::lower_bound(begin(fontSizes), end(fontSizes), sz); // iterator to correct font size
-    if (fontSizeIt == end(fontSizes) || fontSizeIt->size != sz) {
+void Printer::setSize(BoxSize sz) {
+    size = sz;
+    unsigned int fS = sz.fontSize;
+    fontSizeIt = std::lower_bound(begin(fontSizes), end(fontSizes), fS); // iterator to correct font size
+    if (fontSizeIt == end(fontSizes) || fontSizeIt->size != fS) {
         fontSizeIt = fontSizes.insert(
-            fontSizeIt, {{sdl::Font(TTF_OpenFont("DejaVuSerif.ttf", sz)), sdl::Font(TTF_OpenFont("DejaVuSans.ttf", sz)),
-                          sdl::Font(TTF_OpenFont("NotoSerifDevanagari-Regular.ttf", sz)),
-                          sdl::Font(TTF_OpenFont("wqy-microhei-lite.ttc", sz)),
-                          sdl::Font(TTF_OpenFont("NotoSerifBengali-Regular.ttf", sz))},
-                         sz});
+            fontSizeIt, {{sdl::Font(TTF_OpenFont("DejaVuSerif.ttf", fS)), sdl::Font(TTF_OpenFont("DejaVuSans.ttf", fS)),
+                          sdl::Font(TTF_OpenFont("NotoSerifDevanagari-Regular.ttf", fS)),
+                          sdl::Font(TTF_OpenFont("wqy-microhei-lite.ttc", fS)),
+                          sdl::Font(TTF_OpenFont("NotoSerifBengali-Regular.ttf", fS))},
+                         fS});
     }
+}
+
+void Printer::setColors(const ColorScheme &clrs) {
+    colors = clrs;
+    if (clrs.invert) std::swap(colors.foreground, colors.background);
 }
 
 int Printer::getFontWidth(const std::string &tx) {
@@ -37,7 +44,7 @@ int Printer::getFontWidth(const std::string &tx) {
     return w;
 }
 
-sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs) {
+sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, const std::vector<Image> &imgs) {
     // Create a new SDL_Surface with the given text printed on it. Nation ID used to determine fonts.
     size_t numLines = tx.size();
     std::vector<int> tWs, tHs;      // Widths and heights for each line of text.
@@ -51,9 +58,9 @@ sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
     for (auto &t : tx) {
         // Render lines of text.
         if (t.empty())
-            tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), " ", foreground));
+            tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), " ", colors.foreground));
         else
-            tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), t.c_str(), foreground));
+            tSs.push_back(TTF_RenderUTF8_Solid(fI->get(), t.c_str(), colors.foreground));
         tWs.push_back(tSs.back()->w);
         if (tWs.back() > mW) mW = tWs.back();
         tHs.push_back(TTF_FontHeight(fI->get()));
@@ -76,19 +83,19 @@ sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
             fI += 1;
         }
     }
-    if (!rt.w) rt.w = mW + 2 * b;
-    if (!rt.h) rt.h = mH + 2 * b;
+    if (!rt.w) rt.w = mW + 2 * size.border;
+    if (!rt.h) rt.h = mH + 2 * size.border;
 
     sdl::Surface p(SDL_CreateRGBSurface(surfaceFlags, rt.w, rt.h, bitDepth, rmask, gmask, bmask, amask));
     sdl::Renderer swRdr(SDL_CreateSoftwareRenderer(p.get()));
     SDL_Rect dR = {0, 0, rt.w, rt.h};
-    if (b) {
+    if (size.border) {
         // Draw border.
-        drawRoundedRectangle(swRdr.get(), r, &dR, foreground);
-        dR = {b, b, rt.w - 2 * b, rt.h - 2 * b};
+        drawRoundedRectangle(swRdr.get(), size.radius, &dR, colors.foreground);
+        dR = {size.border, size.border, rt.w - 2 * size.border, rt.h - 2 * size.border};
     }
     // Draw background.
-    drawRoundedRectangle(swRdr.get(), r, &dR, background);
+    drawRoundedRectangle(swRdr.get(), size.radius, &dR, colors.background);
     Alignment justify = center;
     for (auto &img : imgs) {
         // Blit image onto its rectangle on printing surface.
@@ -109,18 +116,19 @@ sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, in
         dR.h = tHs[i];
         switch (justify) {
         case left:
-            dR.x = 2 * b;
+            dR.x = 2 * size.border;
             break;
         case right:
-            dR.x = rt.w - dR.w - 2 * b;
+            dR.x = rt.w - dR.w - 2 * size.border;
             break;
         case center:
             dR.x = rt.w / 2 - dR.w / 2;
             break;
         }
         if (i == static_cast<size_t>(highlightLine)) {
-            SDL_Rect hlR = {b, dR.y, rt.w - 2 * b, dR.h};
-            SDL_SetRenderDrawColor(swRdr.get(), highlight.r, highlight.g, highlight.b, highlight.a);
+            SDL_Rect hlR = {size.border, dR.y, rt.w - 2 * size.border, dR.h};
+            SDL_SetRenderDrawColor(swRdr.get(), colors.highlight.r, colors.highlight.g, colors.highlight.b,
+                                   colors.highlight.a);
             SDL_RenderFillRect(swRdr.get(), &hlR);
         }
         SDL_BlitSurface(tSs[i], nullptr, p.get(), &dR);

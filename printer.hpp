@@ -31,8 +31,9 @@
 
 class Printer {
     unsigned int nationId;
-    SDL_Color foreground, background, highlight;
+    ColorScheme colors;
     int highlightLine = -1;
+    BoxSize size;
     struct FontSize {
         bool operator<(unsigned int sz) { return size < sz; }
         std::array<sdl::Font, kFontCount> fonts;
@@ -43,20 +44,14 @@ class Printer {
     enum Alignment { left, right, center };
 
 public:
-    void setSize(unsigned int s);
-    void setColors(const SDL_Color &fg, const SDL_Color &bg) {
-        foreground = fg;
-        background = bg;
-    }
-    void setHighlight(const SDL_Color &hl) { highlight = hl; };
+    void setSize(BoxSize sz);
+    void setColors(const ColorScheme &clrs);
     void setHighlightLine(int h) { highlightLine = h; }
     void setNationId(unsigned int n) { nationId = n; }
     int getFontHeight() { return TTF_FontHeight(fontSizeIt->fonts.front().get()); }
     int getFontWidth(const std::string &tx);
-    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r, const std::vector<Image> &imgs);
-    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt, int b, int r) {
-        return print(tx, rt, b, r, std::vector<Image>());
-    }
+    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt, const std::vector<Image> &imgs);
+    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt) { return print(tx, rt, std::vector<Image>()); }
 };
 
 #endif

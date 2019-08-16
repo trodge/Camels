@@ -19,12 +19,10 @@
 
 #include "scrollbox.hpp"
 
-ScrollBox::ScrollBox(const BoxInfo &bI, Printer &pr)
-    : TextBox(bI, pr), highlight(bI.colors.highlight), items(bI.text) {}
+ScrollBox::ScrollBox(const BoxInfo &bI, Printer &pr) : TextBox(bI, pr), items(bI.text) {}
 
 void ScrollBox::setText() {
     printer.setHighlightLine(highlightLine - static_cast<int>(scroll));
-    printer.setHighlight(highlight);
     TextBox::setText();
     printer.setHighlightLine(-1);
 }
@@ -37,7 +35,7 @@ void ScrollBox::setItems(const std::vector<std::string> &is) {
 }
 
 void ScrollBox::addItem(const std::string &i) {
-    printer.setSize(fontSize);
+    printer.setSize(size);
     std::string entry = i, overflow;
     while (printer.getFontWidth(entry) > rect.w) {
         overflow.insert(begin(overflow), entry.back());
@@ -62,7 +60,7 @@ void ScrollBox::setHighlightLine(int h) {
     } else
         scroll = 0;
     clicked = false;
-    invColors = false;
+    colors.invert = false;
     setText(std::vector<std::string>(begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll),
                                      begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
 }

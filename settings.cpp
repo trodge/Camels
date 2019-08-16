@@ -286,8 +286,8 @@ double Settings::aILimitFactor() {
     return lFDis(rng);
 }
 
-BoxInfo Settings::boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
-                          bool iN, bool cF, bool cE, BoxSize::Size sz, SDL_Keycode ky,
-                          const std::function<void(MenuButton *)> &fn, bool scl, const SDL_Rect &oR) {
-    return {rt, tx, sm, i, iN, cF, cE, boxSizes[sz], {}, ky, fn, scl, oR};
+BoxInfo Settings::boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
+                          std::pair<unsigned int, bool> i, BoxSize::Size sz, BoxInfo::Behavior bvr, SDL_Keycode ky,
+                          const std::function<void(MenuButton *)> &fn, const SDL_Rect &oR) {
+    return {rt, tx, sm, i, boxSizes[sz], bvr, {}, ky, fn, oR};
 }

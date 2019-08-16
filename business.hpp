@@ -81,7 +81,7 @@ public:
     void takeRequirements(Property &inv, double a);
     void reclaim(Property &inv, double a);
     void run(Property &inv, const std::unordered_map<unsigned int, Conflict> &cfcts);
-    std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
+    std::unique_ptr<MenuButton> button(bool aS, BoxInfo &bI, Printer &pr) const;
     void saveFrequency(unsigned long p, std::string &u) const;
 };
 

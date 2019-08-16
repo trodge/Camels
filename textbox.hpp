@@ -33,15 +33,15 @@
 class TextBox {
 protected:
     SDL_Rect rect{0, 0, 0, 0};
-    bool fixedSize = false, canFocus = false, canEdit = false, isFocus = false;
+    bool fixedSize = false, isFocus = false;
     std::vector<std::string> text;
     size_t lines = 0;
-    SDL_Color foreground{0, 0, 0, 0};
-    SDL_Color background{0, 0, 0, 0};
-    unsigned int id = 0;
-    bool isNation = false;
-    int border = 0, radius = 0, fontSize = -1, lineHeight = -1; // radius of rounded corner circles
-    bool invColors = false, clicked = false;
+    ColorScheme colors;
+    std::pair<unsigned int, bool> id = {0, false}; // id and whether id is nation id
+    BoxSize size;
+    BoxInfo::Behavior behavior; // inert, focus, edit, scroll
+    int lineHeight = -1;        // radius of rounded corner circles
+    bool clicked = false;       // default button behavoir is to toggle between clicked and unclicked state
     sdl::Surface surface;
     sdl::Texture texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface
@@ -53,13 +53,12 @@ public:
     TextBox(const BoxInfo &bI, Printer &pr);
     virtual ~TextBox() {}
     const SDL_Rect &getRect() const { return rect; }
-    bool getCanFocus() const { return canFocus; }
+    bool canFocus() const { return behavior != BoxInfo::inert; }
     const std::vector<std::string> &getText() const { return text; }
     const std::string &getText(size_t i) const { return text[i]; }
     virtual const std::string &getItem() const { return text.back(); }
     bool getClicked() const { return clicked; }
-    unsigned int getId() const { return id; }
-    int getDivisor() const { return fontSize; }
+    unsigned int getId() const { return id.first; }
     virtual int getHighlightLine() const { return -1; }
     virtual void setText();
     void setText(const std::vector<std::string> &tx) {

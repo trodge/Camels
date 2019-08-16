@@ -101,20 +101,20 @@ class Traveler {
     std::forward_list<Town *> pathTo(const Town *t) const;
     double distSq(int x, int y) const;
     double pathDist(const Town *t) const;
-    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, SDL_Keycode ky,
-                    const std::function<void(MenuButton *)> &fn, bool scl) {
-        return Settings::boxInfo(rt, tx, nation->getColors(), 0, false, sz, ky, fn, scl);
+    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, BoxInfo::Behavior bvr,
+                    SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+        return Settings::boxInfo(rt, tx, nation->getColors(), {0, false}, sz, bvr, ky, fn);
     }
-    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, bool scl) {
-        return boxInfo(rt, tx, sz, SDLK_UNKNOWN, nullptr, scl);
+    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, BoxInfo::Behavior bvr) {
+        return boxInfo(rt, tx, sz, bvr, SDLK_UNKNOWN, nullptr);
     }
     BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz) {
-        return boxInfo(rt, tx, sz, false);
-    }
+        return boxInfo(rt, tx, sz, BoxInfo::inert);
+    } // all traveler boxes
     BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return boxInfo(rt, tx, BoxSize::trade);
-    } // fight boxes
-    BoxInfo boxInfo() { return boxInfo({0, 0, 0, 0}, {}); }
+        return boxInfo(rt, tx, BoxSize::fight);
+    }                                                                       // fight boxes
+    BoxInfo boxInfo() { return boxInfo({0, 0, 0, 0}, {}, BoxSize::trade); } // good and business buttons
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
     void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);

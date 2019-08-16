@@ -36,10 +36,10 @@ void LoadBar::progress(double c) {
 
 void LoadBar::draw(SDL_Renderer *s) {
     // draw border
-    drawRoundedRectangle(s, radius, &outsideRect, foreground);
+    drawRoundedRectangle(s, size.radius, &outsideRect, colors.foreground);
     // draw incomplete rectangle
-    drawRoundedRectangle(s, radius, &insideRect, background);
+    drawRoundedRectangle(s, size.radius, &insideRect, colors.background);
     // draw complete rectangle
-    drawRoundedRectangle(s, radius, &completeRect, foreground);
+    drawRoundedRectangle(s, size.radius, &completeRect, colors.foreground);
     TextBox::draw(s);
 }

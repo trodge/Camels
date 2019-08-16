@@ -137,7 +137,7 @@ public:
     void setMaximum() { maximum = std::abs(consumptionRate) * Settings::getConsumptionSpaceFactor(); }
     void setMaximum(double max) { maximum = std::max(maximum, max); }
     void setDemandSlope() { demandSlope = std::max((demandIntercept - minPrice) / maximum, demandSlope); }
-    std::unique_ptr<MenuButton> button(bool aS, BoxInfo bI, Printer &pr) const;
+    std::unique_ptr<MenuButton> button(bool aS, BoxInfo &bI, Printer &pr) const;
     void adjustDemandSlope(double dDS);
 };
 

@@ -239,9 +239,9 @@ void Good::update(unsigned int elTm, double dyLn) {
     amount -= perished;
 }
 
-std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo bI, Printer &pr) const {
+std::unique_ptr<MenuButton> Good::button(bool aS, BoxInfo &bI, Printer &pr) const {
     bI.text = {fullName};
-    bI.id = fullId;
+    bI.id = {fullId, false};
     if (image) bI.images = {{image, {2 * bI.size.border, bI.rect.h / 2 - image->h / 2, image->w, image->h}}};
     if (aS) {
         // Button will have amount shown.
