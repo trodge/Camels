@@ -114,7 +114,7 @@ class Traveler {
     BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx) {
         return boxInfo(rt, tx, BoxSize::fight);
     }                                                                       // fight boxes
-    BoxInfo boxInfo() { return boxInfo({0, 0, 0, 0}, {}, BoxSize::trade); } // good and business buttons
+    BoxInfo boxInfo() { return boxInfo({0, 0, 0, 0}, {}, BoxSize::trade, BoxInfo::focus); } // good and business buttons
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
     void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);

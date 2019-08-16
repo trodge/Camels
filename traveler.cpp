@@ -480,7 +480,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
     pgrs[1].setBounds(rt);
     int dx = (rt.w + m) / kPartCount, dy = (rt.h + m) / Settings::getGoodButtonRows();
-    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSize::equip);
+    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSize::equip, BoxInfo::focus);
     std::array<std::vector<Good>, kPartCount> equippable;
     // array of vectors corresponding to parts that can hold equipment
     properties.find(0)->second.queryGoods([&equippable](const Good &g) {
