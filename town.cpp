@@ -20,18 +20,19 @@
 #include "town.hpp"
 
 Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat,
-           unsigned int tT, bool ctl, unsigned long ppl, Printer &pr)
+           TownType tT, bool ctl, unsigned long ppl, Printer &pr)
     : id(i), nation(nt),
       box(std::make_unique<TextBox>(
-          Settings::boxInfo({0, 0, 0, 0}, nms, nt->getColors(), {nt->getId(), true}, BoxSize::town, BoxInfo::focus), pr)),
+          Settings::boxInfo({0, 0, 0, 0}, nms, nt->getColors(), {nt->getId(), true}, BoxSizeType::town, BoxBehavior::focus), pr)),
       longitude(lng), latitude(lat), property(tT, ctl, ppl, &nt->getProperty()) {}
 
-Town::Town(const Save::Town *t, const std::vector<Nation> &ns, Printer &pr)
-    : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
-      box(std::make_unique<TextBox>(Settings::boxInfo({0, 0, 0, 0}, {t->names()->Get(0)->str(), t->names()->Get(1)->str()},
-                                                      nation->getColors(), {nation->getId(), true}, BoxSize::town, BoxInfo::focus),
-                                    pr)),
-      longitude(t->longitude()), latitude(t->latitude()), property(t->property(), &nation->getProperty()) {
+Town::Town(const Save::Town *ldTn, const std::vector<Nation> &ns, Printer &pr)
+    : id(static_cast<unsigned int>(ldTn->id())), nation(&ns[static_cast<size_t>(ldTn->nation() - 1)]),
+      box(std::make_unique<TextBox>(
+          Settings::boxInfo({0, 0, 0, 0}, {ldTn->names()->Get(0)->str(), ldTn->names()->Get(1)->str()},
+                            nation->getColors(), {nation->getId(), true}, BoxSizeType::town, BoxBehavior::focus),
+          pr)),
+      longitude(ldTn->longitude()), latitude(ldTn->latitude()), property(ldTn->property(), &nation->getProperty()) {
     // Load a town from the given flatbuffers save object. Copy image pointers from nation's goods.
 }
 
@@ -129,7 +130,9 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
                 } else
                     ++water;
             }
-            if (water < 24) { neighbors.insert(std::lower_bound(begin(neighbors), end(neighbors), &t, closer), &t); }
+            if (water < 24) {
+                neighbors.insert(std::lower_bound(begin(neighbors), end(neighbors), &t, closer), &t);
+            }
         }
     }
     // Take only the closest towns.

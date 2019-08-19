@@ -32,10 +32,15 @@
 #include "printer.hpp"
 #include "settings.hpp"
 
+enum class Part { head, torso, leftArm, rightArm, leftLeg, rightLeg, count };
+enum class AttackType { none, bash, slash, stab, count };
+
 struct CombatStat {
-    unsigned int statId, partId, attack, type, speed;
-    // attack types are 1: bash, 2: slash, 3: stab
-    std::array<unsigned int, 3> defense;
+    Part part;
+    Stat stat;
+    unsigned int attack, speed;
+    AttackType type;
+    std::array<unsigned int, static_cast<size_t>(AttackType::count) - 1> defense;
 };
 
 class Good {
@@ -67,26 +72,26 @@ public:
     Good(unsigned int gId, const std::string &gNm, const std::string &msr, unsigned int aId)
         : goodId(gId), goodName(gNm), measure(msr), shoots(aId) {} // constructor for loading from goods table
     Good(const Good &gd, const Good &mt, unsigned int fId, double pr, double cr)
-        : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName), materialName(mt.goodName),
-          fullName(completeName()), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
-    } // constructor for loading from materials table
+        : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName),
+          materialName(mt.goodName), fullName(completeName()), perish(pr), carry(cr), measure(gd.measure),
+          split(!measure.empty()) {} // constructor for loading from materials table
     Good(const Good &gd, double amt)
         : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {
     } // constructor for business inputs and outputs
     Good(unsigned int fId, const std::string &fNm, double amt, const std::vector<CombatStat> &cSs, SDL_Surface *img)
         : fullId(fId), fullName(fNm), amount(amt), combatStats(cSs), image(img) {} // constructor for equipment
-    Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {}               // constructor for transfer goods
+    Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {} // constructor for transfer goods
     Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
-        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
-    Good(const Save::Good *svG)
-        : goodId(svG->goodId()), materialId(svG->materialId()), fullId(svG->fullId()), goodName(svG->goodName()->str()),
-          materialName(svG->materialName()->str()), fullName(completeName()), amount(svG->amount()),
-          perish(svG->perish()), carry(svG->carry()), measure(svG->measure()->str()), split(!measure.empty()),
-          consumptionRate(svG->consumptionRate()), demandSlope(svG->demandSlope()), demandIntercept(svG->demandIntercept()),
-          minPrice(demandIntercept / Settings::getMinPriceDivisor()), lastAmount(amount) {}
+        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {
+    } // constructor for trade goods
+    Good(const Save::Good *ldGd);
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
-    bool operator==(const Good &other) const { return goodId == other.goodId && materialId == other.materialId; }
-    bool operator!=(const Good &other) const { return goodId != other.goodId || materialId != other.materialId; }
+    bool operator==(const Good &other) const {
+        return goodId == other.goodId && materialId == other.materialId;
+    }
+    bool operator!=(const Good &other) const {
+        return goodId != other.goodId || materialId != other.materialId;
+    }
     bool operator<(const Good &other) const { return fullId < other.fullId; }
     unsigned int getGoodId() const { return goodId; }
     unsigned int getMaterialId() const { return materialId; }

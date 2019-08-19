@@ -19,8 +19,9 @@
 
 #include "nation.hpp"
 
-Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj, const SDL_Color &fgr,
-               const SDL_Color &bgr, const std::string &rlg, const std::vector<Good> &gds, const std::vector<Business> &bsns)
+Nation::Nation(unsigned int i, const std::vector<std::string> &nms, const std::string &adj,
+               const SDL_Color &fgr, const SDL_Color &bgr, const std::string &rlg,
+               const std::vector<Good> &gds, const std::vector<Business> &bsns)
     : id(i), names(nms), adjective(adj), religion(rlg), property(gds, bsns) {
     colors.foreground = fgr;
     colors.background = bgr;

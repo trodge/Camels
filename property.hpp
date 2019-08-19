@@ -33,6 +33,7 @@
 namespace mi = boost::multi_index;
 
 #include "business.hpp"
+#include "constants.hpp"
 #include "good.hpp"
 #include "pager.hpp"
 
@@ -53,7 +54,7 @@ class Property {
     using MtIdHsh = mi::hashed_unique<mi::tag<struct MaterialId>, mi::composite_key<Good, GdId, MtId>>;
     using FlIdHsh = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
     using GoodContainer = boost::multi_index_container<Good, mi::indexed_by<FlIdOdr, GdIdHsh, MtIdHsh, FlIdHsh>>;
-    unsigned int townType;
+    TownType townType;
     bool coastal;
     unsigned long population;
     GoodContainer goods;
@@ -64,14 +65,14 @@ class Property {
     void addGood(const Good &srGd, const std::function<void(Good &)> &fn);
 
 public:
-    Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src); // constructor for town
+    Property(TownType tT, bool ctl, unsigned long ppl, const Property *src); // constructor for town
     Property(bool ctl, const Property *src)
         : coastal(ctl), updateCounter(Settings::propertyUpdateCounter()), source(src) {} // constructor for traveler
     Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
         : goods(begin(gds), end(gds)), businesses(bsns) {}    // constructor for nation
-    Property(const Save::Property *ppt, const Property *src); // constructor for loading
+    Property(const Save::Property *svPpt, const Property *src); // constructor for loading
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b, unsigned int tId) const;
-    unsigned int getTownType() const { return townType; }
+    TownType getTownType() const { return townType; }
     bool getCoastal() const { return coastal; }
     unsigned long getPopulation() const { return population; }
     bool hasGood(unsigned int fId) const;
@@ -83,7 +84,8 @@ public:
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const {
-        return std::accumulate(begin(goods), end(goods), 0, [](double w, const auto &gd) { return w + gd.weight(); });
+        return std::accumulate(begin(goods), end(goods), 0,
+                               [](double w, const auto &gd) { return w + gd.weight(); });
     }
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);

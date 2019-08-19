@@ -28,9 +28,7 @@
 const double kPi = boost::math::constants::pi<double>();
 const double kShowPlayerPadding = 0.2; // Portion of screen to pad around player when map zooms to player
 const double kTravelerCarry = -16;
-const size_t kStatCount = 5;
-const size_t kPartCount = 6;             // number of parts travelers have
-const size_t kDecisionCriteriaCount = 8; // number of decision criteria AI uses
+const size_t kStatusChanceCount = 3;
 const size_t kFontCount = 5;             // number of fonts used to display text
 const int kMaxGoodImageSize = 51;
 

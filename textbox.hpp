@@ -39,7 +39,7 @@ protected:
     ColorScheme colors;
     std::pair<unsigned int, bool> id = {0, false}; // id and whether id is nation id
     BoxSize size;
-    BoxInfo::Behavior behavior; // inert, focus, edit, scroll
+    BoxBehavior behavior; // inert, focus, edit, scroll
     int lineHeight = -1;        // radius of rounded corner circles
     bool clicked = false;       // default button behavoir is to toggle between clicked and unclicked state
     sdl::Surface surface;
@@ -53,7 +53,7 @@ public:
     TextBox(const BoxInfo &bI, Printer &pr);
     virtual ~TextBox() {}
     const SDL_Rect &getRect() const { return rect; }
-    bool canFocus() const { return behavior != BoxInfo::inert; }
+    bool canFocus() const { return behavior != BoxBehavior::inert; }
     const std::vector<std::string> &getText() const { return text; }
     const std::string &getText(size_t i) const { return text[i]; }
     virtual const std::string &getItem() const { return text.back(); }

@@ -19,71 +19,79 @@
 
 #include "traveler.hpp"
 
-Traveler::Traveler(const std::string &n, Town *t, const GameData &gD)
-    : name(n), toTown(t), fromTown(t), nation(t->getNation()), longitude(t->getLongitude()), latitude(t->getLatitude()),
-      moving(false), portion(1), gameData(gD) {
+Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
+    : name(n), toTown(tn), fromTown(tn), nation(tn->getNation()), longitude(tn->getLongitude()),
+      latitude(tn->getLatitude()), moving(false), portion(1), gameData(gD) {
     // Copy goods vector from nation.
     properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
-                       std::forward_as_tuple(false, &t->getNation()->getProperty()));
+                       std::forward_as_tuple(false, &tn->getNation()->getProperty()));
     // Equip fists.
-    equip(2);
-    equip(3);
+    equip(Part::leftArm);
+    equip(Part::rightArm);
     // Randomize stats.
     stats = Settings::travelerStats();
     // Set parts status to normal.
-    parts.fill(0);
+    parts.fill(Status::normal);
 }
 
-Traveler::Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD)
-    : name(t->name()->str()), toTown(&ts[static_cast<size_t>(t->toTown() - 1)]),
-      fromTown(&ts[static_cast<size_t>(t->fromTown() - 1)]), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
-      longitude(t->longitude()), latitude(t->latitude()), moving(t->moving()), portion(1), gameData(gD) {
-    auto lLog = t->log();
-    for (auto lLI = lLog->begin(); lLI != lLog->end(); ++lLI) logText.push_back(lLI->str());
+Traveler::Traveler(const Save::Traveler *ldTvl, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD)
+    : name(ldTvl->name()->str()), toTown(&ts[static_cast<size_t>(ldTvl->toTown() - 1)]),
+      fromTown(&ts[static_cast<size_t>(ldTvl->fromTown() - 1)]),
+      nation(&ns[static_cast<size_t>(ldTvl->nation() - 1)]), longitude(ldTvl->longitude()),
+      latitude(ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
+    auto ldLog = ldTvl->log();
+    std::transform(ldLog->begin(), ldLog->end(), std::back_inserter(logText),
+                   [](auto ldL) { return ldL->str(); });
     // Copy good image pointers from nation's goods to traveler's goods.
-    auto nPpt = &nation->getProperty();
-    auto lProperties = t->properties();
-    for (auto lPI = lProperties->begin(); lPI != lProperties->end(); ++lPI)
-        properties.emplace(std::piecewise_construct, std::forward_as_tuple((*lPI)->townId()), std::forward_as_tuple(*lPI, nPpt));
-    auto lStats = t->stats();
-    for (size_t i = 0; i < stats.size(); ++i) stats[i] = lStats->Get(static_cast<unsigned int>(i));
-    auto lParts = t->parts();
-    for (size_t i = 0; i < parts.size(); ++i) parts[i] = lParts->Get(static_cast<unsigned int>(i));
-    auto lEquipment = t->equipment();
-    for (auto lEI = lEquipment->begin(); lEI != lEquipment->end(); ++lEI) equipment.push_back(Good(*lEI));
+    auto ntPpt = &nation->getProperty();
+    auto ldProperties = ldTvl->properties();
+    for (auto ldPI = ldProperties->begin(); ldPI != ldProperties->end(); ++ldPI)
+        properties.emplace(std::piecewise_construct, std::forward_as_tuple((*ldPI)->townId()),
+                           std::forward_as_tuple(*ldPI, ntPpt));
+    auto ldStats = ldTvl->stats();
+    std::transform(ldStats->begin(), ldStats->end(), begin(stats), [](auto ldSt) { return ldSt; });
+    auto ldParts = ldTvl->parts();
+    std::transform(ldParts->begin(), ldParts->end(), begin(parts),
+                   [](auto ldPt) { return static_cast<Status>(ldPt); });
+    auto ldEquipment = ldTvl->equipment();
+    std::transform(ldEquipment->begin(), ldEquipment->end(), std::back_inserter(equipment),
+                   [](auto ldEq) { return Good(ldEq); });
 }
 
 flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilder &b) const {
     // Return a flatbuffers save object for this traveler.
-    auto sName = b.CreateString(name);
-    auto sLog = b.CreateVectorOfStrings(logText);
+    auto svName = b.CreateString(name);
+    auto svLog = b.CreateVectorOfStrings(logText);
     std::vector<std::pair<unsigned int, Property>> vPpts(begin(properties), end(properties));
-    auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(
+    auto svProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(
         properties.size(), [&b, &vPpts](size_t i) { return vPpts[i].second.save(b, vPpts[i].first); });
-    auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
-    auto sParts = b.CreateVector(std::vector<unsigned int>(begin(parts), end(parts)));
-    auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+    auto svStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
+    std::vector<unsigned int> vParts(static_cast<size_t>(Part::count));
+    std::transform(begin(parts), end(parts), begin(vParts),
+                   [](auto pt) { return static_cast<unsigned int>(pt); });
+    auto svParts = b.CreateVector(vParts);
+    auto svEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
     if (aI)
-        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
-                                    latitude, sProperties, sStats, sParts, sEquipment, aI->save(b), moving);
+        return Save::CreateTraveler(b, svName, toTown->getId(), fromTown->getId(), nation->getId(), svLog, longitude,
+                                    latitude, svProperties, svStats, svParts, svEquipment, aI->save(b), moving);
     else
-        return Save::CreateTraveler(b, sName, toTown->getId(), fromTown->getId(), nation->getId(), sLog, longitude,
-                                    latitude, sProperties, sStats, sParts, sEquipment, 0, moving);
+        return Save::CreateTraveler(b, svName, toTown->getId(), fromTown->getId(), nation->getId(), svLog,
+                                    longitude, latitude, svProperties, svStats, svParts, svEquipment, 0, moving);
 }
 
 double Traveler::weight() const {
     return properties.find(0)->second.weight() + static_cast<double>(stats[0]) * kTravelerCarry;
 }
 
-std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
-    // Return forward list of towns on shortest path to t, excluding current town.
+std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
+    // Return forward list of towns on shortest path to tn, excluding current town.
     std::forward_list<Town *> path;
     std::unordered_map<Town *, Town *> from;
     // the town which each town can be most efficiently reached from
     std::unordered_map<Town *, double> distTo({{toTown, 0}});
     // distance along route to each town
-    std::unordered_map<Town *, double> distEst({{toTown, toTown->dist(t)}});
+    std::unordered_map<Town *, double> distEst({{toTown, toTown->dist(tn)}});
     // estimated distance along route through each town to goal
     std::unordered_set<Town *> closed;
     // set of towns already evaluated
@@ -100,7 +108,7 @@ std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
         // Find current town with lowest distance.
         Town *current = *begin(open);
         const std::vector<Town *> &neighbors = current->getNeighbors();
-        if (current == t) {
+        if (current == tn) {
             // Current town is target town.
             while (from.count(current)) {
                 path.push_front(current);
@@ -119,7 +127,7 @@ std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
             if (!distTo.count(n) || dT < distTo[n]) {
                 from[n] = current;
                 distTo[n] = dT;
-                distEst[n] = dT + n->dist(t);
+                distEst[n] = dT + n->dist(tn);
             }
             // Add undiscovered node to open set.
             if (!open.count(n)) open.insert(n);
@@ -131,9 +139,9 @@ std::forward_list<Town *> Traveler::pathTo(const Town *t) const {
 
 double Traveler::distSq(int x, int y) const { return (px - x) * (px - x) + (py - y) * (py - y); }
 
-double Traveler::pathDist(const Town *t) const {
-    // Return the distance to t along shortest path.
-    const std::forward_list<Town *> &path = pathTo(t);
+double Traveler::pathDist(const Town *tn) const {
+    // Return the distance to tn along shortest path.
+    const std::forward_list<Town *> &path = pathTo(tn);
     double dist = 0;
     const Town *m = toTown;
     for (auto &n : path) {
@@ -155,10 +163,10 @@ void Traveler::setPortion(double d) {
 
 void Traveler::changePortion(double d) { setPortion(portion + d); }
 
-void Traveler::pickTown(const Town *t) {
+void Traveler::pickTown(const Town *tn) {
     // Start moving toward given town.
     if (weight() > 0 || moving) return;
-    const auto &path = pathTo(t);
+    const auto &path = pathTo(tn);
     if (path.empty() || path.front() == toTown) return;
     toTown = path.front();
     moving = true;
@@ -250,8 +258,9 @@ void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
     });
     rt.x = sR.w - m - rt.w;
     bxInf.colors = toTown->getNation()->getColors();
-    toTown->buttons(pgrs[2], rt, bxInf, pr,
-                    [this, &pgrs](const Good &) { return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); }; });
+    toTown->buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs](const Good &) {
+        return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
+    });
 }
 
 void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
@@ -260,7 +269,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     clearTrade();
     double offerValue = 0;
     // Loop through all offer buttons.
-    std::vector<TextBox *> bxs = pgrs[1].getAll();
+    std::vector<TextBox *> bxs(pgrs[1].getAll());
     for (auto bx : bxs)
         if (bx->getClicked()) {
             auto &gd = properties.find(0)->second.good(bx->getId()); // good corresponding to bx
@@ -273,12 +282,13 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
                 offerValue += p;
                 offer.push_back(Good(gd.getFullId(), gd.getFullName(), amount, gd.getMeasure()));
             } else
-                // Good is worthless in this town, don't allow it to be offered.
+                // Good is worthless in this town, don'tn allow it to be offered.
                 bx->setClicked(false);
         }
     bxs = pgrs[2].getAll();
-    unsigned int requestCount =
-        std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) { return c + rB->getClicked(); }); // count of clicked request buttons.
+    unsigned int requestCount = std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) {
+        return c + rB->getClicked();
+    }); // count of clicked request buttons.
     request.reserve(requestCount);
     double excess = 0; // excess value of offer over value needed for request
     // Loop through request buttons.
@@ -292,7 +302,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
                 double mE = 0; // excess quantity of this material
                 double amount = tG.quantity(offerValue / requestCount * Settings::getTownProfit(), mE);
                 if (!tG.getSplit())
-                    // Remove extra portion of goods that don't split.
+                    // Remove extra portion of goods that don'tn split.
                     mE += modf(amount, &amount);
                 // Convert material excess to value and add to overall excess.
                 excess += tG.price(mE);
@@ -415,18 +425,19 @@ void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
             // Determine buildable area based on portion.
             double buildable = std::numeric_limits<double>::max();
             for (auto &rq : bsn.getRequirements())
-                buildable = std::min(buildable, properties.find(0)->second.amount(rq.getGoodId()) * portion / rq.getAmount());
+                buildable = std::min(
+                    buildable, properties.find(0)->second.amount(rq.getGoodId()) * portion / rq.getAmount());
             if (buildable > 0) build(bsn, buildable);
             refreshBuildButtons(pgrs, fB, pr);
         };
     });
 }
 
-void Traveler::unequip(unsigned int pI) {
+void Traveler::unequip(Part pt) {
     // Unequip all equipment using the given part id.
-    auto unused = [pI](const Good &e) {
+    auto unused = [pt](const Good &e) {
         auto &eSs = e.getCombatStats();
-        return std::find_if(begin(eSs), end(eSs), [pI](const CombatStat &s) { return s.partId == pI; }) == end(eSs);
+        return std::find_if(begin(eSs), end(eSs), [pt](const CombatStat &s) { return s.part == pt; }) == end(eSs);
     };
     auto uEI = std::partition(begin(equipment), end(equipment), unused);
     // Put equipment back in goods.
@@ -438,30 +449,36 @@ void Traveler::unequip(unsigned int pI) {
 void Traveler::equip(Good &g) {
     // Equip the given good.
     auto &ss = g.getCombatStats();
-    std::vector<unsigned int> pIs; // part ids used by this equipment
-    pIs.reserve(ss.size());
+    std::vector<Part> pts; // parts used by this equipment
+    pts.reserve(ss.size());
     for (auto &s : ss)
-        if (pIs.empty() || pIs.back() != s.partId) pIs.push_back(s.partId);
-    for (auto pI : pIs) unequip(pI);
+        if (pts.empty() || pts.back() != s.part) pts.push_back(s.part);
+    for (auto pt : pts) unequip(pt);
     // Take good out of goods.
     properties.find(0)->second.take(g);
     // Put good in equipment container.
     equipment.push_back(g);
 }
 
-void Traveler::equip(unsigned int pI) {
+void Traveler::equip(Part pt) {
     // Equip fists if nothing is equipped in part.
     // Look for equipment in part.
     for (auto &e : equipment)
         for (auto &s : e.getCombatStats())
-            if (s.partId == pI) return;
-    if (pI == 2) {
+            if (s.part == pt) return;
+    if (pt == Part::leftArm) {
         // Add left fist to equipment.
-        Good fist = Good(0, "left fist", 1, {{1, 2, 1, 1, 0, {{1, 1, 1}}}, {2, 2, 0, 1, 1, {{1, 1, 1}}}}, nullptr);
+        Good fist = Good(0, "left fist", 1,
+                         {{Part::leftArm, Stat::strength, 1, 0, AttackType::bash, {{1, 1, 1}}},
+                          {Part::leftArm, Stat::agility, 0, 1, AttackType::bash, {{1, 1, 1}}}},
+                         nullptr);
         equipment.push_back(fist);
-    } else if (pI == 3) {
+    } else if (pt == Part::rightArm) {
         // Add right fist to equipment.
-        Good fist = Good(0, "right fist", 1, {{1, 3, 1, 1, 0, {{1, 1, 1}}}, {2, 3, 0, 1, 1, {{1, 1, 1}}}}, nullptr);
+        Good fist = Good(0, "right fist", 1,
+                         {{Part::rightArm, Stat::strength, 1, 0, AttackType::bash, {{1, 1, 1}}},
+                          {Part::rightArm, Stat::agility, 0, 1, AttackType::bash, {{1, 1, 1}}}},
+                         nullptr);
         equipment.push_back(fist);
     }
 }
@@ -479,17 +496,17 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     int m = Settings::getButtonMargin();
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
     pgrs[1].setBounds(rt);
-    int dx = (rt.w + m) / kPartCount, dy = (rt.h + m) / Settings::getGoodButtonRows();
-    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSize::equip, BoxInfo::focus);
-    std::array<std::vector<Good>, kPartCount> equippable;
+    int dx = (rt.w + m) / static_cast<int>(Part::count), dy = (rt.h + m) / Settings::getGoodButtonRows();
+    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSizeType::equip);
+    std::array<std::vector<Good>, static_cast<size_t>(Part::count)> equippable;
     // array of vectors corresponding to parts that can hold equipment
     properties.find(0)->second.queryGoods([&equippable](const Good &g) {
         auto &ss = g.getCombatStats();
         if (!ss.empty() && g.getAmount() >= 1) {
             // This good has combat stats and we have at least one of it.
-            unsigned int pId = ss.front().partId;
+            Part pt = ss.front().part;
             Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
-            equippable[pId].push_back(e);
+            equippable[static_cast<size_t>(pt)].push_back(e);
         }
     });
     // Create buttons for equipping equipment.
@@ -513,12 +530,12 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     bxInf.rect.y = rt.y;
     for (auto &e : equipment) {
         auto &ss = e.getCombatStats();
-        unsigned int pI = ss.front().partId;
-        bxInf.rect.x = rt.x + static_cast<int>(pI) * dx;
-        bxInf.onClick = [this, e, &pgrs, pI, &ss, &fB, &pr](MenuButton *) {
-            unequip(pI);
+        Part pt = ss.front().part;
+        bxInf.rect.x = rt.x + static_cast<int>(pt) * dx;
+        bxInf.onClick = [this, e, &pgrs, pt, &ss, &fB, &pr](MenuButton *) {
+            unequip(pt);
             // Equip fists.
-            for (auto &s : ss) equip(s.partId);
+            for (auto &s : ss) equip(s.part);
             // Refresh buttons.
             refreshEquipButtons(pgrs, fB, pr);
         };
@@ -537,10 +554,10 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
     auto &bids = toTown->getBids();
     std::vector<std::string> names;
     for (auto &bd : bids) names.push_back(bd->party->name);
-    pgrs[2].addBox(std::make_unique<SelectButton>(
-        Settings::boxInfo({sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31}, names,
-                          toTown->getNation()->getColors(), BoxSize::big, BoxInfo::scroll, SDLK_h,
-                          [](MenuButton *) {
+    pgrs[2].addBox(std::make_unique<SelectButton>(Settings::boxInfo(
+                                                      {sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31},
+                                                      names, toTown->getNation()->getColors(), BoxSizeType::big, SDLK_h,
+                                                      [](MenuButton *) {
 
                           }),
         pr));
@@ -557,28 +574,29 @@ std::vector<Traveler *> Traveler::attackable() const {
         // Eliminate travelers which are too far away or have reached town or are already fighting or are this traveler.
         double aDstSq = Settings::getAttackDistSq();
         able.erase(std::remove_if(begin(able), end(able),
-                                  [this, aDstSq](Traveler *t) {
-                                      return !t->moving || t->distSq(px, py) > aDstSq || t->target || !t->alive() || t == this;
+                                  [this, aDstSq](Traveler *tn) {
+                                      return !tn->moving || tn->distSq(px, py) > aDstSq || tn->target ||
+                                             !tn->alive() || tn == this;
                                   }),
                    end(able));
     }
     return able;
 }
 
-void Traveler::attack(Traveler *t) {
+void Traveler::attack(Traveler *tn) {
     // Attack the given parameter traveler.
-    target = t;
-    t->target = this;
+    target = tn;
+    tn->target = this;
     fightTime = 0;
-    t->fightTime = 0;
+    tn->fightTime = 0;
     if (aI)
         choice = FightChoice::fight;
     else
         choice = FightChoice::none;
-    if (t->aI)
-        t->aI->choose();
+    if (tn->aI)
+        tn->aI->choose();
     else
-        t->choice = FightChoice::none;
+        tn->choice = FightChoice::none;
 }
 
 void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr) {
@@ -587,59 +605,63 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
     auto able = attackable();       // vector of attackable travelers
     std::vector<std::string> names; // vector of names of attackable travelers
     names.reserve(able.size());
-    std::transform(begin(able), end(able), std::back_inserter(names), [](const Traveler *t) { return t->getName(); });
+    std::transform(begin(able), end(able), std::back_inserter(names),
+                   [](const Traveler *tn) { return tn->getName(); });
     // Create attack button.
-    pgr.addBox(std::make_unique<SelectButton>(
-        boxInfo({sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSize::fight, BoxInfo::scroll, SDLK_f,
-                [this, able, sSF](MenuButton *btn) {
-                    int i = btn->getHighlightLine();
-                    if (i > -1) {
-                        attack(able[static_cast<size_t>(i)]);
-                        sSF();
-                    } else
-                        btn->setClicked(false);
-                }),
-        pr));
+    pgr.addBox(std::make_unique<SelectButton>(boxInfo(
+                                                  {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSizeType::fight, BoxBehavior::scroll, SDLK_f,
+                                                  [this, able, sSF](MenuButton *btn) {
+                                                      int i = btn->getHighlightLine();
+                                                      if (i > -1) {
+                                                          attack(able[static_cast<size_t>(i)]);
+                                                          sSF();
+                                                      } else
+                                                          btn->setClicked(false);
+                                                  }),
+                                              pr));
 }
 
 void Traveler::createLogBox(Pager &pgr, Printer &pr) {
     // Create log box.
     const SDL_Rect &sR = Settings::getScreenRect();
     pgr.addBox(std::make_unique<ScrollBox>(
-        boxInfo({sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15}, logText, BoxSize::small), pr));
+        boxInfo({sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15}, logText, BoxSizeType::small), pr));
 }
 
 void Traveler::loseTarget() {
-    if (auto t = target) {
-        t->target = nullptr;
-        // Remove target from town so that it can't be attacked again.
-        t->fromTown->removeTraveler(t);
+    if (auto tn = target) {
+        tn->target = nullptr;
+        // Remove target from town so that it can'tn be attacked again.
+        tn->fromTown->removeTraveler(tn);
         // Set dead to true if target is not alive.
-        t->dead = !t->alive();
+        tn->dead = !tn->alive();
     }
     target = nullptr;
 }
 
-CombatHit Traveler::firstHit(Traveler &t) {
-    // Find first hit of this traveler on t.
+CombatHit Traveler::firstHit(Traveler &tn) {
+    // Find first hit of this traveler on tn.
     std::array<unsigned int, 3> defense{};
-    for (auto &e : t.equipment)
+    for (auto &e : tn.equipment)
         for (auto &s : e.getCombatStats())
-            for (size_t i = 0; i < defense.size(); ++i) defense[i] += s.defense[i] * t.stats[s.statId];
-    CombatHit first = {std::numeric_limits<double>::max(), 0, 0, ""};
+            for (size_t i = 0; i < defense.size(); ++i)
+                defense[i] += s.defense[i] * tn.stats[static_cast<size_t>(s.stat)];
+    CombatHit first = {std::numeric_limits<double>::max(), Part::count, Status::count, ""};
     for (auto &e : equipment) {
         auto &ss = e.getCombatStats();
         if (ss.front().attack) {
             // e is a weapon.
-            unsigned int attack = 0, type = ss.front().type, speed = 0;
+            unsigned int attack = 0, speed = 0;
+            AttackType type = type = ss.front().type;
             for (auto &s : ss) {
-                attack += s.attack * stats[s.statId];
-                speed += s.speed * stats[s.statId];
+                attack += s.attack * stats[static_cast<size_t>(s.stat)];
+                speed += s.speed * stats[static_cast<size_t>(s.stat)];
             }
-            auto cO = gameData.odds[type - 1];
+            auto cO = gameData.odds[static_cast<size_t>(type) - 1];
             // Calculate number of swings before hit happens.
             double r = Settings::random();
-            double p = static_cast<double>(attack) / cO.hitOdds / static_cast<double>(defense[type - 1]);
+            double p = static_cast<double>(attack) / cO.hitChance /
+                       static_cast<double>(defense[static_cast<size_t>(type) - 1]);
             double time;
             if (p < 1)
                 time = (log(r) / log(1 - p) + 1) / speed;
@@ -648,9 +670,9 @@ CombatHit Traveler::firstHit(Traveler &t) {
             if (time < first.time) {
                 first.time = time;
                 // Pick a random part.
-                first.partId = Settings::randomInt(parts.size() - 1);
+                first.part = static_cast<Part>(Settings::randomInt(static_cast<unsigned int>(Part::count) - 1));
                 // Start status at part's current status.
-                first.status = t.parts[first.partId];
+                first.status = tn.parts[static_cast<size_t>(first.part)];
                 r = Settings::random();
                 auto sCI = begin(cO.statusChances);
                 while (r > 0 && sCI != end(cO.statusChances)) {
@@ -670,13 +692,13 @@ CombatHit Traveler::firstHit(Traveler &t) {
     return first;
 }
 
-void Traveler::useAmmo(double t) {
+void Traveler::useAmmo(double tn) {
     for (auto &e : equipment) {
         unsigned int sId = e.getShoots();
         if (sId) {
             unsigned int speed = 0;
-            for (auto &s : e.getCombatStats()) speed += s.speed * stats[s.statId];
-            unsigned int n = static_cast<unsigned int>(t * speed);
+            for (auto &s : e.getCombatStats()) speed += s.speed * stats[static_cast<size_t>(s.stat)];
+            unsigned int n = static_cast<unsigned int>(tn * speed);
             properties.find(0)->second.use(sId, n);
         }
     }
@@ -715,34 +737,39 @@ void Traveler::fight(Traveler &tgt, unsigned int elTm) {
     }
 }
 
-void Traveler::takeHit(const CombatHit &cH, Traveler &t) {
+void Traveler::takeHit(const CombatHit &cH, Traveler &tn) {
     // Apply the given combat hit from the given traveler to this traveler.
-    parts[cH.partId] = cH.status;
-    if (cH.status > 2) { // Part is too wounded to hold equipment.
-        unequip(cH.partId);
-        std::string logEntry = t.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
-                               gameData.parts[cH.partId] + " has been " + gameData.statuses[cH.status] + ".";
+    parts[static_cast<size_t>(cH.part)] = cH.status;
+    if (static_cast<unsigned int>(cH.status) > 2) { // Part is too wounded to hold equipment.
+        unequip(cH.part);
+        std::string logEntry = tn.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
+                               gameData.partNames[static_cast<size_t>(cH.part)] + " has been " +
+                               gameData.statusNames[static_cast<size_t>(cH.status)] + ".";
         logText.push_back(logEntry);
-        t.logText.push_back(logEntry);
+        tn.logText.push_back(logEntry);
     }
 }
 
 void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
     // Create buttons and text boxes for combat.
     const SDL_Rect &sR = Settings::getScreenRect();
-    pgr.addBox(std::make_unique<TextBox>(boxInfo({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + target->getName() + "..."}), pr));
-    pgr.addBox(std::make_unique<TextBox>(boxInfo({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));
-    pgr.addBox(std::make_unique<TextBox>(target->boxInfo({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}), pr));
-    pgr.addBox(std::make_unique<SelectButton>(boxInfo({sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3},
-                                                      {"Fight", "Run", "Yield"}, BoxSize::fight, BoxInfo::scroll, SDLK_c,
-                                                      [this, &p](MenuButton *btn) {
-                                                          int hl = btn->getHighlightLine();
-                                                          if (hl > -1) {
-                                                              choice = static_cast<FightChoice>(hl);
-                                                              p = false;
-                                                          }
-                                                      }),
-                                              pr));
+    pgr.addBox(std::make_unique<TextBox>(
+        boxInfo({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + target->getName() + "..."}, BoxSizeType::fight), pr));
+    pgr.addBox(std::make_unique<TextBox>(
+        boxInfo({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
+    pgr.addBox(std::make_unique<TextBox>(
+        target->boxInfo({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
+    pgr.addBox(std::make_unique<SelectButton>(
+        boxInfo(
+            {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3}, {"Fight", "Run", "Yield"}, BoxSizeType::fight, BoxBehavior::scroll, SDLK_c,
+            [this, &p](MenuButton *btn) {
+                int hl = btn->getHighlightLine();
+                if (hl > -1) {
+                    choice = static_cast<FightChoice>(hl);
+                    p = false;
+                }
+            }),
+        pr));
 }
 
 void Traveler::updateFightBoxes(Pager &pgr) {
@@ -763,16 +790,18 @@ void Traveler::updateFightBoxes(Pager &pgr) {
         break;
     }
     bxs[0]->setText(choiceText);
-    std::vector<std::string> statusText(7);
+    std::vector<std::string> statusText(static_cast<size_t>(Part::count) + 1);
     statusText[0] = name + "'s Status";
-    for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[getPart(i - 1)];
+    for (size_t i = 1; i < static_cast<size_t>(Part::count) + 1; ++i)
+        statusText[i] = gameData.partNames[i - 1] + ": " +
+                        gameData.statusNames[static_cast<size_t>(getPart(static_cast<Part>(i - 1)))];
     bxs[1]->setText(statusText);
     auto tgt = target;
     if (!tgt) return;
     statusText[0] = tgt->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData.parts[i - 1] + ": " + gameData.statuses[tgt->getPart(i - 1)];
+        statusText[i] = gameData.partNames[i - 1] + ": " +
+                        gameData.statusNames[static_cast<size_t>(getPart(static_cast<Part>(i - 1)))];
     bxs[2]->setText(statusText);
 }
 
@@ -833,21 +862,21 @@ void Traveler::startAI(const Traveler &p) {
 void Traveler::update(unsigned int elTm) {
     // Move traveler toward destination and perform combat with target.
     if (moving) {
-        double t = static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength());
+        double tn = static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength());
         // Take a step toward town.
         double dlt = toTown->getLatitude() - latitude;
         double dlg = toTown->getLongitude() - longitude;
         double ds = dlt * dlt + dlg * dlg;
-        if (ds > t * t) {
+        if (ds > tn * tn) {
             // There remains more distance to travel.
             if (dlg != 0) {
                 double m = dlt / dlg;
-                double dxs = t * t / (1 + m * m);
-                double dys = t * t - dxs;
+                double dxs = tn * tn / (1 + m * m);
+                double dys = tn * tn - dxs;
                 latitude += copysign(sqrt(dys), dlt);
                 longitude += copysign(sqrt(dxs), dlg);
             } else
-                latitude += copysign(t, dlt);
+                latitude += copysign(tn, dlt);
         } else {
             // We have reached the destination.
             latitude = toTown->getLatitude();
@@ -856,11 +885,12 @@ void Traveler::update(unsigned int elTm) {
             toTown->addTraveler(this);
             fromTown = toTown;
             moving = false;
-            logText.push_back(name + " has arrived in the " +
-                              gameData.populationAdjectives.lower_bound(toTown->getProperty().getPopulation())->second +
-                              " " + toTown->getNation()->getAdjective() + " " +
-                              gameData.townTypeNouns[toTown->getProperty().getTownType() - 1] + " of " +
-                              toTown->getName() + ".");
+            logText.push_back(
+                name + " has arrived in the " +
+                gameData.populationAdjectives.lower_bound(toTown->getProperty().getPopulation())->second +
+                " " + toTown->getNation()->getAdjective() + " " +
+                gameData.townTypeNames[static_cast<size_t>(toTown->getProperty().getTownType())] + " of " +
+                toTown->getName() + ".");
         }
     } else if (aI) {
         aI->update(elTm);
@@ -909,7 +939,8 @@ void Traveler::resetTown() { toTown->reset(); }
 void Traveler::adjustAreas(Pager &pgr, double mM) {
     std::vector<MenuButton *> requestButtons;
     std::vector<TextBox *> bxs = pgr.getAll();
-    for (auto rBI = begin(bxs); rBI != end(bxs); ++rBI) requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
+    std::transform(begin(bxs), end(bxs), std::back_inserter(requestButtons),
+                   [](auto rB) { return dynamic_cast<MenuButton *>(rB); });
     toTown->adjustAreas(requestButtons, mM);
 }
 
@@ -917,6 +948,7 @@ void Traveler::adjustDemand(Pager &pgr, double mM) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
     std::vector<TextBox *> bxs = pgr.getAll();
-    for (auto rBI = begin(bxs); rBI != end(bxs); ++rBI) requestButtons.push_back(dynamic_cast<MenuButton *>(*rBI));
+    std::transform(begin(bxs), end(bxs), std::back_inserter(requestButtons),
+                   [](auto rB) { return dynamic_cast<MenuButton *>(rB); });
     toTown->adjustDemand(requestButtons, mM);
 }

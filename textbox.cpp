@@ -45,7 +45,8 @@ void TextBox::setText() {
     if (rect.h && lines > size_t(rect.h / lineHeight)) {
         // Truncate lines of text if they won'tx fit in box of fixed size.
         lines = static_cast<size_t>(rect.h / lineHeight);
-        text = std::vector<std::string>(begin(text), begin(text) + static_cast<std::vector<std::string>::difference_type>(lines));
+        text = std::vector<std::string>(
+            begin(text), begin(text) + static_cast<std::vector<std::string>::difference_type>(lines));
     }
     surface = printer.print(text, rect, images);
     updateTexture = true;
@@ -80,11 +81,11 @@ void TextBox::toggleFocus() {
     isFocus = !isFocus;
     if (isFocus) {
         setBorder(size.border * 2);
-        if (behavior == BoxInfo::edit) SDL_StartTextInput();
+        if (behavior == BoxBehavior::edit) SDL_StartTextInput();
     } else {
         colors.invert = clicked;
         setBorder(size.border / 2);
-        if (behavior == BoxInfo::edit) SDL_StopTextInput();
+        if (behavior == BoxBehavior::edit) SDL_StopTextInput();
     }
 }
 

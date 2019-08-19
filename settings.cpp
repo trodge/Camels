@@ -21,7 +21,7 @@
 
 SDL_Rect Settings::screenRect;
 SDL_Rect Settings::mapView;
-std::unordered_map<ColorScheme::Scheme, ColorScheme> Settings::colorSchemes;
+std::array<ColorScheme, static_cast<size_t>(ColorSchemeType::count)> Settings::colorSchemes;
 SDL_Color Settings::routeColor;
 SDL_Color Settings::waterColor;
 SDL_Color Settings::playerColor;
@@ -30,7 +30,7 @@ int Settings::scroll;
 int Settings::offsetX;
 int Settings::offsetY;
 double Settings::scale;
-std::unordered_map<BoxSize::Size, BoxSize> Settings::boxSizes;
+std::array<BoxSize, static_cast<size_t>(BoxSizeType::count)> Settings::boxSizes;
 int Settings::buttonMargin;
 int Settings::goodButtonColumns;
 int Settings::goodButtonRows;
@@ -51,7 +51,7 @@ int Settings::travelersMin;
 unsigned int Settings::statMax;
 double Settings::attackDistSq;
 double Settings::escapeChance;
-std::array<double, 6> Settings::aIRoleWeights;
+std::array<double, static_cast<size_t>(AIRole::count)> Settings::aIRoleWeights;
 int Settings::criteriaMax;
 unsigned int Settings::aITownRange;
 double Settings::limitFactorMin, Settings::limitFactorMax;
@@ -95,10 +95,10 @@ void Settings::load(const fs::path &p) {
     SDL_GetCurrentDisplayMode(0, &current);
     screenRect = loadRect("ui.screenRect", {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
     mapView = loadRect("ui.mapView", {3330, 2250, screenRect.w, screenRect.h}, tree);
-    colorSchemes.insert({ColorScheme::ui,
-                         loadColorScheme("ui.colors", {{0, 0, 0, 255}, {109, 109, 109, 255}, {0, 127, 251, 255}}, tree)});
-    colorSchemes.insert(
-        {ColorScheme::load, loadColorScheme("ui.loadColors", {{0, 255, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 0}}, tree)});
+    colorSchemes[static_cast<size_t>(ColorSchemeType::ui)] =
+        loadColorScheme("ui.colors", {{0, 0, 0, 255}, {109, 109, 109, 255}, {0, 127, 251, 255}}, tree);
+    colorSchemes[static_cast<size_t>(ColorSchemeType::load)] =
+        loadColorScheme("ui.loadColors", {{0, 255, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 0}}, tree);
     routeColor = loadColor("ui.routeColor", {97, 97, 97, 255}, tree);
     waterColor = loadColor("ui.waterColor", {29, 109, 149, 255}, tree);
     playerColor = loadColor("ui.playerColor", {255, 255, 255, 255}, tree);
@@ -107,19 +107,20 @@ void Settings::load(const fs::path &p) {
     offsetX = tree.get("ui.offsetX", -3197);
     offsetY = tree.get("ui.offsetY", 4731);
     scale = tree.get("ui.scale", 112.5);
-    boxSizes.insert({BoxSize::big,
-                     loadBoxSize("ui.big", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 48 / 1080}, tree)});
-    boxSizes.insert({BoxSize::load,
-                     loadBoxSize("ui.load", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 36 / 1080}, tree)});
-    boxSizes.insert({BoxSize::small,
-                     loadBoxSize("ui.small", {current.h * 3 / 1080, current.h * 7 / 1080, current.h * 24 / 1080}, tree)});
-    boxSizes.insert({BoxSize::town, loadBoxSize("ui.town", {current.h / 1080, current.h / 1080, current.h * 18 / 1080}, tree)});
-    boxSizes.insert({BoxSize::trade,
-                     loadBoxSize("ui.trade", {current.h * 2 / 1080, current.h * 5 / 1080, current.h * 16 / 1080}, tree)});
-    boxSizes.insert({BoxSize::equip,
-                     loadBoxSize("ui.equip", {current.h * 5 / 1080, current.h * 7 / 1080, current.h * 20 / 1080}, tree)});
-    boxSizes.insert({BoxSize::fight,
-                     loadBoxSize("ui.fight", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 20 / 1080}, tree)});
+    boxSizes[static_cast<size_t>(BoxSizeType::big)] =
+        loadBoxSize("ui.big", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 48 / 1080}, tree);
+    boxSizes[static_cast<size_t>(BoxSizeType::load)] =
+        loadBoxSize("ui.load", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 36 / 1080}, tree);
+    boxSizes[static_cast<size_t>(BoxSizeType::small)] =
+        loadBoxSize("ui.small", {current.h * 3 / 1080, current.h * 7 / 1080, current.h * 24 / 1080}, tree);
+    boxSizes[static_cast<size_t>(BoxSizeType::town)] = loadBoxSize(
+        "ui.town", {std::max(current.h / 1080, 1), std::max(current.h / 1080, 1), current.h * 18 / 1080}, tree);
+    boxSizes[static_cast<size_t>(BoxSizeType::trade)] =
+        loadBoxSize("ui.trade", {current.h * 2 / 1080, current.h * 5 / 1080, current.h * 16 / 1080}, tree);
+    boxSizes[static_cast<size_t>(BoxSizeType::equip)] =
+        loadBoxSize("ui.equip", {current.h * 5 / 1080, current.h * 7 / 1080, current.h * 20 / 1080}, tree);
+    boxSizes[static_cast<size_t>(BoxSizeType::fight)] =
+        loadBoxSize("ui.fight", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 20 / 1080}, tree);
     buttonMargin = tree.get("ui.buttonMargin", 3);
     goodButtonColumns = tree.get("ui.goodButtonColumns", 6);
     goodButtonRows = tree.get("ui.goodButtonRows", 11);
@@ -181,8 +182,8 @@ template <class InputIt> void saveRange(const std::string &n, InputIt bgn, Input
 void Settings::save(const fs::path &p) {
     pt::ptree tree;
     saveRect("ui.mapView", mapView, tree);
-    saveColorScheme("ui.colors", colorSchemes[ColorScheme::ui], tree);
-    saveColorScheme("ui.loadColors", colorSchemes[ColorScheme::load], tree);
+    saveColorScheme("ui.colors", colorSchemes[static_cast<size_t>(ColorSchemeType::ui)], tree);
+    saveColorScheme("ui.loadColors", colorSchemes[static_cast<size_t>(ColorSchemeType::load)], tree);
     saveColor("ui.routeColor", routeColor, tree);
     saveColor("ui.waterColor", waterColor, tree);
     saveColor("ui.playerColor", playerColor, tree);
@@ -191,13 +192,13 @@ void Settings::save(const fs::path &p) {
     tree.put("ui.offsetX", offsetX);
     tree.put("ui.offsetY", offsetY);
     tree.put("ui.scale", scale);
-    saveBoxSize("ui.big", boxSizes[BoxSize::big], tree);
-    saveBoxSize("ui.load", boxSizes[BoxSize::load], tree);
-    saveBoxSize("ui.small", boxSizes[BoxSize::small], tree);
-    saveBoxSize("ui.town", boxSizes[BoxSize::town], tree);
-    saveBoxSize("ui.trade", boxSizes[BoxSize::trade], tree);
-    saveBoxSize("ui.equip", boxSizes[BoxSize::equip], tree);
-    saveBoxSize("ui.fight", boxSizes[BoxSize::fight], tree);
+    saveBoxSize("ui.big", boxSizes[static_cast<size_t>(BoxSizeType::big)], tree);
+    saveBoxSize("ui.load", boxSizes[static_cast<size_t>(BoxSizeType::load)], tree);
+    saveBoxSize("ui.small", boxSizes[static_cast<size_t>(BoxSizeType::small)], tree);
+    saveBoxSize("ui.town", boxSizes[static_cast<size_t>(BoxSizeType::town)], tree);
+    saveBoxSize("ui.trade", boxSizes[static_cast<size_t>(BoxSizeType::trade)], tree);
+    saveBoxSize("ui.equip", boxSizes[static_cast<size_t>(BoxSizeType::equip)], tree);
+    saveBoxSize("ui.fight", boxSizes[static_cast<size_t>(BoxSizeType::fight)], tree);
     tree.put("ui.buttonMargin", buttonMargin);
     tree.put("ui.goodButtonColumns", goodButtonColumns);
     tree.put("ui.goodButtonRows", goodButtonRows);
@@ -253,24 +254,24 @@ int Settings::travelersCheckCounter() {
     return tCTDis(rng);
 }
 
-std::array<unsigned int, kStatCount> Settings::travelerStats() {
+std::array<unsigned int, static_cast<size_t>(Stat::count)> Settings::travelerStats() {
     // Randomize traveler stats.
     static std::uniform_int_distribution<unsigned int> stDis(1, statMax);
-    std::array<unsigned int, kStatCount> stats;
+    std::array<unsigned int, static_cast<size_t>(Stat::count)> stats;
     for (auto &stat : stats) stat = stDis(rng);
     return stats;
 }
 
-int Settings::aIRole() {
+AIRole Settings::aIRole() {
     // Randomize ai role.
-    static std::discrete_distribution<> rlDis(begin(aIRoleWeights), end(aIRoleWeights));
-    return rlDis(rng);
+    static std::discrete_distribution<int> rlDis(begin(aIRoleWeights), end(aIRoleWeights));
+    return static_cast<AIRole>(rlDis(rng));
 }
 
-std::array<double, kDecisionCriteriaCount> Settings::aIDecisionCriteria() {
+std::array<double, static_cast<size_t>(DecisionCriteria::count)> Settings::aIDecisionCriteria() {
     // Randomize decision criteria.
     static std::uniform_real_distribution<double> dcCrtDis(1, criteriaMax);
-    std::array<double, kDecisionCriteriaCount> dcCrt;
+    std::array<double, static_cast<size_t>(DecisionCriteria::count)> dcCrt;
     for (auto &dC : dcCrt) dC = dcCrtDis(rng);
     return dcCrt;
 }
@@ -287,7 +288,7 @@ double Settings::aILimitFactor() {
 }
 
 BoxInfo Settings::boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                          std::pair<unsigned int, bool> i, BoxSize::Size sz, BoxInfo::Behavior bvr, SDL_Keycode ky,
+                          std::pair<unsigned int, bool> i, BoxSizeType sz, BoxBehavior bvr, SDL_Keycode ky,
                           const std::function<void(MenuButton *)> &fn, const SDL_Rect &oR) {
-    return {rt, tx, sm, i, boxSizes[sz], bvr, {}, ky, fn, oR};
+    return {rt, tx, sm, i, boxSizes[static_cast<std::size_t>(sz)], bvr, {}, ky, fn, oR};
 }

@@ -44,7 +44,8 @@ struct Deleter {
         if (sqlite3_close(cn) != SQLITE_OK) std::cout << sqlite3_errmsg(cn) << std::endl;
     }
     void operator()(sqlite3_stmt *qr) {
-        if (sqlite3_finalize(qr) != SQLITE_OK) std::cout << sqlite3_errmsg(sqlite3_db_handle(qr)) << std::endl;
+        if (sqlite3_finalize(qr) != SQLITE_OK)
+            std::cout << sqlite3_errmsg(sqlite3_db_handle(qr)) << std::endl;
     }
 };
 
@@ -79,8 +80,8 @@ class Game {
     SDL_RendererInfo screenInfo;
     Printer printer;
     std::vector<sdl::Handle<SDL_Texture>> mapTextures; // textures for map broken down to maximum size for graphics card
-    int mapTextureRowCount, mapTextureColumnCount;     // number of columns in map textures matrix
-    sdl::Texture mapTexture;                           // texture for drawing map on screen at current position
+    int mapTextureRowCount, mapTextureColumnCount; // number of columns in map textures matrix
+    sdl::Texture mapTexture;                       // texture for drawing map on screen at current position
     unsigned int lastTime = 0, currentTime;
     std::vector<Nation> nations;
     std::vector<Town> towns;

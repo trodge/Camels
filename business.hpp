@@ -25,6 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "constants.hpp"
 #include "good.hpp"
 #include "property.hpp"
 
@@ -50,8 +51,9 @@ class Business {
     double reclaimFactor = 0.7;             // portion of requirements that can be reclaimed
 
 public:
-    Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM, const std::array<double, 3> &fFs);
-    Business(const Save::Business *b);
+    Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,
+             const std::array<double, 3> &fFs);
+    Business(const Save::Business *svBsn);
     flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
     bool operator!=(const Business &other) const { return (id != other.id || mode != other.mode); }
@@ -71,7 +73,7 @@ public:
     double getFrequency() const { return frequency; }
     void setArea(double a);
     void changeArea(double a) { setArea(area + a); }
-    void scale(unsigned long ppl, unsigned int tT);
+    void scale(unsigned long ppl, TownType tT);
     void setRequirements(const std::vector<Good> &rqs) { requirements = rqs; }
     void setInputs(const std::vector<Good> &ips) { inputs = ips; }
     void setOutputs(const std::vector<Good> &ops) { outputs = ops; }

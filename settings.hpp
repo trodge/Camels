@@ -44,13 +44,18 @@ struct Image {
 struct ColorScheme {
     SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
     bool invert = false;
-    enum Scheme { ui, load };
 };
+
+enum class ColorSchemeType { ui, load, count };
 
 struct BoxSize {
     int border = 0, radius = 0, fontSize = 0;
-    enum Size { big, load, small, town, trade, equip, fight };
 };
+
+enum class BoxSizeType { big, load, small, town, trade, equip, fight, count };
+
+
+enum class BoxBehavior { inert, focus, edit, scroll };
 
 struct BoxInfo {
     SDL_Rect rect{0, 0, 0, 0};
@@ -58,25 +63,42 @@ struct BoxInfo {
     ColorScheme colors;
     std::pair<unsigned int, bool> id = {0, false};
     BoxSize size;
-    enum Behavior { inert, focus, edit, scroll };
-    Behavior behavior; // behavoir when clicked
+    BoxBehavior behavior; // behavoir when clicked
     std::vector<Image> images;
     SDL_Keycode key = SDLK_UNKNOWN;
     std::function<void(MenuButton *)> onClick = nullptr;
     SDL_Rect outsideRect{0, 0, 0, 0};
 };
 
+enum class TownType { city, town, fort, count };
+
+enum class Stat { strength, endurance, agility, intelligence, charisma, count };
+
+enum class DecisionCriteria {
+    buyScoreWeight,
+    sellScoreWeight,
+    attackScoreWeight,
+    defenseScoreWeight,
+    fightTendency,
+    runTendency,
+    yieldTendency,
+    lootingGreed,
+    count
+};
+
+enum class AIRole { trader, soldier, bandit, agent, guard, thug, count };
+
 class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapView;
-    static std::unordered_map<ColorScheme::Scheme, ColorScheme> colorSchemes;
+    static std::array<ColorScheme, static_cast<size_t>(ColorSchemeType::count)> colorSchemes;
     static SDL_Color routeColor;
     static SDL_Color waterColor;
     static SDL_Color playerColor;
     static SDL_Color aIColor;
     static int scroll, offsetX, offsetY;
     static double scale;
-    static std::unordered_map<BoxSize::Size, BoxSize> boxSizes;
+    static std::array<BoxSize, static_cast<size_t>(BoxSizeType::count)> boxSizes;
     static int buttonMargin;           // margin between good and business buttons in pixels
     static int goodButtonColumns;      // number of columns of good buttons
     static int goodButtonRows;         // number of rows of good buttons
@@ -97,7 +119,7 @@ class Settings {
     static unsigned int statMax;
     static double attackDistSq;
     static double escapeChance;
-    static std::array<double, 6> aIRoleWeights;
+    static std::array<double, static_cast<size_t>(AIRole::count)> aIRoleWeights;
     static int criteriaMax;
     static unsigned int aITownRange;
     static double limitFactorMin, limitFactorMax;
@@ -139,7 +161,6 @@ public:
     static unsigned int getStatMax() { return statMax; }
     static double getAttackDistSq() { return attackDistSq; }
     static double getEscapeChance() { return escapeChance; }
-    static const std::array<double, 6> &getAIRoleWeights() { return aIRoleWeights; }
     static int getCriteriaMax() { return criteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
     static double getAIAttackThreshold() { return aIAttackThreshold; }
@@ -155,68 +176,68 @@ public:
     static int propertyUpdateCounter();
     static int travelerCount(unsigned long ppl);
     static int travelersCheckCounter();
-    static std::array<unsigned int, kStatCount> travelerStats();
-    static int aIRole();
-    static std::array<double, kDecisionCriteriaCount> aIDecisionCriteria();
+    static std::array<unsigned int, static_cast<size_t>(Stat::count)> travelerStats();
+    static AIRole aIRole();
+    static std::array<double, static_cast<size_t>(DecisionCriteria::count)> aIDecisionCriteria();
     static double aIDecisionCounter();
     static double aILimitFactor();
-    static BoxSize boxSize(BoxSize::Size sz) { return boxSizes[sz]; }
+    static BoxSize boxSize(BoxSizeType sz) { return boxSizes[static_cast<size_t>(sz)]; }
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           std::pair<unsigned int, bool> i, BoxSize::Size sz, BoxInfo::Behavior bvr, SDL_Keycode ky,
+                           std::pair<unsigned int, bool> i, BoxSizeType sz, BoxBehavior bvr, SDL_Keycode ky,
                            const std::function<void(MenuButton *)> &fn,
                            const SDL_Rect &oR); // any text box
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           std::pair<unsigned int, bool> i, BoxSize::Size sz, BoxInfo::Behavior bvr, SDL_Keycode ky,
+                           std::pair<unsigned int, bool> i, BoxSizeType sz, BoxBehavior bvr, SDL_Keycode ky,
                            const std::function<void(MenuButton *)> &fn) {
         return boxInfo(rt, tx, sm, i, sz, bvr, ky, fn, {0, 0, 0, 0});
     } // any button
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz,
-                           BoxInfo::Behavior bvr, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSizeType sz,
+                           BoxBehavior bvr, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
         return boxInfo(rt, tx, sm, {0, false}, sz, bvr, ky, fn);
     } // select button with scheme
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, std::pair<unsigned int, bool> i,
-                           BoxSize::Size sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
-        return boxInfo(rt, tx, sm, i, sz, BoxInfo::focus, ky, fn);
+                           BoxSizeType sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+        return boxInfo(rt, tx, sm, i, sz, BoxBehavior::focus, ky, fn);
     } // button with color scheme and id
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz,
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSizeType sz,
                            SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
         return boxInfo(rt, tx, sm, {0, false}, sz, ky, fn);
     } // button with color scheme
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz,
-                           BoxInfo::Behavior bvr, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
-        return boxInfo(rt, tx, colorSchemes[ColorScheme::ui], {0, false}, sz, bvr, ky, fn);
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz,
+                           BoxBehavior bvr, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::ui)], {0, false}, sz, bvr, ky, fn);
     } // ui select button
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, SDL_Keycode ky,
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz, SDL_Keycode ky,
                            const std::function<void(MenuButton *)> &fn) {
-        return boxInfo(rt, tx, sz, BoxInfo::focus, ky, fn);
+        return boxInfo(rt, tx, sz, BoxBehavior::focus, ky, fn);
     } // ui menu button
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           std::pair<unsigned int, bool> i, BoxSize::Size sz, BoxInfo::Behavior bvr, const SDL_Rect &oR) {
+                           std::pair<unsigned int, bool> i, BoxSizeType sz, BoxBehavior bvr, const SDL_Rect &oR) {
         return boxInfo(rt, tx, sm, i, sz, bvr, SDLK_UNKNOWN, nullptr, oR);
     } // any non-button box
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Rect &oR) {
-        return boxInfo(rt, tx, colorSchemes[ColorScheme::load], {0, false}, BoxSize::load, BoxInfo::inert, oR);
+        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::load)], {0, false}, BoxSizeType::load, BoxBehavior::inert, oR);
     } // load bar
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           std::pair<unsigned int, bool> i, BoxSize::Size sz, BoxInfo::Behavior bvr) {
+                           std::pair<unsigned int, bool> i, BoxSizeType sz, BoxBehavior bvr) {
         return boxInfo(rt, tx, sm, i, sz, bvr, {0, 0, 0, 0});
     } // any non-load bar text box
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz,
-                           BoxInfo::Behavior bvr) {
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSizeType sz,
+                           BoxBehavior bvr) {
         return boxInfo(rt, tx, sm, {0, false}, sz, bvr);
     } // scroll or edit box with color scheme
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           std::pair<unsigned int, bool> i, BoxSize::Size sz) {
-        return boxInfo(rt, tx, sm, i, sz, BoxInfo::inert);
+                           std::pair<unsigned int, bool> i, BoxSizeType sz) {
+        return boxInfo(rt, tx, sm, i, sz, BoxBehavior::inert);
     } // box with color scheme and id
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz) {
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSizeType sz) {
         return boxInfo(rt, tx, sm, {0, false}, sz);
     } // box with color scheme
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz, BoxInfo::Behavior bvr) {
-        return boxInfo(rt, tx, colorSchemes[ColorScheme::ui], sz, bvr);
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz, BoxBehavior bvr) {
+        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::ui)], sz, bvr);
     } // edit or scroll ui box
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz) {
-        return boxInfo(rt, tx, sz, BoxInfo::inert);
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz) {
+        return boxInfo(rt, tx, sz, BoxBehavior::inert);
     } // ui box
 };
 

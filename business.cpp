@@ -24,18 +24,22 @@ Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool c
     : id(i), mode(m), name(nm), area(1), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1),
       frequencyFactors(fFs) {}
 
-Business::Business(const Save::Business *b)
-    : id(b->id()), mode(b->mode()), name(b->name()->str()), area(b->area()), canSwitch(b->canSwitch()),
-      requireCoast(b->requireCoast()), keepMaterial(b->keepMaterial()), frequency(b->frequency()),
-      reclaimFactor(b->reclaimFactor()) {
-    auto lRequirements = b->requirements();
-    for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII) requirements.push_back(Good(*lII));
-    auto lReclaimables = b->reclaimables();
-    for (auto lOI = lReclaimables->begin(); lOI != lReclaimables->end(); ++lOI) reclaimables.push_back(Good(*lOI));
-    auto lInputs = b->inputs();
-    for (auto lII = lInputs->begin(); lII != lInputs->end(); ++lII) inputs.push_back(Good(*lII));
-    auto lOutputs = b->outputs();
-    for (auto lOI = lOutputs->begin(); lOI != lOutputs->end(); ++lOI) outputs.push_back(Good(*lOI));
+Business::Business(const Save::Business *svBsn)
+    : id(svBsn->id()), mode(svBsn->mode()), name(svBsn->name()->str()), area(svBsn->area()),
+      canSwitch(svBsn->canSwitch()), requireCoast(svBsn->requireCoast()), keepMaterial(svBsn->keepMaterial()),
+      frequency(svBsn->frequency()), reclaimFactor(svBsn->reclaimFactor()) {
+    auto ldRequirements = svBsn->requirements();
+    std::transform(ldRequirements->begin(), ldRequirements->end(), std::back_inserter(requirements),
+                   [](auto ldRq) { return Good(ldRq); });
+    auto ldReclaimables = svBsn->reclaimables();
+    std::transform(ldReclaimables->begin(), ldReclaimables->end(), std::back_inserter(reclaimables),
+                   [](auto ldRc) { return Good(ldRc); });
+    auto ldInputs = svBsn->inputs();
+    std::transform(ldInputs->begin(), ldInputs->end(), std::back_inserter(inputs),
+                   [](auto ldIp) { return Good(ldIp); });
+    auto lOutputs = svBsn->outputs();
+    std::transform(lOutputs->begin(), lOutputs->end(), std::back_inserter(outputs),
+                   [](auto ldOp) { return Good(ldOp); });
 }
 
 flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilder &b) const {
@@ -44,12 +48,12 @@ flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilde
         requirements.size(), [this, &b](size_t i) { return requirements[i].save(b); });
     auto sReclaimables = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
-    auto sInputs =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
+    auto sInputs = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
     auto sOutputs = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
-    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements,
-                                sReclaimables, sInputs, sOutputs, frequency);
+    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial,
+                                sRequirements, sReclaimables, sInputs, sOutputs, frequency);
 }
 
 void Business::setArea(double a) {
@@ -60,9 +64,9 @@ void Business::setArea(double a) {
     }
 }
 
-void Business::scale(unsigned long ppl, unsigned int tT) {
+void Business::scale(unsigned long ppl, TownType tT) {
     // Set area according to given population and town type.
-    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[tT - 1]);
+    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[static_cast<size_t>(tT) - 1]);
 }
 
 void Business::takeRequirements(Property &inv, double a) {
@@ -129,9 +133,11 @@ void Business::setFactor(double ft, const Property &inv, std::unordered_map<unsi
         else if (ft > inputFactor)
             // Factor is too large for input.
             maxFactor = std::min(inputFactor, maxFactor);
+        if (ipId == 29)
+            std::cout << "input factor: " << inputFactor << std::endl;
     }
     factor = maxFactor;
-    if (factor < 0) throw std::runtime_error(std::to_string(factor) + " factor for " + name);
+    if (factor < 0 or std::isnan(factor)) throw std::runtime_error(std::to_string(factor) + " factor for " + name);
 }
 
 void Business::run(Property &inv, const std::unordered_map<unsigned int, Conflict> &cfcts) {

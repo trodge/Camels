@@ -69,8 +69,9 @@ using Texture = Handle<SDL_Texture>;
 using Font = Handle<TTF_Font>;
 
 inline Texture textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
-    Surface c(SDL_CreateRGBSurfaceWithFormatFrom(static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel,
-                                                 rt.w, rt.h, 32, sf->pitch, SDL_PIXELFORMAT_RGB24));
+    Surface c(SDL_CreateRGBSurfaceWithFormatFrom(
+        static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel, rt.w, rt.h,
+        32, sf->pitch, SDL_PIXELFORMAT_RGB24));
     return Texture(SDL_CreateTextureFromSurface(rdr, c.get()));
 }
 } // namespace sdl

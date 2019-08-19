@@ -1,6 +1,6 @@
 #include "property.hpp"
 
-Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src)
+Property::Property(TownType tT, bool ctl, unsigned long ppl, const Property *src)
     : townType(tT), coastal(ctl), population(ppl), updateCounter(Settings::propertyUpdateCounter()), source(src) {
     // Copy businesses from source that can exist here given coastal.
     std::copy_if(begin(source->businesses), end(source->businesses), std::back_inserter(businesses),
@@ -11,25 +11,28 @@ Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property 
     reset();
 }
 
-Property::Property(const Save::Property *ppt, const Property *src)
-    : townType(ppt->townType()), coastal(ppt->coastal()), population(ppt->population()),
-      updateCounter(ppt->updateCounter()), source(src) {
-    auto ldGds = ppt->goods();
-    for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.insert(Good(*lGI));
+Property::Property(const Save::Property *svPpt, const Property *src)
+    : townType(static_cast<TownType>(svPpt->townType())), coastal(svPpt->coastal()),
+      population(svPpt->population()), updateCounter(svPpt->updateCounter()), source(src) {
+    auto ldGds = svPpt->goods();
+    std::transform(ldGds->begin(), ldGds->end(), std::inserter(goods, end(goods)),
+                   [](auto ldGd) { return Good(ldGd); });
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
         goods.modify(gdIt, [srGd = source->good(gdIt->getFullId())](auto &gd) { gd.setImage(srGd.getImage()); });
-    auto ldBsns = ppt->businesses();
-    for (auto lBI = ldBsns->begin(); lBI != ldBsns->end(); ++lBI) businesses.push_back(Business(*lBI));
+    auto ldBsns = svPpt->businesses();
+    std::transform(ldBsns->begin(), ldBsns->end(), std::back_inserter(businesses),
+                   [](auto ldBsn) { return Business(ldBsn); });
     setMaximums();
 }
 
 flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilder &b, unsigned int tId) const {
     std::vector<Good> gds(begin(goods), end(goods));
-    auto svGoods =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [&b, &gds](size_t i) { return gds[i].save(b); });
+    auto svGoods = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        goods.size(), [&b, &gds](size_t i) { return gds[i].save(b); });
     auto svBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
         businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
-    return Save::CreateProperty(b, tId, townType, coastal, population, svGoods, svBusinesses, updateCounter);
+    return Save::CreateProperty(b, tId, static_cast<Save::TownType>(townType), coastal, population, svGoods,
+                                svBusinesses, updateCounter);
 }
 
 bool Property::hasGood(unsigned int fId) const {
@@ -43,12 +46,14 @@ void Property::queryGoods(const std::function<void(const Good &gd)> &fn) const {
 
 double Property::amount(unsigned int gId) const {
     auto gdRng = goods.get<GoodId>().equal_range(gId);
-    return std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
+    return std::accumulate(gdRng.first, gdRng.second, 0.,
+                           [](double tt, auto &gd) { return tt + gd.getAmount(); });
 }
 
 double Property::maximum(unsigned int gId) const {
     auto gdRng = goods.get<GoodId>().equal_range(gId);
-    return std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getMaximum(); });
+    return std::accumulate(gdRng.first, gdRng.second, 0.,
+                           [](double tt, auto &gd) { return tt + gd.getMaximum(); });
 }
 
 void Property::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {
@@ -62,7 +67,8 @@ void Property::setFrequencies(const std::vector<double> &frqcs) {
 
 void Property::setMaximums() {
     // Set maximum good amounts given businesses.
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.setMaximum(); });
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
+        goods.modify(gdIt, [](auto &gd) { gd.setMaximum(); });
     // Set good maximums for businesses.
     auto &byGoodId = goods.get<GoodId>();
     for (auto &b : businesses) {
@@ -137,7 +143,8 @@ std::vector<Good> Property::take(unsigned int gId, double amt) {
     // Take away the given amount of the given good id, proportional among materials. Return transfer goods.
     auto &byGoodId = goods.get<GoodId>();
     auto gdRng = byGoodId.equal_range(gId);
-    double total = std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
+    double total =
+        std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
     std::vector<Good> transfer;
     for (auto gdIt = gdRng.first; gdIt != gdRng.second; ++gdIt) {
         transfer.push_back(Good(gdIt->getFullId(), amt * gdIt->getAmount() / total));
@@ -171,10 +178,13 @@ void Property::use(unsigned int gId, double amt) {
     // Use the given amount of the given good id.
     auto &byGoodId = goods.get<GoodId>();
     auto gdRng = byGoodId.equal_range(gId);
-    double total = std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
+    double total =
+        std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
     if (total == 0) std::cout << gId << std::endl;
     auto useGood = [amt, total](auto &gd) { gd.use(amt * gd.getAmount() / total); };
     for (; gdRng.first != gdRng.second; ++gdRng.first) byGoodId.modify(gdRng.first, useGood);
+    if (gId == 29)
+        std::cout << "total: " << total << " amt: " << amt << std::endl;
 }
 
 void Property::use() {
@@ -229,7 +239,8 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
 
 void Property::create() {
     // Create maximum amount of all goods.
-    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.create(); });
+    for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
+        goods.modify(gdIt, [](auto &gd) { gd.create(); });
 }
 
 void Property::build(const Business &bsn, double a) {

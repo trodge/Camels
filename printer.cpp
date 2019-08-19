@@ -96,16 +96,16 @@ sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, co
     }
     // Draw background.
     drawRoundedRectangle(swRdr.get(), size.radius, &dR, colors.background);
-    Alignment justify = center;
+    Alignment justify = Alignment::center;
     for (auto &img : imgs) {
         // Blit image onto its rectangle on printing surface.
         dR = img.rect;
         if (dR.x + dR.w / 2 < rt.w / 2)
             // Image is on the left side, justify text right.
-            justify = right;
+            justify = Alignment::right;
         else
             // Image is on right side, justify text left.
-            justify = left;
+            justify = Alignment::left;
         SDL_BlitSurface(img.surface, nullptr, p.get(), &dR);
     }
     // Center text vertically.
@@ -115,13 +115,13 @@ sdl::Surface Printer::print(const std::vector<std::string> &tx, SDL_Rect &rt, co
         dR.w = tWs[i];
         dR.h = tHs[i];
         switch (justify) {
-        case left:
+        case Alignment::left:
             dR.x = 2 * size.border;
             break;
-        case right:
+        case Alignment::right:
             dR.x = rt.w - dR.w - 2 * size.border;
             break;
-        case center:
+        case Alignment::center:
             dR.x = rt.w / 2 - dR.w / 2;
             break;
         }

@@ -19,19 +19,29 @@
 
 #include "good.hpp"
 
+Good::Good(const Save::Good *ldGd)
+    : goodId(ldGd->goodId()), materialId(ldGd->materialId()), fullId(ldGd->fullId()),
+      goodName(ldGd->goodName()->str()), materialName(ldGd->materialName()->str()), fullName(completeName()),
+      amount(ldGd->amount()), perish(ldGd->perish()), carry(ldGd->carry()), measure(ldGd->measure()->str()),
+      split(!measure.empty()), consumptionRate(ldGd->consumptionRate()), demandSlope(ldGd->demandSlope()),
+      demandIntercept(ldGd->demandIntercept()), minPrice(demandIntercept / Settings::getMinPriceDivisor()),
+      lastAmount(amount) {}
+
 flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) const {
     auto svGoodName = b.CreateString(goodName);
     auto svMaterialName = b.CreateString(materialName);
     auto svMeasure = b.CreateString(measure);
-    auto svPerishCounters =
-        b.CreateVectorOfStructs<Save::PerishCounter>(perishCounters.size(), [this](size_t i, Save::PerishCounter *pC) {
+    auto svPerishCounters = b.CreateVectorOfStructs<Save::PerishCounter>(
+        perishCounters.size(), [this](size_t i, Save::PerishCounter *pC) {
             *pC = Save::PerishCounter(perishCounters[i].time, perishCounters[i].amount);
         });
-    auto svCombatStats = b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
-        *cS = Save::CombatStat(combatStats[i].statId, combatStats[i].partId, combatStats[i].attack, combatStats[i].type,
-                               combatStats[i].speed, combatStats[i].defense[0], combatStats[i].defense[1],
-                               combatStats[i].defense[2]);
-    });
+    auto svCombatStats =
+        b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
+            *cS = Save::CombatStat(
+                static_cast<Save::Part>(combatStats[i].part), static_cast<Save::Stat>(combatStats[i].stat),
+                combatStats[i].attack, combatStats[i].speed, static_cast<Save::AttackType>(combatStats[i].type),
+                combatStats[i].defense[0], combatStats[i].defense[1], combatStats[i].defense[2]);
+        });
     return Save::CreateGood(b, goodId, materialId, fullId, svGoodName, svMaterialName, amount, perish, carry, svMeasure,
                             consumptionRate, demandSlope, demandIntercept, svPerishCounters, svCombatStats, shoots);
 }
@@ -230,7 +240,8 @@ void Good::update(unsigned int elTm, double dyLn) {
     PerishCounter exPC = {int(perish * dyLn - elTm), 0};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
     // Total expired amounts.
-    double perished = std::accumulate(expired, perishCounters.end(), 0, [](double d, auto &pC) { return d + pC.amount; });
+    double perished =
+        std::accumulate(expired, perishCounters.end(), 0, [](double d, auto &pC) { return d + pC.amount; });
     // Erase expired perish counters.
     perishCounters.erase(expired, perishCounters.end());
     // Add elapsed time to remaining counters.

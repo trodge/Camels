@@ -55,9 +55,9 @@ class Town {
     double dist(int x, int y) const;
 
 public:
-    Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat, unsigned int tT,
-         bool ctl, long unsigned int ppl, Printer &pr);
-    Town(const Save::Town *t, const std::vector<Nation> &ns, Printer &pr);
+    Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat,
+         TownType tT, bool ctl, long unsigned int ppl, Printer &pr);
+    Town(const Save::Town *ldTn, const std::vector<Nation> &ns, Printer &pr);
     flatbuffers::Offset<Save::Town> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Town &other) const;
     unsigned int getId() const { return id; }

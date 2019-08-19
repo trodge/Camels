@@ -30,6 +30,246 @@ struct Route;
 
 struct Game;
 
+enum Part {
+  Part_head = 0,
+  Part_torso = 1,
+  Part_leftArm = 2,
+  Part_rightArm = 3,
+  Part_leftLeg = 4,
+  Part_rightLeg = 5,
+  Part_MIN = Part_head,
+  Part_MAX = Part_rightLeg
+};
+
+inline const Part (&EnumValuesPart())[6] {
+  static const Part values[] = {
+    Part_head,
+    Part_torso,
+    Part_leftArm,
+    Part_rightArm,
+    Part_leftLeg,
+    Part_rightLeg
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesPart() {
+  static const char * const names[] = {
+    "head",
+    "torso",
+    "leftArm",
+    "rightArm",
+    "leftLeg",
+    "rightLeg",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNamePart(Part e) {
+  if (e < Part_head || e > Part_rightLeg) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesPart()[index];
+}
+
+enum Stat {
+  Stat_strength = 0,
+  Stat_endurance = 1,
+  Stat_agility = 2,
+  Stat_intelligence = 3,
+  Stat_charisma = 4,
+  Stat_MIN = Stat_strength,
+  Stat_MAX = Stat_charisma
+};
+
+inline const Stat (&EnumValuesStat())[5] {
+  static const Stat values[] = {
+    Stat_strength,
+    Stat_endurance,
+    Stat_agility,
+    Stat_intelligence,
+    Stat_charisma
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesStat() {
+  static const char * const names[] = {
+    "strength",
+    "endurance",
+    "agility",
+    "intelligence",
+    "charisma",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameStat(Stat e) {
+  if (e < Stat_strength || e > Stat_charisma) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesStat()[index];
+}
+
+enum AttackType {
+  AttackType_none = 0,
+  AttackType_bash = 1,
+  AttackType_slash = 2,
+  AttackType_stab = 3,
+  AttackType_MIN = AttackType_none,
+  AttackType_MAX = AttackType_stab
+};
+
+inline const AttackType (&EnumValuesAttackType())[4] {
+  static const AttackType values[] = {
+    AttackType_none,
+    AttackType_bash,
+    AttackType_slash,
+    AttackType_stab
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesAttackType() {
+  static const char * const names[] = {
+    "none",
+    "bash",
+    "slash",
+    "stab",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameAttackType(AttackType e) {
+  if (e < AttackType_none || e > AttackType_stab) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesAttackType()[index];
+}
+
+enum TownType {
+  TownType_city = 0,
+  TownType_town = 1,
+  TownType_fort = 2,
+  TownType_MIN = TownType_city,
+  TownType_MAX = TownType_fort
+};
+
+inline const TownType (&EnumValuesTownType())[3] {
+  static const TownType values[] = {
+    TownType_city,
+    TownType_town,
+    TownType_fort
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesTownType() {
+  static const char * const names[] = {
+    "city",
+    "town",
+    "fort",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameTownType(TownType e) {
+  if (e < TownType_city || e > TownType_fort) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesTownType()[index];
+}
+
+enum AIRole {
+  AIRole_trader = 0,
+  AIRole_soldier = 1,
+  AIRole_bandit = 2,
+  AIRole_agent = 3,
+  AIRole_guard = 4,
+  AIRole_thug = 5,
+  AIRole_MIN = AIRole_trader,
+  AIRole_MAX = AIRole_thug
+};
+
+inline const AIRole (&EnumValuesAIRole())[6] {
+  static const AIRole values[] = {
+    AIRole_trader,
+    AIRole_soldier,
+    AIRole_bandit,
+    AIRole_agent,
+    AIRole_guard,
+    AIRole_thug
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesAIRole() {
+  static const char * const names[] = {
+    "trader",
+    "soldier",
+    "bandit",
+    "agent",
+    "guard",
+    "thug",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameAIRole(AIRole e) {
+  if (e < AIRole_trader || e > AIRole_thug) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesAIRole()[index];
+}
+
+enum Status {
+  Status_normal = 0,
+  Status_bruised = 1,
+  Status_wounded = 2,
+  Status_broken = 3,
+  Status_infected = 4,
+  Status_pulverized = 5,
+  Status_amputated = 6,
+  Status_impaled = 7,
+  Status_MIN = Status_normal,
+  Status_MAX = Status_impaled
+};
+
+inline const Status (&EnumValuesStatus())[8] {
+  static const Status values[] = {
+    Status_normal,
+    Status_bruised,
+    Status_wounded,
+    Status_broken,
+    Status_infected,
+    Status_pulverized,
+    Status_amputated,
+    Status_impaled
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesStatus() {
+  static const char * const names[] = {
+    "normal",
+    "bruised",
+    "wounded",
+    "broken",
+    "infected",
+    "pulverized",
+    "amputated",
+    "impaled",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameStatus(Status e) {
+  if (e < Status_normal || e > Status_impaled) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesStatus()[index];
+}
+
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PerishCounter FLATBUFFERS_FINAL_CLASS {
  private:
   int32_t time_;
@@ -57,49 +297,49 @@ FLATBUFFERS_STRUCT_END(PerishCounter, 16);
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) CombatStat FLATBUFFERS_FINAL_CLASS {
  private:
-  uint32_t statId_;
-  uint32_t partId_;
+  uint32_t part_;
+  uint32_t stat_;
   uint32_t attack_;
-  uint32_t type_;
   uint32_t speed_;
+  uint32_t type_;
   uint32_t bashDefense_;
-  uint32_t cutDefense_;
+  uint32_t slashDefense_;
   uint32_t stabDefense_;
 
  public:
   CombatStat() {
     memset(static_cast<void *>(this), 0, sizeof(CombatStat));
   }
-  CombatStat(uint32_t _statId, uint32_t _partId, uint32_t _attack, uint32_t _type, uint32_t _speed, uint32_t _bashDefense, uint32_t _cutDefense, uint32_t _stabDefense)
-      : statId_(flatbuffers::EndianScalar(_statId)),
-        partId_(flatbuffers::EndianScalar(_partId)),
+  CombatStat(Part _part, Stat _stat, uint32_t _attack, uint32_t _speed, AttackType _type, uint32_t _bashDefense, uint32_t _slashDefense, uint32_t _stabDefense)
+      : part_(flatbuffers::EndianScalar(static_cast<uint32_t>(_part))),
+        stat_(flatbuffers::EndianScalar(static_cast<uint32_t>(_stat))),
         attack_(flatbuffers::EndianScalar(_attack)),
-        type_(flatbuffers::EndianScalar(_type)),
         speed_(flatbuffers::EndianScalar(_speed)),
+        type_(flatbuffers::EndianScalar(static_cast<uint32_t>(_type))),
         bashDefense_(flatbuffers::EndianScalar(_bashDefense)),
-        cutDefense_(flatbuffers::EndianScalar(_cutDefense)),
+        slashDefense_(flatbuffers::EndianScalar(_slashDefense)),
         stabDefense_(flatbuffers::EndianScalar(_stabDefense)) {
   }
-  uint32_t statId() const {
-    return flatbuffers::EndianScalar(statId_);
+  Part part() const {
+    return static_cast<Part>(flatbuffers::EndianScalar(part_));
   }
-  uint32_t partId() const {
-    return flatbuffers::EndianScalar(partId_);
+  Stat stat() const {
+    return static_cast<Stat>(flatbuffers::EndianScalar(stat_));
   }
   uint32_t attack() const {
     return flatbuffers::EndianScalar(attack_);
   }
-  uint32_t type() const {
-    return flatbuffers::EndianScalar(type_);
-  }
   uint32_t speed() const {
     return flatbuffers::EndianScalar(speed_);
+  }
+  AttackType type() const {
+    return static_cast<AttackType>(flatbuffers::EndianScalar(type_));
   }
   uint32_t bashDefense() const {
     return flatbuffers::EndianScalar(bashDefense_);
   }
-  uint32_t cutDefense() const {
-    return flatbuffers::EndianScalar(cutDefense_);
+  uint32_t slashDefense() const {
+    return flatbuffers::EndianScalar(slashDefense_);
   }
   uint32_t stabDefense() const {
     return flatbuffers::EndianScalar(stabDefense_);
@@ -217,7 +457,7 @@ struct Good FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   const flatbuffers::Vector<const CombatStat *> *combatStats() const {
     return GetPointer<const flatbuffers::Vector<const CombatStat *> *>(VT_COMBATSTATS);
   }
-  uint32_t shoots() const {
+  uint32_t ammoId() const {
     return GetField<uint32_t>(VT_AMMOID, 0);
   }
   bool Verify(flatbuffers::Verifier &verifier) const {
@@ -291,8 +531,8 @@ struct GoodBuilder {
   void add_combatStats(flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats) {
     fbb_.AddOffset(Good::VT_COMBATSTATS, combatStats);
   }
-  void add_shoots(uint32_t shoots) {
-    fbb_.AddElement<uint32_t>(Good::VT_AMMOID, shoots, 0);
+  void add_ammoId(uint32_t ammoId) {
+    fbb_.AddElement<uint32_t>(Good::VT_AMMOID, ammoId, 0);
   }
   explicit GoodBuilder(flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -322,7 +562,7 @@ inline flatbuffers::Offset<Good> CreateGood(
     double demandIntercept = 0.0,
     flatbuffers::Offset<flatbuffers::Vector<const PerishCounter *>> perishCounters = 0,
     flatbuffers::Offset<flatbuffers::Vector<const CombatStat *>> combatStats = 0,
-    uint32_t shoots = 0) {
+    uint32_t ammoId = 0) {
   GoodBuilder builder_(_fbb);
   builder_.add_demandIntercept(demandIntercept);
   builder_.add_demandSlope(demandSlope);
@@ -330,7 +570,7 @@ inline flatbuffers::Offset<Good> CreateGood(
   builder_.add_carry(carry);
   builder_.add_perish(perish);
   builder_.add_amount(amount);
-  builder_.add_shoots(shoots);
+  builder_.add_ammoId(ammoId);
   builder_.add_combatStats(combatStats);
   builder_.add_perishCounters(perishCounters);
   builder_.add_measure(measure);
@@ -358,7 +598,7 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
     double demandIntercept = 0.0,
     const std::vector<PerishCounter> *perishCounters = nullptr,
     const std::vector<CombatStat> *combatStats = nullptr,
-    uint32_t shoots = 0) {
+    uint32_t ammoId = 0) {
   auto goodName__ = goodName ? _fbb.CreateString(goodName) : 0;
   auto materialName__ = materialName ? _fbb.CreateString(materialName) : 0;
   auto measure__ = measure ? _fbb.CreateString(measure) : 0;
@@ -380,7 +620,7 @@ inline flatbuffers::Offset<Good> CreateGoodDirect(
       demandIntercept,
       perishCounters__,
       combatStats__,
-      shoots);
+      ammoId);
 }
 
 struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
@@ -396,8 +636,8 @@ struct Property FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint32_t townId() const {
     return GetField<uint32_t>(VT_TOWNID, 0);
   }
-  uint32_t townType() const {
-    return GetField<uint32_t>(VT_TOWNTYPE, 0);
+  TownType townType() const {
+    return static_cast<TownType>(GetField<uint32_t>(VT_TOWNTYPE, 0));
   }
   bool coastal() const {
     return GetField<uint8_t>(VT_COASTAL, 0) != 0;
@@ -437,8 +677,8 @@ struct PropertyBuilder {
   void add_townId(uint32_t townId) {
     fbb_.AddElement<uint32_t>(Property::VT_TOWNID, townId, 0);
   }
-  void add_townType(uint32_t townType) {
-    fbb_.AddElement<uint32_t>(Property::VT_TOWNTYPE, townType, 0);
+  void add_townType(TownType townType) {
+    fbb_.AddElement<uint32_t>(Property::VT_TOWNTYPE, static_cast<uint32_t>(townType), 0);
   }
   void add_coastal(bool coastal) {
     fbb_.AddElement<uint8_t>(Property::VT_COASTAL, static_cast<uint8_t>(coastal), 0);
@@ -470,7 +710,7 @@ struct PropertyBuilder {
 inline flatbuffers::Offset<Property> CreateProperty(
     flatbuffers::FlatBufferBuilder &_fbb,
     uint32_t townId = 0,
-    uint32_t townType = 0,
+    TownType townType = TownType_city,
     bool coastal = false,
     uint64_t population = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<Good>>> goods = 0,
@@ -490,7 +730,7 @@ inline flatbuffers::Offset<Property> CreateProperty(
 inline flatbuffers::Offset<Property> CreatePropertyDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     uint32_t townId = 0,
-    uint32_t townType = 0,
+    TownType townType = TownType_city,
     bool coastal = false,
     uint64_t population = 0,
     const std::vector<flatbuffers::Offset<Good>> *goods = nullptr,

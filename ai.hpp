@@ -55,12 +55,11 @@ struct TownInfo {
 class AI {
     Traveler &traveler;                                          // the traveler this AI controls
     int decisionCounter;                                         // counter for updatening AI
-    std::array<double, kDecisionCriteriaCount> decisionCriteria; /* buy/sell score weight, weapon/armor
+    std::array<double, static_cast<size_t>(DecisionCriteria::count)> decisionCriteria; /* buy/sell score weight, weapon/armor
     equip score, tendency to fight/run/yield, looting greed */
-    std::unordered_map<unsigned int, GoodInfo> goodsInfo;        // known information about each good by full id
-    std::vector<TownInfo> nearby;                                // known information about nearby towns
-    enum Role { trader, soldier, bandit, agent, guard, thug };
-    Role role; // behavior for this ai
+    std::unordered_map<unsigned int, GoodInfo> goodsInfo; // known information about each good by full id
+    std::vector<TownInfo> nearby;                         // known information about nearby towns
+    AIRole role;                                          // behavior for this ai
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
     double buyScore(double p, double b) const { return p == 0 ? 0 : b / p; }  // score selling at price p
@@ -75,7 +74,7 @@ class AI {
 public:
     AI(Traveler &tvl);
     AI(Traveler &tvl, const AI &p);
-    AI(Traveler &tvl, const Save::AI *a);
+    AI(Traveler &tvl, const Save::AI *ldAI);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
     void choose();
     void loot();

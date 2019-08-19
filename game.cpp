@@ -22,19 +22,22 @@
 Game::Game()
     : screenRect(Settings::getScreenRect()), mapView(Settings::getMapView()), offsetX(Settings::getOffsetX()),
       offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
-      window(SDL_CreateWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w, screenRect.h,
-                              SDL_WINDOW_BORDERLESS)),
+      window(SDL_CreateWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w,
+                              screenRect.h, SDL_WINDOW_BORDERLESS)),
       screen(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)),
       travelersCheckCounter(Settings::travelersCheckCounter()) {
     player = std::make_unique<Player>(*this);
-    player->setState(UIState::starting);
+    player->setState(State::starting);
     std::cout << "Creating Game" << std::endl;
-    if (!window.get()) throw std::runtime_error("Window creation failed, SDL Error:" + std::string(SDL_GetError()));
+    if (!window.get())
+        throw std::runtime_error("Window creation failed, SDL Error:" + std::string(SDL_GetError()));
     sdl::Surface icon(IMG_Load(fs::path("images/icon.png").string().c_str()));
-    if (!icon.get()) throw std::runtime_error("Failed to load icon, IMG Error: " + std::string(IMG_GetError()));
+    if (!icon.get())
+        throw std::runtime_error("Failed to load icon, IMG Error: " + std::string(IMG_GetError()));
     SDL_SetWindowIcon(window.get(), icon.get());
     icon = nullptr;
-    if (!screen.get()) throw std::runtime_error("Failed to create renderer, SDL Error:" + std::string(SDL_GetError()));
+    if (!screen.get())
+        throw std::runtime_error("Failed to create renderer, SDL Error:" + std::string(SDL_GetError()));
     if (SDL_GetRendererInfo(screen.get(), &screenInfo) < 0)
         throw std::runtime_error("Failed to get renderer info, SDL Error:" + std::string(SDL_GetError()));
     // For debugging, pretend renderer can't handle textures over 64x64
@@ -42,9 +45,11 @@ Game::Game()
     // screenInfo.max_texture_width = 64;
     std::cout << "Loading Map" << std::endl;
     sdl::Surface mapSurface(IMG_Load(fs::path("images/map-scaled.png").string().c_str()));
-    if (!mapSurface) throw std::runtime_error("Failed to load map surface, IMG Error:" + std::string(IMG_GetError()));
+    if (!mapSurface)
+        throw std::runtime_error("Failed to load map surface, IMG Error:" + std::string(IMG_GetError()));
     mapRect = {0, 0, mapSurface->w, mapSurface->h};
-    mapTexture.reset(SDL_CreateTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET, mapView.w, mapView.h));
+    mapTexture.reset(SDL_CreateTexture(screen.get(), SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_TARGET,
+                                       mapView.w, mapView.h));
     SDL_Rect rt = {0, 0, screenInfo.max_texture_width, screenInfo.max_texture_height};
     mapTextureColumnCount = mapRect.w / rt.w + (mapRect.w % rt.w != 0);
     mapTextureRowCount = mapRect.h / rt.h + (mapRect.h % rt.h != 0);
@@ -164,30 +169,30 @@ void Game::loadData(sqlite3 *cn) {
     // Load part names.
     auto quer = sql::makeQuery(cn, "SELECT name FROM parts");
     auto q = quer.get();
-    while (sqlite3_step(q) != SQLITE_DONE)
-        gameData.parts.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0))));
+    for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
+        gameData.partNames[i] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
     // Load status names.
     quer = sql::makeQuery(cn, "SELECT name FROM statuses");
     q = quer.get();
-    while (sqlite3_step(q) != SQLITE_DONE)
-        gameData.statuses.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0))));
+    for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
+        gameData.statusNames[i] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
 
     // Load combat odds.
     quer = sql::makeQuery(cn,
                           "SELECT hit_odds, status_1, status_1_chance, status_2, "
                           "status_2_chance, status_3, status_3_chance FROM combat_odds");
     q = quer.get();
-    while (sqlite3_step(q) != SQLITE_DONE)
-        gameData.odds.push_back({sqlite3_column_double(q, 0),
-                                 {{{sqlite3_column_int(q, 1), sqlite3_column_double(q, 2)},
-                                   {sqlite3_column_int(q, 3), sqlite3_column_double(q, 4)},
-                                   {sqlite3_column_int(q, 5), sqlite3_column_double(q, 6)}}}});
+    for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
+        gameData.odds[i] = {sqlite3_column_double(q, 0),
+                            {{{static_cast<Status>(sqlite3_column_int(q, 1)), sqlite3_column_double(q, 2)},
+                              {static_cast<Status>(sqlite3_column_int(q, 3)), sqlite3_column_double(q, 4)},
+                              {static_cast<Status>(sqlite3_column_int(q, 5)), sqlite3_column_double(q, 6)}}}};
 
     // Load town type nouns.
     quer = sql::makeQuery(cn, "SELECT noun FROM town_type_nouns");
     q = quer.get();
-    while (sqlite3_step(q) != SQLITE_DONE)
-        gameData.townTypeNouns.push_back(std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0))));
+    for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
+        gameData.townTypeNames[i] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
 
     quer = sql::makeQuery(cn, "SELECT minimum, adjective FROM population_adjectives");
     q = quer.get();
@@ -219,12 +224,12 @@ void Game::loadData(sqlite3 *cn) {
     quer = sql::makeQuery(cn, "SELECT good_id, material_id, perish, carry FROM materials");
     q = quer.get();
     while (sqlite3_step(q) != SQLITE_DONE)
-        goods.push_back(Good(basicGoods[sqlite3_column_int(q, 0)], basicGoods[sqlite3_column_int(q, 1)], goods.size(),
-                             sqlite3_column_double(q, 2), sqlite3_column_double(q, 3)));
+        goods.push_back(Good(basicGoods[sqlite3_column_int(q, 0)], basicGoods[sqlite3_column_int(q, 1)],
+                             goods.size(), sqlite3_column_double(q, 2), sqlite3_column_double(q, 3)));
     // Load good images.
     int m = Settings::getButtonMargin();
     int imageSize = std::min(kMaxGoodImageSize, (screenRect.h + m) / Settings::getGoodButtonRows() - m -
-                                                    2 * Settings::boxSize(BoxSize::trade).border);
+                                                    2 * Settings::boxSize(BoxSizeType::trade).border);
     SDL_Rect rt = {0, 0, imageSize, imageSize};
     goodImages.reserve(goods.size());
     for (auto &g : goods) {
@@ -267,31 +272,32 @@ void Game::loadData(sqlite3 *cn) {
             });
             combatStats.clear();
         }
-        combatStats.push_back(
-            {static_cast<unsigned int>(sqlite3_column_int(q, 2)),
-             static_cast<unsigned int>(sqlite3_column_int(q, 3)),
-             static_cast<unsigned int>(sqlite3_column_int(q, 4)),
-             static_cast<unsigned int>(sqlite3_column_int(q, 5)),
-             static_cast<unsigned int>(sqlite3_column_int(q, 6)),
-             {{static_cast<unsigned int>(sqlite3_column_int(q, 7)), static_cast<unsigned int>(sqlite3_column_int(q, 8)),
-               static_cast<unsigned int>(sqlite3_column_int(q, 9))}}});
+        combatStats.push_back({static_cast<Part>(sqlite3_column_int(q, 3)),
+                               static_cast<Stat>(sqlite3_column_int(q, 2)),
+                               static_cast<unsigned int>(sqlite3_column_int(q, 4)),
+                               static_cast<unsigned int>(sqlite3_column_int(q, 6)),
+                               static_cast<AttackType>(sqlite3_column_int(q, 5)),
+                               {{static_cast<unsigned int>(sqlite3_column_int(q, 7)),
+                                 static_cast<unsigned int>(sqlite3_column_int(q, 8)),
+                                 static_cast<unsigned int>(sqlite3_column_int(q, 9))}}});
     }
     gdIt->setCombatStats(combatStats);
     // Load businesses.
     std::vector<Business> businesses;
-    quer = sql::makeQuery(cn,
-                          "SELECT business_id, modes, name, can_switch, require_coast, keep_material, city_frequency, "
-                          "town_frequency, fort_frequency FROM businesses");
+    quer = sql::makeQuery(
+        cn,
+        "SELECT business_id, modes, name, can_switch, require_coast, keep_material, city_frequency, "
+        "town_frequency, fort_frequency FROM businesses");
     q = quer.get();
     unsigned int bId = 1;
     while (sqlite3_step(q) != SQLITE_DONE)
         for (unsigned int bMd = 1; bMd <= static_cast<size_t>(sqlite3_column_int(q, 1)); ++bMd)
-            businesses.push_back(
-                Business(static_cast<unsigned int>(sqlite3_column_int(q, 0)), bMd,
-                         std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
-                         static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
-                         static_cast<bool>(sqlite3_column_int(q, 5)),
-                         {sqlite3_column_double(q, 6), sqlite3_column_double(q, 7), sqlite3_column_double(q, 8)}));
+            businesses.push_back(Business(
+                static_cast<unsigned int>(sqlite3_column_int(q, 0)), bMd,
+                std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
+                static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
+                static_cast<bool>(sqlite3_column_int(q, 5)),
+                {sqlite3_column_double(q, 6), sqlite3_column_double(q, 7), sqlite3_column_double(q, 8)}));
     // Load requirements.
     quer = sql::makeQuery(cn, "SELECT business_id, good_id, amount FROM requirements");
     q = quer.get();
@@ -356,15 +362,16 @@ void Game::loadData(sqlite3 *cn) {
                           "background_r, background_g, background_b, religion FROM nations");
     q = quer.get();
     while (sqlite3_step(q) != SQLITE_DONE)
-        nations.push_back(Nation(static_cast<unsigned int>(sqlite3_column_int(q, 0)),
-                                 {std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))),
-                                  std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2)))},
-                                 std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 3))),
-                                 {static_cast<Uint8>(sqlite3_column_int(q, 4)), static_cast<Uint8>(sqlite3_column_int(q, 5)),
-                                  static_cast<Uint8>(sqlite3_column_int(q, 6)), 255},
-                                 {static_cast<Uint8>(sqlite3_column_int(q, 7)), static_cast<Uint8>(sqlite3_column_int(q, 8)),
-                                  static_cast<Uint8>(sqlite3_column_int(q, 9)), 255},
-                                 std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 10))), goods, businesses));
+        nations.push_back(Nation(
+            static_cast<unsigned int>(sqlite3_column_int(q, 0)),
+            {std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))),
+             std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2)))},
+            std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 3))),
+            {static_cast<Uint8>(sqlite3_column_int(q, 4)), static_cast<Uint8>(sqlite3_column_int(q, 5)),
+             static_cast<Uint8>(sqlite3_column_int(q, 6)), 255},
+            {static_cast<Uint8>(sqlite3_column_int(q, 7)), static_cast<Uint8>(sqlite3_column_int(q, 8)),
+             static_cast<Uint8>(sqlite3_column_int(q, 9)), 255},
+            std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 10))), goods, businesses));
 
     // Load traveler names into nations.
     quer = sql::makeQuery(cn, "SELECT nation_id, name FROM names");
@@ -414,7 +421,8 @@ void Game::loadData(sqlite3 *cn) {
             goodsConsumption.clear();
             ++ntId;
         }
-        goodsConsumption.push_back({{sqlite3_column_double(q, 2), sqlite3_column_double(q, 3), sqlite3_column_double(q, 4)}});
+        goodsConsumption.push_back(
+            {{sqlite3_column_double(q, 2), sqlite3_column_double(q, 3), sqlite3_column_double(q, 4)}});
     }
     // Flush final good consumptions vector.
     nations[ntId - 1].setConsumption(goodsConsumption);
@@ -430,8 +438,9 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     // Store number of towns as double for progress bar purposes.
     double tC = static_cast<double>(gameData.townCount);
 
-    quer = sql::makeQuery(
-        cn, "SELECT town_id, eng, lang, nation_id, latitude, longitude, town_type, coastal, population FROM towns");
+    quer = sql::makeQuery(cn,
+                          "SELECT town_id, eng, lang, nation_id, latitude, longitude, town_type, coastal, "
+                          "population FROM towns");
     q = quer.get();
     towns.reserve(gameData.townCount);
     std::cout << "Loading towns" << std::endl;
@@ -442,9 +451,9 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
                              {std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))),
                               std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2)))},
                              &nations[static_cast<size_t>(sqlite3_column_int(q, 3) - 1)], sqlite3_column_double(q, 5),
-                             sqlite3_column_double(q, 4), static_cast<bool>(sqlite3_column_int(q, 6)),
-                             static_cast<unsigned long>(sqlite3_column_int(q, 7)),
-                             static_cast<unsigned int>(sqlite3_column_int(q, 8)), printer));
+                             sqlite3_column_double(q, 4), static_cast<TownType>(sqlite3_column_int(q, 6)),
+                             static_cast<bool>(sqlite3_column_int(q, 7)),
+                             static_cast<unsigned long>(sqlite3_column_int(q, 8)), printer));
         // Let town run for some business cyles before game starts.
         towns.back().update(Settings::getTownHeadStart());
         ldBr.progress(1 / tC);
@@ -484,12 +493,15 @@ void Game::newGame() {
     loadData(conn.get());
 
     // Load towns from sqlite database.
-    LoadBar loadBar(Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Loading towns..."},
-                                      {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
-                    printer);
+    LoadBar loadBar(
+        Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Loading towns..."},
+                          {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
+        printer);
     // Create a texture for keeping the current screen frozen behind load bar.
-    sdl::Surface freezeSurface(SDL_CreateRGBSurface(surfaceFlags, screenRect.w, screenRect.h, bitDepth, rmask, gmask, bmask, amask));
-    SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
+    sdl::Surface freezeSurface(
+        SDL_CreateRGBSurface(surfaceFlags, screenRect.w, screenRect.h, bitDepth, rmask, gmask, bmask, amask));
+    SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels,
+                         freezeSurface->pitch);
     sdl::Texture freezeTexture(SDL_CreateTextureFromSurface(screen.get(), freezeSurface.get()));
     freezeSurface = nullptr;
     loadTowns(conn.get(), loadBar, freezeTexture.get());
@@ -538,21 +550,24 @@ void Game::loadGame(const fs::path &p) {
         size_t townCount = lTowns->size();
         towns.reserve(townCount);
         double tC = townCount;
-        LoadBar loadBar(Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Loading towns..."},
-                                          {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
-                        printer);
-        sdl::Surface freezeSurface(
-            SDL_CreateRGBSurface(surfaceFlags, screenRect.w, screenRect.h, bitDepth, rmask, gmask, bmask, amask));
-        SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels, freezeSurface->pitch);
+        LoadBar loadBar(
+            Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Loading towns..."},
+                              {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
+            printer);
+        sdl::Surface freezeSurface(SDL_CreateRGBSurface(surfaceFlags, screenRect.w, screenRect.h, bitDepth,
+                                                        rmask, gmask, bmask, amask));
+        SDL_RenderReadPixels(screen.get(), nullptr, freezeSurface->format->format, freezeSurface->pixels,
+                             freezeSurface->pitch);
         sdl::Texture freezeTexture(SDL_CreateTextureFromSurface(screen.get(), freezeSurface.get()));
         freezeSurface = nullptr;
-        for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
-            SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-            towns.push_back(Town(*lTI, nations, printer));
-            loadBar.progress(1 / tC);
-            loadBar.draw(screen.get());
-            SDL_RenderPresent(screen.get());
-        }
+        std::transform(lTowns->begin(), lTowns->end(), std::back_inserter(towns),
+                       [this, &freezeTexture, &loadBar, tC](auto ldTn) {
+                           SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
+                           loadBar.progress(1 / tC);
+                           loadBar.draw(screen.get());
+                           SDL_RenderPresent(screen.get());
+                           return Town(ldTn, nations, printer);
+                       });
         auto lRoutes = game->routes();
         size_t routeCount = lRoutes->size();
         routes.reserve(routeCount);
@@ -571,9 +586,9 @@ void Game::loadGame(const fs::path &p) {
         }
         player->loadTraveler(game->playerTraveler(), towns);
         auto lTravelers = game->aITravelers();
-        auto lTI = lTravelers->begin();
-        for (++lTI; lTI != lTravelers->end(); ++lTI)
-            aITravelers.push_back(std::make_unique<Traveler>(*lTI, towns, nations, gameData));
+        std::transform(lTravelers->begin() + 1, lTravelers->end(), std::back_inserter(aITravelers), [this](auto ldTvl) {
+            return std::make_unique<Traveler>(ldTvl, towns, nations, gameData);
+        });
         for (auto &t : aITravelers) t->startAI();
         place();
     }
@@ -615,9 +630,10 @@ void Game::update() {
         if (!aITravelers.empty()) {
             travelersCheckCounter += elapsed;
             if (travelersCheckCounter > 0) {
-                aITravelers.erase(std::remove_if(begin(aITravelers), end(aITravelers),
-                                                 [](const std::unique_ptr<Traveler> &tvl) { return tvl->getDead(); }),
-                                  end(aITravelers));
+                aITravelers.erase(
+                    std::remove_if(begin(aITravelers), end(aITravelers),
+                                   [](const std::unique_ptr<Traveler> &tvl) { return tvl->getDead(); }),
+                    end(aITravelers));
                 travelersCheckCounter -= Settings::getTravelersCheckTime();
             }
         }
@@ -639,9 +655,10 @@ void Game::draw() {
 
 void Game::generateRoutes() {
     // Recalculate routes between towns and save new routes to database.
-    LoadBar loadBar(Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Finding routes..."},
-                                      {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
-                    printer);
+    LoadBar loadBar(
+        Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0}, {"Finding routes..."},
+                          {screenRect.w / 15, screenRect.h * 7 / 15, screenRect.w * 13 / 15, screenRect.h / 15}),
+        printer);
     /*
     // Have each town find its nearest neighbors.
     for (auto &t : towns) {
@@ -701,7 +718,8 @@ void Game::saveGame() {
     path /= player->getTraveler()->getName();
     path.replace_extension("sav");
     std::ofstream file(path.string(), std::ofstream::binary);
-    if (file.is_open()) file.write(reinterpret_cast<const char *>(builder.GetBufferPointer()), builder.GetSize());
+    if (file.is_open())
+        file.write(reinterpret_cast<const char *>(builder.GetBufferPointer()), builder.GetSize());
 }
 
 std::vector<TextBox *> Game::getTownBoxes() const {

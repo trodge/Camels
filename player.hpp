@@ -40,24 +40,26 @@ class Game;
 
 class MenuButton;
 
+enum class State {
+    starting,
+    beginning,
+    quitting,
+    loading,
+    traveling,
+    trading,
+    storing,
+    building,
+    equipping,
+    managing,
+    attacking,
+    logging,
+    fighting,
+    looting,
+    dying,
+    count
+};
+
 struct UIState {
-    enum State {
-        starting,
-        beginning,
-        quitting,
-        loading,
-        traveling,
-        trading,
-        storing,
-        building,
-        equipping,
-        managing,
-        attacking,
-        logging,
-        fighting,
-        looting,
-        dying
-    };
     std::vector<BoxInfo> boxesInfo;           // info for boxes to create for this state
     std::function<void()> onChange = nullptr; // function to run when this UIState is switched to
     size_t pagerCount = 1;                    // number of pagers this state uses
@@ -73,14 +75,14 @@ class Player {
     int smallBoxFontHeight;
     Printer &printer;
     bool stop = false, show = false, pause = false, storedPause = false, developer = false;
-    enum Direction { left, right, up, down };
+    enum class Direction { left, right, up, down };
     std::unordered_set<Direction> scroll;
     double modMultiplier = 1; // multiplier for values which depend on keymod state
     int focusBox = -1;        // index of box we are focusing across all pagers
     int focusTown = -1;       // index of town currently focused
-    UIState::State state = UIState::starting, storedState = UIState::starting;
-    std::unordered_map<UIState::State, UIState> uIStates;
-    enum FocusGroup { box, neighbor, town };
+    State state = State::starting, storedState = State::starting;
+    std::array<UIState, static_cast<size_t>(State::count)> uIStates;
+    enum class FocusGroup { box, neighbor, town };
     void prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls);
     void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);
     void focus(int f, FocusGroup g);
@@ -97,8 +99,8 @@ public:
     bool getShow() const { return show; }
     const Traveler *getTraveler() const { return traveler.get(); }
     bool hasTraveler() const { return traveler.get(); }
-    void loadTraveler(const Save::Traveler *t, std::vector<Town> &ts);
-    void setState(UIState::State s);
+    void loadTraveler(const Save::Traveler *ldTvl, std::vector<Town> &ts);
+    void setState(State s);
     void place(int ox, int oy, double s) {
         if (traveler.get()) traveler->place(ox, oy, s);
     }
