@@ -71,6 +71,18 @@ enum class TownType { city, town, fort, count };
 
 enum class Stat { strength, endurance, agility, intelligence, charisma, count };
 
+enum class DecisionCriteria {
+    buyScoreWeight,
+    sellScoreWeight,
+    attackScoreWeight,
+    defenseScoreWeight,
+    fightTendency,
+    runTendency,
+    yieldTendency,
+    lootingGreed,
+    count
+};
+
 enum class AIRole { trader, soldier, bandit, agent, guard, thug, count };
 
 class Settings {
@@ -163,7 +175,7 @@ public:
     static int travelersCheckCounter();
     static std::array<unsigned int, static_cast<size_t>(Stat::count)> travelerStats();
     static AIRole aIRole();
-    static std::array<double, kDecisionCriteriaCount> aIDecisionCriteria();
+    static std::array<double, static_cast<size_t>(DecisionCriteria::count)> aIDecisionCriteria();
     static double aIDecisionCounter();
     static double aILimitFactor();
     static BoxSize boxSize(BoxSizeType sz) { return boxSizes[static_cast<size_t>(sz)]; }

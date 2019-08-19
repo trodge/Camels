@@ -125,7 +125,7 @@ class Traveler {
 
 public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
-    Traveler(const Save::Traveler *t, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD);
+    Traveler(const Save::Traveler *ldTvl, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD);
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
     std::string getName() const { return name; }
     const Town *getTown() const { return toTown; }

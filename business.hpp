@@ -53,7 +53,7 @@ class Business {
 public:
     Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,
              const std::array<double, 3> &fFs);
-    Business(const Save::Business *b);
+    Business(const Save::Business *svBsn);
     flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
     bool operator!=(const Business &other) const { return (id != other.id || mode != other.mode); }

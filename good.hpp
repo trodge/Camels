@@ -84,7 +84,7 @@ public:
     Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
         : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {
     } // constructor for trade goods
-    Good(const Save::Good *svG);
+    Good(const Save::Good *ldGd);
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Good &other) const {
         return goodId == other.goodId && materialId == other.materialId;

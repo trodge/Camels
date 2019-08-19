@@ -26,13 +26,13 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
           Settings::boxInfo({0, 0, 0, 0}, nms, nt->getColors(), nt->getId(), true, true, false, BoxSizeType::town), pr)),
       longitude(lng), latitude(lat), property(tT, ctl, ppl, &nt->getProperty()) {}
 
-Town::Town(const Save::Town *t, const std::vector<Nation> &ns, Printer &pr)
-    : id(static_cast<unsigned int>(t->id())), nation(&ns[static_cast<size_t>(t->nation() - 1)]),
+Town::Town(const Save::Town *ldTn, const std::vector<Nation> &ns, Printer &pr)
+    : id(static_cast<unsigned int>(ldTn->id())), nation(&ns[static_cast<size_t>(ldTn->nation() - 1)]),
       box(std::make_unique<TextBox>(
-          Settings::boxInfo({0, 0, 0, 0}, {t->names()->Get(0)->str(), t->names()->Get(1)->str()},
+          Settings::boxInfo({0, 0, 0, 0}, {ldTn->names()->Get(0)->str(), ldTn->names()->Get(1)->str()},
                             nation->getColors(), nation->getId(), true, true, false, BoxSizeType::town),
           pr)),
-      longitude(t->longitude()), latitude(t->latitude()), property(t->property(), &nation->getProperty()) {
+      longitude(ldTn->longitude()), latitude(ldTn->latitude()), property(ldTn->property(), &nation->getProperty()) {
     // Load a town from the given flatbuffers save object. Copy image pointers from nation's goods.
 }
 

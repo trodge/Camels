@@ -268,10 +268,10 @@ AIRole Settings::aIRole() {
     return static_cast<AIRole>(rlDis(rng));
 }
 
-std::array<double, kDecisionCriteriaCount> Settings::aIDecisionCriteria() {
+std::array<double, static_cast<size_t>(DecisionCriteria::count)> Settings::aIDecisionCriteria() {
     // Randomize decision criteria.
     static std::uniform_real_distribution<double> dcCrtDis(1, criteriaMax);
-    std::array<double, kDecisionCriteriaCount> dcCrt;
+    std::array<double, static_cast<size_t>(DecisionCriteria::count)> dcCrt;
     for (auto &dC : dcCrt) dC = dcCrtDis(rng);
     return dcCrt;
 }

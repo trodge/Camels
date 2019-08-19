@@ -11,15 +11,17 @@ Property::Property(TownType tT, bool ctl, unsigned long ppl, const Property *src
     reset();
 }
 
-Property::Property(const Save::Property *ppt, const Property *src)
-    : townType(static_cast<TownType>(ppt->townType())), coastal(ppt->coastal()),
-      population(ppt->population()), updateCounter(ppt->updateCounter()), source(src) {
-    auto ldGds = ppt->goods();
-    for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.insert(Good(*lGI));
+Property::Property(const Save::Property *svPpt, const Property *src)
+    : townType(static_cast<TownType>(svPpt->townType())), coastal(svPpt->coastal()),
+      population(svPpt->population()), updateCounter(svPpt->updateCounter()), source(src) {
+    auto ldGds = svPpt->goods();
+    std::transform(ldGds->begin(), ldGds->end(), std::inserter(goods, end(goods)),
+                   [](auto ldGd) { return Good(ldGd); });
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
         goods.modify(gdIt, [srGd = source->good(gdIt->getFullId())](auto &gd) { gd.setImage(srGd.getImage()); });
-    auto ldBsns = ppt->businesses();
-    for (auto lBI = ldBsns->begin(); lBI != ldBsns->end(); ++lBI) businesses.push_back(Business(*lBI));
+    auto ldBsns = svPpt->businesses();
+    std::transform(ldBsns->begin(), ldBsns->end(), std::back_inserter(businesses),
+                   [](auto ldBsn) { return Business(ldBsn); });
     setMaximums();
 }
 

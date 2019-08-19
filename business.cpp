@@ -24,20 +24,22 @@ Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool c
     : id(i), mode(m), name(nm), area(1), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1),
       frequencyFactors(fFs) {}
 
-Business::Business(const Save::Business *b)
-    : id(b->id()), mode(b->mode()), name(b->name()->str()), area(b->area()), canSwitch(b->canSwitch()),
-      requireCoast(b->requireCoast()), keepMaterial(b->keepMaterial()), frequency(b->frequency()),
-      reclaimFactor(b->reclaimFactor()) {
-    auto lRequirements = b->requirements();
-    for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII)
-        requirements.push_back(Good(*lII));
-    auto lReclaimables = b->reclaimables();
-    for (auto lOI = lReclaimables->begin(); lOI != lReclaimables->end(); ++lOI)
-        reclaimables.push_back(Good(*lOI));
-    auto lInputs = b->inputs();
-    for (auto lII = lInputs->begin(); lII != lInputs->end(); ++lII) inputs.push_back(Good(*lII));
-    auto lOutputs = b->outputs();
-    for (auto lOI = lOutputs->begin(); lOI != lOutputs->end(); ++lOI) outputs.push_back(Good(*lOI));
+Business::Business(const Save::Business *svBsn)
+    : id(svBsn->id()), mode(svBsn->mode()), name(svBsn->name()->str()), area(svBsn->area()),
+      canSwitch(svBsn->canSwitch()), requireCoast(svBsn->requireCoast()), keepMaterial(svBsn->keepMaterial()),
+      frequency(svBsn->frequency()), reclaimFactor(svBsn->reclaimFactor()) {
+    auto ldRequirements = svBsn->requirements();
+    std::transform(ldRequirements->begin(), ldRequirements->end(), std::back_inserter(requirements),
+                   [](auto ldRq) { return Good(ldRq); });
+    auto ldReclaimables = svBsn->reclaimables();
+    std::transform(ldReclaimables->begin(), ldReclaimables->end(), std::back_inserter(reclaimables),
+                   [](auto ldRc) { return Good(ldRc); });
+    auto ldInputs = svBsn->inputs();
+    std::transform(ldInputs->begin(), ldInputs->end(), std::back_inserter(inputs),
+                   [](auto ldIp) { return Good(ldIp); });
+    auto lOutputs = svBsn->outputs();
+    std::transform(lOutputs->begin(), lOutputs->end(), std::back_inserter(outputs),
+                   [](auto ldOp) { return Good(ldOp); });
 }
 
 flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilder &b) const {

@@ -37,12 +37,13 @@ AI::AI(Traveler &tvl, const AI &p)
     setLimits();
 }
 
-AI::AI(Traveler &tvl, const Save::AI *a) : traveler(tvl), decisionCounter(a->decisionCounter()) {
+AI::AI(Traveler &tvl, const Save::AI *ldAI) : traveler(tvl), decisionCounter(ldAI->decisionCounter()) {
     // Load AI from flatbuffers.
-    auto lDecisionCriteria = a->decisionCriteria();
-    for (flatbuffers::uoffset_t i = 0; i < decisionCriteria.size(); ++i)
-        decisionCriteria[i] = lDecisionCriteria->Get(i);
-    auto lGoodsInfo = a->goodsInfo();
+    auto lDecisionCriteria = ldAI->decisionCriteria();
+    size_t criteriaCount = static_cast<size_t>(DecisionCriteria::count);
+    std::transform(lDecisionCriteria->begin(), lDecisionCriteria->end(), begin(decisionCriteria),
+                   [](auto ld) { return ld; });
+    auto lGoodsInfo = ldAI->goodsInfo();
     for (auto gII = lGoodsInfo->begin(); gII != lGoodsInfo->end(); ++gII)
         goodsInfo[(*gII)->fullId()] = {(*gII)->limitFactor(), (*gII)->minPrice(), (*gII)->maxPrice(),
                                        (*gII)->estimate(),    (*gII)->buy(),      (*gII)->sell()};
@@ -69,7 +70,8 @@ double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) con
         attackScore *= s.speed * sts[static_cast<size_t>(s.stat)];
         for (auto &d : s.defense) defenseScore += d * sts[static_cast<size_t>(s.stat)];
     }
-    return attackScore * decisionCriteria[2] + defenseScore * decisionCriteria[3];
+    return attackScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::attackScoreWeight)] +
+           defenseScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::defenseScoreWeight)];
 }
 
 double AI::equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const {
@@ -203,11 +205,10 @@ void AI::attack() {
         // Remove travelers who do not meet threshold for attacking.
         able.erase(std::remove_if(begin(able), end(able),
                                   [this, ourEquipScore](const Traveler *a) {
-                                      return decisionCriteria[4] < Settings::getCriteriaMax() / 3 ||
-                                             lootScore(a->properties.find(0)->second) * ourEquipScore *
-                                                     decisionCriteria[4] /
-                                                     equipScore(a->getEquipment(), a->getStats()) <
-                                                 Settings::getAIAttackThreshold();
+                                      return lootScore(a->properties.find(0)->second) * ourEquipScore *
+                                                 decisionCriteria[static_cast<size_t>(DecisionCriteria::fightTendency)] /
+                                                 equipScore(a->getEquipment(), a->getStats()) <
+                                             Settings::getAIAttackThreshold();
                                   }),
                    end(able));
         if (!able.empty()) {
@@ -222,13 +223,13 @@ void AI::attack() {
 
 void AI::choose() {
     // Choose to fight, update, or yield based on equip scores, stats, and speeds.
-    std::array<double, 3> scores; // fight, update, yield scores
+    std::array<double, 3> scores; // fight, run, yield scores
     auto target = traveler.getTarget();
     double equipmentScoreRatio = equipScore(target->equipment, target->getStats()) /
                                  equipScore(traveler.getEquipment(), traveler.getStats());
-    scores[0] = 1 / equipmentScoreRatio * decisionCriteria[4];
-    scores[1] = equipmentScoreRatio * decisionCriteria[5];
-    scores[2] = equipmentScoreRatio * decisionCriteria[6];
+    scores[0] = 1 / equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::fightTendency)];
+    scores[1] = equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::runTendency)];
+    scores[2] = equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::yieldTendency)];
     if (equipmentScoreRatio > 1) {
         // Target's equipment is better, weigh update and yield decisions by speed
         // ratio.
@@ -247,7 +248,7 @@ void AI::loot() {
     double lootGoal = lootScore(tPpt);
     if (tgt->alive())
         // Looting from an alive target dependent on greed.
-        lootGoal *= decisionCriteria[7] / Settings::getCriteriaMax();
+        lootGoal *= decisionCriteria[static_cast<size_t>(DecisionCriteria::lootingGreed)] / Settings::getCriteriaMax();
     double looted = 0, weight = traveler.weight();
     while (looted < lootGoal) {
         // Keep looting until amount looted matches goal or we can carry no more.
@@ -364,7 +365,8 @@ void AI::update(unsigned int e) {
             std::vector<double> townScores(nearbyCount); // scores for going to each town
             // Set scores based on buying and selling prices in each town.
             std::transform(begin(nearby), end(nearby), begin(townScores), [this](const TownInfo &tI) {
-                return tI.buyScore * decisionCriteria[0] + tI.sellScore * decisionCriteria[1];
+                return tI.buyScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::buyScoreWeight)] +
+                       tI.sellScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::sellScoreWeight)];
             });
             auto bestTownScore = std::max_element(begin(townScores), end(townScores));
             if (bestTownScore != end(townScores)) {

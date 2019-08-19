@@ -560,13 +560,14 @@ void Game::loadGame(const fs::path &p) {
                              freezeSurface->pitch);
         sdl::Texture freezeTexture(SDL_CreateTextureFromSurface(screen.get(), freezeSurface.get()));
         freezeSurface = nullptr;
-        for (auto lTI = lTowns->begin(); lTI != lTowns->end(); ++lTI) {
-            SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
-            towns.push_back(Town(*lTI, nations, printer));
-            loadBar.progress(1 / tC);
-            loadBar.draw(screen.get());
-            SDL_RenderPresent(screen.get());
-        }
+        std::transform(lTowns->begin(), lTowns->end(), std::back_inserter(towns),
+                       [this, &freezeTexture, &loadBar, tC](auto ldTn) {
+                           SDL_RenderCopy(screen.get(), freezeTexture.get(), nullptr, nullptr);
+                           loadBar.progress(1 / tC);
+                           loadBar.draw(screen.get());
+                           SDL_RenderPresent(screen.get());
+                           return Town(ldTn, nations, printer);
+                       });
         auto lRoutes = game->routes();
         size_t routeCount = lRoutes->size();
         routes.reserve(routeCount);
@@ -585,9 +586,9 @@ void Game::loadGame(const fs::path &p) {
         }
         player->loadTraveler(game->playerTraveler(), towns);
         auto lTravelers = game->aITravelers();
-        auto lTI = lTravelers->begin();
-        for (++lTI; lTI != lTravelers->end(); ++lTI)
-            aITravelers.push_back(std::make_unique<Traveler>(*lTI, towns, nations, gameData));
+        std::transform(lTravelers->begin() + 1, lTravelers->end(), std::back_inserter(aITravelers), [this](auto ldTvl) {
+            return std::make_unique<Traveler>(ldTvl, towns, nations, gameData);
+        });
         for (auto &t : aITravelers) t->startAI();
         place();
     }

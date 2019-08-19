@@ -179,9 +179,9 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         true));
 }
 
-void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
+void Player::loadTraveler(const Save::Traveler *ldTvl, std::vector<Town> &ts) {
     // Load the traveler for the player from save file.
-    traveler = std::make_unique<Traveler>(t, ts, game.getNations(), game.getData());
+    traveler = std::make_unique<Traveler>(ldTvl, ts, game.getNations(), game.getData());
 }
 
 void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls) {
