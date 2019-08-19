@@ -47,7 +47,7 @@
 enum class Status { normal, bruised, wounded, broken, infected, pulverized, amputated, impaled, count };
 
 struct CombatOdd {
-    double hitOdds;
+    double hitChance;
     std::array<std::pair<Status, double>, kStatusChanceCount> statusChances;
 };
 
@@ -55,7 +55,7 @@ struct GameData {
     unsigned int townCount;
     std::array<std::string, static_cast<size_t>(Part::count)> partNames;
     std::array<std::string, static_cast<size_t>(Status::count)> statusNames;
-    std::vector<CombatOdd> odds;
+    std::array<CombatOdd, static_cast<size_t>(AttackType::count) - 1> odds;
     std::array<std::string, static_cast<size_t>(TownType::count)> townTypeNames;
     std::map<unsigned long, std::string> populationAdjectives;
 };

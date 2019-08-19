@@ -662,7 +662,7 @@ CombatHit Traveler::firstHit(Traveler &tn) {
             auto cO = gameData.odds[static_cast<size_t>(type) - 1];
             // Calculate number of swings before hit happens.
             double r = Settings::random();
-            double p = static_cast<double>(attack) / cO.hitOdds /
+            double p = static_cast<double>(attack) / cO.hitChance /
                        static_cast<double>(defense[static_cast<size_t>(type) - 1]);
             double time;
             if (p < 1)
