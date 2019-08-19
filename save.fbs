@@ -5,14 +5,20 @@ struct PerishCounter {
     amount:double;
 }
 
+enum Part : uint { head, torso, leftArm, rightArm, leftLeg, rightLeg }
+
+enum Stat : uint { strength, endurance, agility, intelligence, charisma }
+
+enum AttackType : uint { none, bash, slash, stab }
+
 struct CombatStat {
-    statId:uint;
-    partId:uint;
+    part:Part;
+    stat:Stat;
     attack:uint;
-    type:uint;
     speed:uint;
+    type:AttackType;
     bashDefense:uint;
-    cutDefense:uint;
+    slashDefense:uint;
     stabDefense:uint;
 }
 
@@ -45,9 +51,11 @@ table Good {
     ammoId:uint;
 }
 
+enum TownType : uint { city, town, fort }
+
 table Property {
     townId:uint;
-    townType:uint;
+    townType:TownType;
     coastal:bool;
     population:ulong;
     goods:[Good];
@@ -55,11 +63,15 @@ table Property {
     updateCounter:int;
 }
 
+enum AIRole : uint { trader, soldier, bandit, agent, guard, thug }
+
 table AI {
     decisionCounter:int;
     decisionCriteria:[double];
     goodsInfo:[GoodInfo];
 }
+
+enum Status : uint { normal, bruised, wounded, broken, infected, pulverized, amputated, impaled }
 
 table Traveler {
     name:string;
@@ -71,7 +83,7 @@ table Traveler {
     latitude:double;
     properties:[Property];
     stats:[uint];
-    parts:[uint];
+    parts:[Status];
     equipment:[Good];
     ai:AI;
     moving:bool;

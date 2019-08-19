@@ -27,7 +27,7 @@ Game::Game()
       screen(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)),
       travelersCheckCounter(Settings::travelersCheckCounter()) {
     player = std::make_unique<Player>(*this);
-    player->setState(UIState::starting);
+    player->setState(State::starting);
     std::cout << "Creating Game" << std::endl;
     if (!window.get())
         throw std::runtime_error("Window creation failed, SDL Error:" + std::string(SDL_GetError()));
@@ -229,7 +229,7 @@ void Game::loadData(sqlite3 *cn) {
     // Load good images.
     int m = Settings::getButtonMargin();
     int imageSize = std::min(kMaxGoodImageSize, (screenRect.h + m) / Settings::getGoodButtonRows() - m -
-                                                    2 * Settings::boxSize(BoxSize::trade).border);
+                                                    2 * Settings::boxSize(BoxSizeType::trade).border);
     SDL_Rect rt = {0, 0, imageSize, imageSize};
     goodImages.reserve(goods.size());
     for (auto &g : goods) {

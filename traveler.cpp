@@ -62,9 +62,10 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto sProperties = b.CreateVector<flatbuffers::Offset<Save::Property>>(
         properties.size(), [&b, &vPpts](size_t i) { return vPpts[i].second.save(b, vPpts[i].first); });
     auto sStats = b.CreateVector(std::vector<unsigned int>(begin(stats), end(stats)));
-    auto sParts = b.CreateVector(
-        std::vector<unsigned int>(reinterpret_cast<std::array<unsigned int, 0>::const_iterator>(begin(parts)),
-                                  reinterpret_cast<std::array<unsigned int, 0>::const_iterator>(end(parts))));
+    std::vector<unsigned int> vParts(static_cast<size_t>(Part::count));
+    std::transform(begin(parts), end(parts), begin(vParts),
+                   [](Part pt) { return static_cast<unsigned int>(pt); });
+    auto sParts = b.CreateVector(vParts);
     auto sEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
     if (aI)
@@ -492,7 +493,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
     pgrs[1].setBounds(rt);
     int dx = (rt.w + m) / static_cast<int>(Part::count), dy = (rt.h + m) / Settings::getGoodButtonRows();
-    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSize::equip);
+    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSizeType::equip);
     std::array<std::vector<Good>, static_cast<size_t>(Part::count)> equippable;
     // array of vectors corresponding to parts that can hold equipment
     properties.find(0)->second.queryGoods([&equippable](const Good &g) {
@@ -551,7 +552,7 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
     for (auto &bd : bids) names.push_back(bd->party->name);
     pgrs[2].addBox(std::make_unique<SelectButton>(Settings::boxInfo(
                                                       {sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31},
-                                                      names, toTown->getNation()->getColors(), BoxSize::big, SDLK_h,
+                                                      names, toTown->getNation()->getColors(), BoxSizeType::big, SDLK_h,
                                                       [](MenuButton *) {
 
                                                       },
@@ -605,7 +606,7 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
                    [](const Traveler *t) { return t->getName(); });
     // Create attack button.
     pgr.addBox(std::make_unique<SelectButton>(boxInfo(
-                                                  {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSize::fight, SDLK_f,
+                                                  {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSizeType::fight, SDLK_f,
                                                   [this, able, sSF](MenuButton *btn) {
                                                       int i = btn->getHighlightLine();
                                                       if (i > -1) {
@@ -622,7 +623,7 @@ void Traveler::createLogBox(Pager &pgr, Printer &pr) {
     // Create log box.
     const SDL_Rect &sR = Settings::getScreenRect();
     pgr.addBox(std::make_unique<ScrollBox>(
-        boxInfo({sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15}, logText, BoxSize::small), pr));
+        boxInfo({sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15}, logText, BoxSizeType::small), pr));
 }
 
 void Traveler::loseTarget() {
@@ -751,13 +752,14 @@ void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
     // Create buttons and text boxes for combat.
     const SDL_Rect &sR = Settings::getScreenRect();
     pgr.addBox(std::make_unique<TextBox>(
-        boxInfo({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + target->getName() + "..."}, BoxSize::fight), pr));
-    pgr.addBox(std::make_unique<TextBox>(boxInfo({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSize::fight), pr));
+        boxInfo({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + target->getName() + "..."}, BoxSizeType::fight), pr));
     pgr.addBox(std::make_unique<TextBox>(
-        target->boxInfo({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSize::fight), pr));
+        boxInfo({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
+    pgr.addBox(std::make_unique<TextBox>(
+        target->boxInfo({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
     pgr.addBox(std::make_unique<SelectButton>(
         boxInfo(
-            {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3}, {"Fight", "Run", "Yield"}, BoxSize::fight, SDLK_c,
+            {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3}, {"Fight", "Run", "Yield"}, BoxSizeType::fight, SDLK_c,
             [this, &p](MenuButton *btn) {
                 int hl = btn->getHighlightLine();
                 if (hl > -1) {

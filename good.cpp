@@ -38,8 +38,8 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
     auto svCombatStats =
         b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
             *cS = Save::CombatStat(
-                static_cast<unsigned int>(combatStats[i].stat), static_cast<unsigned int>(combatStats[i].part),
-                combatStats[i].attack, static_cast<unsigned int>(combatStats[i].type), combatStats[i].speed,
+                static_cast<Save::Part>(combatStats[i].part), static_cast<Save::Stat>(combatStats[i].stat),
+                combatStats[i].attack, combatStats[i].speed, static_cast<Save::AttackType>(combatStats[i].type),
                 combatStats[i].defense[0], combatStats[i].defense[1], combatStats[i].defense[2]);
         });
     return Save::CreateGood(b, goodId, materialId, fullId, svGoodName, svMaterialName, amount, perish, carry, svMeasure,

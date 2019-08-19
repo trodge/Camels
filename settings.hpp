@@ -43,13 +43,15 @@ struct Image {
 
 struct ColorScheme {
     SDL_Color foreground{0, 0, 0, 0}, background{0, 0, 0, 0}, highlight{0, 0, 0, 0};
-    enum Scheme { ui, load, count };
 };
+
+enum class ColorSchemeType { ui, load, count };
 
 struct BoxSize {
     int border = 0, radius = 0, fontSize = 0;
-    enum Size { big, load, small, town, trade, equip, fight, count };
 };
+
+enum class BoxSizeType { big, load, small, town, trade, equip, fight, count };
 
 struct BoxInfo {
     SDL_Rect rect{0, 0, 0, 0};
@@ -74,14 +76,14 @@ enum class AIRole { trader, soldier, bandit, agent, guard, thug, count };
 class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapView;
-    static std::array<ColorScheme, ColorScheme::count> colorSchemes;
+    static std::array<ColorScheme, static_cast<size_t>(ColorSchemeType::count)> colorSchemes;
     static SDL_Color routeColor;
     static SDL_Color waterColor;
     static SDL_Color playerColor;
     static SDL_Color aIColor;
     static int scroll, offsetX, offsetY;
     static double scale;
-    static std::array<BoxSize, BoxSize::count> boxSizes;
+    static std::array<BoxSize, static_cast<size_t>(BoxSizeType::count)> boxSizes;
     static int buttonMargin;           // margin between good and business buttons in pixels
     static int goodButtonColumns;      // number of columns of good buttons
     static int goodButtonRows;         // number of rows of good buttons
@@ -164,66 +166,66 @@ public:
     static std::array<double, kDecisionCriteriaCount> aIDecisionCriteria();
     static double aIDecisionCounter();
     static double aILimitFactor();
-    static BoxSize boxSize(BoxSize::Size sz) { return boxSizes[sz]; }
+    static BoxSize boxSize(BoxSizeType sz) { return boxSizes[static_cast<size_t>(sz)]; }
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           unsigned int i, bool iN, bool cF, bool cE, BoxSize::Size sz, SDL_Keycode ky,
+                           unsigned int i, bool iN, bool cF, bool cE, BoxSizeType sz, SDL_Keycode ky,
                            const std::function<void(MenuButton *)> &fn, bool scl,
                            const SDL_Rect &oR); // any box
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           unsigned int i, bool iN, BoxSize::Size sz, SDL_Keycode ky,
+                           unsigned int i, bool iN, BoxSizeType sz, SDL_Keycode ky,
                            const std::function<void(MenuButton *)> &fn, bool scl) {
         return boxInfo(rt, tx, sm, i, iN, true, false, sz, ky, fn, scl, {0, 0, 0, 0});
     } // any button
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz,
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSizeType sz,
                            SDL_Keycode ky, const std::function<void(MenuButton *)> &fn, bool scl) {
         return boxInfo(rt, tx, sm, 0, false, sz, ky, fn, scl);
     } // select button with scheme
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
-                           bool iN, BoxSize::Size sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+                           bool iN, BoxSizeType sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
         return boxInfo(rt, tx, sm, i, iN, sz, ky, fn, false);
     } // button with color scheme and id
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           BoxSize::Size sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
+                           BoxSizeType sz, SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
         return boxInfo(rt, tx, sm, 0, false, sz, ky, fn, false);
     } // button with color scheme
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz,
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz,
                            SDL_Keycode ky, const std::function<void(MenuButton *)> &fn, bool scl) {
-        return boxInfo(rt, tx, colorSchemes[ColorScheme::ui], 0, false, sz, ky, fn, scl);
+        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::ui)], 0, false, sz, ky, fn, scl);
     } // ui select button
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz,
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz,
                            SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
         return boxInfo(rt, tx, sz, ky, fn, false);
     } // ui menu button
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
-                           bool iN, bool cF, bool cE, BoxSize::Size sz, bool scl, const SDL_Rect &oR) {
+                           bool iN, bool cF, bool cE, BoxSizeType sz, bool scl, const SDL_Rect &oR) {
         return boxInfo(rt, tx, sm, i, iN, cF, cE, sz, SDLK_UNKNOWN, nullptr, scl, oR);
     } // any text box
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Rect &oR) {
-        return boxInfo(rt, tx, colorSchemes[ColorScheme::load], 0, false, false, false, BoxSize::load, false, oR);
+        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::load)], 0, false, false, false, BoxSizeType::load, false, oR);
     } // load bar
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           unsigned int i, bool iN, bool cF, bool cE, BoxSize::Size sz, bool scl) {
+                           unsigned int i, bool iN, bool cF, bool cE, BoxSizeType sz, bool scl) {
         return boxInfo(rt, tx, sm, i, iN, cF, cE, sz, scl, {0, 0, 0, 0});
     } // any non-load bar text box
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, bool cE,
-                           BoxSize::Size sz, bool scl) {
+                           BoxSizeType sz, bool scl) {
         return boxInfo(rt, tx, sm, 0, false, true, cE, sz, scl);
     } // scroll box with color scheme
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
-                           unsigned int i, bool iN, bool cF, bool cE, BoxSize::Size sz) {
+                           unsigned int i, bool iN, bool cF, bool cE, BoxSizeType sz) {
         return boxInfo(rt, tx, sm, i, iN, cF, cE, sz, false);
     } // box with color scheme and id
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, bool cF,
-                           bool cE, BoxSize::Size sz) {
+                           bool cE, BoxSizeType sz) {
         return boxInfo(rt, tx, sm, 0, false, cF, cE, sz);
     } // box with color scheme
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSize::Size sz) {
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, BoxSizeType sz) {
         return boxInfo(rt, tx, sm, 0, false, false, false, sz);
     } // box with color scheme
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, bool cE, BoxSize::Size sz) {
-        return boxInfo(rt, tx, colorSchemes[ColorScheme::ui], cE, cE, sz);
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, bool cE, BoxSizeType sz) {
+        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::ui)], cE, cE, sz);
     } // editable ui box
-    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSize::Size sz) {
+    static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz) {
         return boxInfo(rt, tx, false, sz);
     } // ui box
 };

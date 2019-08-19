@@ -40,7 +40,7 @@ class Printer {
     };
     std::vector<FontSize> fontSizes;
     std::vector<FontSize>::iterator fontSizeIt;
-    enum Alignment { left, right, center };
+    enum class Alignment { left, right, center };
 
 public:
     void setSize(unsigned int s);
