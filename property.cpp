@@ -1,6 +1,6 @@
 #include "property.hpp"
 
-Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property *src)
+Property::Property(TownType tT, bool ctl, unsigned long ppl, const Property *src)
     : townType(tT), coastal(ctl), population(ppl), updateCounter(Settings::propertyUpdateCounter()), source(src) {
     // Copy businesses from source that can exist here given coastal.
     std::copy_if(begin(source->businesses), end(source->businesses), std::back_inserter(businesses),
@@ -12,7 +12,7 @@ Property::Property(unsigned int tT, bool ctl, unsigned long ppl, const Property 
 }
 
 Property::Property(const Save::Property *ppt, const Property *src)
-    : townType(ppt->townType()), coastal(ppt->coastal()), population(ppt->population()),
+    : townType(static_cast<TownType>(ppt->townType())), coastal(ppt->coastal()), population(ppt->population()),
       updateCounter(ppt->updateCounter()), source(src) {
     auto ldGds = ppt->goods();
     for (auto lGI = ldGds->begin(); lGI != ldGds->end(); ++lGI) goods.insert(Good(*lGI));
@@ -29,7 +29,7 @@ flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilde
         b.CreateVector<flatbuffers::Offset<Save::Good>>(goods.size(), [&b, &gds](size_t i) { return gds[i].save(b); });
     auto svBusinesses = b.CreateVector<flatbuffers::Offset<Save::Business>>(
         businesses.size(), [this, &b](size_t i) { return businesses[i].save(b); });
-    return Save::CreateProperty(b, tId, townType, coastal, population, svGoods, svBusinesses, updateCounter);
+    return Save::CreateProperty(b, tId, static_cast<unsigned int>(townType), coastal, population, svGoods, svBusinesses, updateCounter);
 }
 
 bool Property::hasGood(unsigned int fId) const {

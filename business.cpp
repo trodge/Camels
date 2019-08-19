@@ -29,9 +29,11 @@ Business::Business(const Save::Business *b)
       requireCoast(b->requireCoast()), keepMaterial(b->keepMaterial()), frequency(b->frequency()),
       reclaimFactor(b->reclaimFactor()) {
     auto lRequirements = b->requirements();
-    for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII) requirements.push_back(Good(*lII));
+    for (auto lII = lRequirements->begin(); lII != lRequirements->end(); ++lII)
+        requirements.push_back(Good(*lII));
     auto lReclaimables = b->reclaimables();
-    for (auto lOI = lReclaimables->begin(); lOI != lReclaimables->end(); ++lOI) reclaimables.push_back(Good(*lOI));
+    for (auto lOI = lReclaimables->begin(); lOI != lReclaimables->end(); ++lOI)
+        reclaimables.push_back(Good(*lOI));
     auto lInputs = b->inputs();
     for (auto lII = lInputs->begin(); lII != lInputs->end(); ++lII) inputs.push_back(Good(*lII));
     auto lOutputs = b->outputs();
@@ -44,12 +46,12 @@ flatbuffers::Offset<Save::Business> Business::save(flatbuffers::FlatBufferBuilde
         requirements.size(), [this, &b](size_t i) { return requirements[i].save(b); });
     auto sReclaimables = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         reclaimables.size(), [this, &b](size_t i) { return reclaimables[i].save(b); });
-    auto sInputs =
-        b.CreateVector<flatbuffers::Offset<Save::Good>>(inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
+    auto sInputs = b.CreateVector<flatbuffers::Offset<Save::Good>>(
+        inputs.size(), [this, &b](size_t i) { return inputs[i].save(b); });
     auto sOutputs = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         outputs.size(), [this, &b](size_t i) { return outputs[i].save(b); });
-    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial, sRequirements,
-                                sReclaimables, sInputs, sOutputs, frequency);
+    return Save::CreateBusiness(b, id, mode, sName, area, canSwitch, requireCoast, keepMaterial,
+                                sRequirements, sReclaimables, sInputs, sOutputs, frequency);
 }
 
 void Business::setArea(double a) {
@@ -60,9 +62,9 @@ void Business::setArea(double a) {
     }
 }
 
-void Business::scale(unsigned long ppl, unsigned int tT) {
+void Business::scale(unsigned long ppl, TownType tT) {
     // Set area according to given population and town type.
-    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[tT - 1]);
+    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[static_cast<size_t>(tT) - 1]);
 }
 
 void Business::takeRequirements(Property &inv, double a) {

@@ -21,7 +21,7 @@
 
 AI::AI(Traveler &tvl) : traveler(tvl) {
     // Initialize variables for running a new AI based on starting goods and current town.
-    role = static_cast<Role>(Settings::aIRole());
+    role = Settings::aIRole();
     decisionCriteria = Settings::aIDecisionCriteria();
     decisionCounter = Settings::aIDecisionCounter();
     auto toTown = traveler.getTown();
@@ -64,9 +64,9 @@ double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) con
     double attackScore = 0;
     double defenseScore = 0;
     for (auto &s : e.getCombatStats()) {
-        attackScore += s.attack * sts[s.statId];
-        attackScore *= s.speed * sts[s.statId];
-        for (auto &d : s.defense) defenseScore += d * sts[s.statId];
+        attackScore += s.attack * sts[static_cast<size_t>(s.stat)];
+        attackScore *= s.speed * sts[static_cast<size_t>(s.stat)];
+        for (auto &d : s.defense) defenseScore += d * sts[static_cast<size_t>(s.stat)];
     }
     return attackScore * decisionCriteria[2] + defenseScore * decisionCriteria[3];
 }
@@ -175,16 +175,16 @@ void AI::trade() {
 
 void AI::equip() {
     // Equip best scoring item for each part.
-    std::array<double, 6> bestScores;
+    std::array<double, static_cast<size_t>(Part::count)> bestScores;
     traveler.getProperty().queryGoods([this, &bestScores](const Good &g) {
         if (g.getAmount() >= 1) {
             auto &ss = g.getCombatStats();
             if (!ss.empty()) {
                 Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
                 double score = equipScore(e, traveler.getStats());
-                unsigned int pId = ss.front().partId;
-                if (score > bestScores[pId]) {
-                    bestScores[pId] = score;
+                Part pt = ss.front().part;
+                if (score > bestScores[static_cast<size_t>(pt)]) {
+                    bestScores[static_cast<size_t>(pt)] = score;
                     traveler.equip(e);
                 }
             }

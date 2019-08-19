@@ -44,24 +44,26 @@
 #include "textbox.hpp"
 #include "town.hpp"
 
+enum class Status { normal, bruised, wounded, broken, infected, pulverized, amputated, impaled, count };
+
 struct CombatOdd {
     double hitOdds;
-    std::array<std::pair<unsigned int, double>, 3> statusChances;
-    // statuses are normal, bruised, wounded, broken, infected, pulverized, amputated, impaled
+    std::array<std::pair<Status, double>, kStatusChanceCount> statusChances;
 };
 
 struct GameData {
     unsigned int townCount;
-    std::vector<std::string> parts;
-    std::vector<std::string> statuses;
+    std::array<std::string, static_cast<size_t>(Part::count)> partNames;
+    std::array<std::string, static_cast<size_t>(Status::count)> statusNames;
     std::vector<CombatOdd> odds;
-    std::vector<std::string> townTypeNouns;
+    std::array<std::string, static_cast<size_t>(TownType::count)> townTypeNames;
     std::map<unsigned long, std::string> populationAdjectives;
 };
 
 struct CombatHit {
     double time;
-    unsigned int partId, status;
+    Part part;
+    Status status;
     std::string weapon;
 };
 
@@ -87,8 +89,8 @@ class Traveler {
     double portion;                                        // portion of goods offered in next trade
     std::vector<Good> offer, request;                      // goods offered and requested in next trade
     std::unordered_map<unsigned int, Property> properties; // owned goods and businesses by town id, 0 for carried goods
-    std::array<unsigned int, kStatCount> stats;            // strength, endurance, agility, intelligence, charisma
-    std::array<unsigned int, kPartCount> parts;            // head, torso, left arm, right arm, left leg, right leg
+    std::array<unsigned int, static_cast<size_t>(Stat::count)> stats;
+    std::array<Status, static_cast<size_t>(Part::count)> parts;
     std::vector<Good> equipment;
     std::vector<Traveler *> agents;     // travelers employed
     std::unique_ptr<Contract> contract; // contract with employer, if any
@@ -135,10 +137,12 @@ public:
     double getPortion() const { return portion; }
     const std::array<unsigned int, 5> &getStats() const { return stats; }
     double speed() const { return stats[1] + stats[2] + stats[3]; }
-    unsigned int getPart(size_t i) const { return parts[i]; }
+    Status getPart(Part pt) const { return parts[static_cast<size_t>(pt)]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     Traveler *getTarget() const { return target; }
-    bool alive() const { return parts[0] < 5 && parts[1] < 5; }
+    bool alive() const {
+        return static_cast<unsigned int>(parts[0]) < 5 && static_cast<unsigned int>(parts[1]) < 5;
+    }
     bool getDead() const { return dead; }
     bool getMoving() const { return moving; }
     int getPX() const { return px; }
@@ -168,9 +172,9 @@ public:
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void unequip(unsigned int pI);
+    void unequip(Part pt);
     void equip(Good &g);
-    void equip(unsigned int pI);
+    void equip(Part pt);
     void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<Traveler *> attackable() const;

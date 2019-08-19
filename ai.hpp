@@ -59,8 +59,7 @@ class AI {
     equip score, tendency to fight/run/yield, looting greed */
     std::unordered_map<unsigned int, GoodInfo> goodsInfo;        // known information about each good by full id
     std::vector<TownInfo> nearby;                                // known information about nearby towns
-    enum Role { trader, soldier, bandit, agent, guard, thug };
-    Role role; // behavior for this ai
+    AIRole role; // behavior for this ai
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
     double buyScore(double p, double b) const { return p == 0 ? 0 : b / p; }  // score selling at price p

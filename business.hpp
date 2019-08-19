@@ -27,6 +27,7 @@
 
 #include "good.hpp"
 #include "property.hpp"
+#include "constants.hpp"
 
 class Property;
 class Good;
@@ -71,7 +72,7 @@ public:
     double getFrequency() const { return frequency; }
     void setArea(double a);
     void changeArea(double a) { setArea(area + a); }
-    void scale(unsigned long ppl, unsigned int tT);
+    void scale(unsigned long ppl, TownType tT);
     void setRequirements(const std::vector<Good> &rqs) { requirements = rqs; }
     void setInputs(const std::vector<Good> &ips) { inputs = ips; }
     void setOutputs(const std::vector<Good> &ops) { outputs = ops; }

@@ -32,10 +32,15 @@
 #include "printer.hpp"
 #include "settings.hpp"
 
+enum class Part { head, torso, leftArm, rightArm, leftLeg, rightLeg, count };
+enum class AttackType { none, bash, slash, stab, count };
+
 struct CombatStat {
-    unsigned int statId, partId, attack, type, speed;
-    // attack types are 1: bash, 2: slash, 3: stab
-    std::array<unsigned int, 3> defense;
+    Part part;
+    Stat stat;
+    unsigned int attack, speed;
+    AttackType type;
+    std::array<unsigned int, static_cast<size_t>(AttackType::count) - 1> defense;
 };
 
 class Good {
@@ -78,12 +83,7 @@ public:
     Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {}               // constructor for transfer goods
     Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
         : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
-    Good(const Save::Good *svG)
-        : goodId(svG->goodId()), materialId(svG->materialId()), fullId(svG->fullId()), goodName(svG->goodName()->str()),
-          materialName(svG->materialName()->str()), fullName(completeName()), amount(svG->amount()),
-          perish(svG->perish()), carry(svG->carry()), measure(svG->measure()->str()), split(!measure.empty()),
-          consumptionRate(svG->consumptionRate()), demandSlope(svG->demandSlope()), demandIntercept(svG->demandIntercept()),
-          minPrice(demandIntercept / Settings::getMinPriceDivisor()), lastAmount(amount) {}
+    Good(const Save::Good *svG);
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Good &other) const { return goodId == other.goodId && materialId == other.materialId; }
     bool operator!=(const Good &other) const { return goodId != other.goodId || materialId != other.materialId; }

@@ -21,7 +21,7 @@
 
 SDL_Rect Settings::screenRect;
 SDL_Rect Settings::mapView;
-std::unordered_map<ColorScheme::Scheme, ColorScheme> Settings::colorSchemes;
+std::array<ColorScheme, ColorScheme::count> Settings::colorSchemes;
 SDL_Color Settings::routeColor;
 SDL_Color Settings::waterColor;
 SDL_Color Settings::playerColor;
@@ -30,7 +30,7 @@ int Settings::scroll;
 int Settings::offsetX;
 int Settings::offsetY;
 double Settings::scale;
-std::unordered_map<BoxSize::Size, BoxSize> Settings::boxSizes;
+std::array<BoxSize, BoxSize::count> Settings::boxSizes;
 int Settings::buttonMargin;
 int Settings::goodButtonColumns;
 int Settings::goodButtonRows;
@@ -44,14 +44,14 @@ int Settings::aIDecisionTime;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
 int Settings::minPriceDivisor;
 double Settings::townProfit;
-size_t Settings::maxTowns;
-size_t Settings::connectionCount;
+std::size_t Settings::maxTowns;
+std::size_t Settings::connectionCount;
 double Settings::travelersExponent;
 int Settings::travelersMin;
 unsigned int Settings::statMax;
 double Settings::attackDistSq;
 double Settings::escapeChance;
-std::array<double, 6> Settings::aIRoleWeights;
+std::array<double, static_cast<std::size_t>(AIRole::count)> Settings::aIRoleWeights;
 int Settings::criteriaMax;
 unsigned int Settings::aITownRange;
 double Settings::limitFactorMin, Settings::limitFactorMax;
@@ -95,10 +95,10 @@ void Settings::load(const fs::path &p) {
     SDL_GetCurrentDisplayMode(0, &current);
     screenRect = loadRect("ui.screenRect", {0, 0, current.w * 14 / 15, current.h * 14 / 15}, tree);
     mapView = loadRect("ui.mapView", {3330, 2250, screenRect.w, screenRect.h}, tree);
-    colorSchemes.insert({ColorScheme::ui,
-                         loadColorScheme("ui.colors", {{0, 0, 0, 255}, {109, 109, 109, 255}, {0, 127, 251, 255}}, tree)});
-    colorSchemes.insert(
-        {ColorScheme::load, loadColorScheme("ui.loadColors", {{0, 255, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 0}}, tree)});
+    colorSchemes[ColorScheme::ui] =
+        loadColorScheme("ui.colors", {{0, 0, 0, 255}, {109, 109, 109, 255}, {0, 127, 251, 255}}, tree);
+    colorSchemes[ColorScheme::load] =
+        loadColorScheme("ui.loadColors", {{0, 255, 0, 255}, {0, 0, 0, 255}, {0, 0, 0, 0}}, tree);
     routeColor = loadColor("ui.routeColor", {97, 97, 97, 255}, tree);
     waterColor = loadColor("ui.waterColor", {29, 109, 149, 255}, tree);
     playerColor = loadColor("ui.playerColor", {255, 255, 255, 255}, tree);
@@ -107,19 +107,20 @@ void Settings::load(const fs::path &p) {
     offsetX = tree.get("ui.offsetX", -3197);
     offsetY = tree.get("ui.offsetY", 4731);
     scale = tree.get("ui.scale", 112.5);
-    boxSizes.insert({BoxSize::big,
-                     loadBoxSize("ui.big", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 48 / 1080}, tree)});
-    boxSizes.insert({BoxSize::load,
-                     loadBoxSize("ui.load", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 36 / 1080}, tree)});
-    boxSizes.insert({BoxSize::small,
-                     loadBoxSize("ui.small", {current.h * 3 / 1080, current.h * 7 / 1080, current.h * 24 / 1080}, tree)});
-    boxSizes.insert({BoxSize::town, loadBoxSize("ui.town", {current.h / 1080, current.h / 1080, current.h * 18 / 1080}, tree)});
-    boxSizes.insert({BoxSize::trade,
-                     loadBoxSize("ui.trade", {current.h * 2 / 1080, current.h * 5 / 1080, current.h * 16 / 1080}, tree)});
-    boxSizes.insert({BoxSize::equip,
-                     loadBoxSize("ui.equip", {current.h * 5 / 1080, current.h * 7 / 1080, current.h * 20 / 1080}, tree)});
-    boxSizes.insert({BoxSize::fight,
-                     loadBoxSize("ui.fight", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 20 / 1080}, tree)});
+    boxSizes[BoxSize::big] =
+        loadBoxSize("ui.big", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 48 / 1080}, tree);
+    boxSizes[BoxSize::load] =
+        loadBoxSize("ui.load", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 36 / 1080}, tree);
+    boxSizes[BoxSize::small] =
+        loadBoxSize("ui.small", {current.h * 3 / 1080, current.h * 7 / 1080, current.h * 24 / 1080}, tree);
+    boxSizes[BoxSize::town] = loadBoxSize(
+        "ui.town", {std::max(current.h / 1080, 1), std::max(current.h / 1080, 1), current.h * 18 / 1080}, tree);
+    boxSizes[BoxSize::trade] =
+        loadBoxSize("ui.trade", {current.h * 2 / 1080, current.h * 5 / 1080, current.h * 16 / 1080}, tree);
+    boxSizes[BoxSize::equip] =
+        loadBoxSize("ui.equip", {current.h * 5 / 1080, current.h * 7 / 1080, current.h * 20 / 1080}, tree);
+    boxSizes[BoxSize::fight] =
+        loadBoxSize("ui.fight", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 20 / 1080}, tree);
     buttonMargin = tree.get("ui.buttonMargin", 3);
     goodButtonColumns = tree.get("ui.goodButtonColumns", 6);
     goodButtonRows = tree.get("ui.goodButtonRows", 11);
@@ -253,18 +254,18 @@ int Settings::travelersCheckCounter() {
     return tCTDis(rng);
 }
 
-std::array<unsigned int, kStatCount> Settings::travelerStats() {
+std::array<unsigned int, static_cast<size_t>(Stat::count)> Settings::travelerStats() {
     // Randomize traveler stats.
     static std::uniform_int_distribution<unsigned int> stDis(1, statMax);
-    std::array<unsigned int, kStatCount> stats;
+    std::array<unsigned int, static_cast<size_t>(Stat::count)> stats;
     for (auto &stat : stats) stat = stDis(rng);
     return stats;
 }
 
-int Settings::aIRole() {
+AIRole Settings::aIRole() {
     // Randomize ai role.
-    static std::discrete_distribution<> rlDis(begin(aIRoleWeights), end(aIRoleWeights));
-    return rlDis(rng);
+    static std::discrete_distribution<int> rlDis(begin(aIRoleWeights), end(aIRoleWeights));
+    return static_cast<AIRole>(rlDis(rng));
 }
 
 std::array<double, kDecisionCriteriaCount> Settings::aIDecisionCriteria() {
@@ -286,8 +287,8 @@ double Settings::aILimitFactor() {
     return lFDis(rng);
 }
 
-BoxInfo Settings::boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm, unsigned int i,
-                          bool iN, bool cF, bool cE, BoxSize::Size sz, SDL_Keycode ky,
+BoxInfo Settings::boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
+                          unsigned int i, bool iN, bool cF, bool cE, BoxSize::Size sz, SDL_Keycode ky,
                           const std::function<void(MenuButton *)> &fn, bool scl, const SDL_Rect &oR) {
     return {rt, tx, sm, i, iN, cF, cE, boxSizes[sz], {}, ky, fn, scl, oR};
 }
