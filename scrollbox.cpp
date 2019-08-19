@@ -63,8 +63,9 @@ void ScrollBox::setHighlightLine(int h) {
         scroll = 0;
     clicked = false;
     invColors = false;
-    setText(std::vector<std::string>(begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll),
-                                     begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
+    setText(std::vector<std::string>(
+        begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll),
+        begin(items) + static_cast<std::vector<std::string>::difference_type>(scroll + lines)));
 }
 
 bool ScrollBox::keyCaptured(const SDL_KeyboardEvent &k) const {

@@ -72,21 +72,26 @@ public:
     Good(unsigned int gId, const std::string &gNm, const std::string &msr, unsigned int aId)
         : goodId(gId), goodName(gNm), measure(msr), shoots(aId) {} // constructor for loading from goods table
     Good(const Good &gd, const Good &mt, unsigned int fId, double pr, double cr)
-        : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName), materialName(mt.goodName),
-          fullName(completeName()), perish(pr), carry(cr), measure(gd.measure), split(!measure.empty()) {
-    } // constructor for loading from materials table
+        : goodId(gd.goodId), materialId(mt.goodId), fullId(fId), goodName(gd.goodName),
+          materialName(mt.goodName), fullName(completeName()), perish(pr), carry(cr), measure(gd.measure),
+          split(!measure.empty()) {} // constructor for loading from materials table
     Good(const Good &gd, double amt)
         : goodId(gd.goodId), goodName(gd.goodName), amount(amt), measure(gd.measure), split(!measure.empty()) {
     } // constructor for business inputs and outputs
     Good(unsigned int fId, const std::string &fNm, double amt, const std::vector<CombatStat> &cSs, SDL_Surface *img)
         : fullId(fId), fullName(fNm), amount(amt), combatStats(cSs), image(img) {} // constructor for equipment
-    Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {}               // constructor for transfer goods
+    Good(unsigned int fId, double amt) : fullId(fId), amount(amt) {} // constructor for transfer goods
     Good(unsigned int fId, const std::string &fNm, double amt, const std::string &msr)
-        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {} // constructor for trade goods
+        : fullId(fId), fullName(fNm), amount(amt), measure(msr), split(!measure.empty()) {
+    } // constructor for trade goods
     Good(const Save::Good *svG);
     flatbuffers::Offset<Save::Good> save(flatbuffers::FlatBufferBuilder &b) const;
-    bool operator==(const Good &other) const { return goodId == other.goodId && materialId == other.materialId; }
-    bool operator!=(const Good &other) const { return goodId != other.goodId || materialId != other.materialId; }
+    bool operator==(const Good &other) const {
+        return goodId == other.goodId && materialId == other.materialId;
+    }
+    bool operator!=(const Good &other) const {
+        return goodId != other.goodId || materialId != other.materialId;
+    }
     bool operator<(const Good &other) const { return fullId < other.fullId; }
     unsigned int getGoodId() const { return goodId; }
     unsigned int getMaterialId() const { return materialId; }

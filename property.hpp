@@ -33,8 +33,8 @@
 namespace mi = boost::multi_index;
 
 #include "business.hpp"
-#include "good.hpp"
 #include "constants.hpp"
+#include "good.hpp"
 #include "pager.hpp"
 
 class Business;
@@ -84,7 +84,8 @@ public:
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const {
-        return std::accumulate(begin(goods), end(goods), 0, [](double w, const auto &gd) { return w + gd.weight(); });
+        return std::accumulate(begin(goods), end(goods), 0,
+                               [](double w, const auto &gd) { return w + gd.weight(); });
     }
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);

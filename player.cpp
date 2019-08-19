@@ -23,13 +23,13 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
     printer.setSize(Settings::boxSize(BoxSizeType::small).fontSize);
     smallBoxFontHeight = printer.getFontHeight();
     int bBB = Settings::boxSize(BoxSizeType::big).border;
-     uIStates[static_cast<size_t>(State::starting)] = {
+    uIStates[static_cast<size_t>(State::starting)] = {
         {Settings::boxInfo({screenRect.w / 2, screenRect.h / 15, 0, 0}, {"Camels and Silk"}, BoxSizeType::big),
          Settings::boxInfo({screenRect.w / 7, screenRect.h / 3, 0, 0}, {"(N)ew Game"}, BoxSizeType::big, SDLK_n,
                            [this](MenuButton *) {
                                game.newGame();
                                auto &nations = game.getNations();
-                               auto &beginningBoxes =  uIStates[static_cast<size_t>(State::beginning)].boxesInfo;
+                               auto &beginningBoxes = uIStates[static_cast<size_t>(State::beginning)].boxesInfo;
                                for (auto &nt : nations)
                                    // Create a button for each nation to start in that nation.
                                    beginningBoxes.push_back(Settings::boxInfo(
@@ -52,9 +52,9 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                            }),
          Settings::boxInfo({screenRect.w / 7, screenRect.h * 2 / 3, 0, 0}, {"(L)oad Game"}, BoxSizeType::big,
                            SDLK_l, [this](MenuButton *) { setState(State::loading); })}};
-     uIStates[static_cast<size_t>(State::beginning)] = {
+    uIStates[static_cast<size_t>(State::beginning)] = {
         {Settings::boxInfo({screenRect.w / 2, screenRect.h / 7, 0, 0}, {"Name", ""}, BoxSizeType::big)}};
-     uIStates[static_cast<size_t>(State::quitting)] = {
+    uIStates[static_cast<size_t>(State::quitting)] = {
         {Settings::boxInfo({screenRect.w / 2, screenRect.h * 3 / 4, 0, 0}, {""}, BoxSizeType::big, SDLK_q,
                            [this](MenuButton *) {
                                if (traveler) game.saveGame();
@@ -70,10 +70,10 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
             storedPause = pause;
             pagers[0].getVisible(0)->setText(0, traveler ? "Save and Quit" : "Quit");
         }};
-     uIStates[static_cast<size_t>(State::loading)] = {
+    uIStates[static_cast<size_t>(State::loading)] = {
         {Settings::boxInfo({screenRect.w / 7, screenRect.h / 7, 0, 0}, {"(B)ack"}, BoxSizeType::big, SDLK_b,
                            [this](MenuButton *) { setState(State::starting); })}};
-     uIStates[static_cast<size_t>(State::traveling)] = {
+    uIStates[static_cast<size_t>(State::traveling)] = {
         {Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(G)o"}, BoxSizeType::small, SDLK_g,
                            [this](MenuButton *btn) {
                                if (focusTown > -1)
@@ -96,7 +96,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
          Settings::boxInfo({screenRect.w * 8 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(L)og"},
                            BoxSizeType::small, SDLK_l, [this](MenuButton *) { setState(State::logging); })},
         [this] { pause = false; }};
-     uIStates[static_cast<size_t>(State::trading)] = {
+    uIStates[static_cast<size_t>(State::trading)] = {
         {Settings::boxInfo({screenRect.w * 2 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (T)rading"},
                            BoxSizeType::small, SDLK_t, [this](MenuButton *) { setState(State::traveling); }),
          Settings::boxInfo({screenRect.w * 2 / 9, screenRect.h - (smallBoxFontHeight + bBB) * 2, 0, 0},
@@ -109,25 +109,25 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         },
         [this] { traveler->createTradeButtons(pagers, printer); },
         3};
-     uIStates[static_cast<size_t>(State::storing)] = {
+    uIStates[static_cast<size_t>(State::storing)] = {
         {Settings::boxInfo({screenRect.w / 3, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (S)toring"},
                            BoxSizeType::small, SDLK_s, [this](MenuButton *) { setState(State::traveling); })},
         [this] { traveler->createStorageButtons(pagers, focusBox, printer); },
         3};
-     uIStates[static_cast<size_t>(State::building)] = {
+    uIStates[static_cast<size_t>(State::building)] = {
         {Settings::boxInfo({screenRect.w * 4 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (B)uilding"},
                            BoxSizeType::small, SDLK_b, [this](MenuButton *) { setState(State::traveling); })},
         [this] { traveler->createBuildButtons(pagers, focusBox, printer); },
         3};
-     uIStates[static_cast<size_t>(State::equipping)] = {
+    uIStates[static_cast<size_t>(State::equipping)] = {
         {Settings::boxInfo({screenRect.w * 5 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (E)quipping"},
                            BoxSizeType::small, SDLK_e, [this](MenuButton *) { setState(State::traveling); })},
         [this] { traveler->createEquipButtons(pagers, focusBox, printer); },
         2};
-     uIStates[static_cast<size_t>(State::managing)] = {
+    uIStates[static_cast<size_t>(State::managing)] = {
         {Settings::boxInfo({screenRect.w * 2 / 3, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (M)anaging"},
                            BoxSizeType::small, SDLK_m, [this](MenuButton *) { setState(State::traveling); })}};
-     uIStates[static_cast<size_t>(State::attacking)] = {
+    uIStates[static_cast<size_t>(State::attacking)] = {
         {Settings::boxInfo({screenRect.w * 7 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Cancel (A)ttack"},
                            BoxSizeType::small, SDLK_a, [this](MenuButton *) { setState(State::traveling); })},
         [this] {
@@ -135,46 +135,48 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
             traveler->createAttackButton(
                 pagers[0], [this] { setState(State::fighting); }, printer);
         }};
-     uIStates[static_cast<size_t>(State::logging)] = {
+    uIStates[static_cast<size_t>(State::logging)] = {
         {Settings::boxInfo({screenRect.w * 8 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Close (L)og"},
                            BoxSizeType::small, SDLK_l, [this](MenuButton *) { setState(State::traveling); })},
         [this] { traveler->createLogBox(pagers[0], printer); }};
-     uIStates[static_cast<size_t>(State::fighting)] = {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }};
-     uIStates[static_cast<size_t>(State::looting)] = {{Settings::boxInfo({screenRect.w / 15, screenRect.h - smallBoxFontHeight, 0, 0},
-                                                     {"Stop (L)ooting"}, BoxSizeType::small, SDLK_l,
-                                                     [this](MenuButton *) {
-                                                         traveler->loseTarget();
-                                                         setState(State::traveling);
-                                                     }),
-                                   Settings::boxInfo({screenRect.w * 4 / 15, screenRect.h - smallBoxFontHeight, 0, 0},
-                                                     {"Loot (A)ll"}, BoxSizeType::small, SDLK_a,
-                                                     [this](MenuButton *) {
-                                                         traveler->loot();
-                                                         traveler->loseTarget();
-                                                         setState(State::traveling);
-                                                     })},
-                                  [this] { traveler->createLootButtons(pagers, focusBox, printer); },
-                                  3};
-     uIStates[static_cast<size_t>(State::dying)] = {{}, [this] {
-                                    pagers[0].addBox(std::make_unique<TextBox>(
-                                        Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0},
-                                                          {traveler->getLogText().back(), "You have died."},
-                                                          traveler->getNation()->getColors(), BoxSizeType::big),
-                                        printer));
-                                }};
+    uIStates[static_cast<size_t>(State::fighting)] = {
+        {}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }};
+    uIStates[static_cast<size_t>(State::looting)] = {
+        {Settings::boxInfo({screenRect.w / 15, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (L)ooting"},
+                           BoxSizeType::small, SDLK_l,
+                           [this](MenuButton *) {
+                               traveler->loseTarget();
+                               setState(State::traveling);
+                           }),
+         Settings::boxInfo({screenRect.w * 4 / 15, screenRect.h - smallBoxFontHeight, 0, 0}, {"Loot (A)ll"},
+                           BoxSizeType::small, SDLK_a,
+                           [this](MenuButton *) {
+                               traveler->loot();
+                               traveler->loseTarget();
+                               setState(State::traveling);
+                           })},
+        [this] { traveler->createLootButtons(pagers, focusBox, printer); },
+        3};
+    uIStates[static_cast<size_t>(State::dying)] = {
+        {}, [this] {
+            pagers[0].addBox(std::make_unique<TextBox>(
+                Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0},
+                                  {traveler->getLogText().back(), "You have died."},
+                                  traveler->getNation()->getColors(), BoxSizeType::big),
+                printer));
+        }};
 
     fs::path path{"save"};
     std::vector<std::string> saves;
     for (auto &file : fs::directory_iterator{path}) saves.push_back(file.path().stem().string());
-     uIStates[static_cast<size_t>(State::loading)]
-        .boxesInfo.push_back(Settings::boxInfo(
-            {screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7}, saves, BoxSizeType::big, SDLK_l,
-            [this, &path](MenuButton *btn) {
-                game.loadGame((path / btn->getItem()).replace_extension("sav"));
-                show = true;
-                setState(State::traveling);
-            },
-            true));
+    uIStates[static_cast<size_t>(State::loading)].boxesInfo.push_back(Settings::boxInfo(
+        {screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7}, saves, BoxSizeType::big, SDLK_l,
+        [this, &path](MenuButton *btn) {
+            game.loadGame((path / btn->getItem()).replace_extension("sav"));
+            show = true;
+            setState(State::traveling);
+        },
+        true));
 }
 
 void Player::loadTraveler(const Save::Traveler *t, std::vector<Town> &ts) {
@@ -310,7 +312,7 @@ void Player::focusNext(FocusGroup g) {
 
 void Player::setState(State s) {
     // Change the UI state to s.
-    UIState newState =  uIStates[static_cast<size_t>(s)];
+    UIState newState = uIStates[static_cast<size_t>(s)];
     pagers.clear();
     pagers.resize(newState.pagerCount);
     currentPager = begin(pagers);
@@ -333,7 +335,8 @@ void Player::setState(State s) {
         int bBB = Settings::boxSize(BoxSizeType::big).border;
         // Create portion box and set portion button.
         pagers[0].addBox(std::make_unique<TextBox>(
-            Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {""}, true, BoxSizeType::small), printer));
+            Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {""}, true, BoxSizeType::small),
+            printer));
         portionBox = pagers[0].getVisible().back();
         traveler->updatePortionBox(portionBox);
         pagers[0].addBox(std::make_unique<MenuButton>(
@@ -426,7 +429,7 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
         if (state != State::quitting) {
             if (traveler) {
                 int columnCount = state == State::building ? Settings::getBusinessButtonColumns() :
-                                                               Settings::getGoodButtonColumns();
+                                                             Settings::getGoodButtonColumns();
                 switch (state) {
                 case State::beginning:
                 case State::traveling:

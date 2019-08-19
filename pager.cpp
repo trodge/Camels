@@ -35,7 +35,8 @@ TextBox *Pager::getVisible(size_t idx) {
 std::vector<TextBox *> Pager::getVisible() {
     // Get vector of pointers to all boxes currently visible on this pager.
     std::vector<TextBox *> bxs;
-    std::transform(visible[0], visible[1], std::back_inserter(bxs), [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
+    std::transform(visible[0], visible[1], std::back_inserter(bxs),
+                   [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
     return bxs;
 }
 
@@ -99,15 +100,15 @@ void Pager::setPage(size_t pg) {
 
 int Pager::getKeyedIndex(const SDL_KeyboardEvent &k) {
     // Return the index relative to current page of keyed box, or -1 if no box was keyed on current page.
-    auto keyedIt =
-        std::find_if(visible[0], visible[1], [&k](const std::unique_ptr<TextBox> &bx) { return bx->keyCaptured(k); });
+    auto keyedIt = std::find_if(visible[0], visible[1],
+                                [&k](const std::unique_ptr<TextBox> &bx) { return bx->keyCaptured(k); });
     return keyedIt == visible[1] ? -1 : keyedIt - visible[0];
 }
 
 int Pager::getClickedIndex(const SDL_MouseButtonEvent &b) {
     // Return the index relative to current page of clicked box, or -1 if no box was clicked on current page.
-    auto clickedIt =
-        std::find_if(visible[0], visible[1], [&b](const std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
+    auto clickedIt = std::find_if(visible[0], visible[1],
+                                  [&b](const std::unique_ptr<TextBox> &bx) { return bx->clickCaptured(b); });
     return clickedIt == visible[1] ? -1 : clickedIt - visible[0];
 }
 

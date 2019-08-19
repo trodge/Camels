@@ -201,7 +201,8 @@ public:
         return boxInfo(rt, tx, sm, i, iN, cF, cE, sz, SDLK_UNKNOWN, nullptr, scl, oR);
     } // any text box
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Rect &oR) {
-        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::load)], 0, false, false, false, BoxSizeType::load, false, oR);
+        return boxInfo(rt, tx, colorSchemes[static_cast<size_t>(ColorSchemeType::load)], 0, false, false,
+                       false, BoxSizeType::load, false, oR);
     } // load bar
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
                            unsigned int i, bool iN, bool cF, bool cE, BoxSizeType sz, bool scl) {

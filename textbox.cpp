@@ -49,7 +49,8 @@ void TextBox::setText() {
     if (rect.h && lines > size_t(rect.h / lineHeight)) {
         // Truncate lines of text if they won'tx fit in box of fixed size.
         lines = static_cast<size_t>(rect.h / lineHeight);
-        text = std::vector<std::string>(begin(text), begin(text) + static_cast<std::vector<std::string>::difference_type>(lines));
+        text = std::vector<std::string>(
+            begin(text), begin(text) + static_cast<std::vector<std::string>::difference_type>(lines));
     }
     surface = printer.print(text, rect, border, radius, images);
     updateTexture = true;

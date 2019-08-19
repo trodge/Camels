@@ -25,9 +25,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "constants.hpp"
 #include "good.hpp"
 #include "property.hpp"
-#include "constants.hpp"
 
 class Property;
 class Good;
@@ -51,7 +51,8 @@ class Business {
     double reclaimFactor = 0.7;             // portion of requirements that can be reclaimed
 
 public:
-    Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM, const std::array<double, 3> &fFs);
+    Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,
+             const std::array<double, 3> &fFs);
     Business(const Save::Business *b);
     flatbuffers::Offset<Save::Business> save(flatbuffers::FlatBufferBuilder &b) const;
     bool operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
