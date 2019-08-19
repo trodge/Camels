@@ -183,6 +183,8 @@ void Property::use(unsigned int gId, double amt) {
     if (total == 0) std::cout << gId << std::endl;
     auto useGood = [amt, total](auto &gd) { gd.use(amt * gd.getAmount() / total); };
     for (; gdRng.first != gdRng.second; ++gdRng.first) byGoodId.modify(gdRng.first, useGood);
+    if (gId == 29)
+        std::cout << "total: " << total << " amt: " << amt << std::endl;
 }
 
 void Property::use() {

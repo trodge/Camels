@@ -133,6 +133,8 @@ void Business::setFactor(double ft, const Property &inv, std::unordered_map<unsi
         else if (ft > inputFactor)
             // Factor is too large for input.
             maxFactor = std::min(inputFactor, maxFactor);
+        if (ipId == 29)
+            std::cout << "input factor: " << inputFactor << std::endl;
     }
     factor = maxFactor;
     if (factor < 0) throw std::runtime_error(std::to_string(factor) + " factor for " + name);
