@@ -22,8 +22,9 @@
 Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat,
            TownType tT, bool ctl, unsigned long ppl, Printer &pr)
     : id(i), nation(nt),
-      box(std::make_unique<TextBox>(
-          Settings::boxInfo({0, 0, 0, 0}, nms, nt->getColors(), {nt->getId(), true}, BoxSizeType::town, BoxBehavior::focus), pr)),
+      box(std::make_unique<TextBox>(Settings::boxInfo({0, 0, 0, 0}, nms, nt->getColors(), {nt->getId(), true},
+                                                      BoxSizeType::town, BoxBehavior::focus),
+                                    pr)),
       longitude(lng), latitude(lat), property(tT, ctl, ppl, &nt->getProperty()) {}
 
 Town::Town(const Save::Town *ldTn, const std::vector<Nation> &ns, Printer &pr)

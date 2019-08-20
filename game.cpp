@@ -290,14 +290,17 @@ void Game::loadData(sqlite3 *cn) {
         "town_frequency, fort_frequency FROM businesses");
     q = quer.get();
     unsigned int bId = 1;
-    while (sqlite3_step(q) != SQLITE_DONE)
-        for (unsigned int bMd = 1; bMd <= static_cast<size_t>(sqlite3_column_int(q, 1)); ++bMd)
-            businesses.push_back(Business(
-                static_cast<unsigned int>(sqlite3_column_int(q, 0)), bMd,
-                std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
-                static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
-                static_cast<bool>(sqlite3_column_int(q, 5)),
-                {sqlite3_column_double(q, 6), sqlite3_column_double(q, 7), sqlite3_column_double(q, 8)}));
+    while (sqlite3_step(q) != SQLITE_DONE) {
+        size_t modeCount = sqlite3_column_int(q, 1);
+        businesses.push_back(Business(
+            static_cast<unsigned int>(sqlite3_column_int(q, 0)), 1,
+            std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
+            static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
+            static_cast<bool>(sqlite3_column_int(q, 5)),
+            {sqlite3_column_double(q, 6), sqlite3_column_double(q, 7), sqlite3_column_double(q, 8)}));
+        for (unsigned int bMd = 2; bMd <= modeCount; ++bMd)
+            businesses.push_back(Business(businesses.back(), bMd));
+    }
     // Load requirements.
     quer = sql::makeQuery(cn, "SELECT business_id, good_id, amount FROM requirements");
     q = quer.get();
@@ -451,7 +454,7 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
                              {std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 1))),
                               std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2)))},
                              &nations[static_cast<size_t>(sqlite3_column_int(q, 3) - 1)], sqlite3_column_double(q, 5),
-                             sqlite3_column_double(q, 4), static_cast<TownType>(sqlite3_column_int(q, 6)),
+                             sqlite3_column_double(q, 4), static_cast<TownType>(sqlite3_column_int(q, 6) - 1),
                              static_cast<bool>(sqlite3_column_int(q, 7)),
                              static_cast<unsigned long>(sqlite3_column_int(q, 8)), printer));
         // Let town run for some business cyles before game starts.

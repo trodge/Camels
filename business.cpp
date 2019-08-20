@@ -20,7 +20,7 @@
 #include "business.hpp"
 
 Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,
-                   const std::array<double, 3> &fFs)
+                   const std::array<double, static_cast<size_t>(TownType::count)> &fFs)
     : id(i), mode(m), name(nm), area(1), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1),
       frequencyFactors(fFs) {}
 
@@ -66,7 +66,7 @@ void Business::setArea(double a) {
 
 void Business::scale(unsigned long ppl, TownType tT) {
     // Set area according to given population and town type.
-    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[static_cast<size_t>(tT) - 1]);
+    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[static_cast<size_t>(tT)]);
 }
 
 void Business::takeRequirements(Property &inv, double a) {
@@ -133,11 +133,10 @@ void Business::setFactor(double ft, const Property &inv, std::unordered_map<unsi
         else if (ft > inputFactor)
             // Factor is too large for input.
             maxFactor = std::min(inputFactor, maxFactor);
-        if (ipId == 29)
-            std::cout << "input factor: " << inputFactor << std::endl;
     }
     factor = maxFactor;
-    if (factor < 0 or std::isnan(factor)) throw std::runtime_error(std::to_string(factor) + " factor for " + name);
+    if (factor < 0 || std::isnan(factor))
+        throw std::runtime_error(std::to_string(factor) + " factor for " + name);
 }
 
 void Business::run(Property &inv, const std::unordered_map<unsigned int, Conflict> &cfcts) {

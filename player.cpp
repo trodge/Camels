@@ -30,16 +30,16 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                                game.newGame();
                                auto &nations = game.getNations();
                                auto &beginningBoxes = uIStates[static_cast<size_t>(State::beginning)].boxesInfo;
+                               beginningBoxes.reserve(beginningBoxes.size() + nations.size());
                                for (auto &nt : nations)
                                    // Create a button for each nation to start in that nation.
                                    beginningBoxes.push_back(Settings::boxInfo(
                                        {screenRect.w * (static_cast<int>(nt.getId() - 1) % 3 * 2 + 1) / 6,
                                         screenRect.h * (static_cast<int>(nt.getId() - 1) / 3 + 2) / 7, 0, 0},
                                        nt.getNames(), nt.getColors(), {nt.getId(), true}, BoxSizeType::big,
-                                       SDLK_UNKNOWN, [this, nt](MenuButton *) {
-                                           unsigned int nId = nt.getId(); // nation id
+                                       SDLK_UNKNOWN, [this](MenuButton *btn) {
+                                           unsigned int nId = btn->getId(); // nation id
                                            std::string name = pagers[0].getVisible(0)->getText(1);
-                                           if (name.empty()) name = nt.randomName();
                                            // Create traveler object for player
                                            traveler = game.createPlayerTraveler(nId, name);
                                            traveler->properties.find(0)->second.create(55, 0.75);

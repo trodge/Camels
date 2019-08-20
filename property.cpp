@@ -111,7 +111,7 @@ void Property::addGood(const Good &srGd, const std::function<void(Good &)> &fn) 
         auto ipIt = std::find_if(begin(ips), end(ips), same);
         auto opIt = std::find_if(begin(ops), end(ops), same);
         if (ipIt != end(ips)) gd.setMaximum(ipIt->getAmount() * ipSpF);
-        if (opIt != end(ips)) gd.setMaximum(opIt->getAmount() * opSpF);
+        if (opIt != end(ops)) gd.setMaximum(opIt->getAmount() * opSpF);
     }
     gd.setDemandSlope();
     // Call parameter function.
@@ -183,8 +183,6 @@ void Property::use(unsigned int gId, double amt) {
     if (total == 0) std::cout << gId << std::endl;
     auto useGood = [amt, total](auto &gd) { gd.use(amt * gd.getAmount() / total); };
     for (; gdRng.first != gdRng.second; ++gdRng.first) byGoodId.modify(gdRng.first, useGood);
-    if (gId == 29)
-        std::cout << "total: " << total << " amt: " << amt << std::endl;
 }
 
 void Property::use() {
