@@ -276,7 +276,7 @@ void Game::loadData(sqlite3 *cn) {
                                static_cast<Stat>(sqlite3_column_int(q, 2)),
                                static_cast<unsigned int>(sqlite3_column_int(q, 4)),
                                static_cast<unsigned int>(sqlite3_column_int(q, 6)),
-                               static_cast<AttackType>(sqlite3_column_int(q, 5)),
+                               static_cast<AttackType>(sqlite3_column_int(q, 5) - 1),
                                {{static_cast<unsigned int>(sqlite3_column_int(q, 7)),
                                  static_cast<unsigned int>(sqlite3_column_int(q, 8)),
                                  static_cast<unsigned int>(sqlite3_column_int(q, 9))}}});
@@ -685,13 +685,13 @@ void Game::saveData() {
     // Save changes to frequencies and demand slopes to database.
     sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READWRITE);
     std::string updates = "UPDATE frequencies SET frequency = CASE";
-    player->getTraveler()->getTown()->saveFrequencies(updates);
+    player->getTraveler()->town()->saveFrequencies(updates);
     sql::StmtPtr comm;
     comm = sql::makeQuery(conn.get(), updates.c_str());
     if (sqlite3_step(comm.get()) != SQLITE_DONE)
         throw std::runtime_error(updates + " error: " + std::string(sqlite3_errmsg(conn.get())));
     updates = "UPDATE consumption SET demand_slope = CASE";
-    player->getTraveler()->getTown()->saveDemand(updates);
+    player->getTraveler()->town()->saveDemand(updates);
     comm = sql::makeQuery(conn.get(), updates.c_str());
     if (sqlite3_step(comm.get()) != SQLITE_DONE)
         throw std::runtime_error(updates + " error: " + std::string(sqlite3_errmsg(conn.get())));
@@ -738,6 +738,8 @@ std::unique_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) 
     auto traveler = std::make_unique<Traveler>(n, &towns[nId - 1], gameData);
     traveler->addToTown();
     traveler->place(offsetX, offsetY, scale);
+    traveler->create(55, 0.75);
+    traveler->create(59, 2);
     return traveler;
 }
 

@@ -9,7 +9,7 @@ enum Part : uint { head, torso, leftArm, rightArm, leftLeg, rightLeg }
 
 enum Stat : uint { strength, endurance, agility, intelligence, charisma }
 
-enum AttackType : uint { none, bash, slash, stab }
+enum AttackType : uint { none = -1, bash, slash, stab }
 
 struct CombatStat {
     part:Part;

@@ -33,14 +33,14 @@
 #include "settings.hpp"
 
 enum class Part { head, torso, leftArm, rightArm, leftLeg, rightLeg, count };
-enum class AttackType { none, bash, slash, stab, count };
+enum class AttackType { none = -1, bash, slash, stab, count };
 
 struct CombatStat {
     Part part;
     Stat stat;
     unsigned int attack, speed;
     AttackType type;
-    std::array<unsigned int, static_cast<size_t>(AttackType::count) - 1> defense;
+    std::array<unsigned int, static_cast<size_t>(AttackType::count)> defense;
 };
 
 class Good {

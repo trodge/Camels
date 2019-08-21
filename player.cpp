@@ -42,8 +42,6 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                                            std::string name = pagers[0].getVisible(0)->getText(1);
                                            // Create traveler object for player
                                            traveler = game.createPlayerTraveler(nId, name);
-                                           traveler->properties.find(0)->second.create(55, 0.75);
-                                           traveler->properties.find(0)->second.create(59, 2);
                                            show = true;
                                            focusBox = -1;
                                            setState(State::traveling);
@@ -196,7 +194,7 @@ void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcb
         s = static_cast<int>(fcbls.size());
         break;
     case FocusGroup::neighbor:
-        neighbors = traveler->getTown()->getNeighbors();
+        neighbors = traveler->town()->getNeighbors();
         i = static_cast<int>(
             std::find_if(begin(neighbors), end(neighbors),
                          [this](Town *t) { return t->getId() == static_cast<unsigned int>(focusTown + 1); }) -
@@ -361,8 +359,8 @@ void Player::setState(State s) {
                     {pgIt == begin(pagers) + 1 ?
                          traveler->getName() + "'s " + typeText :
                          s == State::storing ?
-                         "Goods in " + traveler->toTown->getName() :
-                         (s == State::looting ? traveler->target->getName() : traveler->toTown->getName()) + "'s " + typeText},
+                         "Goods in " + traveler->town()->getName() :
+                         (s == State::looting ? traveler->getTarget()->getName() : traveler->town()->getName()) + "'s " + typeText},
                     BoxSizeType::small),
                 printer));
             if (pgIt->pageCount() > 1) {

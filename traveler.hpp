@@ -55,7 +55,7 @@ struct GameData {
     unsigned int townCount;
     std::array<std::string, static_cast<size_t>(Part::count)> partNames;
     std::array<std::string, static_cast<size_t>(Status::count)> statusNames;
-    std::array<CombatOdd, static_cast<size_t>(AttackType::count) - 1> odds;
+    std::array<CombatOdd, static_cast<size_t>(AttackType::count)> odds;
     std::array<std::string, static_cast<size_t>(TownType::count)> townTypeNames;
     std::map<unsigned long, std::string> populationAdjectives;
 };
@@ -117,6 +117,7 @@ class Traveler {
         return boxInfo(rt, tx, BoxSizeType::fight);
     }                                                                       // fight boxes
     BoxInfo boxInfo() { return boxInfo({0, 0, 0, 0}, {}, BoxSizeType::trade, BoxBehavior::focus); } // good and business buttons
+    Property &property(unsigned int tId);
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
     void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
@@ -128,16 +129,16 @@ public:
     Traveler(const Save::Traveler *ldTvl, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD);
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
     std::string getName() const { return name; }
-    const Town *getTown() const { return toTown; }
+    const Town *town() const { return toTown; }
     const Nation *getNation() const { return nation; }
     const std::vector<std::string> &getLogText() const { return logText; }
-    const Property &getProperty() const { return properties.find(0)->second; }
+    const Property &property() const { return properties.find(0)->second; }
     const std::vector<Good> &getOffer() const { return offer; }
     const std::vector<Good> &getRequest() const { return request; }
     double getPortion() const { return portion; }
     const std::array<unsigned int, 5> &getStats() const { return stats; }
     double speed() const { return stats[1] + stats[2] + stats[3]; }
-    Status getPart(Part pt) const { return parts[static_cast<size_t>(pt)]; }
+    Status part(Part pt) const { return parts[static_cast<size_t>(pt)]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     Traveler *getTarget() const { return target; }
     bool alive() const {
@@ -151,9 +152,11 @@ public:
     bool fightWon() const { return target && (target->choice == FightChoice::yield || !target->alive()); }
     double getFightTime() const { return fightTime; }
     FightChoice getChoice() const { return choice; }
+    void choose(FightChoice c) { choice = c; }
     void setPortion(double p);
     void changePortion(double d);
     void addToTown();
+    void create(unsigned int gId, double amt) { properties.find(0)->second.create(gId, amt); }
     void pickTown(const Town *t);
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
@@ -165,7 +168,6 @@ public:
     void makeTrade();
     void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
     void updateTradeButtons(std::vector<Pager> &pgrs);
-    Property &property(unsigned int tId);
     void deposit(Good &g);
     void withdraw(Good &g);
     void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
@@ -197,9 +199,7 @@ public:
     void toggleMaxGoods();
     void resetTown();
     void adjustAreas(Pager &pgr, double mM);
-    void adjustDemand(Pager &pgr, double mM);
-    friend class AI;
-    friend class Player;
+    void adjustDemand(Pager &pgr, double mM); 
 };
 
 #endif // TRAVELER_H

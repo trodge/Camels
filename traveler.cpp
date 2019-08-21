@@ -794,14 +794,14 @@ void Traveler::updateFightBoxes(Pager &pgr) {
     statusText[0] = name + "'s Status";
     for (size_t i = 1; i < static_cast<size_t>(Part::count) + 1; ++i)
         statusText[i] = gameData.partNames[i - 1] + ": " +
-                        gameData.statusNames[static_cast<size_t>(getPart(static_cast<Part>(i - 1)))];
+                        gameData.statusNames[static_cast<size_t>( part (static_cast<Part>(i - 1)))];
     bxs[1]->setText(statusText);
     auto tgt = target;
     if (!tgt) return;
     statusText[0] = tgt->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
         statusText[i] = gameData.partNames[i - 1] + ": " +
-                        gameData.statusNames[static_cast<size_t>(getPart(static_cast<Part>(i - 1)))];
+                        gameData.statusNames[static_cast<size_t>( part (static_cast<Part>(i - 1)))];
     bxs[2]->setText(statusText);
 }
 
@@ -812,7 +812,7 @@ void Traveler::loot(Good &g) {
 }
 
 void Traveler::loot() {
-    target->getProperty().queryGoods([this](const Good &g) {
+    target->property().queryGoods([this](const Good &g) {
         Good lG(g);
         loot(lG);
     });
