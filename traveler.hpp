@@ -150,8 +150,6 @@ public:
     int getPY() const { return py; }
     double weight() const;
     bool fightWon() const { return target && (target->choice == FightChoice::yield || !target->alive()); }
-    double getFightTime() const { return fightTime; }
-    FightChoice getChoice() const { return choice; }
     void choose(FightChoice c) { choice = c; }
     void setPortion(double p);
     void changePortion(double d);
