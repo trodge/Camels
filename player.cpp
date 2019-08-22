@@ -27,8 +27,8 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         {Settings::boxInfo({screenRect.w / 2, screenRect.h / 15, 0, 0}, {"Camels and Silk"}, BoxSizeType::big),
          Settings::boxInfo({screenRect.w / 7, screenRect.h / 3, 0, 0}, {"(N)ew Game"}, BoxSizeType::big, SDLK_n,
                            [this](MenuButton *) {
-                               game.newGame();
-                               auto &nations = game.getNations();
+                               // Load data to create a new game.
+                               auto &nations = game.newGame();
                                auto &beginningBoxes = uIStates[static_cast<size_t>(State::beginning)].boxesInfo;
                                beginningBoxes.reserve(beginningBoxes.size() + nations.size());
                                for (auto &nt : nations)
@@ -176,9 +176,9 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         }));
 }
 
-void Player::loadTraveler(const Save::Traveler *ldTvl, std::vector<Town> &ts) {
+void Player::loadTraveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD) {
     // Load the traveler for the player from save file.
-    traveler = std::make_unique<Traveler>(ldTvl, ts, game.getNations(), game.getData());
+    traveler = std::make_unique<Traveler>(ldTvl, nts, tns, gD);
 }
 
 void Player::prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls) {

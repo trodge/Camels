@@ -359,6 +359,12 @@ void Game::loadData(sqlite3 *cn) {
     // Set outputs for last business.
     bIt->setOutputs(outputs);
     // Load nations.
+    quer = sql::makeQuery(cn, "SELECT COUNT(*) FROM nations");
+    q = quer.get();
+    if (sqlite3_step(q) != SQLITE_ROW)
+        throw std::runtime_error("Error counting nations: " + std::string(sqlite3_errmsg(cn)));
+    gameData.nationCount = sqlite3_column_int(q, 0);
+    nations.reserve(gameData.nationCount);
     quer = sql::makeQuery(cn,
                           "SELECT nation_id, english_name, language_name, adjective, color_r, "
                           "color_g, color_b,"
@@ -375,7 +381,6 @@ void Game::loadData(sqlite3 *cn) {
             {static_cast<Uint8>(sqlite3_column_int(q, 7)), static_cast<Uint8>(sqlite3_column_int(q, 8)),
              static_cast<Uint8>(sqlite3_column_int(q, 9)), 255},
             std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 10))), goods, businesses));
-
     // Load traveler names into nations.
     quer = sql::makeQuery(cn, "SELECT nation_id, name FROM names");
     q = quer.get();
@@ -490,7 +495,7 @@ void Game::loadTowns(sqlite3 *cn, LoadBar &ldBr, SDL_Texture *frzTx) {
     }
 }
 
-void Game::newGame() {
+const std::vector<Nation> &Game::newGame() {
     // Load data for a new game from sqlite database.
     sql::DtbsPtr conn = sql::makeConnection(fs::path("1025ad.db"), SQLITE_OPEN_READONLY);
     loadData(conn.get());
@@ -531,6 +536,7 @@ void Game::newGame() {
         loadBar.draw(screen.get());
         SDL_RenderPresent(screen.get());
     }
+    return nations;
 }
 
 void Game::loadGame(const fs::path &p) {
@@ -587,10 +593,10 @@ void Game::loadGame(const fs::path &p) {
             loadBar.draw(screen.get());
             SDL_RenderPresent(screen.get());
         }
-        player->loadTraveler(game->playerTraveler(), towns);
+        player->loadTraveler(game->playerTraveler(), nations, towns, gameData);
         auto lTravelers = game->aITravelers();
         std::transform(lTravelers->begin() + 1, lTravelers->end(), std::back_inserter(aITravelers), [this](auto ldTvl) {
-            return std::make_unique<Traveler>(ldTvl, towns, nations, gameData);
+            return std::make_unique<Traveler>(ldTvl, nations, towns, gameData);
         });
         for (auto &t : aITravelers) t->startAI();
         place();

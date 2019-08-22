@@ -52,7 +52,7 @@ struct CombatOdd {
 };
 
 struct GameData {
-    unsigned int townCount;
+    unsigned int nationCount, townCount;
     std::array<std::string, static_cast<size_t>(Part::count)> partNames;
     std::array<std::string, static_cast<size_t>(Status::count)> statusNames;
     std::array<CombatOdd, static_cast<size_t>(AttackType::count)> odds;
@@ -78,14 +78,14 @@ class AI;
 
 class Traveler {
     std::string name;
-    Town *toTown, *fromTown;
     const Nation *nation;
-    std::unordered_map<unsigned int, int> reputation; // reputation mapped by nation id
+    Town *toTown, *fromTown;
     std::vector<std::string> logText;
     double longitude, latitude;
     bool moving;
     int px, py;
     double portion;                                        // portion of goods offered in next trade
+    std::vector<int> reputation; // reputation indexed by nation id
     std::vector<Good> offer, request;                      // goods offered and requested in next trade
     std::unordered_map<unsigned int, Property> properties; // owned goods and businesses by town id, 0 for carried goods
     std::array<unsigned int, static_cast<size_t>(Stat::count)> stats;
@@ -125,7 +125,7 @@ class Traveler {
 
 public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
-    Traveler(const Save::Traveler *ldTvl, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD);
+    Traveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD);
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
     std::string getName() const { return name; }
     const Town *town() const { return toTown; }

@@ -20,8 +20,8 @@
 #include "traveler.hpp"
 
 Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
-    : name(n), toTown(tn), fromTown(tn), nation(tn->getNation()), longitude(tn->getLongitude()),
-      latitude(tn->getLatitude()), moving(false), portion(1), gameData(gD) {
+    : name(n), nation(tn->getNation()), toTown(tn), fromTown(tn), longitude(tn->getLongitude()),
+      latitude(tn->getLatitude()), moving(false), portion(1), reputation(gD.nationCount), gameData(gD) {
     // Copy goods vector from nation.
     properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
                        std::forward_as_tuple(false, &tn->getNation()->getProperty()));
@@ -34,11 +34,11 @@ Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
     parts.fill(Status::normal);
 }
 
-Traveler::Traveler(const Save::Traveler *ldTvl, std::vector<Town> &ts, const std::vector<Nation> &ns, const GameData &gD)
-    : name(ldTvl->name()->str()), toTown(&ts[static_cast<size_t>(ldTvl->toTown() - 1)]),
-      fromTown(&ts[static_cast<size_t>(ldTvl->fromTown() - 1)]),
-      nation(&ns[static_cast<size_t>(ldTvl->nation() - 1)]), longitude(ldTvl->longitude()),
-      latitude(ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
+Traveler::Traveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD)
+    : name(ldTvl->name()->str()), nation(&nts[static_cast<size_t>(ldTvl->nation() - 1)]),
+    toTown(&tns[static_cast<size_t>(ldTvl->toTown() - 1)]),
+    fromTown(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]),
+    longitude(ldTvl->longitude()), latitude(ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
     auto ldLog = ldTvl->log();
     std::transform(ldLog->begin(), ldLog->end(), std::back_inserter(logText),
                    [](auto ldL) { return ldL->str(); });

@@ -102,7 +102,7 @@ public:
     Game();
     ~Game();
     void run();
-    void newGame();
+    const std::vector<Nation> &newGame();
     void place();
     void moveView(int dx, int dy);
     void saveGame();
@@ -110,7 +110,6 @@ public:
     void saveData();
     void generateRoutes();
     const SDL_Rect &getMapView() const { return mapView; }
-    const std::vector<Nation> &getNations() { return nations; }
     const std::vector<Town> &getTowns() { return towns; }
     std::vector<TextBox *> getTownBoxes() const;
     const GameData &getData() const { return gameData; }
