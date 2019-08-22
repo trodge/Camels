@@ -639,14 +639,14 @@ void Traveler::loseTarget() {
     target = nullptr;
 }
 
-CombatHit Traveler::firstHit(Traveler &tn) {
+CombatHit Traveler::firstHit(Traveler &tgt ) {
     // Find first hit of this traveler on tn.
     std::array<unsigned int, 3> defense{};
-    for (auto &e : tn.equipment)
+    for (auto &e : tgt.equipment)
         for (auto &s : e.getCombatStats())
             for (size_t i = 0; i < defense.size(); ++i)
-                defense[i] += s.defense[i] * tn.stats[static_cast<size_t>(s.stat)];
-    CombatHit first = {std::numeric_limits<double>::max(), Part::count, Status::count, ""};
+                defense[i] += s.defense[i] * tgt.stats[static_cast<size_t>(s.stat)];
+    CombatHit first = {std::numeric_limits<double>::max(), nullptr, ""};
     for (auto &e : equipment) {
         auto &ss = e.getCombatStats();
         if (ss.front().attack) {
@@ -669,22 +669,7 @@ CombatHit Traveler::firstHit(Traveler &tn) {
                 time = 1 / speed;
             if (time < first.time) {
                 first.time = time;
-                // Pick a random part.
-                first.part = static_cast<Part>(Settings::randomInt(static_cast<unsigned int>(Part::count) - 1));
-                // Start status at part's current status.
-                first.status = tn.parts[static_cast<size_t>(first.part)];
-                r = Settings::random();
-                auto sCI = begin(cO.statusChances);
-                while (r > 0 && sCI != end(cO.statusChances)) {
-                    // Find status such that part becomes more damaged.
-                    if (sCI->first > first.status) {
-                        // This part is less damaged than the current status.
-                        first.status = sCI->first;
-                        // Subtract chance of this status from r.
-                        r -= sCI->second;
-                    }
-                    ++sCI;
-                }
+                first.statusChances = &cO.statusChances;
                 first.weapon = e.getFullName();
             }
         }
@@ -737,17 +722,34 @@ void Traveler::fight(Traveler &tgt, unsigned int elTm) {
     }
 }
 
-void Traveler::takeHit(const CombatHit &cH, Traveler &tn) {
-    // Apply the given combat hit from the given traveler to this traveler.
-    parts[static_cast<size_t>(cH.part)] = cH.status;
-    if (static_cast<unsigned int>(cH.status) > 2) { // Part is too wounded to hold equipment.
-        unequip(cH.part);
-        std::string logEntry = tn.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
-                               gameData.partNames[static_cast<size_t>(cH.part)] + " has been " +
-                               gameData.statusNames[static_cast<size_t>(cH.status)] + ".";
-        logText.push_back(logEntry);
-        tn.logText.push_back(logEntry);
+void Traveler::takeHit(const CombatHit &cH, Traveler &tgt) {
+    // Apply the given combat hit from the given traveler to this traveler and update both logs.
+    // Pick a random part.
+    auto part = Settings::part();
+    // Start status at that part's status.
+    auto status = parts[static_cast<size_t>(part)];
+    // Get random value from 0 to 1.
+    auto r = Settings::random();
+    // Find status such that part becomes more damaged.
+    if (!cH.statusChances) return;
+    auto &stChcs = *cH.statusChances;
+    for (auto sCI = begin(stChcs); r > 0 && sCI != end(stChcs); ++sCI)
+    // Find status such that part becomes more damaged.
+    if (sCI->first > status) {
+        // This part is less damaged than the current status.
+        status = sCI->first;
+        // Subtract chance of this status from r.
+        r -= sCI->second;
     }
+    parts[static_cast<size_t>(part)] = status;
+    if (status > Status::wounded)
+        // Part is too wounded to hold equipment.
+        unequip(part);
+    std::string logEntry = tgt.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
+                            gameData.partNames[static_cast<size_t>(part)] + " has been " +
+                            gameData.statusNames[static_cast<size_t>(status)] + ".";
+    logText.push_back(logEntry);
+    tgt.logText.push_back(logEntry);
 }
 
 void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {

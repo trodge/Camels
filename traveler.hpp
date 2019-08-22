@@ -62,8 +62,7 @@ struct GameData {
 
 struct CombatHit {
     double time;
-    Part part;
-    Status status;
+    std::array<std::pair<Status, double>, kStatusChanceCount> *statusChances;
     std::string weapon;
 };
 
@@ -155,7 +154,7 @@ public:
     void changePortion(double d);
     void addToTown();
     void create(unsigned int gId, double amt) { properties.find(0)->second.create(gId, amt); }
-    void pickTown(const Town *t);
+    void pickTown(const Town *tn);
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
     void clearTrade();
@@ -182,10 +181,10 @@ public:
     void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
     void createLogBox(Pager &pgr, Printer &pr);
     void loseTarget();
-    CombatHit firstHit(Traveler &t);
+    CombatHit firstHit(Traveler &tgt);
     void useAmmo(double t);
     void fight(Traveler &tgt, unsigned int elTm);
-    void takeHit(const CombatHit &cH, Traveler &t);
+    void takeHit ( const CombatHit &cH, Traveler &tgt );
     void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
     void updateFightBoxes(Pager &pgr);
     void loot(Good &g);
