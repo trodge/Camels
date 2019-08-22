@@ -69,7 +69,7 @@ public:
     Property(bool ctl, const Property *src)
         : coastal(ctl), updateCounter(Settings::propertyUpdateCounter()), source(src) {} // constructor for traveler
     Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
-        : goods(begin(gds), end(gds)), businesses(bsns) {}    // constructor for nation
+        : goods(begin(gds), end(gds)), businesses(bsns) {}      // constructor for nation
     Property(const Save::Property *svPpt, const Property *src); // constructor for loading
     flatbuffers::Offset<Save::Property> save(flatbuffers::FlatBufferBuilder &b, unsigned int tId) const;
     TownType getTownType() const { return townType; }

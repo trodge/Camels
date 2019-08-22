@@ -53,10 +53,10 @@ struct TownInfo {
  * AI which updates non-player travelers
  */
 class AI {
-    Traveler &traveler;                                          // the traveler this AI controls
-    int decisionCounter;                                         // counter for updatening AI
-    std::array<double, static_cast<size_t>(DecisionCriteria::count)> decisionCriteria; /* buy/sell score weight, weapon/armor
-    equip score, tendency to fight/run/yield, looting greed */
+    Traveler &traveler;  // the traveler this AI controls
+    int decisionCounter; // counter for updatening AI
+    std::array<double, static_cast<size_t>(DecisionCriteria::count)> decisionCriteria; /* buy/sell score
+    weight, weapon/armor equip score, tendency to fight/run/yield, looting greed */
     std::unordered_map<unsigned int, GoodInfo> goodsInfo; // known information about each good by full id
     std::vector<TownInfo> nearby;                         // known information about nearby towns
     AIRole role;                                          // behavior for this ai
@@ -74,10 +74,13 @@ class AI {
     void attack();
 
 public:
-    AI(Traveler &tvl);
-    AI(Traveler &tvl, const AI &p);
+    AI(Traveler &tvl, const std::array<double, static_cast<size_t>(DecisionCriteria::count)> &dcC,
+       const std::unordered_map<unsigned int, GoodInfo> &gsI, AIRole rl);
+    AI(Traveler &tvl) : AI(tvl, Settings::aIDecisionCriteria(), {}, Settings::aIRole()) {}
+    AI(Traveler &tvl, const AI &p) : AI(tvl, p.decisionCriteria, p.goodsInfo, p.role) {}
     AI(Traveler &tvl, const Save::AI *ldAI);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
+    AIRole getRole() const { return role; }
     void choose();
     void loot();
     void update(unsigned int e);

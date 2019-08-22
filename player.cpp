@@ -167,16 +167,17 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
     fs::path path{"save"};
     std::vector<std::string> saves;
     for (auto &file : fs::directory_iterator{path}) saves.push_back(file.path().stem().string());
-    uIStates[static_cast<size_t>(State::loading)].boxesInfo.push_back(Settings::boxInfo(
-        {screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7}, saves, BoxSizeType::big, BoxBehavior::scroll, SDLK_l,
-        [this, &path](MenuButton *btn) {
-            game.loadGame((path / btn->getItem()).replace_extension("sav"));
-            show = true;
-            setState(State::traveling);
-        }));
+    uIStates[static_cast<size_t>(State::loading)].boxesInfo.push_back(
+        Settings::boxInfo({screenRect.w / 5, screenRect.h / 7, screenRect.w * 3 / 5, screenRect.h * 5 / 7},
+                          saves, BoxSizeType::big, BoxBehavior::scroll, SDLK_l, [this, &path](MenuButton *btn) {
+                              game.loadGame((path / btn->getItem()).replace_extension("sav"));
+                              show = true;
+                              setState(State::traveling);
+                          }));
 }
 
-void Player::loadTraveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD) {
+void Player::loadTraveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns,
+                          const GameData &gD) {
     // Load the traveler for the player from save file.
     traveler = std::make_unique<Traveler>(ldTvl, nts, tns, gD);
 }
@@ -332,7 +333,9 @@ void Player::setState(State s) {
         int bBB = Settings::boxSize(BoxSizeType::big).border;
         // Create portion box and set portion button.
         pagers[0].addBox(std::make_unique<TextBox>(
-            Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {""}, BoxSizeType::small, BoxBehavior::edit), printer));
+            Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {""},
+                              BoxSizeType::small, BoxBehavior::edit),
+            printer));
         portionBox = pagers[0].getVisible().back();
         traveler->updatePortionBox(portionBox);
         pagers[0].addBox(std::make_unique<MenuButton>(

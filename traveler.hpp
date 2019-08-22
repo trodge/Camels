@@ -85,7 +85,7 @@ class Traveler {
     bool moving;
     int px, py;
     double portion;                                        // portion of goods offered in next trade
-    std::vector<int> reputation; // reputation indexed by nation id
+    std::vector<int> reputation;                           // reputation indexed by nation id
     std::vector<Good> offer, request;                      // goods offered and requested in next trade
     std::unordered_map<unsigned int, Property> properties; // owned goods and businesses by town id, 0 for carried goods
     std::array<unsigned int, static_cast<size_t>(Stat::count)> stats;
@@ -114,14 +114,17 @@ class Traveler {
     } // all traveler boxes
     BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx) {
         return boxInfo(rt, tx, BoxSizeType::fight);
-    }                                                                       // fight boxes
-    BoxInfo boxInfo() { return boxInfo({0, 0, 0, 0}, {}, BoxSizeType::trade, BoxBehavior::focus); } // good and business buttons
+    } // fight boxes
+    BoxInfo boxInfo() {
+        return boxInfo({0, 0, 0, 0}, {}, BoxSizeType::trade, BoxBehavior::focus);
+    } // good and business buttons
     Property &property(unsigned int tId);
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
     void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createAIGoods();
 
 public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
@@ -153,7 +156,7 @@ public:
     void setPortion(double p);
     void changePortion(double d);
     void addToTown();
-    void create(unsigned int gId, double amt) { properties.find(0)->second.create(gId, amt); }
+    void create(unsigned int gId, double amt);
     void pickTown(const Town *tn);
     void place(int ox, int oy, double s);
     void draw(SDL_Renderer *s) const;
@@ -184,7 +187,7 @@ public:
     CombatHit firstHit(Traveler &tgt);
     void useAmmo(double t);
     void fight(Traveler &tgt, unsigned int elTm);
-    void takeHit ( const CombatHit &cH, Traveler &tgt );
+    void takeHit(const CombatHit &cH, Traveler &tgt);
     void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
     void updateFightBoxes(Pager &pgr);
     void loot(Good &g);
@@ -196,7 +199,7 @@ public:
     void toggleMaxGoods();
     void resetTown();
     void adjustAreas(Pager &pgr, double mM);
-    void adjustDemand(Pager &pgr, double mM); 
+    void adjustDemand(Pager &pgr, double mM);
 };
 
 #endif // TRAVELER_H

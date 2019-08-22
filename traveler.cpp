@@ -36,9 +36,9 @@ Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
 
 Traveler::Traveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD)
     : name(ldTvl->name()->str()), nation(&nts[static_cast<size_t>(ldTvl->nation() - 1)]),
-    toTown(&tns[static_cast<size_t>(ldTvl->toTown() - 1)]),
-    fromTown(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]),
-    longitude(ldTvl->longitude()), latitude(ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
+      toTown(&tns[static_cast<size_t>(ldTvl->toTown() - 1)]),
+      fromTown(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]), longitude(ldTvl->longitude()),
+      latitude(ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
     auto ldLog = ldTvl->log();
     std::transform(ldLog->begin(), ldLog->end(), std::back_inserter(logText),
                    [](auto ldL) { return ldL->str(); });
@@ -162,6 +162,8 @@ void Traveler::setPortion(double d) {
 }
 
 void Traveler::changePortion(double d) { setPortion(portion + d); }
+
+void Traveler::create(unsigned int gId, double amt) { properties.find(0)->second.create(gId, amt); }
 
 void Traveler::pickTown(const Town *tn) {
     // Start moving toward given town.
@@ -554,10 +556,10 @@ void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
     auto &bids = toTown->getBids();
     std::vector<std::string> names;
     for (auto &bd : bids) names.push_back(bd->party->name);
-    pgrs[2].addBox(std::make_unique<SelectButton>(Settings::boxInfo(
-                                                      {sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31},
-                                                      names, toTown->getNation()->getColors(), BoxSizeType::big, SDLK_h,
-                                                      [](MenuButton *) {
+    pgrs[2].addBox(std::make_unique<SelectButton>(
+        Settings::boxInfo({sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31}, names,
+                          toTown->getNation()->getColors(), BoxSizeType::big, SDLK_h,
+                          [](MenuButton *) {
 
                           }),
         pr));
@@ -608,17 +610,17 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
     std::transform(begin(able), end(able), std::back_inserter(names),
                    [](const Traveler *tn) { return tn->getName(); });
     // Create attack button.
-    pgr.addBox(std::make_unique<SelectButton>(boxInfo(
-                                                  {sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSizeType::fight, BoxBehavior::scroll, SDLK_f,
-                                                  [this, able, sSF](MenuButton *btn) {
-                                                      int i = btn->getHighlightLine();
-                                                      if (i > -1) {
-                                                          attack(able[static_cast<size_t>(i)]);
-                                                          sSF();
-                                                      } else
-                                                          btn->setClicked(false);
-                                                  }),
-                                              pr));
+    pgr.addBox(std::make_unique<SelectButton>(
+        boxInfo({sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSizeType::fight, BoxBehavior::scroll, SDLK_f,
+                [this, able, sSF](MenuButton *btn) {
+                    int i = btn->getHighlightLine();
+                    if (i > -1) {
+                        attack(able[static_cast<size_t>(i)]);
+                        sSF();
+                    } else
+                        btn->setClicked(false);
+                }),
+        pr));
 }
 
 void Traveler::createLogBox(Pager &pgr, Printer &pr) {
@@ -639,7 +641,7 @@ void Traveler::loseTarget() {
     target = nullptr;
 }
 
-CombatHit Traveler::firstHit(Traveler &tgt ) {
+CombatHit Traveler::firstHit(Traveler &tgt) {
     // Find first hit of this traveler on tn.
     std::array<unsigned int, 3> defense{};
     for (auto &e : tgt.equipment)
@@ -734,20 +736,20 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &tgt) {
     if (!cH.statusChances) return;
     auto &stChcs = *cH.statusChances;
     for (auto sCI = begin(stChcs); r > 0 && sCI != end(stChcs); ++sCI)
-    // Find status such that part becomes more damaged.
-    if (sCI->first > status) {
-        // This part is less damaged than the current status.
-        status = sCI->first;
-        // Subtract chance of this status from r.
-        r -= sCI->second;
-    }
+        // Find status such that part becomes more damaged.
+        if (sCI->first > status) {
+            // This part is less damaged than the current status.
+            status = sCI->first;
+            // Subtract chance of this status from r.
+            r -= sCI->second;
+        }
     parts[static_cast<size_t>(part)] = status;
     if (status > Status::wounded)
         // Part is too wounded to hold equipment.
         unequip(part);
     std::string logEntry = tgt.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
-                            gameData.partNames[static_cast<size_t>(part)] + " has been " +
-                            gameData.statusNames[static_cast<size_t>(status)] + ".";
+                           gameData.partNames[static_cast<size_t>(part)] + " has been " +
+                           gameData.statusNames[static_cast<size_t>(status)] + ".";
     logText.push_back(logEntry);
     tgt.logText.push_back(logEntry);
 }
@@ -761,17 +763,16 @@ void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
         boxInfo({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
     pgr.addBox(std::make_unique<TextBox>(
         target->boxInfo({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
-    pgr.addBox(std::make_unique<SelectButton>(
-        boxInfo(
-            {sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3}, {"Fight", "Run", "Yield"}, BoxSizeType::fight, BoxBehavior::scroll, SDLK_c,
-            [this, &p](MenuButton *btn) {
-                int hl = btn->getHighlightLine();
-                if (hl > -1) {
-                    choice = static_cast<FightChoice>(hl);
-                    p = false;
-                }
-            }),
-        pr));
+    pgr.addBox(std::make_unique<SelectButton>(boxInfo({sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3},
+                                                      {"Fight", "Run", "Yield"}, BoxSizeType::fight, BoxBehavior::scroll, SDLK_c,
+                                                      [this, &p](MenuButton *btn) {
+                                                          int hl = btn->getHighlightLine();
+                                                          if (hl > -1) {
+                                                              choice = static_cast<FightChoice>(hl);
+                                                              p = false;
+                                                          }
+                                                      }),
+                                              pr));
 }
 
 void Traveler::updateFightBoxes(Pager &pgr) {
@@ -796,14 +797,14 @@ void Traveler::updateFightBoxes(Pager &pgr) {
     statusText[0] = name + "'s Status";
     for (size_t i = 1; i < static_cast<size_t>(Part::count) + 1; ++i)
         statusText[i] = gameData.partNames[i - 1] + ": " +
-                        gameData.statusNames[static_cast<size_t>( part (static_cast<Part>(i - 1)))];
+                        gameData.statusNames[static_cast<size_t>(part(static_cast<Part>(i - 1)))];
     bxs[1]->setText(statusText);
     auto tgt = target;
     if (!tgt) return;
     statusText[0] = tgt->getName() + "'s Status";
     for (size_t i = 1; i < statusText.size(); ++i)
         statusText[i] = gameData.partNames[i - 1] + ": " +
-                        gameData.statusNames[static_cast<size_t>( part (static_cast<Part>(i - 1)))];
+                        gameData.statusNames[static_cast<size_t>(part(static_cast<Part>(i - 1)))];
     bxs[2]->setText(statusText);
 }
 
@@ -851,14 +852,20 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
     });
 }
 
+void Traveler::createAIGoods() {
+    for (auto &sG : Settings::getAIStartingGoods(aI->getRole())) create(sG.first, sG.second);
+}
+
 void Traveler::startAI() {
     // Initialize variables for running a new AI.
     aI = std::make_unique<AI>(*this);
+    createAIGoods();
 }
 
 void Traveler::startAI(const Traveler &p) {
     // Starts an AI which imitates parameter's AI.
     aI = std::make_unique<AI>(*this, *p.aI);
+    createAIGoods();
 }
 
 void Traveler::update(unsigned int elTm) {

@@ -99,7 +99,8 @@ public:
     bool getShow() const { return show; }
     const Traveler *getTraveler() const { return traveler.get(); }
     bool hasTraveler() const { return traveler.get(); }
-    void loadTraveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD);
+    void loadTraveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns,
+                      const GameData &gD);
     void setState(State s);
     void place(int ox, int oy, double s) {
         if (traveler.get()) traveler->place(ox, oy, s);

@@ -51,7 +51,9 @@ public:
     int getFontHeight() { return TTF_FontHeight(fontSizeIt->fonts.front().get()); }
     int getFontWidth(const std::string &tx);
     sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt, const std::vector<Image> &imgs);
-    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt) { return print(tx, rt, std::vector<Image>()); }
+    sdl::Surface print(const std::vector<std::string> &tx, SDL_Rect &rt) {
+        return print(tx, rt, std::vector<Image>());
+    }
 };
 
 #endif

@@ -40,8 +40,8 @@ protected:
     std::pair<unsigned int, bool> id = {0, false}; // id and whether id is nation id
     BoxSize size;
     BoxBehavior behavior; // inert, focus, edit, scroll
-    int lineHeight = -1;        // radius of rounded corner circles
-    bool clicked = false;       // default button behavoir is to toggle between clicked and unclicked state
+    int lineHeight = -1;  // radius of rounded corner circles
+    bool clicked = false; // default button behavoir is to toggle between clicked and unclicked state
     sdl::Surface surface;
     sdl::Texture texture;
     bool updateTexture = false; // whether the texture needs updating to match the surface

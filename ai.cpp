@@ -19,20 +19,10 @@
 
 #include "ai.hpp"
 
-AI::AI(Traveler &tvl) : traveler(tvl) {
-    // Initialize variables for running a new AI based on starting goods and current town.
-    role = Settings::aIRole();
-    decisionCriteria = Settings::aIDecisionCriteria();
-    decisionCounter = Settings::aIDecisionCounter();
+AI::AI(Traveler &tvl, const std::array<double, static_cast<size_t>(DecisionCriteria::count)> &dcC,
+       const std::unordered_map<unsigned int, GoodInfo> &gsI, AIRole rl)
+    : traveler(tvl), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
-    setNearby(town, town, Settings::getAITownRange());
-    setLimits();
-}
-
-AI::AI(Traveler &tvl, const AI &p)
-    : traveler(tvl), decisionCriteria(p.decisionCriteria), goodsInfo(p.goodsInfo), role(p.role) {
-    // Starts an AI which imitates parameter's AI.
-    const Town *town = traveler.town();
     setNearby(town, town, Settings::getAITownRange());
     setLimits();
 }
@@ -65,9 +55,9 @@ double AI::equipScore(const Good &eq, const std::array<unsigned int, 5> &sts) co
     double attackScore = 0;
     double defenseScore = 0;
     for (auto &cS : eq.getCombatStats()) {
-        attackScore += cS.attack * sts[static_cast<size_t>( cS.stat)];
-        attackScore *= cS.speed * sts[static_cast<size_t>( cS.stat)];
-        for (auto &d : cS.defense) defenseScore += d * sts[static_cast<size_t>( cS.stat)];
+        attackScore += cS.attack * sts[static_cast<size_t>(cS.stat)];
+        attackScore *= cS.speed * sts[static_cast<size_t>(cS.stat)];
+        for (auto &d : cS.defense) defenseScore += d * sts[static_cast<size_t>(cS.stat)];
     }
     return attackScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::attackScoreWeight)] +
            defenseScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::defenseScoreWeight)];
@@ -90,8 +80,7 @@ double AI::equipScore(const Good &eq, const std::vector<Good> &eqpmt, const std:
     for (auto &oEq : eqpmt)
         for (auto &cS : oEq.getCombatStats())
             for (auto &pt : pts)
-                if (cS.part == pt)
-                    return std::max(equipScore(eq, sts) - equipScore(oEq, sts), 0.);
+                if (cS.part == pt) return std::max(equipScore(eq, sts) - equipScore(oEq, sts), 0.);
     return equipScore(eq, sts);
 }
 
@@ -113,7 +102,7 @@ void AI::trade() {
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
     traveler.property().queryGoods([this, weight, &bestScore, &offerValue, &offerWeight, overWeight,
-                                       &bestGood](const Good &g) {
+                                    &bestGood](const Good &g) {
         double gWgt = g.weight();
         if (!overWeight || gWgt > 0) {
             // Either we are not over weight or given material doesn't help carry.
@@ -152,9 +141,9 @@ void AI::trade() {
         bestScore = 1 / bestScore;
     double excess, townProfit = Settings::getTownProfit();
     // Find highest buy score.
-    traveler.town()->getProperty().queryGoods([this, &equipment=traveler.getEquipment(), &stats=traveler.getStats(),
-                                              &bestScore, offerValue, weight, overWeight, &bestGood,
-                                                  townProfit, &excess](const Good &tG) {
+    traveler.town()->getProperty().queryGoods([this, &equipment = traveler.getEquipment(),
+                                               &stats = traveler.getStats(), &bestScore, offerValue, weight,
+                                               overWeight, &bestGood, townProfit, &excess](const Good &tG) {
         double carry = tG.getCarry();
         if (!overWeight || carry < 0) {
             auto fId = tG.getFullId();
@@ -163,8 +152,8 @@ void AI::trade() {
             double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
             double eqpScr = equipScore(tG, equipment, stats);
             // Weigh equip score double if not a trader or agent.
-            score += eqpScr * (1 + !(role == AIRole::trader || role == AIRole::agent)) * 
-                decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)];
+            score += eqpScr * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
+                     decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)];
             if (score > bestScore) {
                 bestScore = score;
                 // Remove amout town takes as profit, store excess.
@@ -196,9 +185,7 @@ void AI::trade() {
     traveler.makeTrade();
 }
 
-void AI::build() {
-    
-}
+void AI::build() {}
 
 void AI::equip() {
     // Equip best scoring item for each part.
@@ -271,7 +258,8 @@ void AI::loot() {
     double lootGoal = lootScore(tPpt);
     if (tgt->alive())
         // Looting from an alive target dependent on greed.
-        lootGoal *= decisionCriteria[static_cast<size_t>(DecisionCriteria::lootingGreed)] / Settings::getCriteriaMax();
+        lootGoal *= decisionCriteria[static_cast<size_t>(DecisionCriteria::lootingGreed)] /
+                    Settings::getAIDecisionCriteriaMax();
     double looted = 0, weight = traveler.weight();
     while (looted < lootGoal) {
         // Keep looting until amount looted matches goal or we can carry no more.
