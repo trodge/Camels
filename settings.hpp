@@ -72,17 +72,22 @@ struct BoxInfo {
 
 enum class TownType { city, town, fort, count };
 
+enum class Part { head, torso, leftArm, rightArm, leftLeg, rightLeg, count };
+
 enum class Stat { strength, endurance, agility, intelligence, charisma, count };
 
+enum class AttackType { none = -1, bash, slash, stab, count };
+
 enum class DecisionCriteria {
-    buyScoreWeight,
-    sellScoreWeight,
-    attackScoreWeight,
-    defenseScoreWeight,
-    fightTendency,
-    runTendency,
-    yieldTendency,
-    lootingGreed,
+    buyScoreWeight,  // buy score weight in deciding where to go
+    sellScoreWeight, // sell score weight in deciding where to go
+    attackScoreWeight, // attack weight for equip scores
+    defenseScoreWeight, // defense weight for equip scores
+    equipScoreWeight, // equip score weight for buying goods
+    fightTendency, // start fights and fight back when attacked
+    runTendency, // run away when attacked
+    yieldTendency, // yield when attacked
+    lootingGreed, // portion of goods to take on yield
     count
 };
 
@@ -177,6 +182,7 @@ public:
     static int travelerCount(unsigned long ppl);
     static int travelersCheckCounter();
     static std::array<unsigned int, static_cast<size_t>(Stat::count)> travelerStats();
+    static Part part();
     static AIRole aIRole();
     static std::array<double, static_cast<size_t>(DecisionCriteria::count)> aIDecisionCriteria();
     static double aIDecisionCounter();

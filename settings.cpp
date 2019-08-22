@@ -262,6 +262,11 @@ std::array<unsigned int, static_cast<size_t>(Stat::count)> Settings::travelerSta
     return stats;
 }
 
+Part Settings::part() {
+    static std::uniform_int_distribution<unsigned int> ptDis(0, static_cast<size_t>(Part::count));
+    return static_cast<Part>(ptDis(rng));
+}
+
 AIRole Settings::aIRole() {
     // Randomize ai role.
     static std::discrete_distribution<int> rlDis(begin(aIRoleWeights), end(aIRoleWeights));

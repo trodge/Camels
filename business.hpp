@@ -60,7 +60,7 @@ public:
     bool operator==(const Business &other) const { return (id == other.id && mode == other.mode); }
     bool operator!=(const Business &other) const { return (id != other.id || mode != other.mode); }
     bool operator<(const Business &other) const {
-        { return (id < other.id || (id == other.id && mode < other.mode)); }
+        return (id < other.id || (id == other.id && mode < other.mode));
     }
     unsigned int getId() const { return id; }
     unsigned int getMode() const { return mode; }

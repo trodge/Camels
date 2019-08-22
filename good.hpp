@@ -32,9 +32,6 @@
 #include "printer.hpp"
 #include "settings.hpp"
 
-enum class Part { head, torso, leftArm, rightArm, leftLeg, rightLeg, count };
-enum class AttackType { none = -1, bash, slash, stab, count };
-
 struct CombatStat {
     Part part;
     Stat stat;
