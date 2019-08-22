@@ -60,24 +60,39 @@ flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const 
     return Save::CreateAI(b, static_cast<short>(decisionCounter), sDecisionCriteria, sMaterialInfo);
 }
 
-double AI::equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const {
-    // Scores parameter equipment based on parameter stats and this ai's criteria
+double AI::equipScore(const Good &eq, const std::array<unsigned int, 5> &sts) const {
+    // Scores parameter equipment based on parameter stats and this ai's criteria. Score is always >= 0.
     double attackScore = 0;
     double defenseScore = 0;
-    for (auto &s : e.getCombatStats()) {
-        attackScore += s.attack * sts[static_cast<size_t>(s.stat)];
-        attackScore *= s.speed * sts[static_cast<size_t>(s.stat)];
-        for (auto &d : s.defense) defenseScore += d * sts[static_cast<size_t>(s.stat)];
+    for (auto &cS : eq.getCombatStats()) {
+        attackScore += cS.attack * sts[static_cast<size_t>( cS.stat)];
+        attackScore *= cS.speed * sts[static_cast<size_t>( cS.stat)];
+        for (auto &d : cS.defense) defenseScore += d * sts[static_cast<size_t>( cS.stat)];
     }
     return attackScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::attackScoreWeight)] +
            defenseScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::defenseScoreWeight)];
 }
 
 double AI::equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const {
-    // Scores parameter equipment based on this traveler's criteria.
+    // Scores parameter equipment with parameter stats based on this ai's criteria. Score is always >= 1.
     double score = 1;
-    for (auto &e : eqpmt) { score += equipScore(e, sts); }
+    for (auto &eq : eqpmt) { score += equipScore(eq, sts); }
     return score;
+}
+
+double AI::equipScore(const Good &eq, const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const {
+    // Score single equipment against set of equipment where parts match
+    std::vector<Part> pts;
+    auto &cSs = eq.getCombatStats();
+    if (cSs.empty()) return 0;
+    pts.reserve(cSs.size());
+    std::transform(begin(cSs), end(cSs), std::back_inserter(pts), [](auto &cS) { return cS.part; });
+    for (auto &oEq : eqpmt)
+        for (auto &cS : oEq.getCombatStats())
+            for (auto &pt : pts)
+                if (cS.part == pt)
+                    return std::max(equipScore(eq, sts) - equipScore(oEq, sts), 0.);
+    return equipScore(eq, sts);
 }
 
 double AI::lootScore(const Property &tPpt) const {
@@ -137,7 +152,8 @@ void AI::trade() {
         bestScore = 1 / bestScore;
     double excess, townProfit = Settings::getTownProfit();
     // Find highest buy score.
-    traveler.town()->getProperty().queryGoods([this, &bestScore, offerValue, weight, overWeight, &bestGood,
+    traveler.town()->getProperty().queryGoods([this, &equipment=traveler.getEquipment(), &stats=traveler.getStats(),
+                                              &bestScore, offerValue, weight, overWeight, &bestGood,
                                                   townProfit, &excess](const Good &tG) {
         double carry = tG.getCarry();
         if (!overWeight || carry < 0) {
@@ -145,6 +161,10 @@ void AI::trade() {
             auto gII = goodsInfo.find(fId);
             if (gII == end(goodsInfo)) return;
             double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
+            double eqpScr = equipScore(tG, equipment, stats);
+            // Weigh equip score double if not a trader or agent.
+            score += eqpScr * (1 + !(role == AIRole::trader || role == AIRole::agent)) * 
+                decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)];
             if (score > bestScore) {
                 bestScore = score;
                 // Remove amout town takes as profit, store excess.
@@ -174,6 +194,10 @@ void AI::trade() {
     traveler.requestGood(std::move(*bestGood));
     // Make the trade.
     traveler.makeTrade();
+}
+
+void AI::build() {
+    
 }
 
 void AI::equip() {

@@ -64,10 +64,12 @@ class AI {
     void setLimits();
     double buyScore(double p, double b) const { return p == 0 ? 0 : b / p; }  // score selling at price p
     double sellScore(double p, double s) const { return s == 0 ? 0 : p / s; } // score buying at price p
-    double equipScore(const Good &e, const std::array<unsigned int, 5> &sts) const;
+    double equipScore(const Good &eq, const std::array<unsigned int, 5> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
+    double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
     double lootScore(const Property &ppt) const;
     void trade();
+    void build();
     void equip();
     void attack();
 
