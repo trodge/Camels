@@ -21,6 +21,7 @@
 #define SETTINGS_H
 #include <array>
 #include <chrono>
+#include <iostream>
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
@@ -99,8 +100,6 @@ class Settings {
     static std::array<ColorScheme, static_cast<size_t>(ColorSchemeType::count)> colorSchemes;
     static SDL_Color routeColor;
     static SDL_Color waterColor;
-    static SDL_Color playerColor;
-    static SDL_Color aIColor;
     static int scroll, offsetX, offsetY;
     static double scale;
     static std::array<BoxSize, static_cast<size_t>(BoxSizeType::count)> boxSizes;
@@ -125,13 +124,15 @@ class Settings {
     static double attackDistSq;
     static double escapeChance;
     static std::vector<std::pair<unsigned int, double>> playerStartingGoods;
+    static SDL_Color playerColor;
     static std::array<double, static_cast<size_t>(AIRole::count)> aIRoleWeights;
     static std::array<std::vector<std::pair<unsigned int, double>>, static_cast<size_t>(AIRole::count)> aIStartingGoods;
     static std::array<unsigned int, static_cast<size_t>(AIRole::count)> aIStartingGoodsCount;
     static int aIDecisionCriteriaMax;
     static unsigned int aITownRange;
-    static double limitFactorMin, limitFactorMax;
+    static double aILimitFactorMin, aILimitFactorMax;
     static double aIAttackThreshold;
+    static SDL_Color aIColor;
     static std::mt19937 rng;
 
 public:
@@ -141,8 +142,6 @@ public:
     static const SDL_Rect &getMapView() { return mapView; }
     static const SDL_Color &getRouteColor() { return routeColor; }
     static const SDL_Color &getWaterColor() { return waterColor; }
-    static const SDL_Color &getPlayerColor() { return playerColor; }
-    static const SDL_Color &getAIColor() { return aIColor; }
     static int getScroll() { return scroll; }
     static int getOffsetX() { return offsetX; }
     static int getOffsetY() { return offsetY; }
@@ -172,9 +171,11 @@ public:
     static const std::vector<std::pair<unsigned int, double>> &getPlayerStartingGoods() {
         return playerStartingGoods;
     }
+    static const SDL_Color &getPlayerColor() { return playerColor; }
     static int getAIDecisionCriteriaMax() { return aIDecisionCriteriaMax; }
     static unsigned int getAITownRange() { return aITownRange; }
     static double getAIAttackThreshold() { return aIAttackThreshold; }
+    static const SDL_Color &getAIColor() { return aIColor; }
     template <typename T> static T randomInt(T max) {
         // Return a random int less than or equal to max.
         std::uniform_int_distribution<T> iDis(0, max);

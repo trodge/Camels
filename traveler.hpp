@@ -62,7 +62,7 @@ struct GameData {
 
 struct CombatHit {
     double time;
-    std::array<std::pair<Status, double>, kStatusChanceCount> *statusChances;
+    const CombatOdd *odd;
     std::string weapon;
 };
 

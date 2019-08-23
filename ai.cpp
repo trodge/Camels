@@ -139,11 +139,12 @@ void AI::trade() {
         bestScore = 0;
     else
         bestScore = 1 / bestScore;
-    double excess, townProfit = Settings::getTownProfit();
+    double excess;
     // Find highest buy score.
     traveler.town()->getProperty().queryGoods([this, &equipment = traveler.getEquipment(),
-                                               &stats = traveler.getStats(), &bestScore, offerValue, weight,
-                                               overWeight, &bestGood, townProfit, &excess](const Good &tG) {
+                                               &stats = traveler.getStats(), criteriaMax = Settings::getAIDecisionCriteriaMax(),
+                                               &bestScore, offerValue, weight,
+                                               overWeight, &bestGood, townProfit = Settings::getTownProfit(), &excess](const Good &tG) {
         double carry = tG.getCarry();
         if (!overWeight || carry < 0) {
             auto fId = tG.getFullId();
@@ -153,7 +154,8 @@ void AI::trade() {
             double eqpScr = equipScore(tG, equipment, stats);
             // Weigh equip score double if not a trader or agent.
             score += eqpScr * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
-                     decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)];
+                     decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)] /
+                     criteriaMax;
             if (score > bestScore) {
                 bestScore = score;
                 // Remove amout town takes as profit, store excess.

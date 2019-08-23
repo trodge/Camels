@@ -654,16 +654,16 @@ CombatHit Traveler::firstHit(Traveler &tgt) {
         if (ss.front().attack) {
             // e is a weapon.
             unsigned int attack = 0, speed = 0;
-            AttackType type = type = ss.front().type;
+            AttackType type = ss.front().type;
             for (auto &s : ss) {
                 attack += s.attack * stats[static_cast<size_t>(s.stat)];
                 speed += s.speed * stats[static_cast<size_t>(s.stat)];
             }
-            auto cO = gameData.odds[static_cast<size_t>(type) - 1];
+            auto &cO = gameData.odds[static_cast<size_t>(type)];
             // Calculate number of swings before hit happens.
             double r = Settings::random();
             double p = static_cast<double>(attack) / cO.hitChance /
-                       static_cast<double>(defense[static_cast<size_t>(type) - 1]);
+                       static_cast<double>(defense[static_cast<size_t>(type)]);
             double time;
             if (p < 1)
                 time = (log(r) / log(1 - p) + 1) / speed;
@@ -671,7 +671,7 @@ CombatHit Traveler::firstHit(Traveler &tgt) {
                 time = 1 / speed;
             if (time < first.time) {
                 first.time = time;
-                first.statusChances = &cO.statusChances;
+                first.odd = &cO;
                 first.weapon = e.getFullName();
             }
         }
@@ -733,8 +733,8 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &tgt) {
     // Get random value from 0 to 1.
     auto r = Settings::random();
     // Find status such that part becomes more damaged.
-    if (!cH.statusChances) return;
-    auto &stChcs = *cH.statusChances;
+    if (!cH.odd) return;
+    auto &stChcs = cH.odd->statusChances;
     for (auto sCI = begin(stChcs); r > 0 && sCI != end(stChcs); ++sCI)
         // Find status such that part becomes more damaged.
         if (sCI->first > status) {
