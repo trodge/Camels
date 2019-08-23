@@ -235,14 +235,14 @@ void Traveler::makeTrade() {
     logText.push_back(logEntry);
 }
 
-void Traveler::divideExcess(double ec) {
+void Traveler::divideExcess(double exc) {
     // Divide excess value among amounts of offered goods.
-    ec /= static_cast<double>(offer.size());
+    exc /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         // Convert value to quantity of this good.
-        auto &tG = toTown->getProperty().good(of.getFullId()); // town good
-        double q = tG.quantity(ec / Settings::getTownProfit());
-        if (!tG.getSplit()) q = floor(q);
+        auto tG = toTown->getProperty().good(of.getFullId()); // pointer to town good
+        double q = tG->quantity(exc / Settings::getTownProfit());
+        if (!tG->getSplit()) q = floor(q);
         // Reduce quantity.
         of.use(q);
     }
@@ -274,15 +274,15 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     std::vector<TextBox *> bxs(pgrs[1].getAll());
     for (auto bx : bxs)
         if (bx->getClicked()) {
-            auto &gd = properties.find(0)->second.good(bx->getId()); // good corresponding to bx
+            auto gd = properties.find(0)->second.good(bx->getId()); // pointer to good corresponding to box
             // Button was clicked, so add corresponding good to offer.
-            double amount = gd.getAmount() * portion;
-            if (!gd.getSplit()) amount = floor(amount);
-            auto &tG = toTown->getProperty().good(gd.getFullId()); // town good
-            double p = tG.price(amount);
+            double amount = gd->getAmount() * portion;
+            if (!gd->getSplit()) amount = floor(amount);
+            auto tG = toTown->getProperty().good(gd->getFullId()); // pointer to town good
+            double p = tG->price(amount);
             if (p > 0) {
                 offerValue += p;
-                offer.push_back(Good(gd.getFullId(), gd.getFullName(), amount, gd.getMeasure()));
+                offer.push_back(Good(gd->getFullId(), gd->getFullName(), amount, gd->getMeasure()));
             } else
                 // Good is worthless in this town, don'tn allow it to be offered.
                 bx->setClicked(false);
@@ -295,20 +295,20 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     double excess = 0; // excess value of offer over value needed for request
     // Loop through request buttons.
     for (auto bx : bxs) {
-        auto &tG = toTown->getProperty().good(bx->getId()); // good in town corresponding to bx
+        auto tG = toTown->getProperty().good(bx->getId()); // pointer to good in town corresponding to box
         if (offer.empty())
-            tG.updateButton(bx);
+            tG->updateButton(bx);
         else {
-            tG.updateButton(offerValue, std::max(1u, requestCount), bx);
+            tG->updateButton(offerValue, std::max(1u, requestCount), bx);
             if (bx->getClicked() && offerValue > 0) {
                 double mE = 0; // excess quantity of this material
-                double amount = tG.quantity(offerValue / requestCount * Settings::getTownProfit(), mE);
-                if (!tG.getSplit())
+                double amount = tG->quantity(offerValue / requestCount * Settings::getTownProfit(), mE);
+                if (!tG->getSplit())
                     // Remove extra portion of goods that don'tn split.
                     mE += modf(amount, &amount);
                 // Convert material excess to value and add to overall excess.
-                excess += tG.price(mE);
-                request.push_back(Good(tG.getFullId(), tG.getFullName(), amount, tG.getMeasure()));
+                excess += tG->price(mE);
+                request.push_back(Good(tG->getFullId(), tG->getFullName(), amount, tG->getMeasure()));
             }
         }
     }

@@ -76,10 +76,8 @@ public:
     bool getCoastal() const { return coastal; }
     unsigned long getPopulation() const { return population; }
     bool hasGood(unsigned int fId) const;
-    const Good &good(unsigned int fId) const { return *goods.get<FullId>().find(fId); }
-    const Good &good(boost::tuple<unsigned int, unsigned int> gMId) const {
-        return *goods.get<MaterialId>().find(gMId);
-    }
+    const Good *good(unsigned int fId) const;
+    const Good *good(boost::tuple<unsigned int, unsigned int> gMId) const;
     void queryGoods(const std::function<void(const Good &gd)> &fn) const;
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;

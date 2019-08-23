@@ -18,7 +18,7 @@ Property::Property(const Save::Property *svPpt, const Property *src)
     std::transform(ldGds->begin(), ldGds->end(), std::inserter(goods, end(goods)),
                    [](auto ldGd) { return Good(ldGd); });
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
-        goods.modify(gdIt, [srGd = source->good(gdIt->getFullId())](auto &gd) { gd.setImage(srGd.getImage()); });
+        goods.modify(gdIt, [srGd = source->good(gdIt->getFullId())](auto &gd) { gd.setImage(srGd->getImage()); });
     auto ldBsns = svPpt->businesses();
     std::transform(ldBsns->begin(), ldBsns->end(), std::back_inserter(businesses),
                    [](auto ldBsn) { return Business(ldBsn); });
@@ -38,6 +38,20 @@ flatbuffers::Offset<Save::Property> Property::save(flatbuffers::FlatBufferBuilde
 bool Property::hasGood(unsigned int fId) const {
     auto &byFullId = goods.get<FullId>();
     return byFullId.find(fId) != end(byFullId);
+}
+
+const Good *Property::good(unsigned int fId) const {
+    auto &byFullId = goods.get<FullId>();
+    auto gdIt = byFullId.find(fId);
+    if (gdIt == end(byFullId)) return nullptr;
+    return &*gdIt;
+}
+
+const Good *Property::good(boost::tuple<unsigned int, unsigned int> gMId) const {
+    auto &byMaterialId = goods.get<MaterialId>();
+    auto gdIt = byMaterialId.find(gMId);
+    if (gdIt == end(byMaterialId)) return nullptr;
+    return &*gdIt;
 }
 
 void Property::queryGoods(const std::function<void(const Good &gd)> &fn) const {
@@ -169,7 +183,7 @@ void Property::put(Good &gd) {
     auto putGood = [&gd](auto &rGd) { rGd.put(gd); };
     if (rGdIt == end(byFullId)) {
         // Good does not exist, copy from source.
-        addGood(source->good(fId), putGood);
+        addGood(*source->good(fId), putGood);
     } else
         byFullId.modify(rGdIt, putGood);
 }
@@ -224,7 +238,7 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
         auto createGood = [cAmt = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(cAmt); };
         if (opIt == end(byMaterialId)) {
             // Output good doesn't exist, copy from source.
-            addGood(source->good(opGMId), createGood);
+            addGood(*source->good(opGMId), createGood);
             // Refresh input iterators because insert invalidates them.
             ipRng = byGoodId.equal_range(ipId);
             // Advance first iterator to position of current input material.

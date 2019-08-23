@@ -164,7 +164,7 @@ public:
     void offerGood(Good &&gd) { offer.push_back(gd); }
     void requestGood(Good &&gd) { request.push_back(gd); }
     void updatePortionBox(TextBox *bx) const;
-    void divideExcess(double ec);
+    void divideExcess(double exc);
     void makeTrade();
     void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
     void updateTradeButtons(std::vector<Pager> &pgrs);

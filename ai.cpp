@@ -107,7 +107,8 @@ void AI::trade() {
         if (!overWeight || gWgt > 0) {
             // Either we are not over weight or given material doesn't help carry.
             auto fId = g.getFullId();
-            auto &tG = traveler.property().good(fId);
+            auto tG = traveler.town()->getProperty().good(fId);
+            if (tG == nullptr) return;
             auto amount = g.getAmount();
             if (amount > 0) {
                 if (gWgt < 0 && weight > gWgt)
@@ -115,13 +116,13 @@ void AI::trade() {
                     amount *= weight / gWgt;
                 auto gII = goodsInfo.find(fId);
                 if (gII == end(goodsInfo)) return;
-                double score = sellScore(tG.price(), gII->second.sell); // score based on minimum sell price
+                double score = sellScore(tG->price(), gII->second.sell); // score based on minimum sell price
                 if ((overWeight && (!bestGood || gWgt > bestGood->weight())) || (score > bestScore)) {
                     // Either we are over weight and good is heavier than previous offer or this good scores better.
                     bestScore = score;
                     if (!g.getSplit()) amount = floor(amount);
-                    bestGood = std::make_unique<Good>(tG.getFullId(), tG.getFullName(), amount, tG.getMeasure());
-                    offerValue = tG.price(amount);
+                    bestGood = std::make_unique<Good>(tG->getFullId(), tG->getFullName(), amount, tG->getMeasure());
+                    offerValue = tG->price(amount);
                     offerWeight = gWgt;
                 }
             }

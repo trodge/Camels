@@ -113,12 +113,12 @@ public:
     double price() const;
     double cost(double qtt) const;
     double value() const { return price() * amount; }
-    double quantity(double prc, double &elTm) const;
+    double quantity(double prc, double &exc) const;
     double quantity(double prc) const;
     double quantum(double c) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
     SDL_Surface *getImage() const { return image; }
-    void setAmount(double a) { amount = a; }
+    void setAmount(double amt) { amount = amt; }
     void setConsumption(const std::array<double, 3> &cnsptn);
     void setCombatStats(const std::vector<CombatStat> &cSs) { combatStats = cSs; }
     void setImage(SDL_Surface *img) { image = img; }
