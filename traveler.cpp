@@ -576,29 +576,29 @@ std::vector<Traveler *> Traveler::attackable() const {
         // Eliminate travelers which are too far away or have reached town or are already fighting or are this traveler.
         double aDstSq = Settings::getAttackDistSq();
         able.erase(std::remove_if(begin(able), end(able),
-                                  [this, aDstSq](Traveler *tn) {
-                                      return !tn->moving || tn->distSq(px, py) > aDstSq || tn->target ||
-                                             !tn->alive() || tn == this;
+                                  [this, aDstSq](Traveler *tg) {
+                                      return !tg->moving || tg->distSq(px, py) > aDstSq || tg->target ||
+                                             !tg->alive() || tg == this;
                                   }),
                    end(able));
     }
     return able;
 }
 
-void Traveler::attack(Traveler *tn) {
+void Traveler::attack(Traveler *tgt) {
     // Attack the given parameter traveler.
-    target = tn;
-    tn->target = this;
+    target = tgt;
+    tgt->target = this;
     fightTime = 0;
-    tn->fightTime = 0;
+    tgt->fightTime = 0;
     if (aI)
         choice = FightChoice::fight;
     else
         choice = FightChoice::none;
-    if (tn->aI)
-        tn->aI->choose();
+    if (tgt->aI)
+        tgt->aI->choose();
     else
-        tn->choice = FightChoice::none;
+        tgt->choice = FightChoice::none;
 }
 
 void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr) {
@@ -608,7 +608,7 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
     std::vector<std::string> names; // vector of names of attackable travelers
     names.reserve(able.size());
     std::transform(begin(able), end(able), std::back_inserter(names),
-                   [](const Traveler *tn) { return tn->getName(); });
+                   [](const Traveler *tg) { return tg->getName(); });
     // Create attack button.
     pgr.addBox(std::make_unique<SelectButton>(
         boxInfo({sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSizeType::fight, BoxBehavior::scroll, SDLK_f,
@@ -631,14 +631,14 @@ void Traveler::createLogBox(Pager &pgr, Printer &pr) {
 }
 
 void Traveler::loseTarget() {
-    if (auto tn = target) {
-        tn->target = nullptr;
+    if (target) {
+        target->target = nullptr;
         // Remove target from town so that it can'tn be attacked again.
-        tn->fromTown->removeTraveler(tn);
+        target->fromTown->removeTraveler(target);
         // Set dead to true if target is not alive.
-        tn->dead = !tn->alive();
+        target->dead = !target->alive();
+        target = nullptr;
     }
-    target = nullptr;
 }
 
 CombatHit Traveler::firstHit(Traveler &tgt) {
@@ -783,7 +783,7 @@ void Traveler::updateFightBoxes(Pager &pgr) {
     case FightChoice::none:
         break;
     case FightChoice::fight:
-        if (choiceText[0] == "Running...") choiceText[0] = "Running... Caught!";
+        if (choiceText[0] == "Running...") choiceText[0] += " Caught!";
         break;
     case FightChoice::run:
         choiceText[0] = "Running...";

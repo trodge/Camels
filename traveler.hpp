@@ -180,7 +180,7 @@ public:
     void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<Traveler *> attackable() const;
-    void attack(Traveler *t);
+    void attack(Traveler *tgt);
     void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
     void createLogBox(Pager &pgr, Printer &pr);
     void loseTarget();
