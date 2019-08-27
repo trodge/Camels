@@ -45,14 +45,11 @@ class Town {
     unsigned int id;
     const Nation *nation = nullptr;
     std::unique_ptr<TextBox> box;
-    double longitude, latitude;
+    Position position;
     Property property;
     std::vector<Town *> neighbors;
     std::vector<Traveler *> travelers;
     std::vector<std::unique_ptr<Contract>> bids;
-    int dpx, dpy;
-    int distSq(int x, int y) const;
-    double dist(int x, int y) const;
 
 public:
     Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat,
@@ -64,14 +61,11 @@ public:
     TextBox *getBox() const { return box.get(); }
     std::string getName() const { return box->getText()[0]; }
     const Nation *getNation() const { return nation; }
-    double getLongitude() const { return longitude; }
-    double getLatitude() const { return latitude; }
+    const Position &getPosition() const { return position; }
     const Property &getProperty() const { return property; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<Traveler *> &getTravelers() const { return travelers; }
     const std::vector<std::unique_ptr<Contract>> &getBids() const { return bids; }
-    int getDPX() const { return dpx; }
-    int getDPY() const { return dpy; }
     void clearTravelers() { travelers.clear(); }
     void removeTraveler(const Traveler *t);
     void addTraveler(Traveler *t) { travelers.push_back(t); }
@@ -79,17 +73,17 @@ public:
     void addBid(std::unique_ptr<Contract> &&bd) { bids.push_back(std::move(bd)); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
     void toggleMaxGoods() { property.toggleMaxGoods(); }
-    void placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s);
-    void placeText(std::vector<SDL_Rect> &drawn) { box->place(dpx, dpy, drawn); }
+    void placeDot(std::vector<SDL_Rect> &drawn, const SDL_Point &ofs, double s);
+    void placeText(std::vector<SDL_Rect> &drawn) { box->place(position.getPoint(), drawn); }
     void draw(SDL_Renderer *s);
     void reset() { property.reset(); }
     void update(unsigned int e);
     void take(Good &g);
     void put(Good &g);
     void generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Traveler>> &tvlrs);
-    double dist(const Town *t) const;
+    int distSq(const Town *t) const;
     void addNeighbor(Town *t) { neighbors.push_back(t); }
-    void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy);
+    void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, const SDL_Point &mOs);
     void connectRoutes();
     void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
                  const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) {

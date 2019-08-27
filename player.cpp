@@ -638,32 +638,33 @@ void Player::update(unsigned int e) {
     default:
         break;
     }
-    int scrollX = 0, scrollY = 0;
+    SDL_Point scl{0, 0};
     double sS = Settings::getScroll() * modMultiplier;
     if (show) {
         const SDL_Rect &mR = game.getMapView();
-        if (traveler->getPX() < int(mR.w * kShowPlayerPadding)) scrollX = -sS;
-        if (traveler->getPY() < int(mR.h * kShowPlayerPadding)) scrollY = -sS;
-        if (traveler->getPX() > int(mR.w * (1 - kShowPlayerPadding))) scrollX = sS;
-        if (traveler->getPY() > int(mR.h * (1 - kShowPlayerPadding))) scrollY = sS;
+        auto &point = traveler->getPosition().getPoint();
+        if (point.x < int(mR.w * kShowPlayerPadding)) scl.x = -sS;
+        if (point.y < int(mR.h * kShowPlayerPadding)) scl.y = -sS;
+        if (point.x > int(mR.w * (1 - kShowPlayerPadding))) scl.x = sS;
+        if (point.y > int(mR.h * (1 - kShowPlayerPadding))) scl.y = sS;
     }
-    std::for_each(begin(scroll), end(scroll), [&scrollX, &scrollY, sS](Direction dir) {
+    std::for_each(begin(scroll), end(scroll), [&scl, sS](Direction dir) {
         switch (dir) {
         case Direction::left:
-            scrollX -= sS;
+            scl.x -= sS;
             break;
         case Direction::right:
-            scrollX += sS;
+            scl.x += sS;
             break;
         case Direction::up:
-            scrollY -= sS;
+            scl.y -= sS;
             break;
         case Direction::down:
-            scrollY += sS;
+            scl.y += sS;
             break;
         }
     });
-    if (scrollX || scrollY) game.moveView(scrollX, scrollY);
+    if (scl.x || scl.y) game.moveView(scl);
     if (traveler.get() && !pause) traveler->update(e);
 }
 

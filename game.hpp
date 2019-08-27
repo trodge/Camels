@@ -72,7 +72,7 @@ class Nation;
 
 class Game {
     SDL_Rect screenRect, mapView, mapRect;
-    int offsetX, offsetY;
+    SDL_Point offset;
     double scale;
     sdl::Handle<SDL_Window> window;
     sdl::Handle<SDL_Renderer> screen;
@@ -104,7 +104,7 @@ public:
     void run();
     const std::vector<Nation> &newGame();
     void place();
-    void moveView(int dx, int dy);
+    void moveView(const SDL_Point &dp);
     void saveGame();
     void loadGame(const fs::path &p);
     void saveData();

@@ -33,6 +33,7 @@
 #include <SDL2/SDL.h>
 
 #include "ai.hpp"
+#include "draw.hpp"
 #include "constants.hpp"
 #include "good.hpp"
 #include "menubutton.hpp"
@@ -60,16 +61,16 @@ struct GameData {
     std::map<unsigned long, std::string> populationAdjectives;
 };
 
-struct CombatHit {
-    double time;
-    const CombatOdd *odd;
-    std::string weapon;
-};
-
 struct Contract {
     Traveler *party; // the other party to this contract, or this if contract is a bid
     double owed;     // value of goods holder will retain at end of contract
     double wage;     // value holder earns daily, in deniers
+};
+
+struct CombatHit {
+    double time;
+    const CombatOdd *odd;
+    std::string weapon;
 };
 
 enum class FightChoice { none = -1, fight, run, yield };
@@ -81,9 +82,8 @@ class Traveler {
     const Nation *nation;
     Town *toTown, *fromTown;
     std::vector<std::string> logText;
-    double longitude, latitude;
+    Position position; // coordinates of traveler in world
     bool moving;
-    int px, py;
     double portion;                                        // portion of goods offered in next trade
     std::vector<int> reputation;                           // reputation indexed by nation id
     std::vector<Good> offer, request;                      // goods offered and requested in next trade
@@ -100,8 +100,7 @@ class Traveler {
     std::unique_ptr<AI> aI;
     const GameData &gameData;
     std::forward_list<Town *> pathTo(const Town *t) const;
-    double distSq(int x, int y) const;
-    double pathDist(const Town *t) const;
+    int pathDistSq(const Town *t) const;
     BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz, BoxBehavior bvr,
                     SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
         return Settings::boxInfo(rt, tx, nation->getColors(), {0, false}, sz, bvr, ky, fn);
@@ -148,8 +147,7 @@ public:
     }
     bool getDead() const { return dead; }
     bool getMoving() const { return moving; }
-    int getPX() const { return px; }
-    int getPY() const { return py; }
+    const Position &getPosition() const { return position; }
     double weight() const;
     bool fightWon() const { return target && (target->choice == FightChoice::yield || !target->alive()); }
     void choose(FightChoice c) { choice = c; }
@@ -158,7 +156,7 @@ public:
     void addToTown();
     void create(unsigned int gId, double amt);
     void pickTown(const Town *tn);
-    void place(int ox, int oy, double s);
+    void place(const SDL_Point &ofs, double s) { position.place(ofs, s); }
     void draw(SDL_Renderer *s) const;
     void clearTrade();
     void offerGood(Good &&gd) { offer.push_back(gd); }

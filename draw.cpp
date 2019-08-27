@@ -4,7 +4,7 @@
  * Camels is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * (at p.your option) any later version.
  *
  * Camels is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,6 +18,39 @@
  */
 
 #include "draw.hpp"
+
+void Position::place(const SDL_Point &ofs, double s) {
+    point.x = int(s * longitude) + ofs.x;
+    point.y = ofs.y - int(s * latitude);
+}
+
+int Position::distSq(const Position &pos) const {
+    SDL_Point dist = {pos.point.x - point.x, pos.point.y - point.y};
+    return (dist.x) * (dist.x) + (dist.y) * (dist.y);
+}
+
+bool Position::stepToward(const Position &pos, double tm) {
+    // Take a step toward given position for given time. Return true if position reached otherwise return false.
+    double dlt = pos.latitude - latitude;
+    double dlg = pos.longitude - longitude;
+    double ds = dlt * dlt + dlg * dlg;
+    if (ds > tm * tm) {
+        // There remains more distance to travel.
+        if (dlg != 0) {
+            double m = dlt / dlg;
+            double dxs = tm * tm / (1 + m * m);
+            double dys = tm * tm - dxs;
+            latitude += copysign(sqrt(dys), dlt);
+            longitude += copysign(sqrt(dxs), dlg);
+        } else
+            latitude += copysign(tm, dlt);
+        return false;
+    }
+    // We have reached the destination.
+    latitude = pos.latitude;
+    longitude = pos.longitude;
+    return true;
+}
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col) {
     // Draw a rounded rectangle where corners are circles with radius r on s.
@@ -49,21 +82,21 @@ void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col)
     SDL_RenderDrawPoints(s, ps.data(), static_cast<int>(ps.size()));
 }
 
-void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl) {
-    // Draw a circle on s at position (cx, cy) with radius r and color col, either filled or not filled.
+void drawCircle(SDL_Renderer *s, const SDL_Point &c, int r, SDL_Color col, bool fl) {
+    // Draw a circle on s with center c, radius r and color col, either filled or not filled.
     std::vector<SDL_Point> ps;
     if (fl) {
         // filled circle
         ps.reserve(static_cast<size_t>(kPi * r * r + 1));
         for (int x = -r; x <= r; ++x)
             for (int y = -r; y <= r; ++y)
-                if ((x * x) + (y * y) <= r * r) ps.push_back({cx + x, cy + y});
+                if ((x * x) + (y * y) <= r * r) ps.push_back({c.x + x, c.y + y});
     } else {
         ps.reserve(static_cast<size_t>(kPi * r * 2 + 1));
         int x = 0;
         int y = r;
         int d = 1 - r;
-        addCircleSymmetryPoints(ps, cx, cy, x, y);
+        addCircleSymmetryPoints(ps, c, {x, y});
         while (x < y) {
             ++x;
             if (d < 0) {
@@ -72,81 +105,81 @@ void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl) 
                 --y;
                 d += ((x - y) << 1) + 1;
             }
-            addCircleSymmetryPoints(ps, cx, cy, x, y);
+            addCircleSymmetryPoints(ps, c, {x, y});
         }
     }
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
     SDL_RenderDrawPoints(s, ps.data(), static_cast<int>(ps.size()));
 }
 
-void addCircleSymmetryPoints(std::vector<SDL_Point> ps, int cx, int cy, int x, int y) {
-    ps.push_back({(cx + x), (cy + y)});
-    ps.push_back({(cx + x), (cy - y)});
-    ps.push_back({(cx - x), (cy + y)});
-    ps.push_back({(cx - x), (cy - y)});
-    ps.push_back({(cx + y), (cy + x)});
-    ps.push_back({(cx + y), (cy - x)});
-    ps.push_back({(cx - y), (cy + x)});
-    ps.push_back({(cx - y), (cy - x)});
+void addCircleSymmetryPoints(std::vector<SDL_Point> ps, const SDL_Point &c, const SDL_Point &p) {
+    ps.push_back({(c.x + p.x), (c.y + p.y)});
+    ps.push_back({(c.x + p.x), (c.y - p.y)});
+    ps.push_back({(c.x - p.x), (c.y + p.y)});
+    ps.push_back({(c.x - p.x), (c.y - p.y)});
+    ps.push_back({(c.x + p.y), (c.y + p.x)});
+    ps.push_back({(c.x + p.y), (c.y - p.x)});
+    ps.push_back({(c.x - p.y), (c.y + p.x)});
+    ps.push_back({(c.x - p.y), (c.y - p.x)});
 }
 
-Uint32 getAt(SDL_Surface *s, int x, int y) {
-    // Get color of pixel in surface s at (x, y)
+Uint32 getAt(SDL_Surface *s, const SDL_Point &pt) {
+    // Get color of pixel in surface s at (x, p.y)
     SDL_LockSurface(s);
     int bpp = s->format->BytesPerPixel;
-    Uint8 *p = static_cast<Uint8 *>(s->pixels) + y * s->pitch + x * bpp;
+    Uint8 *pix = static_cast<Uint8 *>(s->pixels) + pt.y * s->pitch + pt.x * bpp;
     SDL_UnlockSurface(s);
 
     switch (bpp) {
     case 1:
-        return *p;
+        return *pix;
         break;
     case 2:
-        return *reinterpret_cast<Uint16 *>(p);
+        return *reinterpret_cast<Uint16 *>(pix);
         break;
     case 3:
         if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return static_cast<Uint32>(p[0] << 16 | p[1] << 8 | p[2]);
+            return static_cast<Uint32>(pix[0] << 16 | pix[1] << 8 | pix[2]);
         else
-            return static_cast<Uint32>(p[0] | p[1] << 8 | p[2] << 16);
+            return static_cast<Uint32>(pix[0] | pix[1] << 8 | pix[2] << 16);
         break;
     case 4:
-        return *reinterpret_cast<Uint32 *>(p);
+        return *reinterpret_cast<Uint32 *>(pix);
         break;
     default:
         return 0;
     }
 }
 
-void setAt(SDL_Surface *s, int x, int y, Uint32 color) {
-    // Set pixel in surface s at (x, y) to color
+void setAt(SDL_Surface *s, const SDL_Point &pt, Uint32 color) {
+    // Set pixel in surface s at (x, p.y) to color
     SDL_LockSurface(s);
     int bpp = s->format->BytesPerPixel;
-    Uint8 *p = static_cast<Uint8 *>(s->pixels) + y * s->pitch + x * bpp;
+    Uint8 *pix = static_cast<Uint8 *>(s->pixels) + pt.y * s->pitch + pt.x * bpp;
 
     switch (bpp) {
     case 1:
-        *p = static_cast<Uint8>(color);
+        *pix = static_cast<Uint8>(color);
         break;
 
     case 2:
-        *reinterpret_cast<Uint16 *>(p) = static_cast<Uint16>(color);
+        *reinterpret_cast<Uint16 *>(pix) = static_cast<Uint16>(color);
         break;
 
     case 3:
         if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-            p[0] = (color >> 16) & 0xff;
-            p[1] = (color >> 8) & 0xff;
-            p[2] = color & 0xff;
+            pix[0] = (color >> 16) & 0xff;
+            pix[1] = (color >> 8) & 0xff;
+            pix[2] = color & 0xff;
         } else {
-            p[0] = color & 0xff;
-            p[1] = (color >> 8) & 0xff;
-            p[2] = (color >> 16) & 0xff;
+            pix[0] = color & 0xff;
+            pix[1] = (color >> 8) & 0xff;
+            pix[2] = (color >> 16) & 0xff;
         }
         break;
 
     case 4:
-        *reinterpret_cast<Uint32 *>(p) = static_cast<Uint32>(color);
+        *reinterpret_cast<Uint32 *>(pix) = static_cast<Uint32>(color);
         break;
 
     default:

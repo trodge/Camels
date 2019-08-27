@@ -89,9 +89,9 @@ void TextBox::toggleFocus() {
     }
 }
 
-void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
-    rect.x = x - rect.w / 2;
-    rect.y = y - rect.h / 2;
+void TextBox::place(const SDL_Point &pt, std::vector<SDL_Rect> &drawn) {
+    rect.x = pt.x - rect.w / 2;
+    rect.y = pt.y - rect.h / 2;
     SDL_Rect r = rect;
     bool c = true;
     while (c) {
@@ -107,9 +107,9 @@ void TextBox::place(int x, int y, std::vector<SDL_Rect> &drawn) {
     drawn.push_back(r);
 }
 
-void TextBox::move(int dx, int dy) {
-    rect.x += dx;
-    rect.y += dy;
+void TextBox::move(const SDL_Point &dp) {
+    rect.x += dp.x;
+    rect.y += dp.y;
 }
 
 void TextBox::draw(SDL_Renderer *s) {

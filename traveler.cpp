@@ -20,8 +20,8 @@
 #include "traveler.hpp"
 
 Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
-    : name(n), nation(tn->getNation()), toTown(tn), fromTown(tn), longitude(tn->getLongitude()),
-      latitude(tn->getLatitude()), moving(false), portion(1), reputation(gD.nationCount), gameData(gD) {
+    : name(n), nation(tn->getNation()), toTown(tn), fromTown(tn), position(tn->getPosition()), moving(false),
+      portion(1), reputation(gD.nationCount), gameData(gD) {
     // Copy goods vector from nation.
     properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
                        std::forward_as_tuple(false, &tn->getNation()->getProperty()));
@@ -37,8 +37,8 @@ Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
 Traveler::Traveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD)
     : name(ldTvl->name()->str()), nation(&nts[static_cast<size_t>(ldTvl->nation() - 1)]),
       toTown(&tns[static_cast<size_t>(ldTvl->toTown() - 1)]),
-      fromTown(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]), longitude(ldTvl->longitude()),
-      latitude(ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
+      fromTown(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]),
+      position(ldTvl->longitude(), ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
     auto ldLog = ldTvl->log();
     std::transform(ldLog->begin(), ldLog->end(), std::back_inserter(logText),
                    [](auto ldL) { return ldL->str(); });
@@ -73,11 +73,13 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto svEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
     if (aI)
-        return Save::CreateTraveler(b, svName, toTown->getId(), fromTown->getId(), nation->getId(), svLog, longitude,
-                                    latitude, svProperties, svStats, svParts, svEquipment, aI->save(b), moving);
+        return Save::CreateTraveler(b, svName, toTown->getId(), fromTown->getId(), nation->getId(), svLog,
+                                    position.getLongitude(), position.getLatitude(), svProperties, svStats,
+                                    svParts, svEquipment, aI->save(b), moving);
     else
         return Save::CreateTraveler(b, svName, toTown->getId(), fromTown->getId(), nation->getId(), svLog,
-                                    longitude, latitude, svProperties, svStats, svParts, svEquipment, 0, moving);
+                                    position.getLongitude(), position.getLatitude(), svProperties, svStats,
+                                    svParts, svEquipment, 0, moving);
 }
 
 double Traveler::weight() const {
@@ -89,15 +91,14 @@ std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
     std::forward_list<Town *> path;
     std::unordered_map<Town *, Town *> from;
     // the town which each town can be most efficiently reached from
-    std::unordered_map<Town *, double> distTo({{toTown, 0}});
+    std::unordered_map<Town *, int> distSqTo({{toTown, 0}});
     // distance along route to each town
-    std::unordered_map<Town *, double> distEst({{toTown, toTown->dist(tn)}});
+    std::unordered_map<Town *, int> distSqEst({{toTown, toTown->distSq(tn)}});
     // estimated distance along route through each town to goal
     std::unordered_set<Town *> closed;
     // set of towns already evaluated
-    auto shortest = [&distEst](Town *m, Town *n) {
-        double c = distEst[m];
-        double d = distEst[n];
+    auto shortest = [&distSqEst](Town *m, Town *n) {
+        int c = distSqEst[m], d = distSqEst[n];
         if (c == d) return m->getId() < n->getId();
         return c < d;
     };
@@ -118,37 +119,35 @@ std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
         }
         open.erase(begin(open));
         closed.insert(current);
-        for (auto &n : neighbors) {
+        for (auto &nb : neighbors) {
             // Ignore town if already explored.
-            if (closed.count(n)) continue;
-            // Find distance to n through current.
-            double dT = distTo[current] + current->dist(n);
-            // Check if distance through current is less than previous shortest path to n.
-            if (!distTo.count(n) || dT < distTo[n]) {
-                from[n] = current;
-                distTo[n] = dT;
-                distEst[n] = dT + n->dist(tn);
+            if (closed.count(nb)) continue;
+            // Find distance to nb through current.
+            int dSqT = distSqTo[current] + current->distSq(nb);
+            // Check if distance through current is less than previous shortest path to nb.
+            if (!distSqTo.count(nb) || dSqT < distSqTo[nb]) {
+                from[nb] = current;
+                distSqTo[nb] = dSqT;
+                distSqEst[nb] = dSqT + nb->distSq(tn);
             }
             // Add undiscovered node to open set.
-            if (!open.count(n)) open.insert(n);
+            if (!open.count(nb)) open.insert(nb);
         }
     }
     // A path does not exist, return empty list.
     return path;
 }
 
-double Traveler::distSq(int x, int y) const { return (px - x) * (px - x) + (py - y) * (py - y); }
-
-double Traveler::pathDist(const Town *tn) const {
+int Traveler::pathDistSq(const Town *tn) const {
     // Return the distance to tn along shortest path.
     const std::forward_list<Town *> &path = pathTo(tn);
-    double dist = 0;
+    int distSq = 0;
     const Town *m = toTown;
     for (auto &n : path) {
-        dist += m->dist(n);
+        distSq += m->distSq(n);
         m = n;
     }
-    return dist;
+    return distSq;
 }
 
 void Traveler::addToTown() { toTown->addTraveler(this); }
@@ -174,18 +173,13 @@ void Traveler::pickTown(const Town *tn) {
     moving = true;
 }
 
-void Traveler::place(int ox, int oy, double s) {
-    px = static_cast<int>(s * longitude) + ox;
-    py = oy - static_cast<int>(s * latitude);
-}
-
 void Traveler::draw(SDL_Renderer *s) const {
     SDL_Color col;
     if (aI)
         col = Settings::getAIColor();
     else
         col = Settings::getPlayerColor();
-    drawCircle(s, px, py, 1, col, true);
+    drawCircle(s, position.getPoint(), 1, col, true);
 }
 
 void Traveler::updatePortionBox(TextBox *bx) const {
@@ -574,11 +568,11 @@ std::vector<Traveler *> Traveler::attackable() const {
     if (fromTown != toTown) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
     if (!able.empty()) {
         // Eliminate travelers which are too far away or have reached town or are already fighting or are this traveler.
-        double aDstSq = Settings::getAttackDistSq();
+        int aDstSq = Settings::getAttackDistSq();
         able.erase(std::remove_if(begin(able), end(able),
                                   [this, aDstSq](Traveler *tg) {
-                                      return !tg->moving || tg->distSq(px, py) > aDstSq || tg->target ||
-                                             !tg->alive() || tg == this;
+                                      return !tg->moving || position.distSq(tg->position) > aDstSq ||
+                                             tg->target || !tg->alive() || tg == this;
                                   }),
                    end(able));
     }
@@ -871,29 +865,12 @@ void Traveler::startAI(const Traveler &p) {
 void Traveler::update(unsigned int elTm) {
     // Move traveler toward destination and perform combat with target.
     if (moving) {
-        double tn = static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength());
-        // Take a step toward town.
-        double dlt = toTown->getLatitude() - latitude;
-        double dlg = toTown->getLongitude() - longitude;
-        double ds = dlt * dlt + dlg * dlg;
-        if (ds > tn * tn) {
-            // There remains more distance to travel.
-            if (dlg != 0) {
-                double m = dlt / dlg;
-                double dxs = tn * tn / (1 + m * m);
-                double dys = tn * tn - dxs;
-                latitude += copysign(sqrt(dys), dlt);
-                longitude += copysign(sqrt(dxs), dlg);
-            } else
-                latitude += copysign(tn, dlt);
-        } else {
-            // We have reached the destination.
-            latitude = toTown->getLatitude();
-            longitude = toTown->getLongitude();
+        moving = !position.stepToward(
+            toTown->getPosition(), static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength()));
+        if (!moving) {
             fromTown->removeTraveler(this);
-            toTown->addTraveler(this);
             fromTown = toTown;
-            moving = false;
+            toTown->addTraveler(this);
             logText.push_back(
                 name + " has arrived in the " +
                 gameData.populationAdjectives.lower_bound(toTown->getProperty().getPopulation())->second +
@@ -901,9 +878,8 @@ void Traveler::update(unsigned int elTm) {
                 gameData.townTypeNames[static_cast<size_t>(toTown->getProperty().getTownType())] + " of " +
                 toTown->getName() + ".");
         }
-    } else if (aI) {
-        aI->update(elTm);
     }
+    if (aI) aI->update(elTm);
     if (target) {
         if (fightWon() && aI) {
             aI->loot();

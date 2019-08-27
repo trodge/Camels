@@ -100,7 +100,8 @@ class Settings {
     static std::array<ColorScheme, static_cast<size_t>(ColorSchemeType::count)> colorSchemes;
     static SDL_Color routeColor;
     static SDL_Color waterColor;
-    static int scroll, offsetX, offsetY;
+    static int scroll;
+    static SDL_Point offset;
     static double scale;
     static std::array<BoxSize, static_cast<size_t>(BoxSizeType::count)> boxSizes;
     static int buttonMargin;           // margin between good and business buttons in pixels
@@ -121,7 +122,7 @@ class Settings {
     static double travelersExponent;
     static int travelersMin;
     static unsigned int statMax;
-    static double attackDistSq;
+    static int attackDistSq;
     static double escapeChance;
     static std::vector<std::pair<unsigned int, double>> playerStartingGoods;
     static SDL_Color playerColor;
@@ -143,8 +144,7 @@ public:
     static const SDL_Color &getRouteColor() { return routeColor; }
     static const SDL_Color &getWaterColor() { return waterColor; }
     static int getScroll() { return scroll; }
-    static int getOffsetX() { return offsetX; }
-    static int getOffsetY() { return offsetY; }
+    static const SDL_Point &getOffset() { return offset; }
     static double getScale() { return scale; }
     static int getButtonMargin() { return buttonMargin; }
     static int getGoodButtonColumns() { return goodButtonColumns; }
@@ -166,7 +166,7 @@ public:
     static double getTravelersExponent() { return travelersExponent; }
     static int getTravelersMin() { return travelersMin; }
     static unsigned int getStatMax() { return statMax; }
-    static double getAttackDistSq() { return attackDistSq; }
+    static int getAttackDistSq() { return attackDistSq; }
     static double getEscapeChance() { return escapeChance; }
     static const std::vector<std::pair<unsigned int, double>> &getPlayerStartingGoods() {
         return playerStartingGoods;

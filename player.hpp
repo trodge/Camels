@@ -102,8 +102,8 @@ public:
     void loadTraveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns,
                       const GameData &gD);
     void setState(State s);
-    void place(int ox, int oy, double s) {
-        if (traveler.get()) traveler->place(ox, oy, s);
+    void place(const SDL_Point &ofs, double s) {
+        if (traveler.get()) traveler->place(ofs, s);
     }
     void handleEvent(const SDL_Event &e);
     void update(unsigned int e);

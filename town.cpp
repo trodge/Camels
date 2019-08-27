@@ -25,7 +25,7 @@ Town::Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt
       box(std::make_unique<TextBox>(Settings::boxInfo({0, 0, 0, 0}, nms, nt->getColors(), {nt->getId(), true},
                                                       BoxSizeType::town, BoxBehavior::focus),
                                     pr)),
-      longitude(lng), latitude(lat), property(tT, ctl, ppl, &nt->getProperty()) {}
+      position(lng, lat), property(tT, ctl, ppl, &nt->getProperty()) {}
 
 Town::Town(const Save::Town *ldTn, const std::vector<Nation> &ns, Printer &pr)
     : id(static_cast<unsigned int>(ldTn->id())), nation(&ns[static_cast<size_t>(ldTn->nation() - 1)]),
@@ -33,42 +33,39 @@ Town::Town(const Save::Town *ldTn, const std::vector<Nation> &ns, Printer &pr)
           Settings::boxInfo({0, 0, 0, 0}, {ldTn->names()->Get(0)->str(), ldTn->names()->Get(1)->str()},
                             nation->getColors(), {nation->getId(), true}, BoxSizeType::town, BoxBehavior::focus),
           pr)),
-      longitude(ldTn->longitude()), latitude(ldTn->latitude()), property(ldTn->property(), &nation->getProperty()) {
+      position(ldTn->longitude(), ldTn->latitude()), property(ldTn->property(), &nation->getProperty()) {
     // Load a town from the given flatbuffers save object. Copy image pointers from nation's goods.
 }
 
 flatbuffers::Offset<Save::Town> Town::save(flatbuffers::FlatBufferBuilder &b) const {
     auto svNames = b.CreateVectorOfStrings(box->getText());
-    return Save::CreateTown(b, id, svNames, nation->getId(), longitude, latitude, property.save(b, id));
+    return Save::CreateTown(b, id, svNames, nation->getId(), position.getLongitude(), position.getLatitude(),
+                            property.save(b, id));
 }
 
 bool Town::operator==(const Town &other) const { return id == other.id; }
-
-int Town::distSq(int x, int y) const { return (dpx - x) * (dpx - x) + (dpy - y) * (dpy - y); }
-
-double Town::dist(int x, int y) const { return sqrt(distSq(x, y)); }
 
 void Town::removeTraveler(const Traveler *t) {
     auto it = std::find(begin(travelers), end(travelers), t);
     if (it != end(travelers)) travelers.erase(it);
 }
 
-void Town::placeDot(std::vector<SDL_Rect> &drawn, int ox, int oy, double s) {
+void Town::placeDot(std::vector<SDL_Rect> &drawn, const SDL_Point &ofs, double s) {
     // Place the dot for this town based on the given offset and scale.
-    dpx = int(s * longitude) + ox;
-    dpy = oy - int(s * latitude);
-    SDL_Rect r = {dpx - 3, r.y = dpy - 3, r.w = 6, r.h = 6};
-    drawn.push_back(r);
+    position.place(ofs, s);
+    auto &point = position.getPoint();
+    drawn.push_back({point.x - 3, point.y - 3, 6, 6});
 }
 
 void Town::draw(SDL_Renderer *s) {
     const SDL_Rect &bR = box->getRect();
-    SDL_Rect lR = {dpx, bR.y + bR.h, 1, dpy - bR.y - bR.h};
+    auto &point = position.getPoint();
+    SDL_Rect lR = {point.x, bR.y + bR.h, 1, point.y - bR.y - bR.h};
     const SDL_Color &fg = nation->getColors().foreground;
     SDL_SetRenderDrawColor(s, fg.r, fg.g, fg.b, fg.a);
     SDL_RenderFillRect(s, &lR);
     const SDL_Color &dC = nation->getDotColor();
-    drawCircle(s, dpx, dpy, 3, dC, true);
+    drawCircle(s, point, 3, dC, true);
 }
 
 void Town::update(unsigned int elTm) { property.update(elTm); }
@@ -84,25 +81,27 @@ void Town::generateTravelers(const GameData &gD, std::vector<std::unique_ptr<Tra
     for (int i = 0; i < n; ++i) tvlrs.push_back(std::make_unique<Traveler>(nation->randomName(), this, gD));
 }
 
-double Town::dist(const Town *t) const { return dist(t->dpx, t->dpy); }
+int Town::distSq(const Town *t) const { return position.distSq(t->position); }
 
-void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int moy) {
+void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, const SDL_Point &mOs) {
     // Find nearest towns that can be traveled to directly from this one on map surface.
     neighbors.clear();
     size_t mN = Settings::getMaxNeighbors();
     neighbors.reserve(mN);
-    auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
+    auto closer = [this](Town *m, Town *n) { return position.distSq(m->position) < position.distSq(n->position); };
     for (auto &t : ts) {
-        int dS = distSq(t.dpx, t.dpy);
+        int dS = position.distSq(t.position);
         if (t.id != id && !std::binary_search(begin(neighbors), end(neighbors), &t, closer)) {
             // t is not this and not already a neighbor.
             // Determine how much water is between these two towns.
-            int water = 0;
+            unsigned int water = 0;
             // Run incremental change to get from self to t.
-            double x = dpx;
-            double y = dpy;
-            double dx = t.dpx - dpx;
-            double dy = t.dpy - dpy;
+            auto &point = position.getPoint();
+            double x = point.x;
+            double y = point.y;
+            auto &tnPoint = t.position.getPoint();
+            double dx = tnPoint.x - point.x;
+            double dy = tnPoint.y - point.y;
             bool swap = dx == 0;
             if (swap) {
                 std::swap(x, y);
@@ -110,7 +109,7 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
             }
             double m = dy / dx;
             double dt = 0; // distance traveled
-            while (dt * dt < dS && water < 24) {
+            while (dt * dt < dS && water < kMaxWater) {
                 if (dx != 0) {
                     double dxs = 1 / (1 + m * m);
                     double dys = 1 - dxs;
@@ -121,17 +120,17 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
                     y += 1;
                     dt += 1;
                 }
-                int mx = static_cast<int>(x) + mox;
-                int my = static_cast<int>(y) + moy;
-                if (mx >= 0 && mx < mS->w && my >= 0 && my < mS->h) {
+                SDL_Point m = {static_cast<int>(x) + mOs.x, static_cast<int>(y) + mOs.y};
+                if (m.x >= 0 && m.x < mS->w && m.y >= 0 && m.y < mS->h) {
                     const SDL_Color &waterColor = Settings::getWaterColor();
                     Uint8 r, g, b;
-                    SDL_GetRGB(getAt(mS, mx, my), mS->format, &r, &g, &b);
+                    SDL_GetRGB(getAt(mS, m), mS->format, &r, &g, &b);
                     if (r <= waterColor.r && g <= waterColor.g && b >= waterColor.b) ++water;
                 } else
+                    // SDL_Point is out of map bounds.
                     ++water;
             }
-            if (water < 24) {
+            if (water < kMaxWater) {
                 neighbors.insert(std::lower_bound(begin(neighbors), end(neighbors), &t, closer), &t);
             }
         }
@@ -142,7 +141,7 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, int mox, int mo
 
 void Town::connectRoutes() {
     // Ensure that routes go both directions.
-    auto closer = [this](Town *m, Town *n) { return distSq(m->dpx, m->dpy) < distSq(n->dpx, n->dpy); };
+    auto closer = [this](Town *m, Town *n) { return position.distSq(m->position) < position.distSq(n->position); };
     for (auto &n : neighbors) {
         auto &nNs = n->neighbors; // neighbor's neighbors
         auto it = std::lower_bound(begin(nNs), end(nNs), n, closer);
@@ -172,7 +171,8 @@ Route::Route(const Save::Route *rt, std::vector<Town> &ts) {
 void Route::draw(SDL_Renderer *s) {
     const SDL_Color &col = Settings::getRouteColor();
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
-    SDL_RenderDrawLine(s, towns[0]->getDPX(), towns[0]->getDPY(), towns[1]->getDPX(), towns[1]->getDPY());
+    auto &pt = towns[0]->getPosition().getPoint(), &qt = towns[1]->getPosition().getPoint();
+    SDL_RenderDrawLine(s, pt.x, pt.y, qt.x, qt.y);
 }
 
 void Route::saveData(std::string &i) const {

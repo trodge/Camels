@@ -25,8 +25,7 @@ std::array<ColorScheme, static_cast<size_t>(ColorSchemeType::count)> Settings::c
 SDL_Color Settings::routeColor;
 SDL_Color Settings::waterColor;
 int Settings::scroll;
-int Settings::offsetX;
-int Settings::offsetY;
+SDL_Point Settings::offset;
 double Settings::scale;
 std::array<BoxSize, static_cast<size_t>(BoxSizeType::count)> Settings::boxSizes;
 int Settings::buttonMargin;
@@ -47,7 +46,7 @@ size_t Settings::connectionCount;
 double Settings::travelersExponent;
 int Settings::travelersMin;
 unsigned int Settings::statMax;
-double Settings::attackDistSq;
+int Settings::attackDistSq;
 double Settings::escapeChance;
 std::vector<std::pair<unsigned int, double>> Settings::playerStartingGoods;
 SDL_Color Settings::playerColor;
@@ -112,8 +111,8 @@ void Settings::load(const fs::path &p) {
     routeColor = loadColor("ui.routeColor", {97, 97, 97, 255}, tree);
     waterColor = loadColor("ui.waterColor", {29, 109, 149, 255}, tree);
     scroll = tree.get("ui.scroll", 64);
-    offsetX = tree.get("ui.offsetX", -3197);
-    offsetY = tree.get("ui.offsetY", 4731);
+    offset.x = tree.get("ui.offsetX", -3197);
+    offset.y = tree.get("ui.offsetY", 4731);
     scale = tree.get("ui.scale", 112.5);
     boxSizes[static_cast<size_t>(BoxSizeType::big)] =
         loadBoxSize("ui.big", {current.h * 4 / 1080, current.h * 13 / 1080, current.h * 48 / 1080}, tree);
@@ -236,8 +235,8 @@ void Settings::save(const fs::path &p) {
     saveColor("ui.routeColor", routeColor, tree);
     saveColor("ui.waterColor", waterColor, tree);
     tree.put("ui.scroll", scroll);
-    tree.put("ui.offsetX", offsetX);
-    tree.put("ui.offsetY", offsetY);
+    tree.put("ui.offsetX", offset.x);
+    tree.put("ui.offsetY", offset.y);
     tree.put("ui.scale", scale);
     saveBoxSize("ui.big", boxSizes[static_cast<size_t>(BoxSizeType::big)], tree);
     saveBoxSize("ui.load", boxSizes[static_cast<size_t>(BoxSizeType::load)], tree);

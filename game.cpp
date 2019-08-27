@@ -20,10 +20,9 @@
 #include "game.hpp"
 
 Game::Game()
-    : screenRect(Settings::getScreenRect()), mapView(Settings::getMapView()), offsetX(Settings::getOffsetX()),
-      offsetY(Settings::getOffsetY()), scale(Settings::getScale()),
-      window(SDL_CreateWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenRect.w,
-                              screenRect.h, SDL_WINDOW_BORDERLESS)),
+    : screenRect(Settings::getScreenRect()), mapView(Settings::getMapView()), offset(Settings::getOffset()),
+      scale(Settings::getScale()), window(SDL_CreateWindow("Camels", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+                                                           screenRect.w, screenRect.h, SDL_WINDOW_BORDERLESS)),
       screen(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED)),
       travelersCheckCounter(Settings::travelersCheckCounter()) {
     player = std::make_unique<Player>(*this);
@@ -143,20 +142,20 @@ void Game::place() {
     // Place towns and travelers based on offsets and scale
     std::vector<SDL_Rect> newDrawn;
     newDrawn.reserve(towns.size());
-    for (auto &t : towns) t.placeDot(newDrawn, offsetX, offsetY, scale);
+    for (auto &t : towns) t.placeDot(newDrawn, offset, scale);
     for (auto &t : towns) t.placeText(newDrawn);
-    for (auto &t : aITravelers) t->place(offsetX, offsetY, scale);
-    player->place(offsetX, offsetY, scale);
+    for (auto &t : aITravelers) t->place(offset, scale);
+    player->place(offset, scale);
 }
 
-void Game::moveView(int dx, int dy) {
+void Game::moveView(const SDL_Point &dp) {
     // Move view around world map.
-    SDL_Rect m = {mapView.x + dx, mapView.y + dy, mapRect.w, mapRect.h};
+    SDL_Rect m = {mapView.x + dp.x, mapView.y + dp.y, mapRect.w, mapRect.h};
     if (m.x > 0 && m.x < m.w - mapView.w && m.y > 0 && m.y < m.h - mapView.h) {
         mapView.x = m.x;
         mapView.y = m.y;
-        offsetX -= dx;
-        offsetY -= dy;
+        offset.x -= dp.x;
+        offset.y -= dp.y;
         renderMapTexture();
         place();
     }
@@ -634,7 +633,7 @@ void Game::update() {
         for (auto &t : towns) t.update(elapsed);
         for (auto &t : aITravelers) {
             t->update(elapsed);
-            t->place(offsetX, offsetY, scale);
+            t->place(offset, scale);
         }
         if (!aITravelers.empty()) {
             travelersCheckCounter += elapsed;
@@ -648,7 +647,7 @@ void Game::update() {
         }
     }
     player->update(elapsed);
-    player->place(offsetX, offsetY, scale);
+    player->place(offset, scale);
 }
 
 void Game::draw() {
@@ -743,7 +742,7 @@ std::unique_ptr<Traveler> Game::createPlayerTraveler(size_t nId, std::string n) 
     // Create traveler object for player
     auto traveler = std::make_unique<Traveler>(n, &towns[nId - 1], gameData);
     traveler->addToTown();
-    traveler->place(offsetX, offsetY, scale);
+    traveler->place(offset, scale);
     for (auto &sG : Settings::getPlayerStartingGoods()) traveler->create(sG.first, sG.second);
     return traveler;
 }

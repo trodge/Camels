@@ -79,8 +79,8 @@ public:
     virtual void setKey(const SDL_Keycode &) {}
     virtual void setHighlightLine(int) {}
     void toggleFocus();
-    void place(int x, int y, std::vector<SDL_Rect> &drawn);
-    void move(int dx, int dy);
+    void place(const SDL_Point &pt, std::vector<SDL_Rect> &drawn);
+    void move(const SDL_Point &dp);
     virtual void draw(SDL_Renderer *s);
     virtual bool keyCaptured(const SDL_KeyboardEvent &k) const;
     bool clickCaptured(const SDL_MouseButtonEvent &b) const;

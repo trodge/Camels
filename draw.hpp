@@ -32,6 +32,21 @@
 
 #include "constants.hpp"
 
+class Position {
+    double longitude, latitude;
+    SDL_Point point;
+public:
+    Position(double lng, double ltt) : longitude(lng), latitude(ltt) {}
+    double getLongitude() const { return longitude; }
+    double getLatitude() const { return latitude; }
+    const SDL_Point &getPoint() const { return point; }
+    int distSq(const Position &pos) const;
+    void setLongitude(double lng) { longitude = lng; }
+    void setLatitude(double ltt) { latitude = ltt; }
+    void place(const SDL_Point &ofs, double s);
+    bool stepToward(const Position &pos, double tm);
+};
+
 /* SDL interprets each pixel as a 32-bit number, so our masks must depend
    on the endianness (byte order) of the machine */
 const Uint32 surfaceFlags = 0;
@@ -77,9 +92,9 @@ inline Texture textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, con
 } // namespace sdl
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
-void drawCircle(SDL_Renderer *s, int cx, int cy, int r, SDL_Color col, bool fl);
-void addCircleSymmetryPoints(std::vector<SDL_Point> ps, int cx, int cy, int x, int y);
-Uint32 getAt(SDL_Surface *s, int x, int y);
-void setAt(SDL_Surface *s, int x, int y, Uint32 color);
+void drawCircle(SDL_Renderer *s, const SDL_Point &c, int r, SDL_Color col, bool fl);
+void addCircleSymmetryPoints(std::vector<SDL_Point> ps, const SDL_Point &c, const SDL_Point &p);
+Uint32 getAt(SDL_Surface *s, const SDL_Point &pt);
+void setAt(SDL_Surface *s, const SDL_Point &pt, Uint32 color);
 
 #endif
