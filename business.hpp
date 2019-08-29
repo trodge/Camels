@@ -89,4 +89,10 @@ public:
     void saveFrequency(unsigned long p, std::string &u) const;
 };
 
+struct BuildPlan {
+    Business business;
+    std::vector<Good> request;
+    double cost;
+};
+
 #endif // BUSINESS_H

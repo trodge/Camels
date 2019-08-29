@@ -75,23 +75,35 @@ double Property::weight() const {
                             [](double w, const auto &gd) { return w + gd.weight(); });
 }
 
-std::vector<Business> Property::buildable(double ofVl) const {
-    std::vector<Business> bdb;
+std::vector<BuildPlan> Property::buildable(const Property &tPpt, double ofVl) const {
+    // Return vector of plans for businesses that can be built with given starting goods.
+    std::vector<BuildPlan> bdb;
     bdb.reserve(businesses.size());
-    std::copy_if(begin(businesses), end(businesses), std::back_inserter(bdb), [this, ofVl](const Business &bsn) mutable {
+    for (auto &bsn : businesses) {
         // Copy all businesses that can be built with given offer value into buildable vector.
-        for (auto &rq : bsn.getRequirements()) {
-            auto rng = goods.get<GoodId>().equal_range(rq.getGoodId()); // range of goods with required good id
+        auto requirements = bsn.getRequirements();
+        double totalCost = 0; // total cost to acquire all requirements for this business.
+        for (auto &rq : requirements) {
+            auto rqId = rq.getGoodId();
+            // Reduce requirement amount by amounts of matching goods in traveler property.
+            auto tRng = tPpt.goods.get<GoodId>().equal_range(rqId);
+            std::for_each(tRng.first, tRng.second, [&rq](const Good &gd) {
+                rq.use(gd.getAmount());
+            });
+            auto rng = goods.get<GoodId>().equal_range(rqId); // range of goods with required good id
             auto amt = rq.getAmount(); // amount required
             std::unordered_set<unsigned int> used; // material ids already used
-            while (amt > 0 && ofVl > 0) {
+            while (amt > 0 && totalCost < ofVl) {
                 // Find lowest costing material not in used.
                 double lowest = std::numeric_limits<double>::max();
-                Good *cheapest;
+                const Good *cheapest;
                 std::for_each(rng.first, rng.second, [used, amt, &lowest, &cheapest](const Good &gd) {
                     if (used.find(gd.getMaterialId()) == end(used)) {
                         double cost = gd.cost(amt);
-                        lowest = std::min(lowest, cost);
+                        if (cost < lowest) {
+                            lowest = cost;
+                            cheapest = &gd;
+                        }
                     }
                 });
                 ofVl -= lowest;
@@ -104,8 +116,7 @@ std::vector<Business> Property::buildable(double ofVl) const {
                 }
             }
         }
-        return ofVl > 0;
-    });
+    }
     return bdb;
 }
 

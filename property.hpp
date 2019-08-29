@@ -37,13 +37,15 @@ namespace mi = boost::multi_index;
 #include "good.hpp"
 #include "pager.hpp"
 
-class Business;
-
 struct Conflict {
     unsigned int count = 0; // number of businesses using the good
     double needed = 0;      // sum of the business need for the good
     bool conflicted = false;
 };
+
+class Business;
+
+struct BuildPlan;
 
 class Property {
     using GdId = mi::const_mem_fun<Good, unsigned int, &Good::getGoodId>;
@@ -82,7 +84,7 @@ public:
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const;
-    std::vector<Business> buildable(double ofVl) const;
+    std::vector<BuildPlan> buildable(const Property &tPpt, double ofVl) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();

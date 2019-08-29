@@ -101,7 +101,8 @@ void AI::trade() {
     bool overWeight = weight > 0;
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
-    traveler.property().queryGoods([this, weight, &bestScore, &offerValue, &offerWeight, overWeight,
+    auto &travelerProperty = traveler.property();
+    travelerProperty.queryGoods([this, weight, &bestScore, &offerValue, &offerWeight, overWeight,
                                     &bestGood](const Good &g) {
         double gWgt = g.weight();
         if (!overWeight || gWgt > 0) {
@@ -142,7 +143,7 @@ void AI::trade() {
         bestScore = 1 / bestScore;
     // Determine which businesses can be built based on offer value and town prices.
     auto &townProperty = traveler.town()->getProperty();
-    auto buildable = townProperty.buildable(offerValue);
+    auto buildable = townProperty.buildable(travelerProperty, offerValue);
     // Find best business scored based on requirements, inputs, and outputs.
 
     double excess;
