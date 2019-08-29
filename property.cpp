@@ -70,6 +70,46 @@ double Property::maximum(unsigned int gId) const {
                            [](double tt, auto &gd) { return tt + gd.getMaximum(); });
 }
 
+double Property::weight() const {
+    return std::accumulate(begin(goods), end(goods), 0,
+                            [](double w, const auto &gd) { return w + gd.weight(); });
+}
+
+std::vector<Business> Property::buildable(double ofVl) const {
+    std::vector<Business> bdb;
+    bdb.reserve(businesses.size());
+    std::copy_if(begin(businesses), end(businesses), std::back_inserter(bdb), [this, ofVl](const Business &bsn) mutable {
+        // Copy all businesses that can be built with given offer value into buildable vector.
+        for (auto &rq : bsn.getRequirements()) {
+            auto rng = goods.get<GoodId>().equal_range(rq.getGoodId()); // range of goods with required good id
+            auto amt = rq.getAmount(); // amount required
+            std::unordered_set<unsigned int> used; // material ids already used
+            while (amt > 0 && ofVl > 0) {
+                // Find lowest costing material not in used.
+                double lowest = std::numeric_limits<double>::max();
+                Good *cheapest;
+                std::for_each(rng.first, rng.second, [used, amt, &lowest, &cheapest](const Good &gd) {
+                    if (used.find(gd.getMaterialId()) == end(used)) {
+                        double cost = gd.cost(amt);
+                        lowest = std::min(lowest, cost);
+                    }
+                });
+                ofVl -= lowest;
+                auto cheapestAmount = cheapest->getAmount();
+                if (amt > cheapestAmount) {
+                    amt -= cheapestAmount;
+                    used.insert(cheapest->getMaterialId());
+                } else {
+                    amt = 0;
+                }
+            }
+        }
+        return ofVl > 0;
+    });
+    return bdb;
+}
+
+
 void Property::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt)
         goods.modify(gdIt, [cnsptn = gdsCnsptn[gdIt->getFullId()]](auto &gd) { gd.setConsumption(cnsptn); });

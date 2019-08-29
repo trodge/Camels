@@ -140,9 +140,14 @@ void AI::trade() {
         bestScore = 0;
     else
         bestScore = 1 / bestScore;
+    // Determine which businesses can be built based on offer value and town prices.
+    auto &townProperty = traveler.town()->getProperty();
+    auto buildable = townProperty.buildable(offerValue);
+    // Find best business scored based on requirements, inputs, and outputs.
+
     double excess;
     // Find highest buy score.
-    traveler.town()->getProperty().queryGoods([this, &equipment = traveler.getEquipment(),
+    townProperty.queryGoods([this, &equipment = traveler.getEquipment(),
                                                &stats = traveler.getStats(), criteriaMax = Settings::getAIDecisionCriteriaMax(),
                                                &bestScore, offerValue, weight,
                                                overWeight, &bestGood, townProfit = Settings::getTownProfit(), &excess](const Good &tG) {
@@ -187,8 +192,6 @@ void AI::trade() {
     // Make the trade.
     traveler.makeTrade();
 }
-
-void AI::build() {}
 
 void AI::equip() {
     // Equip best scoring item for each part.

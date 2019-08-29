@@ -89,7 +89,7 @@ double Good::price() const {
 }
 
 double Good::cost(double qtt) const {
-    // Get the cost to buy the given quantity
+    // Get the cost to buy the given quantity.
     return std::max((demandIntercept - demandSlope * (amount - qtt / 2)), minPrice) * qtt;
 }
 

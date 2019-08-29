@@ -81,10 +81,8 @@ public:
     void queryGoods(const std::function<void(const Good &gd)> &fn) const;
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
-    double weight() const {
-        return std::accumulate(begin(goods), end(goods), 0,
-                               [](double w, const auto &gd) { return w + gd.weight(); });
-    }
+    double weight() const;
+    std::vector<Business> buildable(double ofVl) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();

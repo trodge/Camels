@@ -82,9 +82,10 @@ enum class AttackType { none = -1, bash, slash, stab, count };
 enum class DecisionCriteria {
     buyScoreWeight,     // buy score weight in deciding where to go
     sellScoreWeight,    // sell score weight in deciding where to go
+    equipScoreWeight,   // equip score weight for buying goods
+    buildTendency,      // tendency to build businesses
     attackScoreWeight,  // attack weight for equip scores
     defenseScoreWeight, // defense weight for equip scores
-    equipScoreWeight,   // equip score weight for buying goods
     fightTendency,      // start fights and fight back when attacked
     runTendency,        // run away when attacked
     yieldTendency,      // yield when attacked
