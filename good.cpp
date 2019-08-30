@@ -80,7 +80,7 @@ std::string Good::logEntry() const {
 
 double Good::price(double qtt) const {
     // Get the price offered when selling the given quantity.
-    return std::max((demandIntercept - demandSlope * (amount + qtt / 2)), minPrice) * qtt;
+    return std::max(demandIntercept - demandSlope * (amount + qtt / 2), minPrice) * qtt;
 }
 
 double Good::price() const {
@@ -90,7 +90,7 @@ double Good::price() const {
 
 double Good::cost(double qtt) const {
     // Get the cost to buy the given quantity.
-    return std::max((demandIntercept - demandSlope * (amount - qtt / 2)), minPrice) * qtt;
+    return std::max(demandIntercept - demandSlope * (amount - qtt / 2), minPrice) * qtt;
 }
 
 double Good::quantity(double prc, double &exc) const {
@@ -127,16 +127,16 @@ double Good::quantity(double prc) const {
 
 double Good::quantum(double cst) const {
     // Get quantum of this material needed to match given cost.
-    double qtt;
+    double qtm;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0)
-        qtt = amount - (demandIntercept - sqrt(b * b - demandSlope * cst * 2)) / demandSlope;
+        qtm = amount - (demandIntercept - sqrt(b * b - demandSlope * cst * 2)) / demandSlope;
     else if (demandIntercept != 0)
-        qtt = cst / demandIntercept;
+        qtm = cst / demandIntercept;
     else
-        qtt = 0;
-    if (qtt < 0) return 0;
-    return qtt;
+        qtm = 0;
+    if (qtm < 0) return 0;
+    return qtm;
 }
 
 void Good::setConsumption(const std::array<double, 3> &cnsptn) {
