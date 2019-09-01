@@ -75,48 +75,55 @@ double Property::weight() const {
                             [](double w, const auto &gd) { return w + gd.weight(); });
 }
 
-std::vector<BuildPlan> Property::buildable(const Property &tPpt, double ofVl) const {
-    // Return vector of plans for businesses that can be built with given starting goods.
-    std::vector<BuildPlan> bdb;
-    bdb.reserve(businesses.size());
-    for (auto &bsn : businesses) {
-        // Copy all businesses that can be built with given offer value into buildable vector.
-        auto requirements = bsn.getRequirements();
-        double totalCost = 0; // total cost to acquire all requirements for this business.
-        for (auto &rq : requirements) {
-            auto rqId = rq.getGoodId();
-            // Reduce requirement amount by amounts of matching goods in traveler property.
-            auto tRng = tPpt.goods.get<GoodId>().equal_range(rqId);
-            std::for_each(tRng.first, tRng.second, [&rq](const Good &gd) {
-                rq.use(gd.getAmount());
-            });
-            auto rng = goods.get<GoodId>().equal_range(rqId); // range of goods with required good id
-            auto amt = rq.getAmount(); // amount required
-            std::unordered_set<unsigned int> used; // material ids already used
-            while (amt > 0 && totalCost < ofVl) {
-                // Find lowest costing material not in used.
-                double lowest = std::numeric_limits<double>::max();
-                const Good *cheapest;
-                std::for_each(rng.first, rng.second, [used, amt, &lowest, &cheapest](const Good &gd) {
-                    if (used.find(gd.getMaterialId()) == end(used)) {
-                        double cost = gd.cost(amt);
-                        if (cost < lowest) {
-                            lowest = cost;
-                            cheapest = &gd;
-                        }
+void Property::buildable(const Business &bsn, const Property &tnPpt, double ofVl, std::vector<BuildPlan> &bdb) const {
+    // Add a build plan for given business to given build plan vector if it can be built.
+    auto requirements = bsn.getRequirements();
+    double totalCost = 0; // total cost to acquire all requirements for this business.
+    std::vector<Good> request; // goods that will need to be acquired through trade
+    for (auto &rq : requirements) {
+        auto rqId = rq.getGoodId();
+        // Reduce requirement amount by amounts of matching goods.
+        auto rng = goods.get<GoodId>().equal_range(rqId);
+        std::for_each(rng.first, rng.second, [&rq](const Good &gd) {
+            rq.use(gd.getAmount());
+        });
+        auto tnRng = tnPpt.goods.get<GoodId>().equal_range(rqId); // range of goods with required good id
+        auto amount = rq.getAmount(); // amount required
+        std::unordered_set<unsigned int> used; // material ids already used
+        while (amount > 0) {
+            // Find lowest costing material not in used.
+            double lowestCost = std::numeric_limits<double>::max(),
+                   cheapestAmount = std::numeric_limits<double>::min(); // cost and available amount of cheapest good
+            const Good *cheapest = nullptr; // pointer to cheapest good in range
+            std::for_each(tnRng.first, tnRng.second, [used, amount, &lowestCost, &cheapestAmount, &cheapest](const Good &gd) {
+                if (used.find(gd.getMaterialId()) == end(used)) {
+                    // Good has not been used yet.
+                    double currentAmount = amount, currentCost = gd.cost(currentAmount);
+                    if (currentCost / currentAmount < lowestCost / cheapestAmount) {
+                        lowestCost = currentCost;
+                        cheapestAmount = currentAmount;
+                        cheapest = &gd;
                     }
-                });
-                ofVl -= lowest;
-                auto cheapestAmount = cheapest->getAmount();
-                if (amt > cheapestAmount) {
-                    amt -= cheapestAmount;
-                    used.insert(cheapest->getMaterialId());
-                } else {
-                    amt = 0;
                 }
-            }
+            });
+            if (!cheapest) /* No goods left to use. */ return;
+            totalCost += lowestCost;
+            if (totalCost > ofVl) /* Cost exceeded, business can't be built. */ return;
+            amount -= cheapestAmount;
+            used.insert(cheapest->getMaterialId());
+            request.push_back(Good(cheapest->getFullId(), cheapest->getFullName(), cheapestAmount, cheapest->getMeasure()));
         }
     }
+    bdb.push_back({bsn, totalCost, 1, request});
+}
+
+std::vector<BuildPlan> Property::buildable(const Property &tnPpt, double ofVl) const {
+    // Return vector of plans for businesses that can be built with given starting goods.
+    std::vector<BuildPlan> bdb;
+    bdb.reserve(tnPpt.businesses.size());
+    for (auto &bsn : tnPpt.businesses)
+        // Add build plan for all businesses that can be built with given offer value to buildable vector.
+        buildable(bsn, tnPpt, ofVl, bdb);
     return bdb;
 }
 

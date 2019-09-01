@@ -111,7 +111,7 @@ public:
     double getMinPrice() const { return minPrice; }
     double price(double qtt) const;
     double price() const;
-    double cost(double qtt) const;
+    double cost(double &qtt) const;
     double value() const { return price() * amount; }
     double quantity(double prc, double &exc) const;
     double quantity(double prc) const;

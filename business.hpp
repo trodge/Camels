@@ -90,9 +90,9 @@ public:
 };
 
 struct BuildPlan {
-    Business business;
+    const Business &business;
+    double cost, area;
     std::vector<Good> request;
-    double cost;
 };
 
 #endif // BUSINESS_H

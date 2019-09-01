@@ -161,6 +161,7 @@ public:
     void clearTrade();
     void offerGood(Good &&gd) { offer.push_back(gd); }
     void requestGood(Good &&gd) { request.push_back(gd); }
+    void requestGoods(std::vector<Good> &&gds) { request = std::move(gds); }
     void updatePortionBox(TextBox *bx) const;
     void divideExcess(double exc);
     void makeTrade();

@@ -64,6 +64,7 @@ class Property {
     int updateCounter;
     bool maxGoods = false;
     const Property *source = nullptr;
+    void buildable(const Business &bsn, const Property &tnPpt, double ofVl, std::vector<BuildPlan> &bdb) const;
     void addGood(const Good &srGd, const std::function<void(Good &)> &fn);
 
 public:
@@ -84,7 +85,7 @@ public:
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const;
-    std::vector<BuildPlan> buildable(const Property &tPpt, double ofVl) const;
+    std::vector<BuildPlan> buildable(const Property &tnPpt, double ofVl) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();
