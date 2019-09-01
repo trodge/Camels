@@ -310,6 +310,7 @@ void Player::focusNext(FocusGroup g) {
 
 void Player::setState(State s) {
     // Change the UI state to s.
+    auto framerateText = framerateBox ? framerateBox->getText() : std::vector<std::string>{"Framerate:", ""};
     UIState newState = uIStates[static_cast<size_t>(s)];
     pagers.clear();
     pagers.resize(newState.pagerCount);
@@ -329,6 +330,8 @@ void Player::setState(State s) {
             pagers[0].addBox(std::make_unique<TextBox>(bI, printer));
     if (newState.onChange) newState.onChange();
     // Create boxes shared by multiple states.
+    pagers[0].addBox(std::make_unique<TextBox>(
+        Settings::boxInfo({screenRect.w / 15, screenRect.h / 31, 0, 0}, framerateText, BoxSizeType::small), printer));
     if (newState.pagerCount > 2) {
         int bBB = Settings::boxSize(BoxSizeType::big).border;
         // Create portion box and set portion button.
@@ -611,7 +614,7 @@ void Player::handleEvent(const SDL_Event &e) {
     }
 }
 
-void Player::update(unsigned int e) {
+void Player::update(unsigned int elTm) {
     // Update the UI to reflect current state.
     auto t = traveler.get();
     bool target = t && t->getTarget();
@@ -665,7 +668,14 @@ void Player::update(unsigned int e) {
         }
     });
     if (scl.x || scl.y) game.moveView(scl);
-    if (traveler.get() && !pause) traveler->update(e);
+    totalElapsed += elTm;
+    if (++frameCount > kFramerateInterval) {
+        framerateBox->setText(
+            1, std::to_string(kMillisecondsPerSecond * kFramerateInterval / totalElapsed) + "fps");
+        totalElapsed = 0;
+        frameCount = 0;
+    }
+    if (traveler.get() && !pause) traveler->update(elTm);
 }
 
 void Player::draw(SDL_Renderer *s) {

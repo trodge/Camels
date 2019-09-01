@@ -69,7 +69,8 @@ class Player {
     std::unique_ptr<Traveler> traveler;
     std::vector<Pager> pagers;
     std::vector<Pager>::iterator currentPager;
-    TextBox *portionBox = nullptr;
+    TextBox *portionBox = nullptr, *framerateBox = nullptr;
+    unsigned int frameCount = 0, totalElapsed = 0;
     Game &game;
     SDL_Rect screenRect;
     int smallBoxFontHeight;
@@ -106,7 +107,7 @@ public:
         if (traveler.get()) traveler->place(ofs, s);
     }
     void handleEvent(const SDL_Event &e);
-    void update(unsigned int e);
+    void update(unsigned int elTm);
     void draw(SDL_Renderer *s);
 };
 
