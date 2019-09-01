@@ -27,6 +27,7 @@
 
 const double kPi = boost::math::constants::pi<double>();
 const unsigned int kMaxWater = 24;
+const int kFramerateInterval = 20;
 const double kShowPlayerPadding = 0.2; // Portion of screen to pad around player when map zooms to player
 const double kTravelerCarry = -16;
 const size_t kStatusChanceCount = 3;

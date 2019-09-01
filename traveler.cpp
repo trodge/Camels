@@ -309,7 +309,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     if (offer.size()) divideExcess(excess);
 }
 
-Property &Traveler::property(unsigned int tId) {
+Property &Traveler::makeProperty(unsigned int tId) {
     // Returns a reference to property in the given town id, or carried property if 0.
     auto pptIt = properties.find(tId);
     if (pptIt == end(properties))
@@ -324,12 +324,12 @@ Property &Traveler::property(unsigned int tId) {
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
     properties.find(0)->second.take(g);
-    property(toTown->getId()).put(g);
+    makeProperty(toTown->getId()).put(g);
 }
 
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
-    property(toTown->getId()).take(g);
+    makeProperty(toTown->getId()).take(g);
     properties.find(0)->second.put(g);
 }
 
@@ -383,12 +383,12 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
 
 void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before calling.
-    property(toTown->getId()).build(bsn, a);
+    makeProperty(toTown->getId()).build(bsn, a);
 }
 
 void Traveler::demolish(const Business &bsn, double a) {
     // Demolish the given area of the given business. Check area before calling.
-    property(toTown->getId()).demolish(bsn, a);
+    makeProperty(toTown->getId()).demolish(bsn, a);
 }
 
 void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
@@ -863,7 +863,9 @@ void Traveler::startAI(const Traveler &p) {
 }
 
 void Traveler::update(unsigned int elTm) {
-    // Move traveler toward destination and perform combat with target.
+    // Move traveler toward destination, update properties, and perform combat with target.
+    if (aI) aI->update(elTm);
+    for (auto &ppt : properties) ppt.second.update(elTm);
     if (moving) {
         moving = !position.stepToward(
             toTown->getPosition(), static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength()));
@@ -879,7 +881,6 @@ void Traveler::update(unsigned int elTm) {
                 toTown->getName() + ".");
         }
     }
-    if (aI) aI->update(elTm);
     if (target) {
         if (fightWon() && aI) {
             aI->loot();

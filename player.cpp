@@ -66,6 +66,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         [this] {
             storedState = state;
             storedPause = pause;
+            pause = true;
             pagers[0].getVisible(0)->setText(0, traveler ? "Save and Quit" : "Quit");
         }};
     uIStates[static_cast<size_t>(State::loading)] = {
@@ -311,6 +312,9 @@ void Player::focusNext(FocusGroup g) {
 void Player::setState(State s) {
     // Change the UI state to s.
     UIState newState = uIStates[static_cast<size_t>(s)];
+    std::vector<std::string> framerateText;
+    if (framerateBox) framerateText = framerateBox->getText();
+    else framerateText = {"Framerate:", ""};
     pagers.clear();
     pagers.resize(newState.pagerCount);
     currentPager = begin(pagers);
@@ -329,6 +333,9 @@ void Player::setState(State s) {
             pagers[0].addBox(std::make_unique<TextBox>(bI, printer));
     if (newState.onChange) newState.onChange();
     // Create boxes shared by multiple states.
+    pagers[0].addBox(std::make_unique<TextBox>(
+        Settings::boxInfo({screenRect.w / 15, screenRect.h / 31, 0, 0}, framerateText, BoxSizeType::small), printer));
+    framerateBox = pagers[0].getVisible().back();
     if (newState.pagerCount > 2) {
         int bBB = Settings::boxSize(BoxSizeType::big).border;
         // Create portion box and set portion button.
@@ -611,10 +618,16 @@ void Player::handleEvent(const SDL_Event &e) {
     }
 }
 
-void Player::update(unsigned int e) {
+void Player::update(unsigned int elTm) {
     // Update the UI to reflect current state.
     auto t = traveler.get();
     bool target = t && t->getTarget();
+    elapsedTotal += elTm;
+    if (++frameCount > 0) {
+        framerateBox->setText(1, std::to_string(1000 * kFramerateInterval / elapsedTotal) + "fps");
+        elapsedTotal = 0;
+        frameCount -= kFramerateInterval;
+    }
     switch (state) {
     case State::traveling:
         if (target) {
@@ -665,7 +678,7 @@ void Player::update(unsigned int e) {
         }
     });
     if (scl.x || scl.y) game.moveView(scl);
-    if (traveler.get() && !pause) traveler->update(e);
+    if (traveler.get() && !pause) traveler->update(elTm);
 }
 
 void Player::draw(SDL_Renderer *s) {

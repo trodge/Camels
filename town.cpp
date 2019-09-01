@@ -88,7 +88,9 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, const SDL_Point
     neighbors.clear();
     size_t mN = Settings::getMaxNeighbors();
     neighbors.reserve(mN);
-    auto closer = [this](Town *m, Town *n) { return position.distSq(m->position) < position.distSq(n->position); };
+    auto closer = [this](Town *m, Town *n) {
+        return position.distSq(m->position) < position.distSq(n->position);
+    };
     for (auto &t : ts) {
         int dS = position.distSq(t.position);
         if (t.id != id && !std::binary_search(begin(neighbors), end(neighbors), &t, closer)) {
@@ -141,7 +143,9 @@ void Town::findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, const SDL_Point
 
 void Town::connectRoutes() {
     // Ensure that routes go both directions.
-    auto closer = [this](Town *m, Town *n) { return position.distSq(m->position) < position.distSq(n->position); };
+    auto closer = [this](Town *m, Town *n) {
+        return position.distSq(m->position) < position.distSq(n->position);
+    };
     for (auto &n : neighbors) {
         auto &nNs = n->neighbors; // neighbor's neighbors
         auto it = std::lower_bound(begin(nNs), end(nNs), n, closer);
