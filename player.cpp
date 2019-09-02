@@ -332,6 +332,7 @@ void Player::setState(State s) {
     // Create boxes shared by multiple states.
     pagers[0].addBox(std::make_unique<TextBox>(
         Settings::boxInfo({screenRect.w / 15, screenRect.h / 31, 0, 0}, framerateText, BoxSizeType::small), printer));
+    framerateBox = pagers[0].getVisible().back();
     if (newState.pagerCount > 2) {
         int bBB = Settings::boxSize(BoxSizeType::big).border;
         // Create portion box and set portion button.
