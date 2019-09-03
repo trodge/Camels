@@ -73,7 +73,7 @@ struct CombatHit {
     std::string weapon;
 };
 
-enum class FightChoice { none = -1, fight, run, yield };
+enum class FightChoice { none = -1, fight, run, yield, count };
 
 class AI;
 

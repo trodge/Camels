@@ -103,8 +103,7 @@ void AI::trade() {
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
     auto &travelerProperty = traveler.property();
-    travelerProperty.queryGoods([this, weight, &bestScore, &offerValue, &offerWeight, overWeight,
-                                    &bestGood](const Good &g) {
+    travelerProperty.queryGoods([this, weight, &bestScore, &offerValue, &offerWeight, overWeight, &bestGood](const Good &g) {
         double gWgt = g.weight();
         if (!overWeight || gWgt > 0) {
             // Either we are not over weight or given material doesn't help carry.
@@ -137,10 +136,8 @@ void AI::trade() {
     BuildPlan *bestPlan = nullptr;
     std::for_each(begin(buildable), end(buildable), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
         double score = -bdp.cost;
-        for (auto &ip : bdp.business.getInputs())
-            score -= goodsInfo[ip.getFullId()].estimate;
-        for (auto &op : bdp.business.getOutputs())
-            score += goodsInfo[op.getFullId()].estimate;
+        for (auto &ip : bdp.business.getInputs()) score -= goodsInfo[ip.getFullId()].estimate;
+        for (auto &op : bdp.business.getOutputs()) score += goodsInfo[op.getFullId()].estimate;
         if (score * decisionCriteria[static_cast<size_t>(DecisionCriteria::buildTendency)] / criteriaMax > bestScore) {
             bestScore = score;
             bestPlan = &bdp;
@@ -167,10 +164,9 @@ void AI::trade() {
 
     double excess;
     // Find highest buy score.
-    townProperty.queryGoods([this, &equipment = traveler.getEquipment(),
-                                               &stats = traveler.getStats(), criteriaMax,
-                                               &bestScore, offerValue, weight,
-                                               overWeight, &bestGood, townProfit = Settings::getTownProfit(), &excess](const Good &tG) {
+    townProperty.queryGoods([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(),
+                             criteriaMax, &bestScore, offerValue, weight, overWeight, &bestGood,
+                             townProfit = Settings::getTownProfit(), &excess](const Good &tG) {
         double carry = tG.getCarry();
         if (!overWeight || carry < 0) {
             auto fId = tG.getFullId();
@@ -180,8 +176,7 @@ void AI::trade() {
             double eqpScr = equipScore(tG, equipment, stats);
             // Weigh equip score double if not a trader or agent.
             score += eqpScr * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
-                     decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)] /
-                     criteriaMax;
+                     decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)] / criteriaMax;
             if (score > bestScore) {
                 bestScore = score;
                 // Remove amout town takes as profit, store excess.
@@ -256,30 +251,36 @@ void AI::attack() {
                    end(able));
         if (!able.empty()) {
             // Attack the easiest target.
-            auto easiest = std::min_element(begin(able), end(able), [this](const Traveler *a, const Traveler *b) {
-                return equipScore(a->getEquipment(), a->getStats()) < equipScore(b->getEquipment(), b->getStats());
-            });
-            traveler.attack(*easiest);
+            Traveler *easiest = nullptr;
+            double lowest = std::numeric_limits<double>::max();
+            for (auto tvl : able) {
+                double score = equipScore(tvl->getEquipment(), tvl->getStats());
+                if (score < lowest) {
+                    lowest = score;
+                    easiest = tvl;
+                }
+            }
+            traveler.attack(easiest);
         }
     }
 }
 
 void AI::choose() {
     // Choose to fight, update, or yield based on equip scores, stats, and speeds.
-    std::array<double, 3> scores; // fight, run, yield scores
+    std::array<double, static_cast<size_t>(FightChoice::count)> scores; // fight, run, yield scores
     auto target = traveler.getTarget();
     double equipmentScoreRatio = equipScore(target->getEquipment(), target->getStats()) /
                                  equipScore(traveler.getEquipment(), traveler.getStats());
-    scores[0] = 1 / equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::fightTendency)];
-    scores[1] = equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::runTendency)];
-    scores[2] = equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::yieldTendency)];
-    if (equipmentScoreRatio > 1) {
-        // Target's equipment is better, weigh update and yield decisions by speed
-        // ratio.
-        double speedRatio = target->speed() / traveler.speed();
-        scores[1] /= speedRatio;
-        scores[2] *= speedRatio;
-    }
+    scores[static_cast<size_t>(FightChoice::fight)] =
+        1 / equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::fightTendency)];
+    scores[static_cast<size_t>(FightChoice::run)] =
+        equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::runTendency)];
+    scores[static_cast<size_t>(FightChoice::yield)] =
+        equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::yieldTendency)];
+    if (equipmentScoreRatio > 1)
+        // Target's equipment is better, weigh run score by speed ratio.
+        scores[static_cast<size_t>(FightChoice::run)] *= traveler.speed() / target->speed();
+    // Choose whichever choice has the best score.
     traveler.choose(static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores)));
 }
 
@@ -404,16 +405,22 @@ void AI::update(unsigned int e) {
             trade();
             equip();
             attack();
-            size_t nearbyCount = nearby.size();
-            std::vector<double> townScores(nearbyCount); // scores for going to each town
-            // Set scores based on buying and selling prices in each town.
-            std::transform(begin(nearby), end(nearby), begin(townScores), [this](const TownInfo &tI) {
-                return tI.buyScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::buyScoreWeight)] +
-                       tI.sellScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::sellScoreWeight)];
-            });
-            auto bestTownScore = std::max_element(begin(townScores), end(townScores));
-            if (bestTownScore != end(townScores)) {
-                traveler.pickTown(nearby[static_cast<size_t>(bestTownScore - begin(townScores))].town);
+            // Find highest score based on buy and sell scores in each town.
+            Town *bestTown = nullptr;
+            double highest = 0;
+            for (auto &tI : nearby) {
+                double score =
+                    tI.buyScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::buyScoreWeight)] +
+                    tI.sellScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::sellScoreWeight)];
+                if (score > highest) {
+                    highest = score;
+                    bestTown = tI.town;
+                }
+            }
+            if (bestTown) {
+                // Set traveler's target to target town.
+                traveler.pickTown(bestTown);
+                // Set nearby towns based on town traveler travels to first.
                 const Town *town = traveler.town();
                 setNearby(town, town, Settings::getAITownRange());
                 setLimits();
