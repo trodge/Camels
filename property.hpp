@@ -85,6 +85,7 @@ public:
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const;
+    std::vector<Good> balance(const std::vector<Good> &gds, double ofVl);
     std::vector<BuildPlan> buildable(const Property &tnPpt, double ofVl) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
