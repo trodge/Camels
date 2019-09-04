@@ -149,12 +149,22 @@ void AI::trade() {
         }
     });
     if (bestPlan && bestPlan->request.empty()) {
+<<<<<<< HEAD
         // Build business without trading.
         traveler.build(bestPlan->business, bestPlan->area);
         bestPlan = nullptr;
     }
     if (!bestGood) return;
     // Add best selling good to offer if found.
+=======
+        // Business can be built without trading.
+        traveler.build(bestPlan->business, bestPlan->area);
+        bestPlan = nullptr;
+    }
+    // If no good found to sell, stop trading.
+    if (!bestGood) return;
+    // Add best good to offer if found.
+>>>>>>> cde62cedb0aaa1d3c028398485cb4035f2848f15
     traveler.offerGood(std::move(*bestGood));
     bestGood = nullptr;
     weight -= offerWeight;
@@ -165,6 +175,10 @@ void AI::trade() {
     else
         // Trade only if score exceeds reciprocol of selling score.
         bestScore = 1 / bestScore;
+<<<<<<< HEAD
+=======
+
+>>>>>>> cde62cedb0aaa1d3c028398485cb4035f2848f15
     double excess;
     // Find highest buy score.
     townProperty.queryGoods([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(),

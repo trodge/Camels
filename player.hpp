@@ -70,8 +70,7 @@ class Player {
     std::vector<Pager> pagers;
     std::vector<Pager>::iterator currentPager;
     TextBox *portionBox = nullptr, *framerateBox = nullptr;
-    unsigned int elapsedTotal = 0;
-    int frameCount = 0;
+    unsigned int frameCount = 0, totalElapsed = 0;
     Game &game;
     SDL_Rect screenRect;
     int smallBoxFontHeight;

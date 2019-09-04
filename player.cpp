@@ -311,10 +311,8 @@ void Player::focusNext(FocusGroup g) {
 
 void Player::setState(State s) {
     // Change the UI state to s.
+    auto framerateText = framerateBox ? framerateBox->getText() : std::vector<std::string>{"Framerate:", ""};
     UIState newState = uIStates[static_cast<size_t>(s)];
-    std::vector<std::string> framerateText;
-    if (framerateBox) framerateText = framerateBox->getText();
-    else framerateText = {"Framerate:", ""};
     pagers.clear();
     pagers.resize(newState.pagerCount);
     currentPager = begin(pagers);
@@ -622,12 +620,6 @@ void Player::update(unsigned int elTm) {
     // Update the UI to reflect current state.
     auto t = traveler.get();
     bool target = t && t->getTarget();
-    elapsedTotal += elTm;
-    if (++frameCount > 0) {
-        framerateBox->setText(1, std::to_string(1000 * kFramerateInterval / elapsedTotal) + "fps");
-        elapsedTotal = 0;
-        frameCount -= kFramerateInterval;
-    }
     switch (state) {
     case State::traveling:
         if (target) {
@@ -678,6 +670,13 @@ void Player::update(unsigned int elTm) {
         }
     });
     if (scl.x || scl.y) game.moveView(scl);
+    totalElapsed += elTm;
+    if (++frameCount > kFramerateInterval) {
+        framerateBox->setText(
+            1, std::to_string(kMillisecondsPerSecond * kFramerateInterval / totalElapsed) + "fps");
+        totalElapsed = 0;
+        frameCount = 0;
+    }
     if (traveler.get() && !pause) traveler->update(elTm);
 }
 
