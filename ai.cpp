@@ -130,27 +130,31 @@ void AI::trade() {
         }
     });
     // Determine which businesses can be built based on offer value and town prices.
-    auto &townProperty = traveler.town()->getProperty();
+    auto town = traveler.town();
+    auto &storageProperty = traveler.property(town->getId());
+    auto &townProperty = town->getProperty();
     auto buildable = travelerProperty.buildable(townProperty, offerValue);
     // Find best business scored based on requirements, inputs, and outputs.
     BuildPlan *bestPlan = nullptr;
     std::for_each(begin(buildable), end(buildable), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
         double score = -bdp.cost;
-        for (auto &ip : bdp.business.getInputs()) score -= goodsInfo[ip.getFullId()].estimate;
-        for (auto &op : bdp.business.getOutputs()) score += goodsInfo[op.getFullId()].estimate;
+        double area = bdp.business.getArea();
+        for (auto &ip : bdp.business.getInputs())
+            score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() / area;
+        for (auto &op : bdp.business.getOutputs())
+            score += goodsInfo[op.getFullId()].estimate * op.getAmount() / area;
         if (score * decisionCriteria[static_cast<size_t>(DecisionCriteria::buildTendency)] / criteriaMax > bestScore) {
             bestScore = score;
             bestPlan = &bdp;
         }
     });
     if (bestPlan && bestPlan->request.empty()) {
-        // Business can be built without trading.
+        // Build business without trading.
         traveler.build(bestPlan->business, bestPlan->area);
         bestPlan = nullptr;
     }
-    // If no good found to sell, stop trading.
     if (!bestGood) return;
-    // Add best good to offer if found.
+    // Add best selling good to offer if found.
     traveler.offerGood(std::move(*bestGood));
     bestGood = nullptr;
     weight -= offerWeight;
@@ -161,7 +165,6 @@ void AI::trade() {
     else
         // Trade only if score exceeds reciprocol of selling score.
         bestScore = 1 / bestScore;
-
     double excess;
     // Find highest buy score.
     townProperty.queryGoods([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(),
@@ -173,10 +176,12 @@ void AI::trade() {
             auto gII = goodsInfo.find(fId);
             if (gII == end(goodsInfo)) return;
             double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
-            double eqpScr = equipScore(tG, equipment, stats);
+            double inputScore = 0;
+            double eqpScr =
+                equipScore(tG, equipment, stats) * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
+                decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)] / criteriaMax;
             // Weigh equip score double if not a trader or agent.
-            score += eqpScr * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
-                     decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)] / criteriaMax;
+            score += eqpScr;
             if (score > bestScore) {
                 bestScore = score;
                 // Remove amout town takes as profit, store excess.

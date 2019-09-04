@@ -66,6 +66,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         [this] {
             storedState = state;
             storedPause = pause;
+            pause = true;
             pagers[0].getVisible(0)->setText(0, traveler ? "Save and Quit" : "Quit");
         }};
     uIStates[static_cast<size_t>(State::loading)] = {

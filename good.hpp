@@ -40,6 +40,8 @@ struct CombatStat {
     std::array<unsigned int, static_cast<size_t>(AttackType::count)> defense;
 };
 
+enum class Optimization { a, b, s, count };
+
 class Good {
     unsigned int goodId, materialId = 0, fullId = 0;
     std::string goodName, materialName, fullName;
@@ -116,6 +118,7 @@ public:
     double quantity(double prc, double &exc) const;
     double quantity(double prc) const;
     double quantum(double c) const;
+    std::array<double, static_cast<size_t>(Optimization::count)> optimization() const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
     SDL_Surface *getImage() const { return image; }
     void setAmount(double amt) { amount = amt; }

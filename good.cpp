@@ -140,6 +140,10 @@ double Good::quantum(double cst) const {
     return qtm;
 }
 
+std::array<double, static_cast<size_t>(Optimization::count)> Good::optimization() const {
+    return {amount - demandIntercept / demandSlope, demandIntercept - demandSlope * amount, demandSlope};
+}
+
 void Good::setConsumption(const std::array<double, 3> &cnsptn) {
     // Assign the given three values to consumption, demand slope, and demand intercept.
     consumptionRate = cnsptn[0];

@@ -35,6 +35,7 @@
 class Position {
     double longitude, latitude;
     SDL_Point point;
+
 public:
     Position(double lng, double ltt) : longitude(lng), latitude(ltt) {}
     double getLongitude() const { return longitude; }

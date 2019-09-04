@@ -77,20 +77,23 @@ BoxSize loadBoxSize(const std::string &n, const BoxSize &d, const pt::ptree &t) 
     return {t.get(n + "_border", d.border), t.get(n + "_radius", d.radius), t.get(n + "_fontSize", d.fontSize)};
 }
 
-template <typename First, typename Second> std::pair<First, Second> loadPair(const std::string &n, const std::pair<First, Second> &df, const pt::ptree &t) {
+template <typename First, typename Second>
+std::pair<First, Second> loadPair(const std::string &n, const std::pair<First, Second> &df, const pt::ptree &t) {
     return std::make_pair(t.get(n + "_first", df.first), t.get(n + "_second", df.second));
 }
 
 template <class OutputIt, typename T, typename Function>
-void loadRange(const std::string &n, OutputIt out, const Function &fn,
-               const std::initializer_list<T> &dfs, const pt::ptree &t) {
+void loadRange(const std::string &n, OutputIt out, const Function &fn, const std::initializer_list<T> &dfs,
+               const pt::ptree &t) {
     unsigned int i = 0;
-    std::transform(begin(dfs), end(dfs), out, [&n, &i, &fn, &t](auto &df) { return fn(n + "_" + std::to_string(++i), df, t); });
+    std::transform(begin(dfs), end(dfs), out,
+                   [&n, &i, &fn, &t](auto &df) { return fn(n + "_" + std::to_string(++i), df, t); });
 }
 
 template <class OutputIt, typename T>
 void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const pt::ptree &t) {
-    loadRange(n, out, [](const std::string &m, const T &df, const pt::ptree &r) { return r.get(m, df); }, dfs, t);
+    loadRange(
+        n, out, [](const std::string &m, const T &df, const pt::ptree &r) { return r.get(m, df); }, dfs, t);
 }
 
 void Settings::load(const fs::path &p) {
@@ -155,23 +158,28 @@ void Settings::load(const fs::path &p) {
     playerColor = loadColor("player.color", {255, 255, 255, 255}, tree);
     aIDecisionCriteriaMax = tree.get("aI.decisionCriteriaMax", 9);
     loadRange("aI.roleWeights", begin(aIRoleWeights), {0.4, 0.1, 0.1, 0.2, 0.1, 0.1}, tree);
-    loadRange("aI.traderGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::trader)]), &loadPair<unsigned int, double>,
+    loadRange("aI.traderGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::trader)]),
+              &loadPair<unsigned int, double>,
               {std::make_pair(1, 21.), std::make_pair(9, 10.5), std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
-    loadRange("aI.soldierGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::soldier)]), &loadPair<unsigned int, double>,
+    loadRange("aI.soldierGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::soldier)]),
+              &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
-    loadRange("aI.banditGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::bandit)]), &loadPair<unsigned int, double>,
+    loadRange("aI.banditGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::bandit)]),
+              &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
-    loadRange("aI.agentGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::agent)]), &loadPair<unsigned int, double>,
-              {std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
-    loadRange("aI.guardGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::guard)]), &loadPair<unsigned int, double>,
+    loadRange("aI.agentGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::agent)]),
+              &loadPair<unsigned int, double>, {std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
+    loadRange("aI.guardGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::guard)]),
+              &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
-    loadRange("aI.thugGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::thug)]), &loadPair<unsigned int, double>,
+    loadRange("aI.thugGoods", std::back_inserter(aIStartingGoods[static_cast<size_t>(AIRole::thug)]),
+              &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
@@ -212,19 +220,21 @@ void saveBoxSize(const std::string &n, const BoxSize &s, pt::ptree &t) {
     t.put(n + "_fontSize", s.fontSize);
 }
 
-template <typename First, typename Second> void savePair(const std::string &n, const std::pair<First, Second> &pr, pt::ptree &t) {
+template <typename First, typename Second>
+void savePair(const std::string &n, const std::pair<First, Second> &pr, pt::ptree &t) {
     t.put(n + "_first", pr.first);
     t.put(n + "_second", pr.second);
 }
 
-template <class InputIt, typename Function> void saveRange(const std::string &n, InputIt bgn, InputIt end,
-                                                    const Function &fn, pt::ptree &t) {
+template <class InputIt, typename Function>
+void saveRange(const std::string &n, InputIt bgn, InputIt end, const Function &fn, pt::ptree &t) {
     unsigned int i = 0;
     std::for_each(bgn, end, [&n, &i, &fn, &t](auto &a) { fn(n + "_" + std::to_string(++i), a, t); });
 }
 
 template <class InputIt> void saveRange(const std::string &n, InputIt bgn, InputIt end, pt::ptree &t) {
-    saveRange(n, bgn, end, [](const std::string &m, const decltype(*bgn) &sv, pt::ptree &r) { r.put(m, sv); }, t);
+    saveRange(
+        n, bgn, end, [](const std::string &m, const decltype(*bgn) &sv, pt::ptree &r) { r.put(m, sv); }, t);
 }
 
 void Settings::save(const fs::path &p) {
@@ -267,8 +277,8 @@ void Settings::save(const fs::path &p) {
     tree.put("travelers.statMax", statMax);
     tree.put("travelers.attackDistSq", attackDistSq);
     tree.put("travelers.escapeChance", escapeChance);
-    saveRange("player.startingGoods", begin(playerStartingGoods),
-              end(playerStartingGoods), &savePair<unsigned int, double>, tree);
+    saveRange("player.startingGoods", begin(playerStartingGoods), end(playerStartingGoods),
+              &savePair<unsigned int, double>, tree);
     saveColor("player.color", playerColor, tree);
     tree.put("aI.decisionCriteriaMax", aIDecisionCriteriaMax);
     saveRange("aI.roleWeights", begin(aIRoleWeights), end(aIRoleWeights), tree);
@@ -291,8 +301,8 @@ void Settings::save(const fs::path &p) {
     tree.put("aI.guardGoodCount", aIStartingGoodsCount[static_cast<size_t>(AIRole::guard)]);
     tree.put("aI.thugGoodCount", aIStartingGoodsCount[static_cast<size_t>(AIRole::thug)]);
     tree.put("aI.townRange", aITownRange);
-    tree.put("aI.limitFactorMin", aILimitFactorMin );
-    tree.put("aI.limitFactorMax", aILimitFactorMax );
+    tree.put("aI.limitFactorMin", aILimitFactorMin);
+    tree.put("aI.limitFactorMax", aILimitFactorMax);
     tree.put("aI.attackThreshold", aIAttackThreshold);
     saveColor("ui.aIColor", aIColor, tree);
     pt::write_ini(p.string(), tree);

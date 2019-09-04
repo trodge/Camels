@@ -33,8 +33,8 @@
 #include <SDL2/SDL.h>
 
 #include "ai.hpp"
-#include "draw.hpp"
 #include "constants.hpp"
+#include "draw.hpp"
 #include "good.hpp"
 #include "menubutton.hpp"
 #include "nation.hpp"
@@ -117,7 +117,7 @@ class Traveler {
     BoxInfo boxInfo() {
         return boxInfo({0, 0, 0, 0}, {}, BoxSizeType::trade, BoxBehavior::focus);
     } // good and business buttons
-    Property &property(unsigned int tId);
+    Property &makeProperty(unsigned int tId);
     void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
     void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
@@ -134,6 +134,7 @@ public:
     const Nation *getNation() const { return nation; }
     const std::vector<std::string> &getLogText() const { return logText; }
     const Property &property() const { return properties.find(0)->second; }
+    const Property &property(unsigned int tId) { return makeProperty(tId); }
     const std::vector<Good> &getOffer() const { return offer; }
     const std::vector<Good> &getRequest() const { return request; }
     double getPortion() const { return portion; }

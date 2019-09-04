@@ -78,6 +78,7 @@ public:
     TownType getTownType() const { return townType; }
     bool getCoastal() const { return coastal; }
     unsigned long getPopulation() const { return population; }
+    const std::vector<Business> &getBusinesses() const { return businesses; }
     bool hasGood(unsigned int fId) const;
     const Good *good(unsigned int fId) const;
     const Good *good(boost::tuple<unsigned int, unsigned int> gMId) const;
