@@ -137,7 +137,6 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
 
 BuildPlan Property::buildable(const Business &bsn, const Property &tvlPpt, double ofVl) const {
     // Add a build plan for given business to given build plan vector if it can be built.
-    double totalCost = 0;      // total cost to acquire all requirements for this business.
     std::vector<Good> request; // goods that will need to be acquired through trade
     for (auto &rq : bsn.getRequirements()) request.push_back(rq);
     double area = bsn.getArea();
