@@ -301,7 +301,6 @@ void Property::create(unsigned int opId, double amt) {
     if (opRng.first == opRng.second) {
         // Output good doesn't exist, copy from nation.
         auto srRng = source->goods.get<GoodId>().equal_range(opId);
-        auto gdIt = srRng.first;
         addGood(*std::min_element(srRng.first, srRng.second), createGood);
     } else
         byGoodId.modify(std::min_element(opRng.first, opRng.second), createGood);
