@@ -55,8 +55,16 @@ const Good *Property::good(boost::tuple<unsigned int, unsigned int> gMId) const 
     return &*gdIt;
 }
 
-void Property::queryGoods(const std::function<void(const Good &gd)> &fn) const {
-    for (auto &gd : goods) { fn(gd); }
+void Property::forGood(const std::function<void(const Good &gd)> &fn) const {
+    // Run given function for each good.
+    std::for_each(begin(goods), end(goods), fn);
+}
+
+
+void Property::forGood(unsigned int gId, const std::function<void(const Good &gd)> &fn) const {
+    // Run given function for each good with given good id.
+    auto rng = goods.get<GoodId>().equal_range(gId);
+    std::for_each(rng.first, rng.second, fn);
 }
 
 double Property::amount(unsigned int gId) const {
@@ -79,9 +87,17 @@ double Property::weight() const {
 double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const {
     // Set amounts of given goods such that they can be purchased for given cost, keeping ratios the
     // same. Adjusts cost downward and sets full ids, names, and measure words for goods.
-    double ratioDotProduct = 0, amountDotProduct = 0; // dot product of prices and ratios and amounts and prices
+    double factor = std::numeric_limits<double>::max();
+    if (cst == 0) {
+        // No goods can be bought.
+        for (auto &gd : goods)
+            factor = std::min(tvlPpt.amount(gd.getGoodId()) / gd.getAmount(), factor);
+        gds.clear();
+        return factor;
+    }
+    double amountDotProduct = 0, ratioDotProduct = 0; // dot product of amounts and prices and prices and ratios
     size_t goodCount = gds.size();
-    std::vector<GoodBalance> goodBalances(goodCount); // cheapest town good for each good
+    std::vector<GoodBalance> goodBalances(goodCount);
     for (size_t i = 0; i < goodCount; ++i) {
         auto &gd = gds[i];
         auto gdId = gd.getGoodId();
@@ -90,8 +106,8 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
         blnc.amount = tvlPpt.amount(gdId);
         blnc.price = std::numeric_limits<double>::max();
         blnc.ratio = gd.getAmount();
-        std::for_each(rng.first, rng.second, [i, &blnc](const Good &tnGd) {
-            if (tnGd.getAmount() >= blnc.ratio) {
+        std::for_each(rng.first, rng.second, [&blnc](const Good &tnGd) {
+            if (tnGd.getAmount() > 0) {
                 double price = tnGd.price();
                 if (price < blnc.price) {
                     blnc.price = price;
@@ -99,6 +115,7 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
                 }
             }
         });
+        if (!blnc.cheapest) /* A good is not available */ return 0;
         gd.setFullId(blnc.cheapest->getFullId());
         gd.setFullName(blnc.cheapest->getFullName());
         gd.setMeasure(blnc.cheapest->getMeasure());
@@ -114,46 +131,62 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
                                           blnc.amount * (ratioDotProduct - blnc.price * blnc.ratio)) /
                                              ratioDotProduct,
                                          0.);
-        gd.setAmount(linearEstimate);
         // Add cost of linear estimate to total cost.
         totalCost += blnc.cheapest->cost(linearEstimate);
+        // Set amount to linear estimate.
+        gd.setAmount(linearEstimate);
     }
-    double adjustment = cst / totalCost, factor = std::numeric_limits<double>::max();
-    std::cout << "Cost in: " << cst << std::endl;
-    cst = 0;
-    for (size_t i = 0; i < goodCount; ++i) {
-        auto &gd = gds[i];
-        // Adjust amount.
-        double amount = gd.getAmount() * adjustment;
-        gd.setAmount(amount);
-        auto &blnc = goodBalances[i];
-        factor = std::min((amount + blnc.amount) / blnc.ratio, factor);
-        // Add cost of new amount to output variable.
-        cst += blnc.cheapest->cost(amount);
+    if (totalCost > cst) {
+        // Quantities need to be adjusted down.
+        double adjustment = cst / totalCost;
+        std::cout << "Cost in: " << cst << " adjustment: " << adjustment << std::endl;
+        cst = 0;
+        for (size_t i = 0; i < goodCount; ++i) {
+            auto &gd = gds[i];
+            // Adjust amount.
+            double amount = gd.getAmount() * adjustment;
+            gd.setAmount(amount);
+            auto &blnc = goodBalances[i];
+            factor = std::min((amount + blnc.amount) / blnc.ratio, factor);
+            // Add cost of new amount to output variable.
+            cst += blnc.cheapest->cost(amount);
+        }
+        std::cout << "Cost out: " << cst << std::endl;
+    } else {
+        std::cout << "Cost in: " << cst << std::endl;
+        cst = totalCost;
+        std::cout << "Cost out: " << cst << std::endl;
+        for (size_t i = 0; i < goodCount; ++i) {
+            auto &blnc = goodBalances[i];
+            factor = std::min((gds[i].getAmount() + blnc.amount) / blnc.ratio, factor);
+        }
     }
-    std::cout << "Cost out: " << cst << std::endl;
     return factor;
 }
 
 BuildPlan Property::buildable(const Business &bsn, const Property &tvlPpt, double ofVl) const {
     // Add a build plan for given business to given build plan vector if it can be built.
-    std::vector<Good> request; // goods that will need to be acquired through trade
-    for (auto &rq : bsn.getRequirements()) request.push_back(rq);
+    BuildPlan bdp{bsn};
+    for (auto &rq : bsn.getRequirements()) bdp.request.push_back(rq);
     double area = bsn.getArea();
     for (auto &ip : bsn.getInputs()) {
-        request.push_back(ip);
-        request.back().setAmount(ip.getAmount() / area);
+        bdp.request.push_back(ip);
+        bdp.request.back().setAmount(ip.getAmount() / area);
     }
-    return {bsn, balance(request, tvlPpt, ofVl), ofVl, request};
+    bdp.area = balance(bdp.request, tvlPpt, ofVl);
+    bdp.cost = ofVl;
+    return bdp;
 }
 
 std::vector<BuildPlan> Property::buildable(const Property &tvlPpt, double ofVl) const {
     // Return vector of plans for businesses that can be built with given starting goods.
     std::vector<BuildPlan> bdb;
     bdb.reserve(businesses.size());
-    for (auto &bsn : businesses)
+    for (auto &bsn : businesses) {
         // Add build plan for all businesses.
-        bdb.push_back(buildable(bsn, tvlPpt, ofVl));
+        auto bdp = buildable(bsn, tvlPpt, ofVl);
+        if (bdp.area > 0) bdb.push_back(bdp);
+    }
     return bdb;
 }
 
@@ -281,7 +314,7 @@ void Property::use(unsigned int gId, double amt) {
     auto gdRng = byGoodId.equal_range(gId);
     double total =
         std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
-    if (total == 0) std::cout << gId << std::endl;
+    if (total == 0) throw std::runtime_error("0 total using good " + std::to_string(gId));
     auto useGood = [amt, total](auto &gd) { gd.use(amt * gd.getAmount() / total); };
     for (; gdRng.first != gdRng.second; ++gdRng.first) byGoodId.modify(gdRng.first, useGood);
 }

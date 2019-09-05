@@ -498,7 +498,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSizeType::equip);
     std::array<std::vector<Good>, static_cast<size_t>(Part::count)> equippable;
     // array of vectors corresponding to parts that can hold equipment
-    properties.find(0)->second.queryGoods([&equippable](const Good &g) {
+    properties.find(0)->second.forGood([&equippable](const Good &g) {
         auto &ss = g.getCombatStats();
         if (!ss.empty() && g.getAmount() >= 1) {
             // This good has combat stats and we have at least one of it.
@@ -811,7 +811,7 @@ void Traveler::loot(Good &g) {
 }
 
 void Traveler::loot() {
-    target->property().queryGoods([this](const Good &g) {
+    target->property().forGood([this](const Good &g) {
         Good lG(g);
         loot(lG);
     });

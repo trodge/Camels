@@ -87,7 +87,7 @@ double AI::equipScore(const Good &eq, const std::vector<Good> &eqpmt, const std:
 double AI::lootScore(const Property &tPpt) const {
     // Total value from looting given set of goods.
     double score = 0;
-    tPpt.queryGoods([this, &score](const Good &tG) {
+    tPpt.forGood([this, &score](const Good &tG) {
         auto gII = goodsInfo.find(tG.getFullId());
         if (gII != end(goodsInfo)) score += tG.getAmount() * gII->second.estimate;
     });
@@ -103,7 +103,7 @@ void AI::trade() {
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
     auto &travelerProperty = traveler.property();
-    travelerProperty.queryGoods([this, weight, &bestScore, &offerValue, &offerWeight, overWeight, &bestGood](const Good &g) {
+    travelerProperty.forGood([this, weight, &bestScore, &offerValue, &offerWeight, overWeight, &bestGood](const Good &g) {
         double gWgt = g.weight();
         if (!overWeight || gWgt > 0) {
             // Either we are not over weight or given material doesn't help carry.
@@ -135,17 +135,22 @@ void AI::trade() {
     // Determine which businesses can be built based on offer value and town prices.
     auto town = traveler.town();
     auto &storageProperty = traveler.property(town->getId());
+    // Take all goods out of storage.
+    storageProperty.forGood([this](const Good &gd) {
+        Good wG(gd);
+        traveler.withdraw(wG);
+    });
     auto &townProperty = town->getProperty();
     auto buildable = townProperty.buildable(travelerProperty, offerValue);
     // Find best business scored based on requirements, inputs, and outputs.
     BuildPlan *bestPlan = nullptr;
     std::for_each(begin(buildable), end(buildable), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
         double score = -bdp.cost;
-        double area = bdp.business.getArea();
+        double bsnA = bdp.business.getArea();
         for (auto &ip : bdp.business.getInputs())
-            score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() / area;
+            score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() * bdp.area / bsnA;
         for (auto &op : bdp.business.getOutputs())
-            score += goodsInfo[op.getFullId()].estimate * op.getAmount() / area;
+            score += goodsInfo[op.getFullId()].estimate * op.getAmount() * bdp.area / bsnA;
         if (score * decisionCriteria[static_cast<size_t>(DecisionCriteria::buildTendency)] / criteriaMax > bestScore) {
             bestScore = score;
             bestPlan = &bdp;
@@ -154,6 +159,7 @@ void AI::trade() {
     if (bestPlan && bestPlan->cost == 0) {
         // Build business without trading.
         traveler.build(bestPlan->business, bestPlan->area);
+        store();
         bestPlan = nullptr;
     }
     if (!bestGood) return;
@@ -170,7 +176,7 @@ void AI::trade() {
         bestScore = 1 / bestScore;
     double excess;
     // Find highest buy score.
-    townProperty.queryGoods([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(),
+    townProperty.forGood([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(),
                              criteriaMax, &bestScore, offerValue, weight, overWeight, &bestGood,
                              townProfit, &excess](const Good &tG) {
         double carry = tG.getCarry();
@@ -179,7 +185,6 @@ void AI::trade() {
             auto gII = goodsInfo.find(fId);
             if (gII == end(goodsInfo)) return;
             double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
-            double inputScore = 0;
             double eqpScr =
                 equipScore(tG, equipment, stats) * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
                 decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)] / criteriaMax;
@@ -220,13 +225,26 @@ void AI::trade() {
         traveler.requestGoods(std::move(bestPlan->request));
         traveler.makeTrade();
         traveler.build(bestPlan->business, bestPlan->area);
+        store();
     }
+}
+
+void AI::store() {
+    // Deposit all goods that are inputs for businesses
+    auto &storageProperty = traveler.property(traveler.town()->getId()),
+         &travelerProperty = traveler.property();
+    for (auto &bsn : storageProperty.getBusinesses())
+        for (auto &ip : bsn.getInputs())
+            travelerProperty.forGood(ip.getGoodId(), [this](const Good &gd) {
+                Good dG(gd);
+                traveler.deposit(dG);
+            });
 }
 
 void AI::equip() {
     // Equip best scoring item for each part.
     std::array<double, static_cast<size_t>(Part::count)> bestScores;
-    traveler.property().queryGoods([this, &bestScores](const Good &g) {
+    traveler.property().forGood([this, &bestScores](const Good &g) {
         if (g.getAmount() >= 1) {
             auto &ss = g.getCombatStats();
             if (!ss.empty()) {
@@ -307,7 +325,7 @@ void AI::loot() {
         // Keep looting until amount looted matches goal or we can carry no more.
         double bestScore = 0, bestValue, bestWeight;
         std::unique_ptr<Good> bestGood;
-        tPpt.queryGoods([this, &bestScore, &bestValue, &bestWeight, &bestGood, looted, lootGoal](const Good &tG) {
+        tPpt.forGood([this, &bestScore, &bestValue, &bestWeight, &bestGood, looted, lootGoal](const Good &tG) {
             double amount = tG.getAmount();
             if (amount > 0) {
                 auto gII = goodsInfo.find(tG.getFullId());
@@ -369,7 +387,7 @@ void AI::setLimits() {
         nb.buyScore = 0;
         nb.sellScore = 0;
         // Find minimum and maximum price for each good in nearby towns.
-        nb.town->getProperty().queryGoods([this](const Good &nG) {
+        nb.town->getProperty().forGood([this](const Good &nG) {
             auto price = nG.price();
             auto fId = nG.getFullId();
             auto gII = goodsInfo.find(fId);
@@ -393,7 +411,7 @@ void AI::setLimits() {
     auto &ppt = traveler.property();
     // Loop through nearby towns again now that info has been gathered to set buy and sell scores.
     for (auto &nb : nearby)
-        nb.town->getProperty().queryGoods([this, &ppt, &nb](const Good &nG) {
+        nb.town->getProperty().forGood([this, &ppt, &nb](const Good &nG) {
             auto price = nG.price();
             auto fId = nG.getFullId();
             if (ppt.hasGood(fId) && price > 0)

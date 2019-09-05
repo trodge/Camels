@@ -6,6 +6,6 @@ h = (Qb + Ab) / Rb - (Qc + Ac) / Rc
 i = (Qc + Ac) / Rc - (Qd + Ad) / Rd
 solution = sp.solvers.solve((f, g, h, i), (Qa, Qb, Qc, Qd))
 for var in solution:
-    print(var, ': ', sp.simplify(sp.factor(solution[var])))
+    print(var, ' = ', sp.simplify(solution[var]))
 
 # Qx = (Rx * (ADP + P - Ax * Px) - Ax * (RDP - Px * Rx)) / RDP

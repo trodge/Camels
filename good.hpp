@@ -111,11 +111,11 @@ public:
     double getMinPrice() const { return minPrice; }
     double price(double qtt) const;
     double price() const;
-    double cost(double qtt) const;
+    double cost(double &qtt) const;
     double value() const { return price() * amount; }
-    double quantity(double prc, double &exc) const;
-    double quantity(double prc) const;
-    double quantum(double cst) const;
+    double quantity(double cst, double &exc) const;
+    double quantity(double cst ) const;
+    double quota (double prc ) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
     SDL_Surface *getImage() const { return image; }
     void setFullId(unsigned int fId) { fullId = fId; }

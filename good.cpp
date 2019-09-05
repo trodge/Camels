@@ -88,21 +88,21 @@ double Good::price() const {
     return std::max(demandIntercept - demandSlope * amount, minPrice);
 }
 
-double Good::cost(double qtt) const {
+double Good::cost(double &qtt) const {
     // Get the cost to buy the given quantity, or available amount if less.
     qtt = std::min(amount, qtt);
     return std::max(demandIntercept - demandSlope * (amount - qtt / 2), minPrice) * qtt;
 }
 
-double Good::quantity(double prc, double &exc) const {
-    /* Get quantity of this material available at given price.
+double Good::quantity(double cst, double &exc) const {
+    /* Get quantity of this material available for given cost.
      * Second parameter holds excess quantity after amount is used up. */
     double qtt;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0)
-        qtt = amount - (demandIntercept - sqrt(b * b + demandSlope * prc * 2)) / demandSlope;
+        qtt = amount - (demandIntercept - sqrt(b * b + demandSlope * cst * 2)) / demandSlope;
     else if (demandIntercept != 0)
-        qtt = prc / demandIntercept;
+        qtt = cst / demandIntercept;
     else
         qtt = 0;
     if (qtt < 0) return 0;
@@ -112,32 +112,32 @@ double Good::quantity(double prc, double &exc) const {
     return amount;
 }
 
-double Good::quantity(double prc) const {
-    // Get quantity of this material corresponding to given price. Ignore material availability.
+double Good::quantity(double cst) const {
+    // Get quantity of this material offered for given price. Ignore material availability.
     double qtt;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0)
-        qtt = amount - (demandIntercept - sqrt(b * b + demandSlope * prc * 2)) / demandSlope;
+        qtt = amount - (demandIntercept - sqrt(b * b + demandSlope * cst * 2)) / demandSlope;
     else if (demandIntercept != 0)
-        qtt = prc / demandIntercept;
+        qtt = cst / demandIntercept;
     else
         qtt = 0;
     if (qtt < 0) return 0;
     return qtt;
 }
 
-double Good::quantum(double cst) const {
-    // Get quantum of this material needed to match given cost.
-    double qtm;
+double Good::quota(double prc) const {
+    // Get quota of this material needed to achieve given price.
+    double qta;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0)
-        qtm = amount - (demandIntercept - sqrt(b * b - demandSlope * cst * 2)) / demandSlope;
+        qta = amount - (demandIntercept - sqrt(b * b - demandSlope * prc * 2)) / demandSlope;
     else if (demandIntercept != 0)
-        qtm = cst / demandIntercept;
+        qta = prc / demandIntercept;
     else
-        qtm = 0;
-    if (qtm < 0) return 0;
-    return qtm;
+        qta = 0;
+    if ( qta < 0) return 0;
+    return qta;
 }
 
 void Good::setConsumption(const std::array<double, 3> &cnsptn) {
