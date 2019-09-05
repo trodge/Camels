@@ -129,11 +129,14 @@ void AI::trade() {
             }
         }
     });
+    // Reduce offer value to reflect town profit.
+    double townProfit = Settings::getTownProfit();
+    offerValue *= townProfit;
     // Determine which businesses can be built based on offer value and town prices.
     auto town = traveler.town();
     auto &storageProperty = traveler.property(town->getId());
     auto &townProperty = town->getProperty();
-    auto buildable = travelerProperty.buildable(townProperty, offerValue);
+    auto buildable = townProperty.buildable(travelerProperty, offerValue);
     // Find best business scored based on requirements, inputs, and outputs.
     BuildPlan *bestPlan = nullptr;
     std::for_each(begin(buildable), end(buildable), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
@@ -148,7 +151,7 @@ void AI::trade() {
             bestPlan = &bdp;
         }
     });
-    if (bestPlan && bestPlan->request.empty()) {
+    if (bestPlan && bestPlan->cost == 0) {
         // Build business without trading.
         traveler.build(bestPlan->business, bestPlan->area);
         bestPlan = nullptr;
@@ -169,7 +172,7 @@ void AI::trade() {
     // Find highest buy score.
     townProperty.queryGoods([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(),
                              criteriaMax, &bestScore, offerValue, weight, overWeight, &bestGood,
-                             townProfit = Settings::getTownProfit(), &excess](const Good &tG) {
+                             townProfit, &excess](const Good &tG) {
         double carry = tG.getCarry();
         if (!overWeight || carry < 0) {
             auto fId = tG.getFullId();
@@ -208,12 +211,12 @@ void AI::trade() {
     });
     if (bestGood) {
         // Purchasing a good exceeded score of building a business.
-        if (excess > 0) traveler.divideExcess(excess);
+        if (excess > 0) traveler.divideExcess(excess, townProfit);
         traveler.requestGood(std::move(*bestGood));
         traveler.makeTrade();
     } else if (bestPlan) {
         // No good exceeded score of building business.
-        traveler.divideExcess(offerValue - bestPlan->cost);
+        traveler.divideExcess(offerValue - bestPlan->cost, townProfit);
         traveler.requestGoods(std::move(bestPlan->request));
         traveler.makeTrade();
         traveler.build(bestPlan->business, bestPlan->area);

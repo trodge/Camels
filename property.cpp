@@ -76,48 +76,85 @@ double Property::weight() const {
                            [](double w, const auto &gd) { return w + gd.weight(); });
 }
 
-void Property::buildable(const Business &bsn, const Property &tnPpt, double ofVl, std::vector<BuildPlan> &bdb) const {
-    // Add a build plan for given business to given build plan vector if it can be built.
-    auto requirements = bsn.getRequirements();
-    double totalCost = 0;      // total cost to acquire all requirements for this business.
-    std::vector<Good> request; // goods that will need to be acquired through trade
-    for (auto &rq : requirements) {
-        auto rqId = rq.getGoodId();
-        // Reduce requirement amount by amounts of matching goods.
-        auto rng = goods.get<GoodId>().equal_range(rqId);
-        std::for_each(rng.first, rng.second, [&rq](const Good &gd) { rq.use(gd.getAmount()); });
-        auto tnRng = tnPpt.goods.get<GoodId>().equal_range(rqId); // range of goods with required good id
-        auto amount = rq.getAmount();                             // amount required
-        // Find lowest costing material not in used.
-        double lowest = std::numeric_limits<double>::max(); // cost of cheapest good with enough amount
-        const Good *cheapest = nullptr;                     // pointer to cheapest good in range
-        std::for_each(tnRng.first, tnRng.second, [amount, &lowest, &cheapest](const Good &gd) {
-            if (gd.getAmount() >= amount) {
-                // Good amount is high enough.
-                double cost = gd.cost(amount);
-                if (cost < lowest) {
-                    lowest = cost;
-                    cheapest = &gd;
+double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const {
+    // Set amounts of given goods such that they can be purchased for given cost, keeping ratios the
+    // same. Adjusts cost downward and sets full ids, names, and measure words for goods.
+    double ratioDotProduct = 0, amountDotProduct = 0; // dot product of prices and ratios and amounts and prices
+    size_t goodCount = gds.size();
+    std::vector<GoodBalance> goodBalances(goodCount); // cheapest town good for each good
+    for (size_t i = 0; i < goodCount; ++i) {
+        auto &gd = gds[i];
+        auto gdId = gd.getGoodId();
+        auto rng = goods.get<GoodId>().equal_range(gdId);
+        auto &blnc = goodBalances[i];
+        blnc.amount = tvlPpt.amount(gdId);
+        blnc.price = std::numeric_limits<double>::max();
+        blnc.ratio = gd.getAmount();
+        std::for_each(rng.first, rng.second, [i, &blnc](const Good &tnGd) {
+            if (tnGd.getAmount() >= blnc.ratio) {
+                double price = tnGd.price();
+                if (price < blnc.price) {
+                    blnc.price = price;
+                    blnc.cheapest = &tnGd;
                 }
             }
         });
-        if (!cheapest) /* No good has enough amount. */
-            return;
-        totalCost += lowest;
-        if (totalCost > ofVl) /* Cost exceeded, business can't be built. */
-            return;
-        request.push_back(Good(cheapest->getFullId(), cheapest->getFullName(), amount, cheapest->getMeasure()));
+        gd.setFullId(blnc.cheapest->getFullId());
+        gd.setFullName(blnc.cheapest->getFullName());
+        gd.setMeasure(blnc.cheapest->getMeasure());
+        amountDotProduct += blnc.amount * blnc.price;
+        ratioDotProduct += blnc.ratio * blnc.price;
     }
-    bdb.push_back({bsn, totalCost, 1, request});
+    double totalCost = 0;
+    for (size_t i = 0; i < goodCount; ++i) {
+        auto &gd = gds[i];
+        // Set amount to linear estimate.
+        auto &blnc = goodBalances[i];
+        double linearEstimate = std::max((blnc.ratio * (amountDotProduct + cst - blnc.amount * blnc.price) -
+                                          blnc.amount * (ratioDotProduct - blnc.price * blnc.ratio)) /
+                                             ratioDotProduct,
+                                         0.);
+        gd.setAmount(linearEstimate);
+        // Add cost of linear estimate to total cost.
+        totalCost += blnc.cheapest->cost(linearEstimate);
+    }
+    double adjustment = cst / totalCost, factor = std::numeric_limits<double>::max();
+    std::cout << "Cost in: " << cst << std::endl;
+    cst = 0;
+    for (size_t i = 0; i < goodCount; ++i) {
+        auto &gd = gds[i];
+        // Adjust amount.
+        double amount = gd.getAmount() * adjustment;
+        gd.setAmount(amount);
+        auto &blnc = goodBalances[i];
+        factor = std::min((amount + blnc.amount) / blnc.ratio, factor);
+        // Add cost of new amount to output variable.
+        cst += blnc.cheapest->cost(amount);
+    }
+    std::cout << "Cost out: " << cst << std::endl;
+    return factor;
 }
 
-std::vector<BuildPlan> Property::buildable(const Property &tnPpt, double ofVl) const {
+BuildPlan Property::buildable(const Business &bsn, const Property &tvlPpt, double ofVl) const {
+    // Add a build plan for given business to given build plan vector if it can be built.
+    double totalCost = 0;      // total cost to acquire all requirements for this business.
+    std::vector<Good> request; // goods that will need to be acquired through trade
+    for (auto &rq : bsn.getRequirements()) request.push_back(rq);
+    double area = bsn.getArea();
+    for (auto &ip : bsn.getInputs()) {
+        request.push_back(ip);
+        request.back().setAmount(ip.getAmount() / area);
+    }
+    return {bsn, balance(request, tvlPpt, ofVl), ofVl, request};
+}
+
+std::vector<BuildPlan> Property::buildable(const Property &tvlPpt, double ofVl) const {
     // Return vector of plans for businesses that can be built with given starting goods.
     std::vector<BuildPlan> bdb;
-    bdb.reserve(tnPpt.businesses.size());
-    for (auto &bsn : tnPpt.businesses)
-        // Add build plan for all businesses that can be built with given offer value to buildable vector.
-        buildable(bsn, tnPpt, ofVl, bdb);
+    bdb.reserve(businesses.size());
+    for (auto &bsn : businesses)
+        // Add build plan for all businesses.
+        bdb.push_back(buildable(bsn, tvlPpt, ofVl));
     return bdb;
 }
 

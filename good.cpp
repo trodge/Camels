@@ -113,7 +113,7 @@ double Good::quantity(double prc, double &exc) const {
 }
 
 double Good::quantity(double prc) const {
-    // Get quantity of this material corresponding to price. Ignore material availability.
+    // Get quantity of this material corresponding to given price. Ignore material availability.
     double qtt;
     double b = demandIntercept - demandSlope * amount;
     if (demandSlope != 0)
@@ -138,10 +138,6 @@ double Good::quantum(double cst) const {
         qtm = 0;
     if (qtm < 0) return 0;
     return qtm;
-}
-
-std::array<double, static_cast<size_t>(Optimization::count)> Good::optimization() const {
-    return {amount - demandIntercept / demandSlope, demandIntercept - demandSlope * amount, demandSlope};
 }
 
 void Good::setConsumption(const std::array<double, 3> &cnsptn) {

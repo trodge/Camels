@@ -91,7 +91,7 @@ public:
 
 struct BuildPlan {
     const Business &business;
-    double cost, area;
+    double area, cost;
     std::vector<Good> request;
 };
 

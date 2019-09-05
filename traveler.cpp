@@ -229,13 +229,13 @@ void Traveler::makeTrade() {
     logText.push_back(logEntry);
 }
 
-void Traveler::divideExcess(double exc) {
+void Traveler::divideExcess(double exc, double tnP) {
     // Divide excess value among amounts of offered goods.
     exc /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         // Convert value to quantity of this good.
         auto tG = toTown->getProperty().good(of.getFullId()); // pointer to town good
-        double q = tG->quantity(exc / Settings::getTownProfit());
+        double q = tG->quantity(exc / tnP);
         if (!tG->getSplit()) q = floor(q);
         // Reduce quantity.
         of.use(q);
@@ -281,6 +281,8 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
                 // Good is worthless in this town, don'tn allow it to be offered.
                 bx->setClicked(false);
         }
+    double townProfit = Settings::getTownProfit();
+    offerValue *= townProfit;
     bxs = pgrs[2].getAll();
     unsigned int requestCount = std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) {
         return c + rB->getClicked();
@@ -296,7 +298,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
             tG->updateButton(offerValue, std::max(1u, requestCount), bx);
             if (bx->getClicked() && offerValue > 0) {
                 double mE = 0; // excess quantity of this material
-                double amount = tG->quantity(offerValue / requestCount * Settings::getTownProfit(), mE);
+                double amount = tG->quantity(offerValue / requestCount, mE);
                 if (!tG->getSplit())
                     // Remove extra portion of goods that don'tn split.
                     mE += modf(amount, &amount);
@@ -306,7 +308,7 @@ void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
             }
         }
     }
-    if (offer.size()) divideExcess(excess);
+    if (offer.size()) divideExcess(excess, townProfit);
 }
 
 Property &Traveler::makeProperty(unsigned int tId) {

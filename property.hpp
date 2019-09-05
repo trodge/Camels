@@ -45,6 +45,11 @@ struct Conflict {
 
 class Business;
 
+struct GoodBalance {
+    const Good *cheapest = nullptr;
+    double amount, price, ratio;
+};
+
 struct BuildPlan;
 
 class Property {
@@ -64,7 +69,7 @@ class Property {
     int updateCounter;
     bool maxGoods = false;
     const Property *source = nullptr;
-    void buildable(const Business &bsn, const Property &tnPpt, double ofVl, std::vector<BuildPlan> &bdb) const;
+    BuildPlan buildable(const Business &bsn, const Property &tvlPpt, double ofVl) const;
     void addGood(const Good &srGd, const std::function<void(Good &)> &fn);
 
 public:
@@ -86,8 +91,8 @@ public:
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const;
-    std::vector<Good> balance(const std::vector<Good> &gds, double ofVl);
-    std::vector<BuildPlan> buildable(const Property &tnPpt, double ofVl) const;
+    double balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const;
+    std::vector<BuildPlan> buildable(const Property &tvlPpt, double ofVl) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();
