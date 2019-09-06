@@ -97,9 +97,17 @@ double AI::lootScore(const Property &tPpt) const {
 void AI::trade() {
     // Attempt to make best possible single trade in current town.
     double criteriaMax = Settings::getAIDecisionCriteriaMax();
+    auto town = traveler.town();
+    auto &storageProperty = traveler.property(town->getId());
+    // Take all goods out of storage.
+    storageProperty.forGood([this](const Good &gd) {
+        Good wG(gd);
+        traveler.withdraw(wG);
+    });
+    // Clear offer and request from previous trade.
     traveler.clearTrade();
     double bestScore = 0, offerValue = 0, offerWeight = 0, weight = traveler.weight();
-    bool overWeight = weight > 0;
+    bool overWeight = weight > 0; // goods are too heavy to carry
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
     auto &travelerProperty = traveler.property();
@@ -133,13 +141,6 @@ void AI::trade() {
     double townProfit = Settings::getTownProfit();
     offerValue *= townProfit;
     // Determine which businesses can be built based on offer value and town prices.
-    auto town = traveler.town();
-    auto &storageProperty = traveler.property(town->getId());
-    // Take all goods out of storage.
-    storageProperty.forGood([this](const Good &gd) {
-        Good wG(gd);
-        traveler.withdraw(wG);
-    });
     auto &townProperty = town->getProperty();
     auto buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
     // Find best business scored based on requirements, inputs, and outputs.
@@ -236,7 +237,7 @@ void AI::trade() {
 }
 
 void AI::store() {
-    // Deposit all goods that are inputs for businesses
+    // Deposit all goods that are inputs for businesses.
     auto &storageProperty = traveler.property(traveler.town()->getId()), &travelerProperty = traveler.property();
     for (auto &bsn : storageProperty.getBusinesses())
         for (auto &ip : bsn.getInputs())
