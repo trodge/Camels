@@ -39,8 +39,9 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
         b.CreateVectorOfStructs<Save::CombatStat>(combatStats.size(), [this](size_t i, Save::CombatStat *cS) {
             *cS = Save::CombatStat(
                 static_cast<Save::Part>(combatStats[i].part), static_cast<Save::Stat>(combatStats[i].stat),
-                combatStats[i].attack, combatStats[i].speed, static_cast<Save::AttackType>(combatStats[i].type),
-                combatStats[i].defense[AttackType::bash], combatStats[i].defense[AttackType::slash], combatStats[i].defense[AttackType::stab]);
+                combatStats[i].attack, combatStats[i].speed,
+                static_cast<Save::AttackType>(combatStats[i].type), combatStats[i].defense[AttackType::bash],
+                combatStats[i].defense[AttackType::slash], combatStats[i].defense[AttackType::stab]);
         });
     return Save::CreateGood(b, goodId, materialId, fullId, svGoodName, svMaterialName, amount, perish, carry, svMeasure,
                             consumptionRate, demandSlope, demandIntercept, svPerishCounters, svCombatStats, shoots);
@@ -136,7 +137,7 @@ double Good::quota(double prc) const {
         qta = prc / demandIntercept;
     else
         qta = 0;
-    if ( qta < 0) return 0;
+    if (qta < 0) return 0;
     return qta;
 }
 

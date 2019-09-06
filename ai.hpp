@@ -53,8 +53,8 @@ struct TownInfo {
  * AI which updates non-player travelers
  */
 class AI {
-    Traveler &traveler;  // the traveler this AI controls
-    int decisionCounter; // counter for updatening AI
+    Traveler &traveler;                                   // the traveler this AI controls
+    int decisionCounter;                                  // counter for updatening AI
     EnumArray<double, DecisionCriteria> decisionCriteria; /* buy/sell score
     weight, weapon/armor equip score, tendency to fight/run/yield, looting greed */
     std::unordered_map<unsigned int, GoodInfo> goodsInfo; // known information about each good by full id
@@ -66,7 +66,7 @@ class AI {
     double sellScore(double p, double s) const { return s == 0 ? 0 : p / s; } // score buying at price p
     double equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
-    double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat>&sts) const;
+    double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double lootScore(const Property &ppt) const;
     void trade();
     void store();

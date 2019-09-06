@@ -69,9 +69,8 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
             pause = true;
             pagers[0].getVisible(0)->setText(0, traveler ? "Save and Quit" : "Quit");
         }};
-    uIStates[State::loading] = {
-        {Settings::boxInfo({screenRect.w / 7, screenRect.h / 7, 0, 0}, {"(B)ack"}, BoxSizeType::big, SDLK_b,
-                           [this](MenuButton *) { setState(State::starting); })}};
+    uIStates[State::loading] = {{Settings::boxInfo({screenRect.w / 7, screenRect.h / 7, 0, 0}, {"(B)ack"}, BoxSizeType::big,
+                                                   SDLK_b, [this](MenuButton *) { setState(State::starting); })}};
     uIStates[State::traveling] = {
         {Settings::boxInfo({screenRect.w / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(G)o"}, BoxSizeType::small, SDLK_g,
                            [this](MenuButton *btn) {
@@ -138,32 +137,29 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         {Settings::boxInfo({screenRect.w * 8 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Close (L)og"},
                            BoxSizeType::small, SDLK_l, [this](MenuButton *) { setState(State::traveling); })},
         [this] { traveler->createLogBox(pagers[0], printer); }};
-    uIStates[State::fighting] = {
-        {}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }};
-    uIStates[State::looting] = {
-        {Settings::boxInfo({screenRect.w / 15, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (L)ooting"},
-                           BoxSizeType::small, SDLK_l,
-                           [this](MenuButton *) {
-                               traveler->loseTarget();
-                               setState(State::traveling);
-                           }),
-         Settings::boxInfo({screenRect.w * 4 / 15, screenRect.h - smallBoxFontHeight, 0, 0}, {"Loot (A)ll"},
-                           BoxSizeType::small, SDLK_a,
-                           [this](MenuButton *) {
-                               traveler->loot();
-                               traveler->loseTarget();
-                               setState(State::traveling);
-                           })},
-        [this] { traveler->createLootButtons(pagers, focusBox, printer); },
-        3};
-    uIStates[State::dying] = {
-        {}, [this] {
-            pagers[0].addBox(std::make_unique<TextBox>(
-                Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0},
-                                  {traveler->getLogText().back(), "You have died."},
-                                  traveler->getNation()->getColors(), BoxSizeType::big),
-                printer));
-        }};
+    uIStates[State::fighting] = {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }};
+    uIStates[State::looting] = {{Settings::boxInfo({screenRect.w / 15, screenRect.h - smallBoxFontHeight, 0, 0},
+                                                   {"Stop (L)ooting"}, BoxSizeType::small, SDLK_l,
+                                                   [this](MenuButton *) {
+                                                       traveler->loseTarget();
+                                                       setState(State::traveling);
+                                                   }),
+                                 Settings::boxInfo({screenRect.w * 4 / 15, screenRect.h - smallBoxFontHeight, 0, 0},
+                                                   {"Loot (A)ll"}, BoxSizeType::small, SDLK_a,
+                                                   [this](MenuButton *) {
+                                                       traveler->loot();
+                                                       traveler->loseTarget();
+                                                       setState(State::traveling);
+                                                   })},
+                                [this] { traveler->createLootButtons(pagers, focusBox, printer); },
+                                3};
+    uIStates[State::dying] = {{}, [this] {
+                                  pagers[0].addBox(std::make_unique<TextBox>(
+                                      Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0},
+                                                        {traveler->getLogText().back(), "You have died."},
+                                                        traveler->getNation()->getColors(), BoxSizeType::big),
+                                      printer));
+                              }};
 
     fs::path path{"save"};
     std::vector<std::string> saves;

@@ -40,15 +40,15 @@ class Business {
     double area;    // in uncia
     bool canSwitch; // whether able to switch between modes
     bool requireCoast;
-    bool keepMaterial;              // whether outputs get input as material
-    std::vector<Good> requirements; // goods needed to start
-    std::vector<Good> reclaimables; // goods which will be reclaimed when business is demolished
-    std::vector<Good> inputs;       // goods needed every production cycle
-    std::vector<Good> outputs;      // goods created every production cycle
-    double factor;                  // factor based on area and available inputs for production
-    double frequency = 0;           // area of business per unit of population
+    bool keepMaterial;                            // whether outputs get input as material
+    std::vector<Good> requirements;               // goods needed to start
+    std::vector<Good> reclaimables;               // goods which will be reclaimed when business is demolished
+    std::vector<Good> inputs;                     // goods needed every production cycle
+    std::vector<Good> outputs;                    // goods created every production cycle
+    double factor;                                // factor based on area and available inputs for production
+    double frequency = 0;                         // area of business per unit of population
     EnumArray<double, TownType> frequencyFactors; // factors for frequency in different town types
-    double reclaimFactor = 0.7; // portion of requirements that can be reclaimed
+    double reclaimFactor = 0.7;                   // portion of requirements that can be reclaimed
 
 public:
     Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,

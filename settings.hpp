@@ -232,8 +232,7 @@ public:
         return boxInfo(rt, tx, sm, i, sz, bvr, SDLK_UNKNOWN, nullptr, oR);
     } // any non-button box
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, const SDL_Rect &oR) {
-        return boxInfo(rt, tx, colorSchemes[ColorSchemeType::load], {0, false},
-                       BoxSizeType::load, BoxBehavior::inert, oR);
+        return boxInfo(rt, tx, colorSchemes[ColorSchemeType::load], {0, false}, BoxSizeType::load, BoxBehavior::inert, oR);
     } // load bar
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
                            std::pair<unsigned int, bool> i, BoxSizeType sz, BoxBehavior bvr) {

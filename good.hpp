@@ -115,8 +115,8 @@ public:
     double cost(double &qtt) const;
     double value() const { return price() * amount; }
     double quantity(double cst, double &exc) const;
-    double quantity(double cst ) const;
-    double quota (double prc ) const;
+    double quantity(double cst) const;
+    double quota(double prc) const;
     const std::vector<CombatStat> &getCombatStats() const { return combatStats; }
     SDL_Surface *getImage() const { return image; }
     void setFullId(unsigned int fId) { fullId = fId; }

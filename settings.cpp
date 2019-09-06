@@ -158,28 +158,23 @@ void Settings::load(const fs::path &p) {
     playerColor = loadColor("player.color", {255, 255, 255, 255}, tree);
     aIDecisionCriteriaMax = tree.get("aI.decisionCriteriaMax", 9);
     loadRange("aI.roleWeights", begin(aIRoleWeights), {0.4, 0.1, 0.1, 0.2, 0.1, 0.1}, tree);
-    loadRange("aI.traderGoods", std::back_inserter(aIStartingGoods[AIRole::trader]),
-              &loadPair<unsigned int, double>,
+    loadRange("aI.traderGoods", std::back_inserter(aIStartingGoods[AIRole::trader]), &loadPair<unsigned int, double>,
               {std::make_pair(1, 21.), std::make_pair(9, 10.5), std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
-    loadRange("aI.soldierGoods", std::back_inserter(aIStartingGoods[AIRole::soldier]),
-              &loadPair<unsigned int, double>,
+    loadRange("aI.soldierGoods", std::back_inserter(aIStartingGoods[AIRole::soldier]), &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
-    loadRange("aI.banditGoods", std::back_inserter(aIStartingGoods[AIRole::bandit]),
-              &loadPair<unsigned int, double>,
+    loadRange("aI.banditGoods", std::back_inserter(aIStartingGoods[AIRole::bandit]), &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
     loadRange("aI.agentGoods", std::back_inserter(aIStartingGoods[AIRole::agent]),
               &loadPair<unsigned int, double>, {std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
-    loadRange("aI.guardGoods", std::back_inserter(aIStartingGoods[AIRole::guard]),
-              &loadPair<unsigned int, double>,
+    loadRange("aI.guardGoods", std::back_inserter(aIStartingGoods[AIRole::guard]), &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
-    loadRange("aI.thugGoods", std::back_inserter(aIStartingGoods[AIRole::thug]),
-              &loadPair<unsigned int, double>,
+    loadRange("aI.thugGoods", std::back_inserter(aIStartingGoods[AIRole::thug]), &loadPair<unsigned int, double>,
               {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
                std::make_pair(44, 1.), std::make_pair(46, 1.)},
               tree);
@@ -282,18 +277,18 @@ void Settings::save(const fs::path &p) {
     saveColor("player.color", playerColor, tree);
     tree.put("aI.decisionCriteriaMax", aIDecisionCriteriaMax);
     saveRange("aI.roleWeights", begin(aIRoleWeights), end(aIRoleWeights), tree);
-    saveRange("aI.traderGoods", begin(aIStartingGoods[AIRole::trader]),
-              end(aIStartingGoods[AIRole::trader]), &savePair<unsigned int, double>, tree);
+    saveRange("aI.traderGoods", begin(aIStartingGoods[AIRole::trader]), end(aIStartingGoods[AIRole::trader]),
+              &savePair<unsigned int, double>, tree);
     saveRange("aI.soldierGoods", begin(aIStartingGoods[AIRole::soldier]),
               end(aIStartingGoods[AIRole::soldier]), &savePair<unsigned int, double>, tree);
-    saveRange("aI.banditGoods", begin(aIStartingGoods[AIRole::bandit]),
-              end(aIStartingGoods[AIRole::bandit]), &savePair<unsigned int, double>, tree);
-    saveRange("aI.agentGoods", begin(aIStartingGoods[AIRole::agent]),
-              end(aIStartingGoods[AIRole::agent]), &savePair<unsigned int, double>, tree);
-    saveRange("aI.guardGoods", begin(aIStartingGoods[AIRole::guard]),
-              end(aIStartingGoods[AIRole::guard]), &savePair<unsigned int, double>, tree);
-    saveRange("aI.thugGoods", begin(aIStartingGoods[AIRole::thug]),
-              end(aIStartingGoods[AIRole::thug]), &savePair<unsigned int, double>, tree);
+    saveRange("aI.banditGoods", begin(aIStartingGoods[AIRole::bandit]), end(aIStartingGoods[AIRole::bandit]),
+              &savePair<unsigned int, double>, tree);
+    saveRange("aI.agentGoods", begin(aIStartingGoods[AIRole::agent]), end(aIStartingGoods[AIRole::agent]),
+              &savePair<unsigned int, double>, tree);
+    saveRange("aI.guardGoods", begin(aIStartingGoods[AIRole::guard]), end(aIStartingGoods[AIRole::guard]),
+              &savePair<unsigned int, double>, tree);
+    saveRange("aI.thugGoods", begin(aIStartingGoods[AIRole::thug]), end(aIStartingGoods[AIRole::thug]),
+              &savePair<unsigned int, double>, tree);
     tree.put("aI.traderGoodCount", aIStartingGoodsCount[AIRole::trader]);
     tree.put("aI.soldierGoodCount", aIStartingGoodsCount[AIRole::soldier]);
     tree.put("aI.banditGoodCount", aIStartingGoodsCount[AIRole::bandit]);

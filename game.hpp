@@ -44,7 +44,8 @@ struct Deleter {
         if (sqlite3_close(cn) != SQLITE_OK) throw std::runtime_error(sqlite3_errmsg(cn));
     }
     void operator()(sqlite3_stmt *qr) {
-        if (sqlite3_finalize(qr) != SQLITE_OK) throw std::runtime_error(sqlite3_errmsg(sqlite3_db_handle(qr)));
+        if (sqlite3_finalize(qr) != SQLITE_OK)
+            throw std::runtime_error(sqlite3_errmsg(sqlite3_db_handle(qr)));
     }
 };
 

@@ -60,7 +60,6 @@ void Property::forGood(const std::function<void(const Good &gd)> &fn) const {
     std::for_each(begin(goods), end(goods), fn);
 }
 
-
 void Property::forGood(unsigned int gId, const std::function<void(const Good &gd)> &fn) const {
     // Run given function for each good with given good id.
     auto rng = goods.get<GoodId>().equal_range(gId);
@@ -90,8 +89,7 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
     double factor = std::numeric_limits<double>::max();
     if (cst == 0) {
         // No goods can be bought.
-        for (auto &gd : goods)
-            factor = std::min(tvlPpt.amount(gd.getGoodId()) / gd.getAmount(), factor);
+        for (auto &gd : goods) factor = std::min(tvlPpt.amount(gd.getGoodId()) / gd.getAmount(), factor);
         gds.clear();
         return factor;
     }
@@ -115,7 +113,8 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
                 }
             }
         });
-        if (!blnc.cheapest) /* A good is not available */ return 0;
+        if (!blnc.cheapest) /* A good is not available */
+            return 0;
         gd.setFullId(blnc.cheapest->getFullId());
         gd.setFullName(blnc.cheapest->getFullName());
         gd.setMeasure(blnc.cheapest->getMeasure());

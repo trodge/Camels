@@ -176,18 +176,17 @@ void AI::trade() {
         bestScore = 1 / bestScore;
     double excess;
     // Find highest buy score.
-    townProperty.forGood([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(),
-                             criteriaMax, &bestScore, offerValue, weight, overWeight, &bestGood,
-                             townProfit, &excess](const Good &tG) {
+    townProperty.forGood([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(), criteriaMax,
+                          &bestScore, offerValue, weight, overWeight, &bestGood, townProfit, &excess](const Good &tG) {
         double carry = tG.getCarry();
         if (!overWeight || carry < 0) {
             auto fId = tG.getFullId();
             auto gII = goodsInfo.find(fId);
             if (gII == end(goodsInfo)) return;
             double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
-            double eqpScr =
-                equipScore(tG, equipment, stats) * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
-                decisionCriteria[DecisionCriteria::equipScoreWeight] / criteriaMax;
+            double eqpScr = equipScore(tG, equipment, stats) *
+                            (1 + !(role == AIRole::trader || role == AIRole::agent)) *
+                            decisionCriteria[DecisionCriteria::equipScoreWeight] / criteriaMax;
             // Weigh equip score double if not a trader or agent.
             score += eqpScr;
             if (score > bestScore) {
@@ -231,8 +230,7 @@ void AI::trade() {
 
 void AI::store() {
     // Deposit all goods that are inputs for businesses
-    auto &storageProperty = traveler.property(traveler.town()->getId()),
-         &travelerProperty = traveler.property();
+    auto &storageProperty = traveler.property(traveler.town()->getId()), &travelerProperty = traveler.property();
     for (auto &bsn : storageProperty.getBusinesses())
         for (auto &ip : bsn.getInputs())
             travelerProperty.forGood(ip.getGoodId(), [this](const Good &gd) {
@@ -297,12 +295,9 @@ void AI::choose() {
     auto target = traveler.getTarget();
     double equipmentScoreRatio = equipScore(target->getEquipment(), target->getStats()) /
                                  equipScore(traveler.getEquipment(), traveler.getStats());
-    scores[FightChoice::fight] =
-        1 / equipmentScoreRatio * decisionCriteria[DecisionCriteria::fightTendency];
-    scores[FightChoice::run] =
-        equipmentScoreRatio * decisionCriteria[DecisionCriteria::runTendency];
-    scores[FightChoice::yield] =
-        equipmentScoreRatio * decisionCriteria[DecisionCriteria::yieldTendency];
+    scores[FightChoice::fight] = 1 / equipmentScoreRatio * decisionCriteria[DecisionCriteria::fightTendency];
+    scores[FightChoice::run] = equipmentScoreRatio * decisionCriteria[DecisionCriteria::runTendency];
+    scores[FightChoice::yield] = equipmentScoreRatio * decisionCriteria[DecisionCriteria::yieldTendency];
     if (equipmentScoreRatio > 1)
         // Target's equipment is better, weigh run score by speed ratio.
         scores[FightChoice::run] *= traveler.speed() / target->speed();
@@ -318,8 +313,7 @@ void AI::loot() {
     double lootGoal = lootScore(tPpt);
     if (tgt->alive())
         // Looting from an alive target dependent on greed.
-        lootGoal *= decisionCriteria[DecisionCriteria::lootingGreed] /
-                    Settings::getAIDecisionCriteriaMax();
+        lootGoal *= decisionCriteria[DecisionCriteria::lootingGreed] / Settings::getAIDecisionCriteriaMax();
     double looted = 0, weight = traveler.weight();
     while (looted < lootGoal) {
         // Keep looting until amount looted matches goal or we can carry no more.
@@ -435,9 +429,8 @@ void AI::update(unsigned int e) {
             Town *bestTown = nullptr;
             double highest = 0;
             for (auto &tI : nearby) {
-                double score =
-                    tI.buyScore * decisionCriteria[DecisionCriteria::buyScoreWeight] +
-                    tI.sellScore * decisionCriteria[DecisionCriteria::sellScoreWeight];
+                double score = tI.buyScore * decisionCriteria[DecisionCriteria::buyScoreWeight] +
+                               tI.sellScore * decisionCriteria[DecisionCriteria::sellScoreWeight];
                 if (score > highest) {
                     highest = score;
                     bestTown = tI.town;
