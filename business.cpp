@@ -20,7 +20,7 @@
 #include "business.hpp"
 
 Business::Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,
-                   const std::array<double, static_cast<size_t>(TownType::count)> &fFs)
+                   const EnumArray<double, TownType> &fFs)
     : id(i), mode(m), name(nm), area(1), canSwitch(cS), requireCoast(rC), keepMaterial(kM), frequency(1),
       frequencyFactors(fFs) {}
 
@@ -66,7 +66,7 @@ void Business::setArea(double a) {
 
 void Business::scale(unsigned long ppl, TownType tT) {
     // Set area according to given population and town type.
-    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[static_cast<size_t>(tT)]);
+    setArea(static_cast<double>(ppl) * frequency * frequencyFactors[tT]);
 }
 
 void Business::takeRequirements(Property &inv, double a) {

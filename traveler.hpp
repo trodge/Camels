@@ -35,6 +35,7 @@
 #include "ai.hpp"
 #include "constants.hpp"
 #include "draw.hpp"
+#include "enum_array.hpp"
 #include "good.hpp"
 #include "menubutton.hpp"
 #include "nation.hpp"
@@ -54,10 +55,10 @@ struct CombatOdd {
 
 struct GameData {
     unsigned int nationCount, townCount;
-    std::array<std::string, static_cast<size_t>(Part::count)> partNames;
-    std::array<std::string, static_cast<size_t>(Status::count)> statusNames;
-    std::array<CombatOdd, static_cast<size_t>(AttackType::count)> odds;
-    std::array<std::string, static_cast<size_t>(TownType::count)> townTypeNames;
+    EnumArray<std::string, Part> partNames;
+    EnumArray<std::string, Status> statusNames;
+    EnumArray<CombatOdd, AttackType> odds;
+    EnumArray<std::string, TownType> townTypeNames;
     std::map<unsigned long, std::string> populationAdjectives;
 };
 
@@ -88,8 +89,8 @@ class Traveler {
     std::vector<int> reputation;                           // reputation indexed by nation id
     std::vector<Good> offer, request;                      // goods offered and requested in next trade
     std::unordered_map<unsigned int, Property> properties; // owned goods and businesses by town id, 0 for carried goods
-    std::array<unsigned int, static_cast<size_t>(Stat::count)> stats;
-    std::array<Status, static_cast<size_t>(Part::count)> parts;
+    EnumArray<unsigned int, Stat> stats;
+    EnumArray<Status, Part> parts;
     std::vector<Good> equipment;
     std::vector<Traveler *> agents;     // travelers employed
     std::unique_ptr<Contract> contract; // contract with employer, if any
@@ -138,13 +139,13 @@ public:
     const std::vector<Good> &getOffer() const { return offer; }
     const std::vector<Good> &getRequest() const { return request; }
     double getPortion() const { return portion; }
-    const std::array<unsigned int, 5> &getStats() const { return stats; }
-    double speed() const { return stats[1] + stats[2] + stats[3]; }
-    Status part(Part pt) const { return parts[static_cast<size_t>(pt)]; }
+    const EnumArray<unsigned int, Stat> &getStats() const { return stats; }
+    double speed() const { return stats[Stat::strength] + stats[Stat::endurance] + stats[Stat::agility]; }
+    Status part(Part pt) const { return parts[pt]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     Traveler *getTarget() const { return target; }
     bool alive() const {
-        return static_cast<unsigned int>(parts[0]) < 5 && static_cast<unsigned int>(parts[1]) < 5;
+        return static_cast<unsigned int>(parts[Part::head]) < 5 && static_cast<unsigned int>(parts[Part::torso]) < 5;
     }
     bool getDead() const { return dead; }
     bool getMoving() const { return moving; }

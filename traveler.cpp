@@ -83,7 +83,7 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
 }
 
 double Traveler::weight() const {
-    return properties.find(0)->second.weight() + static_cast<double>(stats[0]) * kTravelerCarry;
+    return properties.find(0)->second.weight() + static_cast<double>(stats[Stat::strength]) * kTravelerCarry;
 }
 
 std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
@@ -496,7 +496,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
     pgrs[1].setBounds(rt);
     int dx = (rt.w + m) / static_cast<int>(Part::count), dy = (rt.h + m) / Settings::getGoodButtonRows();
     BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSizeType::equip);
-    std::array<std::vector<Good>, static_cast<size_t>(Part::count)> equippable;
+    EnumArray<std::vector<Good>, Part> equippable;
     // array of vectors corresponding to parts that can hold equipment
     properties.find(0)->second.forGood([&equippable](const Good &g) {
         auto &ss = g.getCombatStats();
@@ -504,7 +504,7 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
             // This good has combat stats and we have at least one of it.
             Part pt = ss.front().part;
             Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
-            equippable[static_cast<size_t>(pt)].push_back(e);
+            equippable[pt].push_back(e);
         }
     });
     // Create buttons for equipping equipment.
@@ -639,11 +639,11 @@ void Traveler::loseTarget() {
 
 CombatHit Traveler::firstHit(Traveler &tgt) {
     // Find first hit of this traveler on tn.
-    std::array<unsigned int, 3> defense{};
+    EnumArray<unsigned int, AttackType> defense;
     for (auto &e : tgt.equipment)
         for (auto &s : e.getCombatStats())
             for (size_t i = 0; i < defense.size(); ++i)
-                defense[i] += s.defense[i] * tgt.stats[static_cast<size_t>(s.stat)];
+                defense[static_cast<AttackType>(i)] += s.defense[static_cast<AttackType>(i)] * tgt.stats[s.stat];
     CombatHit first = {std::numeric_limits<double>::max(), nullptr, ""};
     for (auto &e : equipment) {
         auto &ss = e.getCombatStats();
@@ -652,14 +652,14 @@ CombatHit Traveler::firstHit(Traveler &tgt) {
             unsigned int attack = 0, speed = 0;
             AttackType type = ss.front().type;
             for (auto &s : ss) {
-                attack += s.attack * stats[static_cast<size_t>(s.stat)];
-                speed += s.speed * stats[static_cast<size_t>(s.stat)];
+                attack += s.attack * stats[s.stat];
+                speed += s.speed * stats[s.stat];
             }
-            auto &cO = gameData.odds[static_cast<size_t>(type)];
+            auto &cO = gameData.odds[type];
             // Calculate number of swings before hit happens.
             double r = Settings::random();
             double p = static_cast<double>(attack) / cO.hitChance /
-                       static_cast<double>(defense[static_cast<size_t>(type)]);
+                       static_cast<double>(defense[type]);
             double time;
             if (p < 1)
                 time = (log(r) / log(1 - p) + 1) / speed;
@@ -680,7 +680,7 @@ void Traveler::useAmmo(double tn) {
         unsigned int sId = e.getShoots();
         if (sId) {
             unsigned int speed = 0;
-            for (auto &s : e.getCombatStats()) speed += s.speed * stats[static_cast<size_t>(s.stat)];
+            for (auto &s : e.getCombatStats()) speed += s.speed * stats[s.stat];
             unsigned int n = static_cast<unsigned int>(tn * speed);
             properties.find(0)->second.use(sId, n);
         }
@@ -725,7 +725,7 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &tgt) {
     // Pick a random part.
     auto part = Settings::part();
     // Start status at that part's status.
-    auto status = parts[static_cast<size_t>(part)];
+    auto status = parts[part];
     // Get random value from 0 to 1.
     auto r = Settings::random();
     // Find status such that part becomes more damaged.
@@ -739,13 +739,13 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &tgt) {
             // Subtract chance of this status from r.
             r -= sCI->second;
         }
-    parts[static_cast<size_t>(part)] = status;
+    parts[part] = status;
     if (status > Status::wounded)
         // Part is too wounded to hold equipment.
         unequip(part);
     std::string logEntry = tgt.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
-                           gameData.partNames[static_cast<size_t>(part)] + " has been " +
-                           gameData.statusNames[static_cast<size_t>(status)] + ".";
+                           gameData.partNames[part] + " has been " +
+                           gameData.statusNames[status] + ".";
     logText.push_back(logEntry);
     tgt.logText.push_back(logEntry);
 }
@@ -791,16 +791,16 @@ void Traveler::updateFightBoxes(Pager &pgr) {
     bxs[0]->setText(choiceText);
     std::vector<std::string> statusText(static_cast<size_t>(Part::count) + 1);
     statusText[0] = name + "'s Status";
-    for (size_t i = 1; i < static_cast<size_t>(Part::count) + 1; ++i)
-        statusText[i] = gameData.partNames[i - 1] + ": " +
-                        gameData.statusNames[static_cast<size_t>(part(static_cast<Part>(i - 1)))];
+    for (size_t i = 0; i < static_cast<size_t>(Part::count); ++i)
+        statusText[i + 1] = gameData.partNames[static_cast<Part>(i)] + ": " +
+                        gameData.statusNames[parts[static_cast<Part>(i)]];
     bxs[1]->setText(statusText);
     auto tgt = target;
     if (!tgt) return;
     statusText[0] = tgt->getName() + "'s Status";
-    for (size_t i = 1; i < statusText.size(); ++i)
-        statusText[i] = gameData.partNames[i - 1] + ": " +
-                        gameData.statusNames[static_cast<size_t>(part(static_cast<Part>(i - 1)))];
+    for (size_t i = 0; i < static_cast<size_t>(Part::count); ++i)
+        statusText[i + 1] = gameData.partNames[static_cast<Part>(i)] + ": " +
+                        gameData.statusNames[tgt->parts[static_cast<Part>(i)]];
     bxs[2]->setText(statusText);
 }
 
@@ -879,7 +879,7 @@ void Traveler::update(unsigned int elTm) {
                 name + " has arrived in the " +
                 gameData.populationAdjectives.lower_bound(toTown->getProperty().getPopulation())->second +
                 " " + toTown->getNation()->getAdjective() + " " +
-                gameData.townTypeNames[static_cast<size_t>(toTown->getProperty().getTownType())] + " of " +
+                gameData.townTypeNames[toTown->getProperty().getTownType()] + " of " +
                 toTown->getName() + ".");
         }
     }

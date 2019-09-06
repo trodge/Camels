@@ -169,12 +169,12 @@ void Game::loadData(sqlite3 *cn) {
     auto quer = sql::makeQuery(cn, "SELECT name FROM parts");
     auto q = quer.get();
     for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
-        gameData.partNames[i] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
+        gameData.partNames[static_cast<Part>(i)] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
     // Load status names.
     quer = sql::makeQuery(cn, "SELECT name FROM statuses");
     q = quer.get();
     for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
-        gameData.statusNames[i] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
+        gameData.statusNames[static_cast<Status>(i)] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
 
     // Load combat odds.
     quer = sql::makeQuery(cn,
@@ -182,7 +182,7 @@ void Game::loadData(sqlite3 *cn) {
                           "status_2_chance, status_3, status_3_chance FROM combat_odds");
     q = quer.get();
     for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
-        gameData.odds[i] = {sqlite3_column_double(q, 0),
+        gameData.odds[static_cast<AttackType>(i)] = {sqlite3_column_double(q, 0),
                             {{{static_cast<Status>(sqlite3_column_int(q, 1)), sqlite3_column_double(q, 2)},
                               {static_cast<Status>(sqlite3_column_int(q, 3)), sqlite3_column_double(q, 4)},
                               {static_cast<Status>(sqlite3_column_int(q, 5)), sqlite3_column_double(q, 6)}}}};
@@ -191,7 +191,7 @@ void Game::loadData(sqlite3 *cn) {
     quer = sql::makeQuery(cn, "SELECT noun FROM town_type_nouns");
     q = quer.get();
     for (size_t i = 0; sqlite3_step(q) != SQLITE_DONE; ++i)
-        gameData.townTypeNames[i] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
+        gameData.townTypeNames[static_cast<TownType>(i)] = std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 0)));
 
     quer = sql::makeQuery(cn, "SELECT minimum, adjective FROM population_adjectives");
     q = quer.get();

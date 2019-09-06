@@ -55,7 +55,7 @@ struct TownInfo {
 class AI {
     Traveler &traveler;  // the traveler this AI controls
     int decisionCounter; // counter for updatening AI
-    std::array<double, static_cast<size_t>(DecisionCriteria::count)> decisionCriteria; /* buy/sell score
+    EnumArray<double, DecisionCriteria> decisionCriteria; /* buy/sell score
     weight, weapon/armor equip score, tendency to fight/run/yield, looting greed */
     std::unordered_map<unsigned int, GoodInfo> goodsInfo; // known information about each good by full id
     std::vector<TownInfo> nearby;                         // known information about nearby towns
@@ -64,9 +64,9 @@ class AI {
     void setLimits();
     double buyScore(double p, double b) const { return p == 0 ? 0 : b / p; }  // score selling at price p
     double sellScore(double p, double s) const { return s == 0 ? 0 : p / s; } // score buying at price p
-    double equipScore(const Good &eq, const std::array<unsigned int, 5> &sts) const;
-    double equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
-    double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const;
+    double equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
+    double equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
+    double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat>&sts) const;
     double lootScore(const Property &ppt) const;
     void trade();
     void store();
@@ -74,7 +74,7 @@ class AI {
     void attack();
 
 public:
-    AI(Traveler &tvl, const std::array<double, static_cast<size_t>(DecisionCriteria::count)> &dcC,
+    AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
        const std::unordered_map<unsigned int, GoodInfo> &gsI, AIRole rl);
     AI(Traveler &tvl) : AI(tvl, Settings::aIDecisionCriteria(), {}, Settings::aIRole()) {}
     AI(Traveler &tvl, const AI &p) : AI(tvl, p.decisionCriteria, p.goodsInfo, p.role) {}

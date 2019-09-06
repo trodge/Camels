@@ -139,7 +139,6 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
     if (totalCost > cst) {
         // Quantities need to be adjusted down.
         double adjustment = cst / totalCost;
-        std::cout << "Cost in: " << cst << " adjustment: " << adjustment << std::endl;
         cst = 0;
         for (size_t i = 0; i < goodCount; ++i) {
             auto &gd = gds[i];
@@ -151,11 +150,8 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
             // Add cost of new amount to output variable.
             cst += blnc.cheapest->cost(amount);
         }
-        std::cout << "Cost out: " << cst << std::endl;
     } else {
-        std::cout << "Cost in: " << cst << std::endl;
         cst = totalCost;
-        std::cout << "Cost out: " << cst << std::endl;
         for (size_t i = 0; i < goodCount; ++i) {
             auto &blnc = goodBalances[i];
             factor = std::min((gds[i].getAmount() + blnc.amount) / blnc.ratio, factor);

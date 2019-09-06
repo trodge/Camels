@@ -40,7 +40,7 @@ flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) co
             *cS = Save::CombatStat(
                 static_cast<Save::Part>(combatStats[i].part), static_cast<Save::Stat>(combatStats[i].stat),
                 combatStats[i].attack, combatStats[i].speed, static_cast<Save::AttackType>(combatStats[i].type),
-                combatStats[i].defense[0], combatStats[i].defense[1], combatStats[i].defense[2]);
+                combatStats[i].defense[AttackType::bash], combatStats[i].defense[AttackType::slash], combatStats[i].defense[AttackType::stab]);
         });
     return Save::CreateGood(b, goodId, materialId, fullId, svGoodName, svMaterialName, amount, perish, carry, svMeasure,
                             consumptionRate, demandSlope, demandIntercept, svPerishCounters, svCombatStats, shoots);

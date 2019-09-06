@@ -19,7 +19,7 @@
 
 #include "ai.hpp"
 
-AI::AI(Traveler &tvl, const std::array<double, static_cast<size_t>(DecisionCriteria::count)> &dcC,
+AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
        const std::unordered_map<unsigned int, GoodInfo> &gsI, AIRole rl)
     : traveler(tvl), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
@@ -50,27 +50,27 @@ flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const 
     return Save::CreateAI(b, static_cast<short>(decisionCounter), sDecisionCriteria, sMaterialInfo);
 }
 
-double AI::equipScore(const Good &eq, const std::array<unsigned int, 5> &sts) const {
+double AI::equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const {
     // Scores parameter equipment based on parameter stats and this ai's criteria. Score is always >= 0.
     double attackScore = 0;
     double defenseScore = 0;
     for (auto &cS : eq.getCombatStats()) {
-        attackScore += cS.attack * sts[static_cast<size_t>(cS.stat)];
-        attackScore *= cS.speed * sts[static_cast<size_t>(cS.stat)];
-        for (auto &d : cS.defense) defenseScore += d * sts[static_cast<size_t>(cS.stat)];
+        attackScore += cS.attack * sts[cS.stat];
+        attackScore *= cS.speed * sts[cS.stat];
+        for (auto &d : cS.defense) defenseScore += d * sts[cS.stat];
     }
-    return attackScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::attackScoreWeight)] +
-           defenseScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::defenseScoreWeight)];
+    return attackScore * decisionCriteria[DecisionCriteria::attackScoreWeight] +
+           defenseScore * decisionCriteria[DecisionCriteria::defenseScoreWeight];
 }
 
-double AI::equipScore(const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const {
+double AI::equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const {
     // Scores parameter equipment with parameter stats based on this ai's criteria. Score is always >= 1.
     double score = 1;
     for (auto &eq : eqpmt) { score += equipScore(eq, sts); }
     return score;
 }
 
-double AI::equipScore(const Good &eq, const std::vector<Good> &eqpmt, const std::array<unsigned int, 5> &sts) const {
+double AI::equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const {
     // Score single equipment against set of equipment where parts match
     std::vector<Part> pts;
     auto &cSs = eq.getCombatStats();
@@ -151,7 +151,7 @@ void AI::trade() {
             score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() * bdp.area / bsnA;
         for (auto &op : bdp.business.getOutputs())
             score += goodsInfo[op.getFullId()].estimate * op.getAmount() * bdp.area / bsnA;
-        if (score * decisionCriteria[static_cast<size_t>(DecisionCriteria::buildTendency)] / criteriaMax > bestScore) {
+        if (score * decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax > bestScore) {
             bestScore = score;
             bestPlan = &bdp;
         }
@@ -187,7 +187,7 @@ void AI::trade() {
             double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
             double eqpScr =
                 equipScore(tG, equipment, stats) * (1 + !(role == AIRole::trader || role == AIRole::agent)) *
-                decisionCriteria[static_cast<size_t>(DecisionCriteria::equipScoreWeight)] / criteriaMax;
+                decisionCriteria[DecisionCriteria::equipScoreWeight] / criteriaMax;
             // Weigh equip score double if not a trader or agent.
             score += eqpScr;
             if (score > bestScore) {
@@ -243,7 +243,7 @@ void AI::store() {
 
 void AI::equip() {
     // Equip best scoring item for each part.
-    std::array<double, static_cast<size_t>(Part::count)> bestScores;
+    EnumArray<double, Part> bestScores;
     traveler.property().forGood([this, &bestScores](const Good &g) {
         if (g.getAmount() >= 1) {
             auto &ss = g.getCombatStats();
@@ -251,8 +251,8 @@ void AI::equip() {
                 Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
                 double score = equipScore(e, traveler.getStats());
                 Part pt = ss.front().part;
-                if (score > bestScores[static_cast<size_t>(pt)]) {
-                    bestScores[static_cast<size_t>(pt)] = score;
+                if (score > bestScores[pt]) {
+                    bestScores[pt] = score;
                     traveler.equip(e);
                 }
             }
@@ -270,7 +270,7 @@ void AI::attack() {
         able.erase(std::remove_if(begin(able), end(able),
                                   [this, ourEquipScore](const Traveler *a) {
                                       return lootScore(a->property()) * ourEquipScore *
-                                                 decisionCriteria[static_cast<size_t>(DecisionCriteria::fightTendency)] /
+                                                 decisionCriteria[DecisionCriteria::fightTendency] /
                                                  equipScore(a->getEquipment(), a->getStats()) <
                                              Settings::getAIAttackThreshold();
                                   }),
@@ -293,19 +293,19 @@ void AI::attack() {
 
 void AI::choose() {
     // Choose to fight, update, or yield based on equip scores, stats, and speeds.
-    std::array<double, static_cast<size_t>(FightChoice::count)> scores; // fight, run, yield scores
+    EnumArray<double, FightChoice> scores; // fight, run, yield scores
     auto target = traveler.getTarget();
     double equipmentScoreRatio = equipScore(target->getEquipment(), target->getStats()) /
                                  equipScore(traveler.getEquipment(), traveler.getStats());
-    scores[static_cast<size_t>(FightChoice::fight)] =
-        1 / equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::fightTendency)];
-    scores[static_cast<size_t>(FightChoice::run)] =
-        equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::runTendency)];
-    scores[static_cast<size_t>(FightChoice::yield)] =
-        equipmentScoreRatio * decisionCriteria[static_cast<size_t>(DecisionCriteria::yieldTendency)];
+    scores[FightChoice::fight] =
+        1 / equipmentScoreRatio * decisionCriteria[DecisionCriteria::fightTendency];
+    scores[FightChoice::run] =
+        equipmentScoreRatio * decisionCriteria[DecisionCriteria::runTendency];
+    scores[FightChoice::yield] =
+        equipmentScoreRatio * decisionCriteria[DecisionCriteria::yieldTendency];
     if (equipmentScoreRatio > 1)
         // Target's equipment is better, weigh run score by speed ratio.
-        scores[static_cast<size_t>(FightChoice::run)] *= traveler.speed() / target->speed();
+        scores[FightChoice::run] *= traveler.speed() / target->speed();
     // Choose whichever choice has the best score.
     traveler.choose(static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores)));
 }
@@ -318,7 +318,7 @@ void AI::loot() {
     double lootGoal = lootScore(tPpt);
     if (tgt->alive())
         // Looting from an alive target dependent on greed.
-        lootGoal *= decisionCriteria[static_cast<size_t>(DecisionCriteria::lootingGreed)] /
+        lootGoal *= decisionCriteria[DecisionCriteria::lootingGreed] /
                     Settings::getAIDecisionCriteriaMax();
     double looted = 0, weight = traveler.weight();
     while (looted < lootGoal) {
@@ -436,8 +436,8 @@ void AI::update(unsigned int e) {
             double highest = 0;
             for (auto &tI : nearby) {
                 double score =
-                    tI.buyScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::buyScoreWeight)] +
-                    tI.sellScore * decisionCriteria[static_cast<size_t>(DecisionCriteria::sellScoreWeight)];
+                    tI.buyScore * decisionCriteria[DecisionCriteria::buyScoreWeight] +
+                    tI.sellScore * decisionCriteria[DecisionCriteria::sellScoreWeight];
                 if (score > highest) {
                     highest = score;
                     bestTown = tI.town;

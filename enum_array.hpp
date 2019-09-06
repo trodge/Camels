@@ -27,8 +27,6 @@ public:
     using Base = std::array<T, static_cast<size_t>(EnumType::count)>;
     using reference = typename Base::reference;
     using const_reference = typename Base::const_reference;
-    reference at(EnumType pos) { return Base::at(static_cast<size_t>(pos)); }
-    const_reference at(EnumType pos) const { return Base::at(static_cast<size_t>(pos)); }
     reference operator[](EnumType pos) { return Base::operator[](static_cast<size_t>(pos)); }
     const_reference operator[](EnumType pos) const { return Base::operator[](static_cast<size_t>(pos)); }
 };

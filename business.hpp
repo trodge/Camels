@@ -47,12 +47,12 @@ class Business {
     std::vector<Good> outputs;      // goods created every production cycle
     double factor;                  // factor based on area and available inputs for production
     double frequency = 0;           // area of business per unit of population
-    std::array<double, static_cast<size_t>(TownType::count)> frequencyFactors; // factors for frequency in different town types
+    EnumArray<double, TownType> frequencyFactors; // factors for frequency in different town types
     double reclaimFactor = 0.7; // portion of requirements that can be reclaimed
 
 public:
     Business(unsigned int i, unsigned int m, const std::string &nm, bool cS, bool rC, bool kM,
-             const std::array<double, static_cast<size_t>(TownType::count)> &fFs);
+             const EnumArray<double, TownType> &fFs);
     Business(const Business &bsn, unsigned int m)
         : Business(bsn.id, m, bsn.name, bsn.canSwitch, bsn.requireCoast, bsn.keepMaterial, bsn.frequencyFactors) {}
     Business(const Save::Business *svBsn);

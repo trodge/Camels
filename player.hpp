@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "enum_array.hpp"
 #include "game.hpp"
 #include "menubutton.hpp"
 #include "pager.hpp"
@@ -82,7 +83,7 @@ class Player {
     int focusBox = -1;        // index of box we are focusing across all pagers
     int focusTown = -1;       // index of town currently focused
     State state = State::starting, storedState = State::starting;
-    std::array<UIState, static_cast<size_t>(State::count)> uIStates;
+    EnumArray<UIState, State> uIStates;
     enum class FocusGroup { box, neighbor, town };
     void prepFocus(FocusGroup g, int &i, int &s, std::vector<TextBox *> &fcbls);
     void finishFocus(int f, FocusGroup g, const std::vector<TextBox *> &fcbls);

@@ -28,6 +28,7 @@
 #include "save_generated.h"
 
 #include "constants.hpp"
+#include "enum_array.hpp"
 #include "menubutton.hpp"
 #include "printer.hpp"
 #include "settings.hpp"
@@ -37,7 +38,7 @@ struct CombatStat {
     Stat stat;
     unsigned int attack, speed;
     AttackType type;
-    std::array<unsigned int, static_cast<size_t>(AttackType::count)> defense;
+    EnumArray<unsigned int, AttackType> defense;
 };
 
 class Good {
