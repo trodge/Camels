@@ -19,7 +19,6 @@
 
 #ifndef SETTINGS_H
 #define SETTINGS_H
-#include <array>
 #include <chrono>
 #include <iostream>
 #include <random>
@@ -35,6 +34,7 @@ namespace pt = boost::property_tree;
 #include <SDL2/SDL.h>
 
 #include "constants.hpp"
+#include "enum_array.hpp"
 
 class MenuButton;
 
@@ -98,7 +98,7 @@ enum class AIRole { trader, soldier, bandit, agent, guard, thug, count };
 class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapView;
-    static std::array<ColorScheme, static_cast<size_t>(ColorSchemeType::count)> colorSchemes;
+    static EnumArray<ColorScheme, ColorSchemeType> colorSchemes;
     static SDL_Color routeColor;
     static SDL_Color waterColor;
     static int scroll;
