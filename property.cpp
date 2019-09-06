@@ -159,7 +159,7 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
     return factor;
 }
 
-BuildPlan Property::buildable(const Business &bsn, const Property &tvlPpt, double ofVl) const {
+BuildPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const {
     // Add a build plan for given business to given build plan vector if it can be built.
     BuildPlan bdp{bsn};
     for (auto &rq : bsn.getRequirements()) bdp.request.push_back(rq);
@@ -173,13 +173,13 @@ BuildPlan Property::buildable(const Business &bsn, const Property &tvlPpt, doubl
     return bdp;
 }
 
-std::vector<BuildPlan> Property::buildable(const Property &tvlPpt, double ofVl) const {
+std::vector<BuildPlan> Property::buildPlans(const Property &tvlPpt, double ofVl) const {
     // Return vector of plans for businesses that can be built with given starting goods.
     std::vector<BuildPlan> bdb;
     bdb.reserve(businesses.size());
     for (auto &bsn : businesses) {
         // Add build plan for all businesses.
-        auto bdp = buildable(bsn, tvlPpt, ofVl);
+        auto bdp = buildPlan(bsn, tvlPpt, ofVl);
         if (bdp.area > 0) bdb.push_back(bdp);
     }
     return bdb;

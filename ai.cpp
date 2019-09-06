@@ -141,17 +141,24 @@ void AI::trade() {
         traveler.withdraw(wG);
     });
     auto &townProperty = town->getProperty();
-    auto buildable = townProperty.buildable(travelerProperty, offerValue);
+    auto buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
     // Find best business scored based on requirements, inputs, and outputs.
     BuildPlan *bestPlan = nullptr;
-    std::for_each(begin(buildable), end(buildable), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
+    std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
+        // Reduce score by cost of build plan.
         double score = -bdp.cost;
+        // Area of business in town, use to get inputs and outputs per uncia.
         double bsnA = bdp.business.getArea();
+        // Reduce score by estimated value of inputs.
         for (auto &ip : bdp.business.getInputs())
             score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() * bdp.area / bsnA;
+        // Increase score by estimated value of outputs.
         for (auto &op : bdp.business.getOutputs())
             score += goodsInfo[op.getFullId()].estimate * op.getAmount() * bdp.area / bsnA;
-        if (score * decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax > bestScore) {
+        // Multiply score by build tendency.
+        score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
+        if (score > bestScore) {
+            // Score for this build plan is better than current best score.
             bestScore = score;
             bestPlan = &bdp;
         }
