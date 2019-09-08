@@ -135,7 +135,10 @@ public:
     const Nation *getNation() const { return nation; }
     const std::vector<std::string> &getLogText() const { return logText; }
     const Property &property() const { return properties.find(0)->second; }
-    const Property &property(unsigned int tId) { return makeProperty(tId); }
+    const Property *property(unsigned int tId) const {
+        auto pptIt = properties.find(tId);
+        return pptIt == end(properties) ? nullptr : &pptIt->second;
+    }
     const std::vector<Good> &getOffer() const { return offer; }
     const std::vector<Good> &getRequest() const { return request; }
     double getPortion() const { return portion; }
@@ -150,7 +153,9 @@ public:
     bool getDead() const { return dead; }
     bool getMoving() const { return moving; }
     const Position &getPosition() const { return position; }
-    double weight() const;
+    double weight() const {
+        return properties.find(0)->second.weight() + static_cast<double>(stats[Stat::strength]) * kTravelerCarry;
+    }
     bool fightWon() const { return target && (target->choice == FightChoice::yield || !target->alive()); }
     void choose(FightChoice c) { choice = c; }
     void setPortion(double p);

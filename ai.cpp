@@ -98,12 +98,14 @@ void AI::trade() {
     // Attempt to make best possible single trade in current town.
     double criteriaMax = Settings::getAIDecisionCriteriaMax();
     auto town = traveler.town();
-    auto &storageProperty = traveler.property(town->getId());
-    // Take all goods out of storage.
-    storageProperty.forGood([this](const Good &gd) {
-        Good wG(gd);
-        traveler.withdraw(wG);
-    });
+    auto townId = town->getId();
+    auto storageProperty = traveler.property(townId);
+    if (storageProperty)
+        // Take all goods out of storage.
+        storageProperty->forGood([this](const Good &gd) {
+            Good wG(gd);
+            traveler.withdraw(wG);
+        });
     // Clear offer and request from previous trade.
     traveler.clearTrade();
     double bestScore = 0, offerValue = 0, offerWeight = 0, weight = traveler.weight();
@@ -142,33 +144,37 @@ void AI::trade() {
     offerValue *= townProfit;
     // Determine which businesses can be built based on offer value and town prices.
     auto &townProperty = town->getProperty();
-    auto buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
-    // Find best business scored based on requirements, inputs, and outputs.
+    std::vector<BuildPlan> buildPlans;
     BuildPlan *bestPlan = nullptr;
-    std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
-        // Reduce score by cost of build plan.
-        double score = -bdp.cost;
-        // Area of business in town, use to get inputs and outputs per uncia.
-        double bsnA = bdp.business.getArea();
-        // Reduce score by estimated value of inputs.
-        for (auto &ip : bdp.business.getInputs())
-            score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() * bdp.area / bsnA;
-        // Increase score by estimated value of outputs.
-        for (auto &op : bdp.business.getOutputs())
-            score += goodsInfo[op.getFullId()].estimate * op.getAmount() * bdp.area / bsnA;
-        // Multiply score by build tendency.
-        score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
-        if (score > bestScore) {
-            // Score for this build plan is better than current best score.
-            bestScore = score;
-            bestPlan = &bdp;
+    if (role == AIRole::trader) {
+        // Find best business scored based on requirements, inputs, and outputs.
+        buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
+        std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
+            // Reduce score by cost of build plan.
+            double score = -bdp.cost;
+            // Area of business in town, use to get inputs and outputs per uncia.
+            double bsnA = bdp.business.getArea();
+            // Reduce score by estimated value of inputs.
+            for (auto &ip : bdp.business.getInputs())
+                score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() * bdp.area / bsnA;
+            // Increase score by estimated value of outputs.
+            for (auto &op : bdp.business.getOutputs())
+                score += goodsInfo[op.getFullId()].estimate * op.getAmount() * bdp.area / bsnA;
+            // Multiply score by build tendency.
+            score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
+            if (score > bestScore) {
+                // Score for this build plan is better than current best score.
+                bestScore = score;
+                bestPlan = &bdp;
+            }
+        });
+        if (bestPlan && bestPlan->cost == 0) {
+            // Build business without trading.
+            traveler.build(bestPlan->business, bestPlan->area);
+            if (!storageProperty) storageProperty = traveler.property(townId);
+            store(storageProperty, travelerProperty);
+            bestPlan = nullptr;
         }
-    });
-    if (bestPlan && bestPlan->cost == 0) {
-        // Build business without trading.
-        traveler.build(bestPlan->business, bestPlan->area);
-        store();
-        bestPlan = nullptr;
     }
     if (!bestGood) return;
     // Add best selling good to offer if found.
@@ -232,16 +238,16 @@ void AI::trade() {
         traveler.requestGoods(std::move(bestPlan->request));
         traveler.makeTrade();
         traveler.build(bestPlan->business, bestPlan->area);
-        store();
+        if (!storageProperty) storageProperty = traveler.property(townId);
+        store(storageProperty, travelerProperty);
     }
 }
 
-void AI::store() {
+void AI::store(const Property *sPpt, const Property &tPpt) {
     // Deposit all goods that are inputs for businesses.
-    auto &storageProperty = traveler.property(traveler.town()->getId()), &travelerProperty = traveler.property();
-    for (auto &bsn : storageProperty.getBusinesses())
+    for (auto &bsn : sPpt->getBusinesses())
         for (auto &ip : bsn.getInputs())
-            travelerProperty.forGood(ip.getGoodId(), [this](const Good &gd) {
+            tPpt.forGood(ip.getGoodId(), [this](const Good &gd) {
                 Good dG(gd);
                 traveler.deposit(dG);
             });
@@ -425,10 +431,10 @@ void AI::setLimits() {
         });
 }
 
-void AI::update(unsigned int e) {
+void AI::update(unsigned int elTm) {
     // Run the AI for the elapsed time. Includes trading, equipping, and attacking.
     if (!traveler.getMoving()) {
-        decisionCounter += e;
+        decisionCounter += elTm;
         if (decisionCounter > 0) {
             trade();
             equip();

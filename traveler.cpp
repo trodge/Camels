@@ -82,10 +82,6 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
                                     svParts, svEquipment, 0, moving);
 }
 
-double Traveler::weight() const {
-    return properties.find(0)->second.weight() + static_cast<double>(stats[Stat::strength]) * kTravelerCarry;
-}
-
 std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
     // Return forward list of towns on shortest path to tn, excluding current town.
     std::forward_list<Town *> path;
@@ -373,7 +369,7 @@ void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &
     });
     rt.x = sR.w - m - rt.w;
     bxInf.colors = toTown->getNation()->getColors();
-    property(toTown->getId()).buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
+    makeProperty(toTown->getId()).buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
         return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
             double amt = g.getAmount() * portion;
             Good wG(g.getFullId(), amt);
@@ -401,19 +397,20 @@ void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &p
 }
 
 void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Create buttons for managing businesses.
+    // Create buttons for handling businesses.
     const SDL_Rect &sR = Settings::getScreenRect();
     // Create buttons for demolishing businesses.
     int m = Settings::getButtonMargin();
     SDL_Rect rt = {m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
     pgrs[1].setBounds(rt);
     BoxInfo bxInf = boxInfo();
-    property(toTown->getId()).buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
+    makeProperty(toTown->getId()).buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
         return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
             demolish(bsn, bsn.getArea() * portion);
             refreshBuildButtons(pgrs, fB, pr);
         };
     });
+    // Create buttons for building businesses.
     rt.x = sR.w - m - rt.w;
     bxInf.rect.x = rt.x;
     bxInf.rect.y = rt.y;
