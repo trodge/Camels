@@ -184,7 +184,7 @@ void Settings::load(const fs::path &p) {
     aIStartingGoodsCount[AIRole::agent] = tree.get("aI.agentGoodCount", 1);
     aIStartingGoodsCount[AIRole::guard] = tree.get("aI.guardGoodCount", 2);
     aIStartingGoodsCount[AIRole::thug] = tree.get("aI.thugGoodCount", 1);
-    aITownRange = static_cast<unsigned int>(tree.get("aI.townRange", 9));
+    aITownRange = static_cast<unsigned int>(tree.get("aI.townRange", 5));
     aILimitFactorMin = tree.get("aI.limitFactorMin", 0.1);
     aILimitFactorMax = tree.get("aI.limitFactorMax", 0.9);
     aIAttackThreshold = tree.get("aI.attackThreshold", 13500);

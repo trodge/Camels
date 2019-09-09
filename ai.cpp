@@ -198,10 +198,10 @@ void AI::trade() {
             auto gII = goodsInfo.find(fId);
             if (gII == end(goodsInfo)) return;
             double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
+            // Weigh equip score double if not a trader or agent.
             double eqpScr = equipScore(tG, equipment, stats) *
                             (1 + !(role == AIRole::trader || role == AIRole::agent)) *
                             decisionCriteria[DecisionCriteria::equipScoreWeight] / criteriaMax;
-            // Weigh equip score double if not a trader or agent.
             score += eqpScr;
             if (score > bestScore) {
                 bestScore = score;
@@ -411,24 +411,26 @@ void AI::setLimits() {
         });
     }
     // Set value and buy and sell based on min and max prices.
+    double townProfit = Settings::getTownProfit();
     for (auto &gI : goodsInfo) {
         gI.second.estimate = gI.second.minPrice + gI.second.limitFactor * (gI.second.maxPrice - gI.second.minPrice);
-        gI.second.buy = gI.second.estimate * Settings::getTownProfit();
-        gI.second.sell = gI.second.estimate / Settings::getTownProfit();
+        gI.second.buy = gI.second.estimate * townProfit;
+        gI.second.sell = gI.second.estimate / townProfit;
     }
     auto &ppt = traveler.property();
     // Loop through nearby towns again now that info has been gathered to set buy and sell scores.
-    for (auto &nb : nearby)
+    for (auto &nb : nearby) {
         nb.town->getProperty().forGood([this, &ppt, &nb](const Good &nG) {
             auto price = nG.price();
             auto fId = nG.getFullId();
-            if (ppt.hasGood(fId) && price > 0)
-                // We have the good and it is worth something in the town.
+            if (ppt.hasGood(fId))
+                // We have the good.
                 nb.sellScore = std::max(sellScore(price, goodsInfo[fId].sell), nb.sellScore);
             else
                 // Only score buying goods not already owned.
                 nb.buyScore = std::max(buyScore(price, goodsInfo[fId].buy), nb.buyScore);
         });
+    }
 }
 
 void AI::update(unsigned int elTm) {
