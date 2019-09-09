@@ -11,7 +11,7 @@ vs-build/
 callgrind.*
 CMakeCache\.txt
 CMakeSettings.json
-Camels\.*
+camels\.*
 cmake_install\.cmake
 colorpicker\.py
 packages.config
