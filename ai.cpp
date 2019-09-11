@@ -23,6 +23,12 @@ AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
        const std::unordered_map<unsigned int, GoodInfo> &gsI, AIRole rl)
     : traveler(tvl), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
+    if (goodsInfo.empty()) {
+        // Pick all goods in inventory and a random set of goods from town.
+        traveler.property().forGood([this](const Good &gd) {
+            goodsInfo.insert(std::make_pair(gd.getFullId(), GoodInfo{.limitFactor = Settings::aILimitFactor()}))
+        });
+    }
     setNearby(town, town, Settings::getAITownRange());
     setLimits();
 }
@@ -395,19 +401,15 @@ void AI::setLimits() {
         nb.buyScore = 0;
         nb.sellScore = 0;
         // Find minimum and maximum price for each good in nearby towns.
+        auto &townProperty = nb.town->getProperty;
         nb.town->getProperty().forGood([this](const Good &nG) {
             auto price = nG.price();
             auto fId = nG.getFullId();
             auto gII = goodsInfo.find(fId);
-            if (gII == end(goodsInfo))
-                gII = goodsInfo
-                          .insert(std::make_pair(
-                              fId, GoodInfo{.limitFactor = Settings::aILimitFactor(), .minPrice = price, .maxPrice = price}))
-                          .first;
-            else {
-                gII->second.minPrice = std::min(gII->second.minPrice, price);
-                gII->second.maxPrice = std::max(gII->second.maxPrice, price);
-            }
+            if (gII == end(goodsInfo)) else {
+                    gII->second.minPrice = std::min(gII->second.minPrice, price);
+                    gII->second.maxPrice = std::max(gII->second.maxPrice, price);
+                }
         });
     }
     // Set value and buy and sell based on min and max prices.

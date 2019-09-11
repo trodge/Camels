@@ -20,14 +20,16 @@
 #ifndef NET_H
 #define NET_H
 
-struct Node {
+#include <vector>
+
+class Node {
     double value = 0;
-}
+};
 
 class Net {
     std::vector<std::vector<Node>> layers;
 public:
     Net(const std::vector<unsigned int> &sz);
-}
+}; 
 
 #endif // NET_H

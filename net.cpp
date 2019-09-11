@@ -17,6 +17,8 @@
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
 
+#include "net.hpp"
+
 Net::Net(const std::vector<unsigned int> &sz) {
     layers.reserve(sz.size());
     for (auto s : sz) {
