@@ -20,14 +20,14 @@
 #include "ai.hpp"
 
 AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
-       const std::unordered_map<unsigned int, GoodInfo> &gsI, AIRole rl)
+       const GoodInfoContainer &gsI, AIRole rl)
     : traveler(tvl), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
+    auto &townProperty = town->getProperty();
     if (goodsInfo.empty()) {
-        // Pick all goods in inventory and a random set of goods from town.
-        traveler.property().forGood([this](const Good &gd) {
-            goodsInfo.insert(std::make_pair(gd.getFullId(), GoodInfo{.limitFactor = Settings::aILimitFactor()}))
-        });
+        // Insert a randomly chosen set of goods into goods info.
+        for (auto fId : Settings::aIFullIds(townProperty.fullIds()))
+            goodsInfo.insert({fId, {Settings::aILimitFactor()}});
     }
     setNearby(town, town, Settings::getAITownRange());
     setLimits();
@@ -40,8 +40,8 @@ AI::AI(Traveler &tvl, const Save::AI *ldAI) : traveler(tvl), decisionCounter(ldA
                    [](auto ld) { return ld; });
     auto lGoodsInfo = ldAI->goodsInfo();
     for (auto gII = lGoodsInfo->begin(); gII != lGoodsInfo->end(); ++gII)
-        goodsInfo[(*gII)->fullId()] = {(*gII)->limitFactor(), (*gII)->minPrice(), (*gII)->maxPrice(),
-                                       (*gII)->estimate(),    (*gII)->buy(),      (*gII)->sell()};
+        goodsInfo.insert({(*gII)->fullId(), (*gII)->owned(), (*gII)->limitFactor(), (*gII)->minPrice(),
+                          (*gII)->maxPrice(), (*gII)->estimate(), (*gII)->buy(), (*gII)->sell()});
 }
 
 flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const {
@@ -90,12 +90,13 @@ double AI::equipScore(const Good &eq, const std::vector<Good> &eqpmt, const Enum
     return equipScore(eq, sts);
 }
 
-double AI::lootScore(const Property &tPpt) const {
+double AI::lootScore(const Property &tPpt) {
     // Total value from looting given set of goods.
     double score = 0;
     tPpt.forGood([this, &score](const Good &tG) {
-        auto gII = goodsInfo.find(tG.getFullId());
-        if (gII != end(goodsInfo)) score += tG.getAmount() * gII->second.estimate;
+        // Attempt to insert the good to goods info.
+        auto gII = goodsInfo.insert({tG.getFullId(), {Settings::aILimitFactor()}}).first;
+        score += tG.getAmount() * gII->second.estimate;
     });
     return score;
 }
@@ -280,32 +281,38 @@ void AI::equip() {
 
 void AI::attack() {
     // Attack traveler with lower equipment score and lootable goods.
-    if (!traveler.getTarget()) {
-        // There isn't already a target.
-        auto able = traveler.attackable();
-        double ourEquipScore = equipScore(traveler.getEquipment(), traveler.getStats());
-        // Remove travelers who do not meet threshold for attacking.
-        able.erase(std::remove_if(begin(able), end(able),
-                                  [this, ourEquipScore](const Traveler *a) {
-                                      return lootScore(a->property()) * ourEquipScore *
-                                                 decisionCriteria[DecisionCriteria::fightTendency] /
-                                                 equipScore(a->getEquipment(), a->getStats()) <
-                                             Settings::getAIAttackThreshold();
-                                  }),
-                   end(able));
-        if (!able.empty()) {
-            // Attack the easiest target.
-            Traveler *easiest = nullptr;
-            double lowest = std::numeric_limits<double>::max();
-            for (auto tvl : able) {
-                double score = equipScore(tvl->getEquipment(), tvl->getStats());
-                if (score < lowest) {
-                    lowest = score;
-                    easiest = tvl;
+    switch (role) {
+    case AIRole::bandit:
+        if (!traveler.getTarget()) {
+            // There isn't already a target.
+            auto able = traveler.attackable();
+            double ourEquipScore = equipScore(traveler.getEquipment(), traveler.getStats());
+            // Remove travelers who do not meet threshold for attacking.
+            able.erase(std::remove_if(begin(able), end(able),
+                                      [this, ourEquipScore](const Traveler *a) {
+                                          return lootScore(a->property()) * ourEquipScore *
+                                                     decisionCriteria[DecisionCriteria::fightTendency] /
+                                                     equipScore(a->getEquipment(), a->getStats()) <
+                                                 Settings::getAIAttackThreshold();
+                                      }),
+                       end(able));
+            if (!able.empty()) {
+                // Attack the easiest target.
+                Traveler *easiest = nullptr;
+                double lowest = std::numeric_limits<double>::max();
+                for (auto tvl : able) {
+                    double score = equipScore(tvl->getEquipment(), tvl->getStats());
+                    if (score < lowest) {
+                        lowest = score;
+                        easiest = tvl;
+                    }
                 }
+                traveler.attack(easiest);
             }
-            traveler.attack(easiest);
         }
+        break;
+    default:
+        break;
     }
 }
 
@@ -401,36 +408,44 @@ void AI::setLimits() {
         nb.buyScore = 0;
         nb.sellScore = 0;
         // Find minimum and maximum price for each good in nearby towns.
-        auto &townProperty = nb.town->getProperty;
-        nb.town->getProperty().forGood([this](const Good &nG) {
-            auto price = nG.price();
-            auto fId = nG.getFullId();
-            auto gII = goodsInfo.find(fId);
-            if (gII == end(goodsInfo)) else {
-                    gII->second.minPrice = std::min(gII->second.minPrice, price);
-                    gII->second.maxPrice = std::max(gII->second.maxPrice, price);
-                }
-        });
+        auto &townProperty = nb.town->getProperty();
+        for (auto gdInfIt = begin(goodsInfo); gdInfIt != end(goodsInfo); ++gdInfIt) {
+            auto nbGd = townProperty.good(gdInfIt->fullId);
+            if (!nbGd) continue;
+            auto price = nbGd->price();
+            goodsInfo.modify(gdInfIt, [price](GoodInfo &gdInf) {
+                gdInf.minPrice = std::min(price, gdInf.minPrice);
+                gdInf.maxPrice = std::max(price, gdInf.maxPrice);
+            });
+        }
     }
     // Set value and buy and sell based on min and max prices.
     double townProfit = Settings::getTownProfit();
-    for (auto &gI : goodsInfo) {
-        gI.second.estimate = gI.second.minPrice + gI.second.limitFactor * (gI.second.maxPrice - gI.second.minPrice);
-        gI.second.buy = gI.second.estimate * townProfit;
-        gI.second.sell = gI.second.estimate / townProfit;
+    for (auto gdInfIt = begin(goodsInfo); gdInfIt != end(goodsInfo); ++gdInfIt) {
+        goodsInfo.modify(gdInfIt, [townProfit](GoodInfo &gdInf) {
+            gdInf.estimate = gdInf.minPrice + gdInf.limitFactor * (gdInf.maxPrice - gdInf.minPrice);
+            gdInf.buy = gdInf.estimate * townProfit;
+            gdInf.sell = gdInf.estimate / townProfit;
+        });
     }
     auto &ppt = traveler.property();
     // Loop through nearby towns again now that info has been gathered to set buy and sell scores.
     for (auto &nb : nearby) {
-        nb.town->getProperty().forGood([this, &ppt, &nb](const Good &nG) {
-            auto price = nG.price();
-            auto fId = nG.getFullId();
-            if (ppt.hasGood(fId))
-                // We have the good.
-                nb.sellScore = std::max(sellScore(price, goodsInfo[fId].sell), nb.sellScore);
-            else
-                // Only score buying goods not already owned.
-                nb.buyScore = std::max(buyScore(price, goodsInfo[fId].buy), nb.buyScore);
+        auto &townProperty = nb.town->getProperty();
+        auto &byOwned = goodsInfo.get<Owned>();
+        // Set sell scores for goods owned.
+        auto rng = byOwned.equal_range(true);
+        std::for_each(rng.first, rng.second, [&nb, &townProperty](const GoodInfo &gdInf) {
+            auto nbGd = townProperty.good(gdInf.fullId);
+            if (!nbGd) return;
+            nb.sellScore = std::max(sellScore(nbGd->price(), gdInf.sell), nb.sellScore);
+        });
+        // Set buy scores for goods not owned.
+        rng = byOwned.equal_range(false);
+        std::for_each(rng.first, rng.second, [&nb, &townProperty](const GoodInfo &gdInf) {
+            auto nbGd = townProperty.good(gdInf.fullId);
+            if (!nbGd) return;
+            nb.buyScore = std::max(buyScore(nbGd->price(), gdInf.buy), nb.buyScore);
         });
     }
 }

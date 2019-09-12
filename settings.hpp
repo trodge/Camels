@@ -95,6 +95,11 @@ enum class DecisionCriteria {
 
 enum class AIRole { trader, soldier, bandit, agent, guard, thug, count };
 
+struct AIStartingGoods {
+    size_t count = 0;
+    std::vector<std::pair<unsigned int, double>> goods;
+};
+
 class Settings {
     static SDL_Rect screenRect;
     static SDL_Rect mapView;
@@ -127,11 +132,10 @@ class Settings {
     static double escapeChance;
     static std::vector<std::pair<unsigned int, double>> playerStartingGoods;
     static SDL_Color playerColor;
+    static EnumArray<AIStartingGoods, AIRole> aIStartingGoods;
     static EnumArray<double, AIRole> aIRoleWeights;
-    static EnumArray<std::vector<std::pair<unsigned int, double>>, AIRole> aIStartingGoods;
-    static EnumArray<unsigned int, AIRole> aIStartingGoodsCount;
     static int aIDecisionCriteriaMax;
-    static unsigned int aITownRange;
+    static unsigned int aITownRange, aIGoodsCount;
     static double aILimitFactorMin, aILimitFactorMax;
     static double aIAttackThreshold;
     static SDL_Color aIColor;
@@ -185,6 +189,7 @@ public:
     template <typename T> static auto &randomChoice(const std::vector<T> &options) {
         return options[randomInt(options.size() - 1)];
     }
+    template <typename T> static auto randomChoice(const std::vector<T> &options, size_t count);
     static double random();
     static int propertyUpdateCounter();
     static int travelerCount(unsigned long ppl);

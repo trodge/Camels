@@ -87,6 +87,7 @@ public:
     bool hasGood(unsigned int fId) const;
     const Good *good(unsigned int fId) const;
     const Good *good(boost::tuple<unsigned int, unsigned int> gMId) const;
+    const std::vector<unsigned int> fullIds() const;
     void forGood(const std::function<void(const Good &gd)> &fn) const;
     void forGood(unsigned int gId, const std::function<void(const Good &gd)> &fn) const;
     double amount(unsigned int gId) const;

@@ -55,6 +55,13 @@ const Good *Property::good(boost::tuple<unsigned int, unsigned int> gMId) const 
     return &*gdIt;
 }
 
+const std::vector<unsigned int> Property::fullIds() const {
+    std::vector<unsigned int> fIds;
+    fIds.reserve(goods.size());
+    for (auto &gd : goods) fIds.push_back(gd.getFullId());
+    return fIds;
+}
+
 void Property::forGood(const std::function<void(const Good &gd)> &fn) const {
     // Run given function for each good.
     std::for_each(begin(goods), end(goods), fn);

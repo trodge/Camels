@@ -51,10 +51,9 @@ double Settings::escapeChance;
 std::vector<std::pair<unsigned int, double>> Settings::playerStartingGoods;
 SDL_Color Settings::playerColor;
 EnumArray<double, AIRole> Settings::aIRoleWeights;
-EnumArray<std::vector<std::pair<unsigned int, double>>, AIRole> Settings::aIStartingGoods;
-EnumArray<unsigned int, AIRole> Settings::aIStartingGoodsCount;
+EnumArray<AIStartingGoods, AIRole> Settings::aIStartingGoods;
 int Settings::aIDecisionCriteriaMax;
-unsigned int Settings::aITownRange;
+unsigned int Settings::aITownRange, Settings::aIGoodsCount;
 double Settings::aILimitFactorMin, Settings::aILimitFactorMax;
 double Settings::aIAttackThreshold;
 SDL_Color Settings::aIColor;
@@ -83,17 +82,22 @@ std::pair<First, Second> loadPair(const std::string &n, const std::pair<First, S
 }
 
 template <class OutputIt, typename T, typename Function>
-void loadRange(const std::string &n, OutputIt out, const Function &fn, const std::initializer_list<T> &dfs,
-               const pt::ptree &t) {
+void loadRange(const std::string &n, OutputIt out, const Function &fn, const std::vector<T> &dfs, const pt::ptree &t) {
     unsigned int i = 0;
     std::transform(begin(dfs), end(dfs), out,
                    [&n, &i, &fn, &t](auto &df) { return fn(n + "_" + std::to_string(++i), df, t); });
 }
 
 template <class OutputIt, typename T>
-void loadRange(const std::string &n, OutputIt out, const std::initializer_list<T> &dfs, const pt::ptree &t) {
+void loadRange(const std::string &n, OutputIt out, const std::vector<T> &dfs, const pt::ptree &t) {
     loadRange(
         n, out, [](const std::string &m, const T &df, const pt::ptree &r) { return r.get(m, df); }, dfs, t);
+}
+
+AIStartingGoods loadAIStartingGoods(const std::string &n, const AIStartingGoods &d, const pt::ptree &t) {
+    AIStartingGoods goods{t.get(n + "_count", d.count)};
+    loadRange(n + "_goods", std::back_inserter(goods.goods), &loadPair<unsigned int, double>, d.goods, t);
+    return goods;
 }
 
 void Settings::load(const fs::path &p) {
@@ -153,38 +157,22 @@ void Settings::load(const fs::path &p) {
     statMax = static_cast<unsigned int>(tree.get("travelers.statMax", 15));
     attackDistSq = tree.get("travelers.attackDistSq", 9000);
     escapeChance = tree.get("travelers.escapeChance", 0.5);
-    loadRange("player.startingGoods", std::back_inserter(playerStartingGoods),
-              &loadPair<unsigned int, double>, {std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
+    loadRange("player.startingGoods", std::back_inserter(playerStartingGoods), &loadPair<unsigned int, double>,
+              std::vector<std::pair<unsigned int, double>>{{55, 0.75}, {59, 2.}}, tree);
     playerColor = loadColor("player.color", {255, 255, 255, 255}, tree);
     aIDecisionCriteriaMax = tree.get("aI.decisionCriteriaMax", 9);
-    loadRange("aI.roleWeights", begin(aIRoleWeights), {0.4, 0.1, 0.1, 0.2, 0.1, 0.1}, tree);
-    loadRange("aI.traderGoods", std::back_inserter(aIStartingGoods[AIRole::trader]), &loadPair<unsigned int, double>,
-              {std::make_pair(1, 21.), std::make_pair(9, 10.5), std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
-    loadRange("aI.soldierGoods", std::back_inserter(aIStartingGoods[AIRole::soldier]), &loadPair<unsigned int, double>,
-              {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
-               std::make_pair(44, 1.), std::make_pair(46, 1.)},
-              tree);
-    loadRange("aI.banditGoods", std::back_inserter(aIStartingGoods[AIRole::bandit]), &loadPair<unsigned int, double>,
-              {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
-               std::make_pair(44, 1.), std::make_pair(46, 1.)},
-              tree);
-    loadRange("aI.agentGoods", std::back_inserter(aIStartingGoods[AIRole::agent]),
-              &loadPair<unsigned int, double>, {std::make_pair(55, 0.75), std::make_pair(59, 2.)}, tree);
-    loadRange("aI.guardGoods", std::back_inserter(aIStartingGoods[AIRole::guard]), &loadPair<unsigned int, double>,
-              {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
-               std::make_pair(44, 1.), std::make_pair(46, 1.)},
-              tree);
-    loadRange("aI.thugGoods", std::back_inserter(aIStartingGoods[AIRole::thug]), &loadPair<unsigned int, double>,
-              {std::make_pair(37, 1.), std::make_pair(38, 1.), std::make_pair(42, 1.), std::make_pair(43, 1.),
-               std::make_pair(44, 1.), std::make_pair(46, 1.)},
-              tree);
-    aIStartingGoodsCount[AIRole::trader] = tree.get("aI.traderGoodCount", 2);
-    aIStartingGoodsCount[AIRole::soldier] = tree.get("aI.soldierGoodCount", 3);
-    aIStartingGoodsCount[AIRole::bandit] = tree.get("aI.banditGoodCount", 1);
-    aIStartingGoodsCount[AIRole::agent] = tree.get("aI.agentGoodCount", 1);
-    aIStartingGoodsCount[AIRole::guard] = tree.get("aI.guardGoodCount", 2);
-    aIStartingGoodsCount[AIRole::thug] = tree.get("aI.thugGoodCount", 1);
+    loadRange("aI.roleWeights", begin(aIRoleWeights), std::vector<double>{0.4, 0.1, 0.1, 0.2, 0.1, 0.1}, tree);
+    aIStartingGoods[AIRole::trader] =
+        loadAIStartingGoods("aI.traderGoods", {2, {{1, 21.}, {9, 10.5}, {55, 0.75}, {59, 2.}}}, tree);
+    aIStartingGoods[AIRole::soldier] = loadAIStartingGoods(
+        "aI.soldierGoods", {3, {{37, 1.}, {38, 1.}, {42, 1.}, {43, 1.}, {44, 1.}, {46, 1.}}}, tree);
+    aIStartingGoods[AIRole::bandit] = loadAIStartingGoods(
+        "aI.banditGoods", {1, {{37, 1.}, {38, 1.}, {42, 1.}, {43, 1.}, {44, 1.}, {46, 1.}}}, tree);
+    aIStartingGoods[AIRole::agent] = loadAIStartingGoods("aI.agentGoods", {}, tree);
+    aIStartingGoods[AIRole::guard] = loadAIStartingGoods("aI.guardGoods", {}, tree);
+    aIStartingGoods[AIRole::thug] = loadAIStartingGoods("aI.thugGoods", {}, tree);
     aITownRange = static_cast<unsigned int>(tree.get("aI.townRange", 5));
+    aIGoodsCount = static_cast<unsigned int>(tree.get("aI.goodsCount", 13));
     aILimitFactorMin = tree.get("aI.limitFactorMin", 0.1);
     aILimitFactorMax = tree.get("aI.limitFactorMax", 0.9);
     aIAttackThreshold = tree.get("aI.attackThreshold", 13500);
@@ -232,6 +220,11 @@ template <class InputIt> void saveRange(const std::string &n, InputIt bgn, Input
         n, bgn, end, [](const std::string &m, const decltype(*bgn) &sv, pt::ptree &r) { r.put(m, sv); }, t);
 }
 
+void saveAIStartingGoods(const std::string &n, const AIStartingGoods &s, pt::ptree &t) {
+    t.put(n + "_count", s.count);
+    saveRange(n + "_goods", begin(s.goods), end(s.goods), &savePair<unsigned int, double>, t);
+}
+
 void Settings::save(const fs::path &p) {
     pt::ptree tree;
     saveRect("ui.mapView", mapView, tree);
@@ -277,30 +270,29 @@ void Settings::save(const fs::path &p) {
     saveColor("player.color", playerColor, tree);
     tree.put("aI.decisionCriteriaMax", aIDecisionCriteriaMax);
     saveRange("aI.roleWeights", begin(aIRoleWeights), end(aIRoleWeights), tree);
-    saveRange("aI.traderGoods", begin(aIStartingGoods[AIRole::trader]), end(aIStartingGoods[AIRole::trader]),
-              &savePair<unsigned int, double>, tree);
-    saveRange("aI.soldierGoods", begin(aIStartingGoods[AIRole::soldier]),
-              end(aIStartingGoods[AIRole::soldier]), &savePair<unsigned int, double>, tree);
-    saveRange("aI.banditGoods", begin(aIStartingGoods[AIRole::bandit]), end(aIStartingGoods[AIRole::bandit]),
-              &savePair<unsigned int, double>, tree);
-    saveRange("aI.agentGoods", begin(aIStartingGoods[AIRole::agent]), end(aIStartingGoods[AIRole::agent]),
-              &savePair<unsigned int, double>, tree);
-    saveRange("aI.guardGoods", begin(aIStartingGoods[AIRole::guard]), end(aIStartingGoods[AIRole::guard]),
-              &savePair<unsigned int, double>, tree);
-    saveRange("aI.thugGoods", begin(aIStartingGoods[AIRole::thug]), end(aIStartingGoods[AIRole::thug]),
-              &savePair<unsigned int, double>, tree);
-    tree.put("aI.traderGoodCount", aIStartingGoodsCount[AIRole::trader]);
-    tree.put("aI.soldierGoodCount", aIStartingGoodsCount[AIRole::soldier]);
-    tree.put("aI.banditGoodCount", aIStartingGoodsCount[AIRole::bandit]);
-    tree.put("aI.agentGoodCount", aIStartingGoodsCount[AIRole::agent]);
-    tree.put("aI.guardGoodCount", aIStartingGoodsCount[AIRole::guard]);
-    tree.put("aI.thugGoodCount", aIStartingGoodsCount[AIRole::thug]);
+    saveAIStartingGoods("aI.traderGoods", aIStartingGoods[AIRole::trader], tree);
+    saveAIStartingGoods("aI.soldierGoods", aIStartingGoods[AIRole::soldier], tree);
+    saveAIStartingGoods("aI.banditGoods", aIStartingGoods[AIRole::bandit], tree);
+    saveAIStartingGoods("aI.agentGoods", aIStartingGoods[AIRole::agent], tree);
+    saveAIStartingGoods("aI.guardGoods", aIStartingGoods[AIRole::guard], tree);
+    saveAIStartingGoods("aI.thugGoods", aIStartingGoods[AIRole::thug], tree);
     tree.put("aI.townRange", aITownRange);
+    tree.put("aI.goodsCount", aIGoodsCount);
     tree.put("aI.limitFactorMin", aILimitFactorMin);
     tree.put("aI.limitFactorMax", aILimitFactorMax);
     tree.put("aI.attackThreshold", aIAttackThreshold);
     saveColor("ui.aIColor", aIColor, tree);
     pt::write_ini(p.string(), tree);
+}
+
+template <typename T> auto Settings::randomChoice(const std::vector<T> &options, size_t count) {
+    std::unordered_set<size_t> indices;
+    std::uniform_int_distribution<size_t> iDis(0, options.size() - 1);
+    while (indices.size() < count) indices.insert(iDis(rng));
+    std::vector<T> chosen;
+    chosen.reserve(count);
+    for (auto idx : indices) chosen.push_back(options[idx]);
+    return chosen;
 }
 
 double Settings::random() {
@@ -347,15 +339,11 @@ AIRole Settings::aIRole() {
 }
 
 std::vector<std::pair<unsigned int, double>> Settings::getAIStartingGoods(AIRole rl) {
-    auto &startingGoods = aIStartingGoods[rl];
-    std::unordered_set<size_t> indices;
-    std::uniform_int_distribution<size_t> iDis(0, startingGoods.size() - 1);
-    auto goodCount = aIStartingGoodsCount[rl];
-    while (indices.size() < goodCount) indices.insert(iDis(rng));
-    std::vector<std::pair<unsigned int, double>> chosenGoods;
-    chosenGoods.reserve(goodCount);
-    for (auto idx : indices) chosenGoods.push_back(startingGoods[idx]);
-    return chosenGoods;
+    return randomChoice(aIStartingGoods[rl].goods, aIStartingGoods[rl].count);
+}
+
+std::vector<unsigned int> Settings::aIFullIds(std::vector<unsigned int> &fIds) {
+    return randomChoice(fI)
 }
 
 EnumArray<double, DecisionCriteria> Settings::aIDecisionCriteria() {

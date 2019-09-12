@@ -112,10 +112,10 @@ inline const char *EnumNameStat(Stat e) {
 }
 
 enum AttackType {
-  AttackType_none = 0,
-  AttackType_bash = 1,
-  AttackType_slash = 2,
-  AttackType_stab = 3,
+  AttackType_none = -1,
+  AttackType_bash = 0,
+  AttackType_slash = 1,
+  AttackType_stab = 2,
   AttackType_MIN = AttackType_none,
   AttackType_MAX = AttackType_stab
 };
@@ -143,7 +143,7 @@ inline const char * const *EnumNamesAttackType() {
 
 inline const char *EnumNameAttackType(AttackType e) {
   if (e < AttackType_none || e > AttackType_stab) return "";
-  const size_t index = static_cast<size_t>(e);
+  const size_t index = static_cast<size_t>(e) - static_cast<size_t>(AttackType_none);
   return EnumNamesAttackType()[index];
 }
 
@@ -301,7 +301,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) CombatStat FLATBUFFERS_FINAL_CLASS {
   uint32_t stat_;
   uint32_t attack_;
   uint32_t speed_;
-  uint32_t type_;
+  int32_t type_;
   uint32_t bashDefense_;
   uint32_t slashDefense_;
   uint32_t stabDefense_;
@@ -315,7 +315,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) CombatStat FLATBUFFERS_FINAL_CLASS {
         stat_(flatbuffers::EndianScalar(static_cast<uint32_t>(_stat))),
         attack_(flatbuffers::EndianScalar(_attack)),
         speed_(flatbuffers::EndianScalar(_speed)),
-        type_(flatbuffers::EndianScalar(static_cast<uint32_t>(_type))),
+        type_(flatbuffers::EndianScalar(static_cast<int32_t>(_type))),
         bashDefense_(flatbuffers::EndianScalar(_bashDefense)),
         slashDefense_(flatbuffers::EndianScalar(_slashDefense)),
         stabDefense_(flatbuffers::EndianScalar(_stabDefense)) {
@@ -350,7 +350,8 @@ FLATBUFFERS_STRUCT_END(CombatStat, 32);
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) GoodInfo FLATBUFFERS_FINAL_CLASS {
  private:
   uint32_t fullId_;
-  int32_t padding0__;
+  uint8_t owned_;
+  int8_t padding0__;  int16_t padding1__;
   double limitFactor_;
   double minPrice_;
   double maxPrice_;
@@ -362,19 +363,24 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) GoodInfo FLATBUFFERS_FINAL_CLASS {
   GoodInfo() {
     memset(static_cast<void *>(this), 0, sizeof(GoodInfo));
   }
-  GoodInfo(uint32_t _fullId, double _limitFactor, double _minPrice, double _maxPrice, double _estimate, double _buy, double _sell)
+  GoodInfo(uint32_t _fullId, bool _owned, double _limitFactor, double _minPrice, double _maxPrice, double _estimate, double _buy, double _sell)
       : fullId_(flatbuffers::EndianScalar(_fullId)),
+        owned_(flatbuffers::EndianScalar(static_cast<uint8_t>(_owned))),
         padding0__(0),
+        padding1__(0),
         limitFactor_(flatbuffers::EndianScalar(_limitFactor)),
         minPrice_(flatbuffers::EndianScalar(_minPrice)),
         maxPrice_(flatbuffers::EndianScalar(_maxPrice)),
         estimate_(flatbuffers::EndianScalar(_estimate)),
         buy_(flatbuffers::EndianScalar(_buy)),
         sell_(flatbuffers::EndianScalar(_sell)) {
-    (void)padding0__;
+    (void)padding0__;    (void)padding1__;
   }
   uint32_t fullId() const {
     return flatbuffers::EndianScalar(fullId_);
+  }
+  bool owned() const {
+    return flatbuffers::EndianScalar(owned_) != 0;
   }
   double limitFactor() const {
     return flatbuffers::EndianScalar(limitFactor_);

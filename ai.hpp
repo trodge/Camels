@@ -23,6 +23,12 @@
 #include <functional>
 #include <memory>
 
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index_container.hpp>
+
+namespace mi = boost::multi_index;
+
 #include "save_generated.h"
 
 #include "property.hpp"
@@ -37,6 +43,8 @@ class Town;
 class Traveler;
 
 struct GoodInfo {
+    unsigned int fullId;
+    bool owned;
     double limitFactor = 0; // factor controlling value based on min/max price
     double minPrice = 0,
            maxPrice = 0; // minimum and maximum price of material nearby
@@ -57,17 +65,22 @@ class AI {
     int decisionCounter;                                  // counter for updatening AI
     EnumArray<double, DecisionCriteria> decisionCriteria; /* buy/sell score
     weight, weapon/armor equip score, tendency to fight/run/yield, looting greed */
-    std::unordered_map<unsigned int, GoodInfo> goodsInfo; // known information about each good by full id
-    std::vector<TownInfo> nearby;                         // known information about nearby towns
-    AIRole role;                                          // behavior for this ai
+    using FlId = mi::member<GoodInfo, unsigned int, &GoodInfo::fullId>;
+    using Ownd = mi::member<GoodInfo, bool, &GoodInfo::owned>;
+    using FlIdHsh = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
+    using OwndHsh = mi::hashed_non_unique<mi::tag<struct Owned>, Ownd>;
+    using GoodInfoContainer = boost::multi_index_container<GoodInfo, mi::indexed_by<FlIdHsh, OwndHsh>>;
+    GoodInfoContainer goodsInfo;  // known information about each good by full id
+    std::vector<TownInfo> nearby; // known information about nearby towns
+    AIRole role;                  // behavior for this ai
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
-    double buyScore(double p, double b) const { return p == 0 ? 0 : b / p; }  // score selling at price p
-    double sellScore(double p, double s) const { return s == 0 ? 0 : p / s; } // score buying at price p
+    static double buyScore(double p, double b) { return p == 0 ? 0 : b / p; }  // score selling at price p
+    static double sellScore(double p, double s) { return s == 0 ? 0 : p / s; } // score buying at price p
     double equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
-    double lootScore(const Property &ppt) const;
+    double lootScore(const Property &ppt);
     void trade();
     void store(const Property *sPpt, const Property &tPpt);
     void equip();
@@ -75,9 +88,9 @@ class AI {
 
 public:
     AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
-       const std::unordered_map<unsigned int, GoodInfo> &gsI, AIRole rl);
+       const GoodInfoContainer &gsI, AIRole rl);
     AI(Traveler &tvl) : AI(tvl, Settings::aIDecisionCriteria(), {}, Settings::aIRole()) {}
-    AI(Traveler &tvl, const AI &p) : AI(tvl, p.decisionCriteria, p.goodsInfo, p.role) {}
+    AI(Traveler &tvl, const AI &p) : AI(tvl, p.decisionCriteria, p.owned, p.watched, p.role) {}
     AI(Traveler &tvl, const Save::AI *ldAI);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
     AIRole getRole() const { return role; }
