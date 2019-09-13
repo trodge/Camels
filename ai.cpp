@@ -19,16 +19,19 @@
 
 #include "ai.hpp"
 
-AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
-       const GoodInfoContainer &gsI, AIRole rl)
+AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const GoodInfoContainer &gsI, AIRole rl)
     : traveler(tvl), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
     auto &townProperty = town->getProperty();
-    if (goodsInfo.empty()) {
-        // Insert a randomly chosen set of goods into goods info.
+    // Insert full ids of owned goods into goods info.
+    traveler.createAIGoods();
+    for (auto fId : traveler.property().fullIds()) goodsInfo.insert({fId, true, Settings::aILimitFactor()});
+    if (gsI.empty())
+        // Insert a randomly chosen set of full ids from town into goods info.
         for (auto fId : Settings::aIFullIds(townProperty.fullIds()))
-            goodsInfo.insert({fId, {Settings::aILimitFactor()}});
-    }
+            goodsInfo.insert({fId, false, Settings::aILimitFactor()});
+    for (auto &gdInf : goodsInfo)
+        std::cout << gdInf.fullId << " " << gdInf.owned << std::endl;
     setNearby(town, town, Settings::getAITownRange());
     setLimits();
 }
@@ -45,15 +48,15 @@ AI::AI(Traveler &tvl, const Save::AI *ldAI) : traveler(tvl), decisionCounter(ldA
 }
 
 flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const {
-    auto sDecisionCriteria = b.CreateVector(std::vector<double>(begin(decisionCriteria), end(decisionCriteria)));
-    std::vector<std::pair<unsigned int, GoodInfo>> vGoodsInfo(begin(goodsInfo), end(goodsInfo));
-    auto sMaterialInfo =
+    auto svDecisionCriteria = b.CreateVector(std::vector<double>(begin(decisionCriteria), end(decisionCriteria)));
+    std::vector<GoodInfo> vGoodsInfo(begin(goodsInfo), end(goodsInfo));
+    auto svGoodsInfo =
         b.CreateVectorOfStructs<Save::GoodInfo>(goodsInfo.size(), [vGoodsInfo](size_t i, Save::GoodInfo *gI) {
-            *gI = Save::GoodInfo(vGoodsInfo[i].first, vGoodsInfo[i].second.limitFactor, vGoodsInfo[i].second.minPrice,
-                                 vGoodsInfo[i].second.maxPrice, vGoodsInfo[i].second.estimate,
-                                 vGoodsInfo[i].second.buy, vGoodsInfo[i].second.sell);
+            *gI = Save::GoodInfo(vGoodsInfo[i].fullId, vGoodsInfo[i].owned, vGoodsInfo[i].limitFactor,
+                                 vGoodsInfo[i].minPrice, vGoodsInfo[i].maxPrice, vGoodsInfo[i].estimate,
+                                 vGoodsInfo[i].buy, vGoodsInfo[i].sell);
         });
-    return Save::CreateAI(b, static_cast<short>(decisionCounter), sDecisionCriteria, sMaterialInfo);
+    return Save::CreateAI(b, static_cast<short>(decisionCounter), svDecisionCriteria, svGoodsInfo);
 }
 
 double AI::equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const {
@@ -90,13 +93,13 @@ double AI::equipScore(const Good &eq, const std::vector<Good> &eqpmt, const Enum
     return equipScore(eq, sts);
 }
 
-double AI::lootScore(const Property &tPpt) {
+double AI::lootScore(const Property &tgtPpt) {
     // Total value from looting given set of goods.
     double score = 0;
-    tPpt.forGood([this, &score](const Good &tG) {
+    tgtPpt.forGood([this, &score](const Good &tgtGd) {
         // Attempt to insert the good to goods info.
-        auto gII = goodsInfo.insert({tG.getFullId(), {Settings::aILimitFactor()}}).first;
-        score += tG.getAmount() * gII->second.estimate;
+        auto gII = goodsInfo.insert({tgtGd.getFullId(), false, Settings::aILimitFactor()}).first;
+        score += tgtGd.getAmount() * gII->estimate;
     });
     return score;
 }
@@ -112,6 +115,7 @@ void AI::trade() {
         storageProperty->forGood([this](const Good &gd) {
             Good wG(gd);
             traveler.withdraw(wG);
+            goodsInfo.insert({gd.getFullId(), true, Settings::aILimitFactor()});
         });
     // Clear offer and request from previous trade.
     traveler.clearTrade();
@@ -120,32 +124,35 @@ void AI::trade() {
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
     auto &travelerProperty = traveler.property();
-    travelerProperty.forGood([this, weight, &bestScore, &offerValue, &offerWeight, overWeight, &bestGood](const Good &g) {
-        double gWgt = g.weight();
+    auto &byOwned = goodsInfo.get<Owned>();
+    auto rng = byOwned.equal_range(true);
+    decltype(rng.first) sellInfo;
+    for (; rng.first != rng.second; ++rng.first) {
+        auto &gd = *travelerProperty.good(rng.first->fullId);
+        double gWgt = gd.weight();
         if (!overWeight || gWgt > 0) {
             // Either we are not over weight or given material doesn't help carry.
-            auto fId = g.getFullId();
-            auto tG = traveler.town()->getProperty().good(fId);
-            if (tG == nullptr) return;
-            auto amount = g.getAmount();
+            auto fId = gd.getFullId();
+            auto tnGd = traveler.town()->getProperty().good(fId);
+            if (tnGd == nullptr) return;
+            auto amount = gd.getAmount();
             if (amount > 0) {
                 if (gWgt < 0 && weight > gWgt)
                     // This good is needed to carry existing goods, reduce amount.
                     amount *= weight / gWgt;
-                auto gII = goodsInfo.find(fId);
-                if (gII == end(goodsInfo)) return;
-                double score = sellScore(tG->price(), gII->second.sell); // score based on minimum sell price
+                double score = sellScore(tnGd->price(), rng.first->sell); // score based on minimum sell price
                 if ((overWeight && (!bestGood || gWgt > bestGood->weight())) || (score > bestScore)) {
                     // Either we are over weight and good is heavier than previous offer or this good scores better.
                     bestScore = score;
-                    if (!g.getSplit()) amount = floor(amount);
-                    bestGood = std::make_unique<Good>(tG->getFullId(), tG->getFullName(), amount, tG->getMeasure());
-                    offerValue = tG->price(amount);
+                    if (!gd.getSplit()) amount = floor(amount);
+                    offerValue = tnGd->price(amount);
                     offerWeight = gWgt;
+                    bestGood = std::make_unique<Good>(tnGd->getFullId(), tnGd->getFullName(), amount, tnGd->getMeasure());
+                    sellInfo = rng.first;
                 }
             }
         }
-    });
+    }
     // Reduce offer value to reflect town profit.
     double townProfit = Settings::getTownProfit();
     offerValue *= townProfit;
@@ -158,15 +165,7 @@ void AI::trade() {
         buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
         std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
             // Reduce score by cost of build plan.
-            double score = -bdp.cost;
-            // Area of business in town, use to get inputs and outputs per uncia.
-            double bsnA = bdp.business.getArea();
-            // Reduce score by estimated value of inputs.
-            for (auto &ip : bdp.business.getInputs())
-                score -= goodsInfo[ip.getFullId()].estimate * ip.getAmount() * bdp.area / bsnA;
-            // Increase score by estimated value of outputs.
-            for (auto &op : bdp.business.getOutputs())
-                score += goodsInfo[op.getFullId()].estimate * op.getAmount() * bdp.area / bsnA;
+            double score = bdp.profit - bdp.cost;
             // Multiply score by build tendency.
             score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
             if (score > bestScore) {
@@ -196,17 +195,20 @@ void AI::trade() {
         // Trade only if score exceeds reciprocol of selling score.
         bestScore = 1 / bestScore;
     double excess;
-    // Find highest buy score.
-    townProperty.forGood([this, &equipment = traveler.getEquipment(), &stats = traveler.getStats(), criteriaMax,
-                          &bestScore, offerValue, weight, overWeight, &bestGood, townProfit, &excess](const Good &tG) {
-        double carry = tG.getCarry();
+    // Find highest buy score among goods not owned.
+    auto &equipment = traveler.getEquipment();
+    auto &stats = traveler.getStats();
+    rng = byOwned.equal_range(false);
+    decltype(rng.first) buyInfo;
+    for (; rng.first != rng.second; ++rng.first) {
+        auto tnGd = townProperty.good(rng.first->fullId);
+        if (!tnGd) return;
+        double carry = tnGd->getCarry();
         if (!overWeight || carry < 0) {
-            auto fId = tG.getFullId();
-            auto gII = goodsInfo.find(fId);
-            if (gII == end(goodsInfo)) return;
-            double score = buyScore(tG.price(), gII->second.buy); // score based on maximum buy price
+            auto fId = tnGd->getFullId();
+            double score = buyScore(tnGd->price(), rng.first->buy); // score based on maximum buy price
             // Weigh equip score double if not a trader or agent.
-            double eqpScr = equipScore(tG, equipment, stats) *
+            double eqpScr = equipScore(*tnGd, equipment, stats) *
                             (1 + !(role == AIRole::trader || role == AIRole::agent)) *
                             decisionCriteria[DecisionCriteria::equipScoreWeight] / criteriaMax;
             score += eqpScr;
@@ -214,7 +216,7 @@ void AI::trade() {
                 bestScore = score;
                 // Remove amout town takes as profit, store excess.
                 excess = 0;
-                double amount = tG.quantity(offerValue * townProfit, excess);
+                double amount = tnGd->quantity(offerValue * townProfit, excess);
                 if (amount > 0) {
                     if (overWeight) {
                         // Try to buy minimum that will bring net weight back below 0
@@ -224,37 +226,43 @@ void AI::trade() {
                             amount = needed;
                         }
                     }
-                    if (!tG.getSplit())
+                    if (!tnGd->getSplit())
                         // Remove extra portion of goods that don't split.
                         excess += modf(amount, &amount);
                     // Convert the excess from units of bought good to deniers.
-                    excess = tG.price(excess);
-                    bestGood = std::make_unique<Good>(tG.getFullId(), tG.getFullName(), amount, tG.getMeasure());
+                    excess = tnGd->price(excess);
+                    bestGood = std::make_unique<Good>(tnGd->getFullId(), tnGd->getFullName(), amount, tnGd->getMeasure());
+                    buyInfo = rng.first;
                 }
             }
         }
-    });
+    }
+    auto toggleOwned = [](GoodInfo &gdInf) { gdInf.owned = !gdInf.owned; };
     if (bestGood) {
         // Purchasing a good exceeded score of building a business.
         if (excess > 0) traveler.divideExcess(excess, townProfit);
         traveler.requestGood(std::move(*bestGood));
         traveler.makeTrade();
+        byOwned.modify(sellInfo, toggleOwned);
+        byOwned.modify(buyInfo, toggleOwned);
     } else if (bestPlan) {
         // No good exceeded score of building business.
-        traveler.divideExcess(offerValue - bestPlan->cost, townProfit);
+        excess = offerValue - bestPlan->cost;
+        if (excess > 0) traveler.divideExcess(excess, townProfit);
         traveler.requestGoods(std::move(bestPlan->request));
         traveler.makeTrade();
+        byOwned.modify(sellInfo, toggleOwned);
         traveler.build(bestPlan->business, bestPlan->area);
         if (!storageProperty) storageProperty = traveler.property(townId);
         store(storageProperty, travelerProperty);
     }
 }
 
-void AI::store(const Property *sPpt, const Property &tPpt) {
+void AI::store(const Property *sPpt, const Property &tnPpt) {
     // Deposit all goods that are inputs for businesses.
     for (auto &bsn : sPpt->getBusinesses())
         for (auto &ip : bsn.getInputs())
-            tPpt.forGood(ip.getGoodId(), [this](const Good &gd) {
+            tnPpt.forGood(ip.getGoodId(), [this](const Good &gd) {
                 Good dG(gd);
                 traveler.deposit(dG);
             });
@@ -263,11 +271,11 @@ void AI::store(const Property *sPpt, const Property &tPpt) {
 void AI::equip() {
     // Equip best scoring item for each part.
     EnumArray<double, Part> bestScores;
-    traveler.property().forGood([this, &bestScores](const Good &g) {
-        if (g.getAmount() >= 1) {
-            auto &ss = g.getCombatStats();
+    traveler.property().forGood([this, &bestScores](const Good &gd) {
+        if (gd.getAmount() >= 1) {
+            auto &ss = gd.getCombatStats();
             if (!ss.empty()) {
-                Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
+                Good e(gd.getFullId(), gd.getFullName(), 1, ss, gd.getImage());
                 double score = equipScore(e, traveler.getStats());
                 Part pt = ss.front().part;
                 if (score > bestScores[pt]) {
@@ -336,8 +344,8 @@ void AI::loot() {
     // Automatically loot based on scores and decision criteria.
     auto tgt = traveler.getTarget();
     if (!tgt) return;
-    auto &tPpt = tgt->property();
-    double lootGoal = lootScore(tPpt);
+    auto &tgtPpt = tgt->property();
+    double lootGoal = lootScore(tgtPpt);
     if (tgt->alive())
         // Looting from an alive target dependent on greed.
         lootGoal *= decisionCriteria[DecisionCriteria::lootingGreed] / Settings::getAIDecisionCriteriaMax();
@@ -346,13 +354,14 @@ void AI::loot() {
         // Keep looting until amount looted matches goal or we can carry no more.
         double bestScore = 0, bestValue, bestWeight;
         std::unique_ptr<Good> bestGood;
-        tPpt.forGood([this, &bestScore, &bestValue, &bestWeight, &bestGood, looted, lootGoal](const Good &tG) {
-            double amount = tG.getAmount();
+        GoodInfoContainer::iterator bestGoodInfo;
+        tgtPpt.forGood([this, &bestScore, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted,
+                        lootGoal](const Good &tgtGd) {
+            double amount = tgtGd.getAmount();
             if (amount > 0) {
-                auto gII = goodsInfo.find(tG.getFullId());
-                if (gII == end(goodsInfo)) return;
-                double estimate = gII->second.estimate;
-                double carry = tG.getCarry();
+                auto gII = goodsInfo.insert({tgtGd.getFullId(), false, Settings::aILimitFactor()}).first;
+                double estimate = gII->estimate;
+                double carry = tgtGd.getCarry();
                 double score;
                 if (carry > 0)
                     // Heavier goods score lower.
@@ -369,7 +378,8 @@ void AI::loot() {
                     amount = std::min((lootGoal - looted) / estimate, amount);
                     bestValue = estimate * amount;
                     bestWeight = carry * amount;
-                    bestGood = std::make_unique<Good>(tG.getFullId(), amount);
+                    bestGood = std::make_unique<Good>(tgtGd.getFullId(), amount);
+                    bestGoodInfo = gII;
                 }
             }
         });
@@ -380,6 +390,7 @@ void AI::loot() {
         if (weight > 0) return;
         // Loot the current best good from target.
         traveler.loot(*bestGood);
+        goodsInfo.modify(bestGoodInfo, [](GoodInfo &gdInf) { gdInf.owned = true; });
         looted += bestValue;
     }
 }

@@ -124,7 +124,6 @@ class Traveler {
     void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void createAIGoods();
 
 public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
@@ -161,7 +160,7 @@ public:
     void setPortion(double p);
     void changePortion(double d);
     void addToTown();
-    void create(unsigned int gId, double amt);
+    void create(unsigned int fId, double amt);
     void pickTown(const Town *tn);
     void place(const SDL_Point &ofs, double s) { position.place(ofs, s); }
     void draw(SDL_Renderer *s) const;
@@ -199,6 +198,7 @@ public:
     void loot(Good &g);
     void loot();
     void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void createAIGoods();
     void startAI();
     void startAI(const Traveler &p);
     void update(unsigned int e);

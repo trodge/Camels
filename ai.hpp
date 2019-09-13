@@ -90,7 +90,7 @@ public:
     AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
        const GoodInfoContainer &gsI, AIRole rl);
     AI(Traveler &tvl) : AI(tvl, Settings::aIDecisionCriteria(), {}, Settings::aIRole()) {}
-    AI(Traveler &tvl, const AI &p) : AI(tvl, p.decisionCriteria, p.owned, p.watched, p.role) {}
+    AI(Traveler &tvl, const AI &p) : AI(tvl, p.decisionCriteria, p.goodsInfo, p.role) {}
     AI(Traveler &tvl, const Save::AI *ldAI);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
     AIRole getRole() const { return role; }

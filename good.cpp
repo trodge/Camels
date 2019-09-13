@@ -243,7 +243,7 @@ void Good::update(unsigned int elTm, double dyLn) {
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
     // Total expired amounts.
     double perished =
-        std::accumulate(expired, perishCounters.end(), 0, [](double d, auto &pC) { return d + pC.amount; });
+        std::accumulate(expired, perishCounters.end(), 0., [](double d, auto &pC) { return d + pC.amount; });
     // Erase expired perish counters.
     perishCounters.erase(expired, perishCounters.end());
     // Add elapsed time to remaining counters.

@@ -342,8 +342,8 @@ std::vector<std::pair<unsigned int, double>> Settings::getAIStartingGoods(AIRole
     return randomChoice(aIStartingGoods[rl].goods, aIStartingGoods[rl].count);
 }
 
-std::vector<unsigned int> Settings::aIFullIds(std::vector<unsigned int> &fIds) {
-    return randomChoice(fI)
+std::vector<unsigned int> Settings::aIFullIds(const std::vector<unsigned int> &fIds) {
+    return randomChoice(fIds, aIGoodsCount);
 }
 
 EnumArray<double, DecisionCriteria> Settings::aIDecisionCriteria() {

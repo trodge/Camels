@@ -198,6 +198,7 @@ public:
     static Part part();
     static AIRole aIRole();
     static std::vector<std::pair<unsigned int, double>> getAIStartingGoods(AIRole rl);
+    static std::vector<unsigned int> aIFullIds(const std::vector<unsigned int> &fIds);
     static EnumArray<double, DecisionCriteria> aIDecisionCriteria();
     static double aIDecisionCounter();
     static double aILimitFactor();

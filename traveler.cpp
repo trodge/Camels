@@ -158,7 +158,11 @@ void Traveler::setPortion(double d) {
 
 void Traveler::changePortion(double d) { setPortion(portion + d); }
 
-void Traveler::create(unsigned int gId, double amt) { properties.find(0)->second.create(gId, amt); }
+void Traveler::create(unsigned int fId, double amt) {
+    Good crGd(fId, 0);
+    crGd.create(amt);
+    properties.find(0)->second.put(crGd);
+}
 
 void Traveler::pickTown(const Town *tn) {
     // Start moving toward given town.
@@ -850,13 +854,11 @@ void Traveler::createAIGoods() {
 void Traveler::startAI() {
     // Initialize variables for running a new AI.
     aI = std::make_unique<AI>(*this);
-    createAIGoods();
 }
 
 void Traveler::startAI(const Traveler &p) {
     // Starts an AI which imitates parameter's AI.
     aI = std::make_unique<AI>(*this, *p.aI);
-    createAIGoods();
 }
 
 void Traveler::update(unsigned int elTm) {

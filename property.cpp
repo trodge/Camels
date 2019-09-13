@@ -90,6 +90,23 @@ double Property::weight() const {
                            [](double w, const auto &gd) { return w + gd.weight(); });
 }
 
+std::pair<const Good *, double> Property::cheapest(unsigned int gId) const {
+    // Returns a pair containing the cheapest good of given good id and its price.
+    auto rng = goods.get<GoodId>().equal_range(gId);
+    const Good *cheapest = nullptr;
+    double lowest = std::numeric_limits<double>::max();
+    std::for_each(rng.first, rng.second, [&cheapest, &lowest](const Good &tnGd) {
+        if (tnGd.getAmount() > 0) {
+            double price = tnGd.price();
+            if (price < lowest) {
+                lowest = price;
+                cheapest = &tnGd;
+            }
+        }
+    });
+    return {cheapest, lowest};
+}
+
 double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const {
     // Set amounts of given goods such that they can be purchased for given cost, keeping ratios the
     // same. Adjusts cost downward and sets full ids, names, and measure words for goods.
@@ -106,20 +123,10 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
     for (size_t i = 0; i < goodCount; ++i) {
         auto &gd = gds[i];
         auto gdId = gd.getGoodId();
-        auto rng = goods.get<GoodId>().equal_range(gdId);
         auto &blnc = goodBalances[i];
         blnc.amount = tvlPpt.amount(gdId);
-        blnc.price = std::numeric_limits<double>::max();
         blnc.ratio = gd.getAmount();
-        std::for_each(rng.first, rng.second, [&blnc](const Good &tnGd) {
-            if (tnGd.getAmount() > 0) {
-                double price = tnGd.price();
-                if (price < blnc.price) {
-                    blnc.price = price;
-                    blnc.cheapest = &tnGd;
-                }
-            }
-        });
+        std::tie(blnc.cheapest, blnc.price) = cheapest(gdId);
         if (!blnc.cheapest) /* A good is not available */
             return 0;
         gd.setFullId(blnc.cheapest->getFullId());
@@ -171,10 +178,25 @@ BuildPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, doubl
     BuildPlan bdp{bsn};
     for (auto &rq : bsn.getRequirements()) bdp.request.push_back(rq);
     double area = bsn.getArea();
-    for (auto &ip : bsn.getInputs()) {
+    bdp.profit = 0;
+    auto &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
+    unsigned int lastInputId;
+    bool keepMaterial = bsn.getKeepMaterial();
+    for (auto &ip : inputs) {
         bdp.request.push_back(ip);
-        bdp.request.back().setAmount(ip.getAmount() / area);
+        double amount = ip.getAmount() / area;
+        bdp.request.back().setAmount(amount);
+        auto chpst = cheapest(ip.getGoodId());
+        if (keepMaterial) lastInputId = chpst.first->getMaterialId();
+        bdp.profit -= amount * chpst.second;
     }
+    bdp.profit = std::accumulate(begin(outputs), end(outputs), bdp.profit,
+                                 [this, keepMaterial, lastInputId, area](double a, const Good &op) {
+                                     auto opId = op.getGoodId();
+                                     auto tnGd = good(boost::make_tuple(opId, keepMaterial ? lastInputId : opId));
+                                     if (!tnGd) return a;
+                                     return a + op.getAmount() / area * tnGd->price();
+                                 });
     bdp.area = balance(bdp.request, tvlPpt, ofVl);
     bdp.cost = ofVl;
     return bdp;

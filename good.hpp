@@ -44,14 +44,10 @@ struct CombatStat {
 class Good {
     unsigned int goodId, materialId = 0, fullId = 0;
     std::string goodName, materialName, fullName;
-    double amount = 0, perish = 0, carry = 0;
+    double amount = 0, maximum /* maximum allowable amount */ = 0, perish /* shelf life in days */ = 0,
+           carry /* per-unit weight */ = 0, consumptionRate, demandSlope, demandIntercept, minPrice;
     std::string measure;     // word used to measure good
     bool split;              // whether good can be split
-    double maximum = 0;      // maximum allowable amont of good, or 0 if no maximum
-    double consumptionRate;  // units of good consumed per day
-    double demandSlope;      // reduction in price per unit of good
-    double demandIntercept;  // price per unit when amount is 0
-    double minPrice;         // price per unit when amount is maximum
     unsigned int shoots = 0; // good id of good this good shoots
     std::vector<CombatStat> combatStats;
     double lastAmount = 0;
@@ -99,12 +95,12 @@ public:
     const std::string &getFullName() const { return fullName; }
     std::string businessText() const;
     double getAmount() const { return amount; }
+    double getMaximum() const { return maximum; }
     double getPerish() const { return perish; }
     double getCarry() const { return carry; }
     double weight() const { return amount * carry; }
     const std::string &getMeasure() const { return measure; }
     bool getSplit() const { return split; }
-    double getMaximum() const { return maximum; }
     unsigned int getShoots() const { return shoots; }
     double getConsumptionRate() const { return consumptionRate; }
     double getDemandSlope() const { return demandSlope; }

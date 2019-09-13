@@ -93,6 +93,7 @@ public:
     double amount(unsigned int gId) const;
     double maximum(unsigned int gId) const;
     double weight() const;
+    std::pair<const Good *, double> cheapest(unsigned int gId) const;
     double balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const;
     std::vector<BuildPlan> buildPlans(const Property &tvlPpt, double ofVl) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
