@@ -24,7 +24,7 @@ AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const Good
     auto town = traveler.town();
     auto &townProperty = town->getProperty();
     // Insert full ids of owned goods into goods info.
-    traveler.createAIGoods();
+    traveler.createAIGoods(role);
     for (auto fId : traveler.property().fullIds()) goodsInfo.insert({fId, true, Settings::aILimitFactor()});
     if (gsI.empty())
         // Insert a randomly chosen set of full ids from town into goods info.

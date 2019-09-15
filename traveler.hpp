@@ -26,6 +26,7 @@
 #include <forward_list>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -198,7 +199,7 @@ public:
     void loot(Good &g);
     void loot();
     void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void createAIGoods();
+    void createAIGoods(AIRole rl);
     void startAI();
     void startAI(const Traveler &p);
     void update(unsigned int e);

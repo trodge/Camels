@@ -775,8 +775,6 @@ void Traveler::updateFightBoxes(Pager &pgr) {
     std::vector<TextBox *> bxs = pgr.getVisible();
     std::vector<std::string> choiceText = bxs[0]->getText();
     switch (choice) {
-    case FightChoice::none:
-        break;
     case FightChoice::fight:
         if (choiceText[0] == "Running...") choiceText[0] += " Caught!";
         break;
@@ -785,6 +783,8 @@ void Traveler::updateFightBoxes(Pager &pgr) {
         break;
     case FightChoice::yield:
         choiceText[0] = "Yielding...";
+        break;
+    default:
         break;
     }
     bxs[0]->setText(choiceText);
@@ -847,8 +847,8 @@ void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr)
     });
 }
 
-void Traveler::createAIGoods() {
-    for (auto &sG : Settings::getAIStartingGoods(aI->getRole())) create(sG.first, sG.second);
+void Traveler::createAIGoods(AIRole rl) {
+    for (auto &sG : Settings::getAIStartingGoods(rl)) create(sG.first, sG.second);
 }
 
 void Traveler::startAI() {

@@ -158,16 +158,16 @@ void Settings::load(const fs::path &p) {
     attackDistSq = tree.get("travelers.attackDistSq", 9000);
     escapeChance = tree.get("travelers.escapeChance", 0.5);
     loadRange("player.startingGoods", std::back_inserter(playerStartingGoods), &loadPair<unsigned int, double>,
-              std::vector<std::pair<unsigned int, double>>{{55, 0.75}, {59, 2.}}, tree);
+              std::vector<std::pair<unsigned int, double>>{{96, 0.75}, {100, 2.}}, tree);
     playerColor = loadColor("player.color", {255, 255, 255, 255}, tree);
     aIDecisionCriteriaMax = tree.get("aI.decisionCriteriaMax", 9);
     loadRange("aI.roleWeights", begin(aIRoleWeights), std::vector<double>{0.4, 0.1, 0.1, 0.2, 0.1, 0.1}, tree);
     aIStartingGoods[AIRole::trader] =
-        loadAIStartingGoods("aI.traderGoods", {2, {{1, 21.}, {9, 10.5}, {55, 0.75}, {59, 2.}}}, tree);
+        loadAIStartingGoods("aI.traderGoods", {2, {{1, 21.}, {2, 23.}, {16, 10.5}, {96, 0.75}, {100, 2.}}}, tree);
     aIStartingGoods[AIRole::soldier] = loadAIStartingGoods(
-        "aI.soldierGoods", {3, {{37, 1.}, {38, 1.}, {42, 1.}, {43, 1.}, {44, 1.}, {46, 1.}}}, tree);
+        "aI.soldierGoods", {3, {{69, 1.}, {73, 1.}, {77, 1.}, {79, 1.}, {81, 1.}, {87, 1.}}}, tree);
     aIStartingGoods[AIRole::bandit] = loadAIStartingGoods(
-        "aI.banditGoods", {1, {{37, 1.}, {38, 1.}, {42, 1.}, {43, 1.}, {44, 1.}, {46, 1.}}}, tree);
+        "aI.banditGoods", {2, {{67, 1.}, {70, 1.}, {78, 1.}, {80, 1.}, {82, 1.}, {86, 1.}}}, tree);
     aIStartingGoods[AIRole::agent] = loadAIStartingGoods("aI.agentGoods", {}, tree);
     aIStartingGoods[AIRole::guard] = loadAIStartingGoods("aI.guardGoods", {}, tree);
     aIStartingGoods[AIRole::thug] = loadAIStartingGoods("aI.thugGoods", {}, tree);
