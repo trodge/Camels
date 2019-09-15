@@ -518,6 +518,8 @@ const std::vector<Nation> &Game::newGame() {
     loadTowns(conn.get(), loadBar, freezeTexture.get());
     conn = nullptr;
     double tC = static_cast<double>(towns.size());
+    // Generate AI travelers.
+    return nations;
     loadBar.progress(-1);
     loadBar.setText(0, "Generating Travelers...");
     for (auto &t : towns) {

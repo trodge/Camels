@@ -150,8 +150,11 @@ void Good::setConsumption(const std::array<double, 3> &cnsptn) {
 
 void Good::scale(double ppl) {
     // Assign consumption to match given population.
-    demandSlope /= ppl;
-    consumptionRate *= ppl;
+    if (ppl) {
+        demandSlope /= ppl;
+        consumptionRate *= ppl;
+    } else
+        consumptionRate = 0;
 }
 
 void Good::enforceMaximum() {
@@ -239,7 +242,7 @@ void Good::update(unsigned int elTm, double dyLn) {
         create(-consumed);
     if (perishCounters.empty()) return;
     // Find the first perish counter that will expire.
-    PerishCounter exPC = {int(perish * dyLn - elTm), 0};
+    PerishCounter exPC = {int(perish * dyLn - elTm)};
     auto expired = std::upper_bound(perishCounters.begin(), perishCounters.end(), exPC);
     // Total expired amounts.
     double perished =

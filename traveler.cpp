@@ -159,9 +159,7 @@ void Traveler::setPortion(double d) {
 void Traveler::changePortion(double d) { setPortion(portion + d); }
 
 void Traveler::create(unsigned int fId, double amt) {
-    Good crGd(fId, 0);
-    crGd.create(amt);
-    properties.find(0)->second.put(crGd);
+    properties.find(0)->second.create(fId, amt);
 }
 
 void Traveler::pickTown(const Town *tn) {
@@ -682,7 +680,7 @@ void Traveler::useAmmo(double tn) {
             unsigned int speed = 0;
             for (auto &s : e.getCombatStats()) speed += s.speed * stats[s.stat];
             unsigned int n = static_cast<unsigned int>(tn * speed);
-            properties.find(0)->second.use(sId, n);
+            properties.find(0)->second.input(sId, n);
         }
     }
 }

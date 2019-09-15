@@ -290,10 +290,10 @@ void Property::reset() {
         for (auto &ip : b.getInputs())
             if (ip == lastOutput)
                 // Input good is also output, create full amount.
-                create(ip.getGoodId(), ip.getAmount());
+                output(ip.getGoodId(), ip.getAmount());
             else
                 // Create only enough for one cycle.
-                create(ip.getGoodId(), ip.getAmount() * updateTime / dayLength);
+                output(ip.getGoodId(), ip.getAmount() * updateTime / dayLength);
     }
 }
 
@@ -332,13 +332,13 @@ void Property::put(Good &gd) {
         byFullId.modify(rGdIt, putGood);
 }
 
-void Property::use(unsigned int gId, double amt) {
+void Property::input(unsigned int ipId, double amt) {
     // Use the given amount of the given good id.
     auto &byGoodId = goods.get<GoodId>();
-    auto gdRng = byGoodId.equal_range(gId);
+    auto gdRng = byGoodId.equal_range(ipId);
     double total =
         std::accumulate(gdRng.first, gdRng.second, 0., [](double tt, auto &gd) { return tt + gd.getAmount(); });
-    if (total == 0) throw std::runtime_error("0 total using good " + std::to_string(gId));
+    if (total == 0) throw std::runtime_error("0 total using good " + std::to_string(ipId));
     auto useGood = [amt, total](auto &gd) { gd.use(amt * gd.getAmount() / total); };
     for (; gdRng.first != gdRng.second; ++gdRng.first) byGoodId.modify(gdRng.first, useGood);
 }
@@ -348,7 +348,7 @@ void Property::use() {
     for (auto gdIt = begin(goods); gdIt != end(goods); ++gdIt) goods.modify(gdIt, [](auto &gd) { gd.use(); });
 }
 
-void Property::create(unsigned int opId, double amt) {
+void Property::output(unsigned int opId, double amt) {
     // Create the given amount of the lowest indexed material of the given good id.
     if (std::isnan(amt)) std::cout << opId;
     auto &byGoodId = goods.get<GoodId>();
@@ -362,7 +362,7 @@ void Property::create(unsigned int opId, double amt) {
         byGoodId.modify(std::min_element(opRng.first, opRng.second), createGood);
 }
 
-void Property::create(unsigned int opId, unsigned int ipId, double amt) {
+void Property::output(unsigned int opId, unsigned int ipId, double amt) {
     // Create the given amount of the first good id based on inputs of the second good id.
     auto &byGoodId = goods.get<GoodId>();
     auto &byMaterialId = goods.get<MaterialId>();
@@ -390,6 +390,16 @@ void Property::create(unsigned int opId, unsigned int ipId, double amt) {
             // Create good.
             byMaterialId.modify(opIt, createGood);
     }
+}
+
+void Property::create(unsigned int fId, double amt) {
+    auto &byFullId = goods.get<FullId>();
+    auto gdIt = byFullId.find(fId);
+    auto createGood = [amt](auto &gd) { gd.create(amt); };
+    if (gdIt == end(byFullId))
+        addGood(*source->good(fId), createGood);
+    else
+        byFullId.modify(gdIt, createGood);
 }
 
 void Property::create() {

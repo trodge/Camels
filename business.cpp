@@ -157,12 +157,12 @@ void Business::run(Property &inv, const std::unordered_map<unsigned int, Conflic
             auto outputId = op.getGoodId();
             if (keepMaterial && outputId != lastInputId)
                 // Use materials of last input.
-                inv.create(outputId, lastInputId, op.getAmount() * factor);
+                inv.output(outputId, lastInputId, op.getAmount() * factor);
             else
                 // Materials are not kept or last input and output are the same, ignore materials.
-                inv.create(outputId, op.getAmount() * factor);
+                inv.output(outputId, op.getAmount() * factor);
         }
-        for (auto &ip : inputs) inv.use(ip.getGoodId(), ip.getAmount() * factor);
+        for (auto &ip : inputs) inv.input(ip.getGoodId(), ip.getAmount() * factor);
     }
 }
 

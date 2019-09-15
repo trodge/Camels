@@ -75,7 +75,7 @@ class Property {
 public:
     Property(TownType tT, bool ctl, unsigned long ppl, const Property *src); // constructor for town
     Property(bool ctl, const Property *src)
-        : coastal(ctl), updateCounter(Settings::propertyUpdateCounter()), source(src) {} // constructor for traveler
+        : coastal(ctl), population(0), updateCounter(Settings::propertyUpdateCounter()), source(src) {} // constructor for traveler
     Property(const std::vector<Good> &gds, const std::vector<Business> &bsns)
         : goods(begin(gds), end(gds)), businesses(bsns) {}      // constructor for nation
     Property(const Save::Property *svPpt, const Property *src); // constructor for loading
@@ -106,10 +106,11 @@ public:
     void take(Good &gd);
     void put(Good &gd);
     void use();
-    void use(unsigned int gId, double amt);
+    void input(unsigned int ipId, double amt);
+    void create(unsigned int fId, double amt);
     void create();
-    void create(unsigned int opId, double amt);
-    void create(unsigned int opId, unsigned int ipId, double amt);
+    void output(unsigned int opId, double amt);
+    void output(unsigned int opId, unsigned int ipId, double amt);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void update(unsigned int elTm);
