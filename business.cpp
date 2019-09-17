@@ -123,7 +123,7 @@ void Business::setFactor(double ft, const Property &inv, std::unordered_map<unsi
         auto &cfct = cfcts[ipId];
         ++cfct.count;
         auto ipAmt = ip.getAmount();
-        cfct.needed += ipAmt;
+        cfct.needed += ipAmt * ft;
         auto invAmt = inv.amount(ipId);
         if (cfct.needed > invAmt) cfct.conflicted = true;
         auto inputFactor = invAmt / ipAmt; // max factor possible given this input

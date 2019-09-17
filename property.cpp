@@ -187,8 +187,9 @@ BuildPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, doubl
         double amount = ip.getAmount() / area;
         bdp.request.back().setAmount(amount);
         auto chpst = cheapest(ip.getGoodId());
-        if (keepMaterial) lastInputId = chpst.first->getMaterialId();
+        if (!chpst.first) return {bsn, 0};
         bdp.profit -= amount * chpst.second;
+        if (keepMaterial) lastInputId = chpst.first->getMaterialId();
     }
     bdp.profit = std::accumulate(begin(outputs), end(outputs), bdp.profit,
                                  [this, keepMaterial, lastInputId, area](double a, const Good &op) {
@@ -209,7 +210,7 @@ std::vector<BuildPlan> Property::buildPlans(const Property &tvlPpt, double ofVl)
     for (auto &bsn : businesses) {
         // Add build plan for all businesses.
         auto bdp = buildPlan(bsn, tvlPpt, ofVl);
-        if (bdp.area > 0) bdb.push_back(bdp);
+        if (bdp.area > std::numeric_limits<double>::epsilon()) bdb.push_back(bdp);
     }
     return bdb;
 }
@@ -375,10 +376,10 @@ void Property::output(unsigned int opId, unsigned int ipId, double amt) {
     // Find needed output goods that don't exist.
     for (; ipRng.first != ipRng.second; ++ipRng.first) {
         // Search for good with output good id and input material id.
+        auto createGood = [cAmt = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(cAmt); };
         auto ipMId = ipRng.first->getMaterialId();
         auto opGMId = boost::make_tuple(opId, ipMId);
         auto opIt = byMaterialId.find(opGMId);
-        auto createGood = [cAmt = amt * ipRng.first->getAmount() / inputTotal](auto &gd) { gd.create(cAmt); };
         if (opIt == end(byMaterialId)) {
             // Output good doesn't exist, copy from source.
             addGood(*source->good(opGMId), createGood);
@@ -393,9 +394,9 @@ void Property::output(unsigned int opId, unsigned int ipId, double amt) {
 }
 
 void Property::create(unsigned int fId, double amt) {
+    auto createGood = [amt](auto &gd) { gd.create(amt); };
     auto &byFullId = goods.get<FullId>();
     auto gdIt = byFullId.find(fId);
-    auto createGood = [amt](auto &gd) { gd.create(amt); };
     if (gdIt == end(byFullId))
         addGood(*source->good(fId), createGood);
     else

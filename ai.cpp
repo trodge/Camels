@@ -30,8 +30,6 @@ AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const Good
         // Insert a randomly chosen set of full ids from town into goods info.
         for (auto fId : Settings::aIFullIds(townProperty.fullIds()))
             goodsInfo.insert({fId, false, Settings::aILimitFactor()});
-    for (auto &gdInf : goodsInfo)
-        std::cout << gdInf.fullId << " " << gdInf.owned << std::endl;
     setNearby(town, town, Settings::getAITownRange());
     setLimits();
 }
