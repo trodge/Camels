@@ -176,10 +176,11 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
 BuildPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const {
     // Add a build plan for given business to given build plan vector if it can be built.
     BuildPlan bdp{bsn};
-    for (auto &rq : bsn.getRequirements()) bdp.request.push_back(rq);
+    auto &requirements = bsn.getRequirements(), &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
+    bdp.request.reserve(requirements.size() + inputs.size());
+    for (auto &rq : requirements) bdp.request.push_back(rq);
     double area = bsn.getArea();
     bdp.profit = 0;
-    auto &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
     unsigned int lastInputId;
     bool keepMaterial = bsn.getKeepMaterial();
     for (auto &ip : inputs) {
