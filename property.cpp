@@ -110,6 +110,7 @@ std::pair<const Good *, double> Property::cheapest(unsigned int gId) const {
 double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const {
     // Set amounts of given goods such that they can be purchased for given cost, keeping ratios the
     // same. Adjusts cost downward and sets full ids, names, and measure words for goods.
+    // Returns factor of actual amounts to ratios.
     double factor = std::numeric_limits<double>::max();
     if (cst == 0) {
         // No goods can be bought.
@@ -173,9 +174,9 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
     return factor;
 }
 
-BuildPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const {
+BusinessPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const {
     // Add a build plan for given business to given build plan vector if it can be built.
-    BuildPlan bdp{bsn};
+    BusinessPlan bdp{bsn};
     auto &requirements = bsn.getRequirements(), &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
     bdp.request.reserve(requirements.size() + inputs.size());
     for (auto &rq : requirements) bdp.request.push_back(rq);
@@ -199,21 +200,38 @@ BuildPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, doubl
                                      if (!tnGd) return a;
                                      return a + op.getAmount() / area * tnGd->price();
                                  });
-    bdp.area = balance(bdp.request, tvlPpt, ofVl);
+    bdp.factor = balance(bdp.request, tvlPpt, ofVl);
     bdp.cost = ofVl;
     return bdp;
 }
 
-std::vector<BuildPlan> Property::buildPlans(const Property &tvlPpt, double ofVl) const {
+std::vector<BusinessPlan> Property::buildPlans(const Property &tvlPpt, double ofVl) const {
     // Return vector of plans for businesses that can be built with given starting goods.
-    std::vector<BuildPlan> bdb;
-    bdb.reserve(businesses.size());
+    std::vector<BusinessPlan> buildable;
+    buildable.reserve(businesses.size());
     for (auto &bsn : businesses) {
         // Add build plan for all businesses.
         auto bdp = buildPlan(bsn, tvlPpt, ofVl);
-        if (bdp.area > std::numeric_limits<double>::epsilon()) bdb.push_back(bdp);
+        if (bdp.factor > std::numeric_limits<double>::epsilon()) buildable.push_back(bdp);
     }
-    return bdb;
+    return buildable;
+}
+
+BusinessPlan Property::restockPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const {
+    // Return plan for restocking given business with given starting goods.
+    BusinessPlan rsp{bsn};
+    auto &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
+}
+
+std::vector<BusinessPlan> Property::restockPlans(const Property &tvlPpt, const Property &srgPpt, double ofVl) const {
+    // Return vector of plans for restocking businesses in given storage property with given starting goods.
+    std::vector<BusinessPlan> restockable;
+    auto &storageBusinesses = srgPpt.businesses;
+    restockable.reserve(storageBusinesses.size());
+    for (auto &bsn : storageBusinesses) {
+
+    }
+    return restockable;
 }
 
 void Property::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {

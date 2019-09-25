@@ -155,15 +155,24 @@ void AI::trade() {
     // Reduce offer value to reflect town profit.
     double townProfit = Settings::getTownProfit();
     offerValue *= townProfit;
+    weight -= offerWeight;
+    overWeight = weight > 0;
+    if (overWeight)
+        // Force a trade to occur.
+        bestScore = 0;
+    else
+        // Trade only if score exceeds reciprocol of selling score.
+        bestScore = 1 / bestScore;
     // Determine which businesses can be built based on offer value and town prices.
     auto &townProperty = town->getProperty();
-    std::vector<BuildPlan> buildPlans;
-    BuildPlan *bestPlan = nullptr;
+    std::vector<BusinessPlan> buildPlans, // plans to build businesses in current town
+        restockPlans; // plans to restock businesses in current town
+    BusinessPlan *bestPlan = nullptr;     // pointer to highest scoring business plan
     if (role == AIRole::trader) {
         if (++businessCounter >= 0) {
             // Find best business scored based on requirements, inputs, and outputs.
             buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
-            std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
+            std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BusinessPlan &bdp) {
                 // Reduce score by cost of build plan.
                 double score = bdp.profit - bdp.cost;
                 // Multiply score by build tendency.
@@ -176,10 +185,13 @@ void AI::trade() {
             });
             if (bestPlan && bestPlan->cost == 0) {
                 // Build business without trading.
-                traveler.build(bestPlan->business, bestPlan->area);
+                traveler.build(bestPlan->business, bestPlan->factor);
                 if (!storageProperty) storageProperty = traveler.property(townId);
                 store(storageProperty, travelerProperty);
                 bestPlan = nullptr;
+            }
+            if (storageProperty) {
+                restockPlans = townProperty.restockPlans(travelerProperty, *storageProperty, offerValue);
             }
             businessCounter = -Settings::getAIBusinessInterval();
         }
@@ -188,14 +200,6 @@ void AI::trade() {
     // Add best selling good to offer if found.
     traveler.offerGood(std::move(*bestGood));
     bestGood = nullptr;
-    weight -= offerWeight;
-    overWeight = weight > 0;
-    if (overWeight)
-        // Force a trade to occur.
-        bestScore = 0;
-    else
-        // Trade only if score exceeds reciprocol of selling score.
-        bestScore = 1 / bestScore;
     double excess;
     // Find highest buy score among goods not owned.
     auto &equipment = traveler.getEquipment();
@@ -254,7 +258,7 @@ void AI::trade() {
         traveler.requestGoods(std::move(bestPlan->request));
         traveler.makeTrade();
         byOwned.modify(sellInfo, toggleOwned);
-        traveler.build(bestPlan->business, bestPlan->area);
+        traveler.build(bestPlan->business, bestPlan->factor);
         if (!storageProperty) storageProperty = traveler.property(townId);
         store(storageProperty, travelerProperty);
     }

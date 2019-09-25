@@ -50,7 +50,7 @@ struct GoodBalance {
     double amount, price, ratio;
 };
 
-struct BuildPlan;
+struct BusinessPlan;
 
 class Property {
     using GdId = mi::const_mem_fun<Good, unsigned int, &Good::getGoodId>;
@@ -69,7 +69,8 @@ class Property {
     int updateCounter;
     bool maxGoods = false;
     const Property *source = nullptr;
-    BuildPlan buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const;
+    BusinessPlan buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const;
+    BusinessPlan restockPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const;
     void addGood(const Good &srGd, const std::function<void(Good &)> &fn);
 
 public:
@@ -95,7 +96,8 @@ public:
     double weight() const;
     std::pair<const Good *, double> cheapest(unsigned int gId) const;
     double balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const;
-    std::vector<BuildPlan> buildPlans(const Property &tvlPpt, double ofVl) const;
+    std::vector<BusinessPlan> buildPlans(const Property &tvlPpt, double ofVl) const;
+    std::vector<BusinessPlan> restockPlans(const Property &tvlPpt, const Property &srgPpt, double ofVl) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();

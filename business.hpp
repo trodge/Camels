@@ -89,9 +89,9 @@ public:
     void saveFrequency(unsigned long p, std::string &u) const;
 };
 
-struct BuildPlan {
+struct BusinessPlan {
     const Business &business;
-    double area, cost, profit;
+    double factor, cost, profit;
     std::vector<Good> request;
 };
 
