@@ -71,7 +71,8 @@ class Player {
     std::vector<Pager> pagers;
     std::vector<Pager>::iterator currentPager;
     TextBox *portionBox = nullptr, *framerateBox = nullptr;
-    unsigned int frameCount = 0, totalElapsed = 0;
+    int frameCount = 0;
+    unsigned int totalElapsed = 0;
     Game &game;
     SDL_Rect screenRect;
     int smallBoxFontHeight;
@@ -80,8 +81,8 @@ class Player {
     enum class Direction { left, right, up, down };
     std::unordered_set<Direction> scroll;
     double modMultiplier = 1; // multiplier for values which depend on keymod state
-    int focusBox = -1;        // index of box we are focusing across all pagers
-    int focusTown = -1;       // index of town currently focused
+    int focusBox = -1,        // index of box we are focusing across all pagers
+        focusTown = -1;       // index of town currently focused
     State state = State::starting, storedState = State::starting;
     EnumArray<UIState, State> uIStates;
     enum class FocusGroup { box, neighbor, town };

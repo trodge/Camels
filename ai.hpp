@@ -62,7 +62,8 @@ struct TownInfo {
  */
 class AI {
     Traveler &traveler;                                   // the traveler this AI controls
-    int decisionCounter;                                  // counter for updatening AI
+    int decisionCounter,                                  // counter for updating AI
+        businessCounter;                                  // counter for making business decisions
     EnumArray<double, DecisionCriteria> decisionCriteria; /* buy/sell score
     weight, weapon/armor equip score, tendency to fight/run/yield, looting greed */
     using FlId = mi::member<GoodInfo, unsigned int, &GoodInfo::fullId>;
@@ -87,8 +88,7 @@ class AI {
     void attack();
 
 public:
-    AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC,
-       const GoodInfoContainer &gsI, AIRole rl);
+    AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const GoodInfoContainer &gsI, AIRole rl);
     AI(Traveler &tvl) : AI(tvl, Settings::aIDecisionCriteria(), {}, Settings::aIRole()) {}
     AI(Traveler &tvl, const AI &p) : AI(tvl, p.decisionCriteria, p.goodsInfo, p.role) {}
     AI(Traveler &tvl, const Save::AI *ldAI);

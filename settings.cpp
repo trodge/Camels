@@ -19,30 +19,21 @@
 
 #include "settings.hpp"
 
-SDL_Rect Settings::screenRect;
-SDL_Rect Settings::mapView;
+SDL_Rect Settings::screenRect, Settings::mapView;
 EnumArray<ColorScheme, ColorSchemeType> Settings::colorSchemes;
-SDL_Color Settings::routeColor;
-SDL_Color Settings::waterColor;
+SDL_Color Settings::routeColor, Settings::waterColor;
 int Settings::scroll;
 SDL_Point Settings::offset;
 double Settings::scale;
 EnumArray<BoxSize, BoxSizeType> Settings::boxSizes;
-int Settings::buttonMargin;
-int Settings::goodButtonColumns;
-int Settings::goodButtonRows;
-int Settings::businessButtonColumns;
-int Settings::businessButtonRows;
-int Settings::dayLength;
+int Settings::buttonMargin, Settings::goodButtonColumns, Settings::goodButtonRows,
+    Settings::businessButtonColumns, Settings::businessButtonRows, Settings::dayLength;
 unsigned int Settings::townHeadStart;
-int Settings::propertyUpdateTime;
-int Settings::travelersCheckTime;
-int Settings::aIDecisionTime;
+int Settings::propertyUpdateTime, Settings::travelersCheckTime, Settings::aIDecisionTime, Settings::aIBusinessInterval;
 double Settings::consumptionSpaceFactor, Settings::inputSpaceFactor, Settings::outputSpaceFactor;
 int Settings::minPriceDivisor;
 double Settings::townProfit;
-size_t Settings::maxTowns;
-size_t Settings::connectionCount;
+size_t Settings::maxTowns, Settings::connectionCount;
 double Settings::travelersExponent;
 int Settings::travelersMin;
 unsigned int Settings::statMax;
@@ -54,8 +45,7 @@ EnumArray<double, AIRole> Settings::aIRoleWeights;
 EnumArray<AIStartingGoods, AIRole> Settings::aIStartingGoods;
 int Settings::aIDecisionCriteriaMax;
 unsigned int Settings::aITownRange, Settings::aIGoodsCount;
-double Settings::aILimitFactorMin, Settings::aILimitFactorMax;
-double Settings::aIAttackThreshold;
+double Settings::aILimitFactorMin, Settings::aILimitFactorMax, Settings::aIAttackThreshold;
 SDL_Color Settings::aIColor;
 std::mt19937 Settings::rng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
@@ -145,6 +135,7 @@ void Settings::load(const fs::path &p) {
     propertyUpdateTime = tree.get("time.propertyUpdateTime", 1500);
     travelersCheckTime = tree.get("time.travelersCheckTime", 4500);
     aIDecisionTime = tree.get("time.aIDecisionTime", 12000);
+    aIBusinessInterval = tree.get("time.aIBusinessInterval", 20);
     consumptionSpaceFactor = tree.get("goods.consumptionSpaceFactor", 13.14);
     inputSpaceFactor = tree.get("goods.inputSpaceFactor", 19.71);
     outputSpaceFactor = tree.get("goods.outputSpaceFactor", 19.71);
@@ -253,6 +244,7 @@ void Settings::save(const fs::path &p) {
     tree.put("time.propertyUpdateTime", propertyUpdateTime);
     tree.put("time.travelersCheckTime", travelersCheckTime);
     tree.put("time.aIDecisionTime", aIDecisionTime);
+    tree.put("time.aIBusinessInterval", aIBusinessInterval);
     tree.put("goods.consumptionSpaceFactor", consumptionSpaceFactor);
     tree.put("goods.inputSpaceFactor", inputSpaceFactor);
     tree.put("goods.outputSpaceFactor", outputSpaceFactor);
@@ -354,9 +346,15 @@ EnumArray<double, DecisionCriteria> Settings::aIDecisionCriteria() {
     return dcCrt;
 }
 
-double Settings::aIDecisionCounter() {
+int Settings::aIDecisionCounter() {
     // Randomize decision counter.
     static std::uniform_int_distribution<> dcCntDis(-aIDecisionTime, 0);
+    return dcCntDis(rng);
+}
+
+int Settings::aIBusinessCounter() {
+    // Randomize business counter.
+    static std::uniform_int_distribution<> dcCntDis(-aIBusinessInterval, 0);
     return dcCntDis(rng);
 }
 

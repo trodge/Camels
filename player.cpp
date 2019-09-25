@@ -667,11 +667,11 @@ void Player::update(unsigned int elTm) {
     });
     if (scl.x || scl.y) game.moveView(scl);
     totalElapsed += elTm;
-    if (++frameCount > kFramerateInterval) {
+    if (++frameCount >= 0) {
         framerateBox->setText(
             1, std::to_string(kMillisecondsPerSecond * kFramerateInterval / totalElapsed) + "fps");
         totalElapsed = 0;
-        frameCount = 0;
+        frameCount = -kFramerateInterval;
     }
     if (traveler.get() && !pause) traveler->update(elTm);
 }

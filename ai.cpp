@@ -20,7 +20,8 @@
 #include "ai.hpp"
 
 AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const GoodInfoContainer &gsI, AIRole rl)
-    : traveler(tvl), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
+    : traveler(tvl), decisionCounter(Settings::aIDecisionCounter()),
+      businessCounter(Settings::aIBusinessCounter()), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
     auto &townProperty = town->getProperty();
     // Insert full ids of owned goods into goods info.
@@ -159,25 +160,28 @@ void AI::trade() {
     std::vector<BuildPlan> buildPlans;
     BuildPlan *bestPlan = nullptr;
     if (role == AIRole::trader) {
-        // Find best business scored based on requirements, inputs, and outputs.
-        buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
-        std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
-            // Reduce score by cost of build plan.
-            double score = bdp.profit - bdp.cost;
-            // Multiply score by build tendency.
-            score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
-            if (score > bestScore) {
-                // Score for this build plan is better than current best score.
-                bestScore = score;
-                bestPlan = &bdp;
+        if (++businessCounter >= 0) {
+            // Find best business scored based on requirements, inputs, and outputs.
+            buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
+            std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BuildPlan &bdp) {
+                // Reduce score by cost of build plan.
+                double score = bdp.profit - bdp.cost;
+                // Multiply score by build tendency.
+                score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
+                if (score > bestScore) {
+                    // Score for this build plan is better than current best score.
+                    bestScore = score;
+                    bestPlan = &bdp;
+                }
+            });
+            if (bestPlan && bestPlan->cost == 0) {
+                // Build business without trading.
+                traveler.build(bestPlan->business, bestPlan->area);
+                if (!storageProperty) storageProperty = traveler.property(townId);
+                store(storageProperty, travelerProperty);
+                bestPlan = nullptr;
             }
-        });
-        if (bestPlan && bestPlan->cost == 0) {
-            // Build business without trading.
-            traveler.build(bestPlan->business, bestPlan->area);
-            if (!storageProperty) storageProperty = traveler.property(townId);
-            store(storageProperty, travelerProperty);
-            bestPlan = nullptr;
+            businessCounter = -Settings::getAIBusinessInterval();
         }
     }
     if (!bestGood) return;

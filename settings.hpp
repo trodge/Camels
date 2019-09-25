@@ -84,6 +84,7 @@ enum class DecisionCriteria {
     sellScoreWeight,    // sell score weight in deciding where to go
     equipScoreWeight,   // equip score weight for buying goods
     buildTendency,      // tendency to build businesses
+    restockTendency,    // tendency to restock business inputs
     attackScoreWeight,  // attack weight for equip scores
     defenseScoreWeight, // defense weight for equip scores
     fightTendency,      // start fights and fight back when attacked
@@ -101,30 +102,29 @@ struct AIStartingGoods {
 };
 
 class Settings {
-    static SDL_Rect screenRect;
-    static SDL_Rect mapView;
+    static SDL_Rect screenRect, mapView;
     static EnumArray<ColorScheme, ColorSchemeType> colorSchemes;
-    static SDL_Color routeColor;
-    static SDL_Color waterColor;
+    static SDL_Color routeColor, waterColor;
     static int scroll;
     static SDL_Point offset;
     static double scale;
     static EnumArray<BoxSize, BoxSizeType> boxSizes;
-    static int buttonMargin;           // margin between good and business buttons in pixels
-    static int goodButtonColumns;      // number of columns of good buttons
-    static int goodButtonRows;         // number of rows of good buttons
-    static int businessButtonColumns;  // number of columns of business buttons
-    static int businessButtonRows;     // number of rows of business buttons
-    static int dayLength;              // length of a day in milliseconds
+    static int buttonMargin,           // margin between good and business buttons in pixels
+        goodButtonColumns,             // number of columns of good buttons
+        goodButtonRows,                // number of rows of good buttons
+        businessButtonColumns,         // number of columns of business buttons
+        businessButtonRows,            // number of rows of business buttons
+        dayLength;                     // length of a day in milliseconds
     static unsigned int townHeadStart; // number of milliseconds to run before game starts on new game
-    static int propertyUpdateTime;     // time between business cycles in milliseconds
-    static int travelersCheckTime;     // time between checks of dead travelers in milliseconds
-    static int aIDecisionTime;         // time between AI cycles in milliseconds
+    static int propertyUpdateTime,     // time between business cycles in milliseconds
+        travelersCheckTime,            // time between checks of dead travelers in milliseconds
+        aIDecisionTime,                // time between AI cycles in milliseconds
+        aIBusinessInterval;            // cycles between AI business decisions
     static double consumptionSpaceFactor, inputSpaceFactor, outputSpaceFactor;
     static int minPriceDivisor;
     static double townProfit;
-    static size_t maxTowns;        // max number of towns to load from database
-    static size_t connectionCount; // number of connections each town makes
+    static size_t maxTowns, // max number of towns to load from database
+        connectionCount;    // number of connections each town makes
     static double travelersExponent;
     static int travelersMin;
     static unsigned int statMax;
@@ -136,8 +136,7 @@ class Settings {
     static EnumArray<double, AIRole> aIRoleWeights;
     static int aIDecisionCriteriaMax;
     static unsigned int aITownRange, aIGoodsCount;
-    static double aILimitFactorMin, aILimitFactorMax;
-    static double aIAttackThreshold;
+    static double aILimitFactorMin, aILimitFactorMax, aIAttackThreshold;
     static SDL_Color aIColor;
     static std::mt19937 rng;
 
@@ -161,6 +160,7 @@ public:
     static int getPropertyUpdateTime() { return propertyUpdateTime; }
     static int getTravelersCheckTime() { return travelersCheckTime; }
     static int getAIDecisionTime() { return aIDecisionTime; }
+    static int getAIBusinessInterval() { return aIBusinessInterval; }
     static double getConsumptionSpaceFactor() { return consumptionSpaceFactor; }
     static double getInputSpaceFactor() { return inputSpaceFactor; }
     static double getOutputSpaceFactor() { return outputSpaceFactor; }
@@ -200,7 +200,8 @@ public:
     static std::vector<std::pair<unsigned int, double>> getAIStartingGoods(AIRole rl);
     static std::vector<unsigned int> aIFullIds(const std::vector<unsigned int> &fIds);
     static EnumArray<double, DecisionCriteria> aIDecisionCriteria();
-    static double aIDecisionCounter();
+    static int aIDecisionCounter();
+    static int aIBusinessCounter();
     static double aILimitFactor();
     static BoxSize boxSize(BoxSizeType sz) { return boxSizes[sz]; }
     static BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, ColorScheme sm,
