@@ -93,6 +93,7 @@ struct BusinessPlan {
     const Business &business;
     double factor, cost, profit;
     std::vector<Good> request;
+    bool build;
 };
 
 #endif // BUSINESS_H

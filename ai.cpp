@@ -103,6 +103,20 @@ double AI::lootScore(const Property &tgtPpt) {
     return score;
 }
 
+void AI::findBestPlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &bstScr) {
+    for (auto &pln : plns) {
+        // Reduce score by cost of build plan.
+        double score = pln.profit - pln.cost;
+        // Multiply score by build tendency.
+        score *= dcCt;
+        if (score > bstScr) {
+            // Score for this build plan is better than current best score.
+            bstScr = score;
+            bstPln = &pln;
+        }
+    }
+}
+
 void AI::trade() {
     // Attempt to make best possible single trade in current town.
     double criteriaMax = Settings::getAIDecisionCriteriaMax();
@@ -125,7 +139,7 @@ void AI::trade() {
     auto &travelerProperty = traveler.property();
     auto &byOwned = goodsInfo.get<Owned>();
     auto rng = byOwned.equal_range(true);
-    decltype(rng.first) sellInfo;
+    decltype(rng.first) sellInfo; // info for good sold
     for (; rng.first != rng.second; ++rng.first) {
         auto &gd = *travelerProperty.good(rng.first->fullId);
         double gWgt = gd.weight();
@@ -172,17 +186,7 @@ void AI::trade() {
         if (++businessCounter >= 0) {
             // Find best business scored based on requirements, inputs, and outputs.
             buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
-            for (auto &buildPlan : buildPlans) {
-                // Reduce score by cost of build plan.
-                double score = buildPlan.profit - buildPlan.cost;
-                // Multiply score by build tendency.
-                score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
-                if (score > bestScore) {
-                    // Score for this build plan is better than current best score.
-                    bestScore = score;
-                    bestPlan = &buildPlan;
-                }
-            }
+            findBestPlan(buildPlans, bestPlan, decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax, bestScore);
             if (bestPlan && bestPlan->cost == 0) {
                 // Build business without trading.
                 traveler.build(bestPlan->business, bestPlan->factor);
@@ -192,17 +196,8 @@ void AI::trade() {
             }
             if (storageProperty) {
                 restockPlans = townProperty.restockPlans(travelerProperty, *storageProperty, offerValue);
-                for (auto &restockPlan : restockPlans) {
-                    // Reduce score by cost of restock plan.
-                    double score = restockPlan.profit - restockPlan.cost;
-                    // Multiply score by restock tendency.
-                    score *= decisionCriteria[DecisionCriteria::restockTendency] / criteriaMax;
-                    if (score > bestScore) {
-                        // Score for this restock plan is better than current best score.
-                        bestScore = score;
-                        bestPlan = &restockPlan;
-                    }
-                }
+                findBestPlan(restockPlans, bestPlan,
+                             decisionCriteria[DecisionCriteria::restockTendency] / criteriaMax, bestScore);
             }
             businessCounter = -Settings::getAIBusinessInterval();
         }
@@ -216,7 +211,7 @@ void AI::trade() {
     auto &equipment = traveler.getEquipment();
     auto &stats = traveler.getStats();
     rng = byOwned.equal_range(false);
-    decltype(rng.first) buyInfo;
+    decltype(rng.first) buyInfo; // info for good bought
     for (; rng.first != rng.second; ++rng.first) {
         auto tnGd = townProperty.good(rng.first->fullId);
         if (!tnGd) return;
@@ -269,7 +264,8 @@ void AI::trade() {
         traveler.requestGoods(std::move(bestPlan->request));
         traveler.makeTrade();
         byOwned.modify(sellInfo, toggleOwned);
-        traveler.build(bestPlan->business, bestPlan->factor);
+        if (bestPlan->build)
+            traveler.build(bestPlan->business, bestPlan->factor);
         if (!storageProperty) storageProperty = traveler.property(townId);
         store(storageProperty, travelerProperty);
     }

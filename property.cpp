@@ -202,6 +202,7 @@ BusinessPlan Property::businessPlan(const Business &bsn, const Property &tvlPpt,
                                  });
     plan.factor = balance(plan.request, tvlPpt, ofVl);
     plan.cost = ofVl;
+    plan.build = bld;
     return plan;
 }
 

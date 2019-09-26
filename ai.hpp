@@ -82,6 +82,7 @@ class AI {
     double equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double lootScore(const Property &ppt);
+    void findBestPlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &bstScr);
     void trade();
     void store(const Property *sPpt, const Property &tPpt);
     void equip();
