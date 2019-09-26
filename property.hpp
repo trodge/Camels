@@ -69,8 +69,7 @@ class Property {
     int updateCounter;
     bool maxGoods = false;
     const Property *source = nullptr;
-    BusinessPlan buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const;
-    BusinessPlan restockPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const;
+    BusinessPlan businessPlan(const Business &bsn, const Property &tvlPpt, double ofVl, bool bld) const;
     void addGood(const Good &srGd, const std::function<void(Good &)> &fn);
 
 public:

@@ -166,23 +166,23 @@ void AI::trade() {
     // Determine which businesses can be built based on offer value and town prices.
     auto &townProperty = town->getProperty();
     std::vector<BusinessPlan> buildPlans, // plans to build businesses in current town
-        restockPlans; // plans to restock businesses in current town
+        restockPlans;                     // plans to restock businesses in current town
     BusinessPlan *bestPlan = nullptr;     // pointer to highest scoring business plan
     if (role == AIRole::trader) {
         if (++businessCounter >= 0) {
             // Find best business scored based on requirements, inputs, and outputs.
             buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
-            std::for_each(begin(buildPlans), end(buildPlans), [this, criteriaMax, &bestScore, &bestPlan](BusinessPlan &bdp) {
+            for (auto &buildPlan : buildPlans) {
                 // Reduce score by cost of build plan.
-                double score = bdp.profit - bdp.cost;
+                double score = buildPlan.profit - buildPlan.cost;
                 // Multiply score by build tendency.
                 score *= decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax;
                 if (score > bestScore) {
                     // Score for this build plan is better than current best score.
                     bestScore = score;
-                    bestPlan = &bdp;
+                    bestPlan = &buildPlan;
                 }
-            });
+            }
             if (bestPlan && bestPlan->cost == 0) {
                 // Build business without trading.
                 traveler.build(bestPlan->business, bestPlan->factor);
@@ -192,6 +192,17 @@ void AI::trade() {
             }
             if (storageProperty) {
                 restockPlans = townProperty.restockPlans(travelerProperty, *storageProperty, offerValue);
+                for (auto &restockPlan : restockPlans) {
+                    // Reduce score by cost of restock plan.
+                    double score = restockPlan.profit - restockPlan.cost;
+                    // Multiply score by restock tendency.
+                    score *= decisionCriteria[DecisionCriteria::restockTendency] / criteriaMax;
+                    if (score > bestScore) {
+                        // Score for this restock plan is better than current best score.
+                        bestScore = score;
+                        bestPlan = &restockPlan;
+                    }
+                }
             }
             businessCounter = -Settings::getAIBusinessInterval();
         }

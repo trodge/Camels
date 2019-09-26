@@ -174,35 +174,35 @@ double Property::balance(std::vector<Good> &gds, const Property &tvlPpt, double 
     return factor;
 }
 
-BusinessPlan Property::buildPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const {
+BusinessPlan Property::businessPlan(const Business &bsn, const Property &tvlPpt, double ofVl, bool bld) const {
     // Add a build plan for given business to given build plan vector if it can be built.
-    BusinessPlan bdp{bsn};
+    BusinessPlan plan{bsn};
     auto &requirements = bsn.getRequirements(), &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
-    bdp.request.reserve(requirements.size() + inputs.size());
-    for (auto &rq : requirements) bdp.request.push_back(rq);
+    plan.request.reserve(bld ? requirements.size() + inputs.size() : inputs.size());
+    if (bld) for (auto &rq : requirements) plan.request.push_back(rq);
     double area = bsn.getArea();
-    bdp.profit = 0;
+    plan.profit = 0;
     unsigned int lastInputId;
     bool keepMaterial = bsn.getKeepMaterial();
     for (auto &ip : inputs) {
-        bdp.request.push_back(ip);
+        plan.request.push_back(ip);
         double amount = ip.getAmount() / area;
-        bdp.request.back().setAmount(amount);
+        plan.request.back().setAmount(amount);
         auto chpst = cheapest(ip.getGoodId());
         if (!chpst.first) return {bsn, 0};
-        bdp.profit -= amount * chpst.second;
+        plan.profit -= amount * chpst.second;
         if (keepMaterial) lastInputId = chpst.first->getMaterialId();
     }
-    bdp.profit = std::accumulate(begin(outputs), end(outputs), bdp.profit,
+    plan.profit = std::accumulate(begin(outputs), end(outputs), plan.profit,
                                  [this, keepMaterial, lastInputId, area](double a, const Good &op) {
                                      auto opId = op.getGoodId();
                                      auto tnGd = good(boost::make_tuple(opId, keepMaterial ? lastInputId : opId));
                                      if (!tnGd) return a;
                                      return a + op.getAmount() / area * tnGd->price();
                                  });
-    bdp.factor = balance(bdp.request, tvlPpt, ofVl);
-    bdp.cost = ofVl;
-    return bdp;
+    plan.factor = balance(plan.request, tvlPpt, ofVl);
+    plan.cost = ofVl;
+    return plan;
 }
 
 std::vector<BusinessPlan> Property::buildPlans(const Property &tvlPpt, double ofVl) const {
@@ -211,16 +211,10 @@ std::vector<BusinessPlan> Property::buildPlans(const Property &tvlPpt, double of
     buildable.reserve(businesses.size());
     for (auto &bsn : businesses) {
         // Add build plan for all businesses.
-        auto bdp = buildPlan(bsn, tvlPpt, ofVl);
-        if (bdp.factor > std::numeric_limits<double>::epsilon()) buildable.push_back(bdp);
+        auto plan = businessPlan(bsn, tvlPpt, ofVl, true);
+        if (plan.factor > std::numeric_limits<double>::epsilon()) buildable.push_back(plan);
     }
     return buildable;
-}
-
-BusinessPlan Property::restockPlan(const Business &bsn, const Property &tvlPpt, double ofVl) const {
-    // Return plan for restocking given business with given starting goods.
-    BusinessPlan rsp{bsn};
-    auto &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
 }
 
 std::vector<BusinessPlan> Property::restockPlans(const Property &tvlPpt, const Property &srgPpt, double ofVl) const {
@@ -229,7 +223,8 @@ std::vector<BusinessPlan> Property::restockPlans(const Property &tvlPpt, const P
     auto &storageBusinesses = srgPpt.businesses;
     restockable.reserve(storageBusinesses.size());
     for (auto &bsn : storageBusinesses) {
-
+        auto plan = businessPlan(bsn, tvlPpt, ofVl, false);
+        if (plan.factor > std::numeric_limits<double>::epsilon()) restockable.push_back(plan);
     }
     return restockable;
 }
