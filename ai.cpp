@@ -103,15 +103,15 @@ double AI::lootScore(const Property &tgtPpt) {
     return score;
 }
 
-void AI::findBestPlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &bstScr) {
+void AI::choosePlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &hst) {
     for (auto &pln : plns) {
         // Reduce score by cost of build plan.
         double score = pln.profit - pln.cost;
-        // Multiply score by build tendency.
+        // Multiply score by decision criteria.
         score *= dcCt;
-        if (score > bstScr) {
+        if (score > hst) {
             // Score for this build plan is better than current best score.
-            bstScr = score;
+            hst = score;
             bstPln = &pln;
         }
     }
@@ -132,7 +132,7 @@ void AI::trade() {
         });
     // Clear offer and request from previous trade.
     traveler.clearTrade();
-    double bestScore = 0, offerValue = 0, offerWeight = 0, weight = traveler.weight();
+    double highest = 0, offerValue = 0, offerWeight = 0, weight = traveler.weight();
     bool overWeight = weight > 0; // goods are too heavy to carry
     std::unique_ptr<Good> bestGood;
     // Find highest sell score.
@@ -154,9 +154,9 @@ void AI::trade() {
                     // This good is needed to carry existing goods, reduce amount.
                     amount *= weight / gWgt;
                 double score = sellScore(tnGd->price(), rng.first->sell); // score based on minimum sell price
-                if ((overWeight && (!bestGood || gWgt > bestGood->weight())) || (score > bestScore)) {
+                if ((overWeight && (!bestGood || gWgt > bestGood->weight())) || (score > highest)) {
                     // Either we are over weight and good is heavier than previous offer or this good scores better.
-                    bestScore = score;
+                    highest = score;
                     if (!gd.getSplit()) amount = floor(amount);
                     offerValue = tnGd->price(amount);
                     offerWeight = gWgt;
@@ -173,20 +173,20 @@ void AI::trade() {
     overWeight = weight > 0;
     if (overWeight)
         // Force a trade to occur.
-        bestScore = 0;
+        highest = 0;
     else
         // Trade only if score exceeds reciprocol of selling score.
-        bestScore = 1 / bestScore;
+        highest = 1 / highest;
     // Determine which businesses can be built based on offer value and town prices.
     auto &townProperty = town->getProperty();
     std::vector<BusinessPlan> buildPlans, // plans to build businesses in current town
         restockPlans;                     // plans to restock businesses in current town
     BusinessPlan *bestPlan = nullptr;     // pointer to highest scoring business plan
     if (role == AIRole::trader) {
-        if (++businessCounter >= 0) {
+        if (++businessCounter >= 0 && (!home || town == home)) {
             // Find best business scored based on requirements, inputs, and outputs.
             buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
-            findBestPlan(buildPlans, bestPlan, decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax, bestScore);
+            choosePlan(buildPlans, bestPlan, decisionCriteria[DecisionCriteria::buildTendency] / criteriaMax, highest);
             if (bestPlan && bestPlan->cost == 0) {
                 // Build business without trading.
                 traveler.build(bestPlan->business, bestPlan->factor);
@@ -196,8 +196,8 @@ void AI::trade() {
             }
             if (storageProperty) {
                 restockPlans = townProperty.restockPlans(travelerProperty, *storageProperty, offerValue);
-                findBestPlan(restockPlans, bestPlan,
-                             decisionCriteria[DecisionCriteria::restockTendency] / criteriaMax, bestScore);
+                choosePlan(restockPlans, bestPlan,
+                             decisionCriteria[DecisionCriteria::restockTendency] / criteriaMax, highest);
             }
             businessCounter = -Settings::getAIBusinessInterval();
         }
@@ -224,8 +224,8 @@ void AI::trade() {
                             (1 + !(role == AIRole::trader || role == AIRole::agent)) *
                             decisionCriteria[DecisionCriteria::equipScoreWeight] / criteriaMax;
             score += eqpScr;
-            if (score > bestScore) {
-                bestScore = score;
+            if (score > highest) {
+                highest = score;
                 // Remove amout town takes as profit, store excess.
                 excess = 0;
                 double amount = tnGd->quantity(offerValue * townProfit, excess);
@@ -264,8 +264,10 @@ void AI::trade() {
         traveler.requestGoods(std::move(bestPlan->request));
         traveler.makeTrade();
         byOwned.modify(sellInfo, toggleOwned);
-        if (bestPlan->build)
+        if (bestPlan->build) {
+            home = town;
             traveler.build(bestPlan->business, bestPlan->factor);
+        }
         if (!storageProperty) storageProperty = traveler.property(townId);
         store(storageProperty, travelerProperty);
     }
@@ -365,10 +367,10 @@ void AI::loot() {
     double looted = 0, weight = traveler.weight();
     while (looted < lootGoal) {
         // Keep looting until amount looted matches goal or we can carry no more.
-        double bestScore = 0, bestValue, bestWeight;
+        double highest = 0, bestValue, bestWeight;
         std::unique_ptr<Good> bestGood;
         GoodInfoContainer::iterator bestGoodInfo;
-        tgtPpt.forGood([this, &bestScore, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted,
+        tgtPpt.forGood([this, &highest, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted,
                         lootGoal](const Good &tgtGd) {
             double amount = tgtGd.getAmount();
             if (amount > 0) {
@@ -385,9 +387,9 @@ void AI::loot() {
                 else
                     // Goods that carry other good score negative.
                     score = carry;
-                if ((bestScore >= 0 && score > bestScore) || (score < 0 && score < bestScore)) {
+                if ((highest >= 0 && score > highest) || (score < 0 && score < highest)) {
                     // Either this is more valuable per weight than current best or this helps carry more than current best.
-                    bestScore = score;
+                    highest = score;
                     amount = std::min((lootGoal - looted) / estimate, amount);
                     bestValue = estimate * amount;
                     bestWeight = carry * amount;
@@ -483,14 +485,20 @@ void AI::update(unsigned int elTm) {
             equip();
             attack();
             // Find highest score based on buy and sell scores in each town.
-            Town *bestTown = nullptr;
-            double highest = 0;
-            for (auto &tI : nearby) {
-                double score = tI.buyScore * decisionCriteria[DecisionCriteria::buyScoreWeight] +
-                               tI.sellScore * decisionCriteria[DecisionCriteria::sellScoreWeight];
-                if (score > highest) {
-                    highest = score;
-                    bestTown = tI.town;
+            const Town *bestTown = nullptr;
+            if (businessCounter >= 0 && home)
+                // Return to home.
+                bestTown = home;
+            else {
+                // Find best scoring
+                double highest = 0;
+                for (auto &tI : nearby) {
+                    double score = tI.buyScore * decisionCriteria[DecisionCriteria::buyScoreWeight] +
+                                   tI.sellScore * decisionCriteria[DecisionCriteria::sellScoreWeight];
+                    if (score > highest) {
+                        highest = score;
+                        bestTown = tI.town;
+                    }
                 }
             }
             if (bestTown) {

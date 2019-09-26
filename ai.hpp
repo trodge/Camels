@@ -74,6 +74,7 @@ class AI {
     GoodInfoContainer goodsInfo;  // known information about each good by full id
     std::vector<TownInfo> nearby; // known information about nearby towns
     AIRole role;                  // behavior for this ai
+    const Town *home = nullptr;
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
     static double buyScore(double p, double b) { return p == 0 ? 0 : b / p; }  // score selling at price p
@@ -82,7 +83,7 @@ class AI {
     double equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double lootScore(const Property &ppt);
-    void findBestPlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &bstScr);
+    void choosePlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &hst);
     void trade();
     void store(const Property *sPpt, const Property &tPpt);
     void equip();
