@@ -25,8 +25,8 @@ void transfer(std::vector<Good> &gds, Source &src, Destination &dst, std::string
     for (auto gI = begin(gds); gI != end(gds); ++gI) {
         if (gI != begin(gds)) {
             // This is not the first good.
-            if (offer.size() != 2) /* There are not exactly two goods. */ lgEt += ", ";
-            if (gI + 1 == end(offer)) /* This is the last good. */ lgEt += " and ";
+            if (gds.size() != 2) /* There are not exactly two goods. */ lgEt += ", ";
+            if (gI + 1 == end(gds)) /* This is the last good. */ lgEt += " and ";
         }
         src.take(*gI);
         dst.put(*gI);
@@ -545,10 +545,9 @@ void Traveler::hire(size_t idx) {
     bid->party = this;
     agent->contract = std::move(bid);
     auto &ppt = properties.find(0)->second, &agnPpt = agent->properties.find(0)->second;
-    for (auto &gd : offer) {
-        ppt.take(gd);
-        agnPpt.put(gd);
-    }
+    std::string logEntry = name + " hires " + agent->name + " for ";
+    transfer(offer, ppt, agnPpt, logEntry);
+    logEntry += ".";
 }
 
 void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
