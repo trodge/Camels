@@ -69,7 +69,7 @@ public:
     void clearTravelers() { travelers.clear(); }
     void removeTraveler(const Traveler *t);
     void addTraveler(Traveler *t) { travelers.push_back(t); }
-    std::unique_ptr<Contract> removeBid(size_t idx);
+    std::unique_ptr<Contract> takeBid(size_t idx);
     void addBid(std::unique_ptr<Contract> &&bd) { bids.push_back(std::move(bd)); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
     void toggleMaxGoods() { property.toggleMaxGoods(); }

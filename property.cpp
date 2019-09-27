@@ -179,7 +179,8 @@ BusinessPlan Property::businessPlan(const Business &bsn, const Property &tvlPpt,
     BusinessPlan plan{bsn};
     auto &requirements = bsn.getRequirements(), &inputs = bsn.getInputs(), &outputs = bsn.getOutputs();
     plan.request.reserve(bld ? requirements.size() + inputs.size() : inputs.size());
-    if (bld) for (auto &rq : requirements) plan.request.push_back(rq);
+    if (bld)
+        for (auto &rq : requirements) plan.request.push_back(rq);
     double area = bsn.getArea();
     plan.profit = 0;
     unsigned int lastInputId;
@@ -194,12 +195,12 @@ BusinessPlan Property::businessPlan(const Business &bsn, const Property &tvlPpt,
         if (keepMaterial) lastInputId = chpst.first->getMaterialId();
     }
     plan.profit = std::accumulate(begin(outputs), end(outputs), plan.profit,
-                                 [this, keepMaterial, lastInputId, area](double a, const Good &op) {
-                                     auto opId = op.getGoodId();
-                                     auto tnGd = good(boost::make_tuple(opId, keepMaterial ? lastInputId : opId));
-                                     if (!tnGd) return a;
-                                     return a + op.getAmount() / area * tnGd->price();
-                                 });
+                                  [this, keepMaterial, lastInputId, area](double a, const Good &op) {
+                                      auto opId = op.getGoodId();
+                                      auto tnGd = good(boost::make_tuple(opId, keepMaterial ? lastInputId : opId));
+                                      if (!tnGd) return a;
+                                      return a + op.getAmount() / area * tnGd->price();
+                                  });
     plan.factor = balance(plan.request, tvlPpt, ofVl);
     plan.cost = ofVl;
     plan.build = bld;
@@ -228,6 +229,15 @@ std::vector<BusinessPlan> Property::restockPlans(const Property &tvlPpt, const P
         if (plan.factor > std::numeric_limits<double>::epsilon()) restockable.push_back(plan);
     }
     return restockable;
+}
+
+double Property::totalValue(const Property &tvlPpt) const {
+    // Determine total value of given goods using this property's prices.
+    return std::accumulate(begin(tvlPpt.goods), end(tvlPpt.goods), 0., [this](double a, const Good &gd) {
+        auto tnGd = good(gd.getFullId());
+        if (!tnGd) return a;
+        return a + tnGd->price(gd.getAmount());
+    });
 }
 
 void Property::setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn) {

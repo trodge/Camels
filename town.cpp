@@ -50,6 +50,14 @@ void Town::removeTraveler(const Traveler *t) {
     if (it != end(travelers)) travelers.erase(it);
 }
 
+std::unique_ptr<Contract> Town::takeBid(size_t idx) {
+    // Erase and return the bid with the given index.
+    auto bidIt = begin(bids) + idx;
+    auto bid = std::move(*bidIt);
+    bids.erase(bidIt);
+    return bid;
+}
+
 void Town::placeDot(std::vector<SDL_Rect> &drawn, const SDL_Point &ofs, double s) {
     // Place the dot for this town based on the given offset and scale.
     position.place(ofs, s);

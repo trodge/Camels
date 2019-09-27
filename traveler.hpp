@@ -63,12 +63,6 @@ struct GameData {
     std::map<unsigned long, std::string> populationAdjectives;
 };
 
-struct Contract {
-    Traveler *party; // the other party to this contract, or this if contract is a bid
-    double owed;     // value of goods holder will retain at end of contract
-    double wage;     // value holder earns daily, in deniers
-};
-
 struct CombatHit {
     double time;
     const CombatOdd *odd;
@@ -78,6 +72,11 @@ struct CombatHit {
 enum class FightChoice { none = -1, fight, run, yield, count };
 
 class AI;
+
+struct Contract;
+
+template <class Source, class Destination>
+void transfer(std::vector<Good> &gds, Source &src, Destination &dst, std::string &lgEt);
 
 class Traveler {
     std::string name;
@@ -184,6 +183,8 @@ public:
     void equip(Good &g);
     void equip(Part pt);
     void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void bid(double bns, double wge);
+    void hire(size_t idx);
     void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<Traveler *> attackable() const;
     void attack(Traveler *tgt);
@@ -207,6 +208,12 @@ public:
     void resetTown();
     void adjustAreas(Pager &pgr, double mM);
     void adjustDemand(Pager &pgr, double mM);
+};
+
+struct Contract {
+    Traveler *party; // the other party to this contract, or this if contract is a bid
+    double owed;     // value holder will retain at end of contract
+    double wage;     // value holder earns daily, in deniers
 };
 
 #endif // TRAVELER_H

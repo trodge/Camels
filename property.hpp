@@ -97,6 +97,7 @@ public:
     double balance(std::vector<Good> &gds, const Property &tvlPpt, double &cst) const;
     std::vector<BusinessPlan> buildPlans(const Property &tvlPpt, double ofVl) const;
     std::vector<BusinessPlan> restockPlans(const Property &tvlPpt, const Property &srgPpt, double ofVl) const;
+    double totalValue(const Property &tvlPpt) const;
     void setConsumption(const std::vector<std::array<double, 3>> &gdsCnsptn);
     void setFrequencies(const std::vector<double> &frqcs);
     void setMaximums();

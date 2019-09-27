@@ -19,6 +19,21 @@
 
 #include "traveler.hpp"
 
+template <class Source, class Destination>
+void transfer(std::vector<Good> &gds, Source &src, Destination &dst, std::string &lgEt) {
+    // Transfer goods from source to destination and append to log entry.
+    for (auto gI = begin(gds); gI != end(gds); ++gI) {
+        if (gI != begin(gds)) {
+            // This is not the first good.
+            if (offer.size() != 2) /* There are not exactly two goods. */ lgEt += ", ";
+            if (gI + 1 == end(offer)) /* This is the last good. */ lgEt += " and ";
+        }
+        src.take(*gI);
+        dst.put(*gI);
+        lgEt += gI->logEntry();
+    }
+}
+
 Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
     : name(n), nation(tn->getNation()), toTown(tn), fromTown(tn), position(tn->getPosition()), moving(false),
       portion(1), reputation(gD.nationCount), gameData(gD) {
@@ -158,9 +173,7 @@ void Traveler::setPortion(double d) {
 
 void Traveler::changePortion(double d) { setPortion(portion + d); }
 
-void Traveler::create(unsigned int fId, double amt) {
-    properties.find(0)->second.create(fId, amt);
-}
+void Traveler::create(unsigned int fId, double amt) { properties.find(0)->second.create(fId, amt); }
 
 void Traveler::pickTown(const Town *tn) {
     // Start moving toward given town.
@@ -198,31 +211,9 @@ void Traveler::makeTrade() {
     if (offer.empty() || request.empty()) return;
     auto &ppt = properties.find(0)->second;
     std::string logEntry = name + " trades ";
-    for (auto gI = begin(offer); gI != end(offer); ++gI) {
-        if (gI != begin(offer)) {
-            // This is not the first good in offer.
-            if (offer.size() != 2) logEntry += ", ";
-            if (gI + 1 == end(offer))
-                // This is the last good in offer.
-                logEntry += " and ";
-        }
-        ppt.take(*gI);
-        toTown->put(*gI);
-        logEntry += gI->logEntry();
-    }
+    transfer(offer, ppt, *toTown, logEntry);
     logEntry += " for ";
-    for (auto gI = begin(request); gI != end(request); ++gI) {
-        if (gI != begin(request)) {
-            // This is not the first good in request.
-            if (request.size() != 2) logEntry += ", ";
-            if (gI + 1 == end(request))
-                // This is the last good in request.
-                logEntry += " and ";
-        }
-        toTown->take(*gI);
-        ppt.put(*gI);
-        logEntry += gI->logEntry();
-    }
+    transfer(request, *toTown, ppt, logEntry);
     logEntry += " in " + toTown->getName() + ".";
     logText.push_back(logEntry);
 }
@@ -537,6 +528,26 @@ void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr
             refreshEquipButtons(pgrs, fB, pr);
         };
         pgrs[1].addBox(e.button(false, bxInf, pr));
+    }
+}
+
+void Traveler::bid(double add, double wge) {
+    // Add bid to current town with given addend and wage.
+    toTown->addBid(std::unique_ptr<Contract>(
+        new Contract{this, toTown->getProperty().totalValue(properties.find(0)->second) + add, wge}));
+}
+
+void Traveler::hire(size_t idx) {
+    // Hire the traveler with the given bid index.
+    auto bid = toTown->takeBid(idx);
+    auto agent = bid->party;
+    agents.push_back(agent);
+    bid->party = this;
+    agent->contract = std::move(bid);
+    auto &ppt = properties.find(0)->second, &agnPpt = agent->properties.find(0)->second;
+    for (auto &gd : offer) {
+        ppt.take(gd);
+        agnPpt.put(gd);
     }
 }
 
