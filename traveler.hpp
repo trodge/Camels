@@ -193,7 +193,7 @@ public:
     void loseTarget();
     CombatHit firstHit(Traveler &tgt);
     void useAmmo(double t);
-    void fight(Traveler &tgt, unsigned int elTm);
+    void fight(unsigned int elTm);
     void takeHit(const CombatHit &cH, Traveler &tgt);
     void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
     void updateFightBoxes(Pager &pgr);

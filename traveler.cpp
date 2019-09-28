@@ -695,36 +695,36 @@ void Traveler::useAmmo(double tn) {
     }
 }
 
-void Traveler::fight(Traveler &tgt, unsigned int elTm) {
+void Traveler::fight(unsigned int elTm) {
     // Fight tgt for e milliseconds.
     fightTime += elTm;
     // Prevent fight from happening twice.
-    tgt.fightTime -= static_cast<double>(elTm);
+    target->fightTime -= static_cast<double>(elTm);
     // Keep fighting until one side dies, runs, or yields or time runs out.
-    while (alive() && tgt.alive() && choice == FightChoice::fight && tgt.choice == FightChoice::fight && fightTime > 0) {
-        CombatHit ourFirst = firstHit(tgt), theirFirst = tgt.firstHit(*this);
+    while (alive() && target->alive() && choice == FightChoice::fight && target->choice == FightChoice::fight && fightTime > 0) {
+        CombatHit ourFirst = firstHit(*target), theirFirst = target->firstHit(*this);
         if (ourFirst.time < theirFirst.time) {
             // Our hit happens first.
-            tgt.takeHit(ourFirst, *this);
+            target->takeHit(ourFirst, *this);
             fightTime -= ourFirst.time;
             useAmmo(ourFirst.time);
-            tgt.useAmmo(ourFirst.time);
+            target->useAmmo(ourFirst.time);
         } else if (theirFirst.time < ourFirst.time) {
             // Their hit happens first.
-            takeHit(theirFirst, tgt);
+            takeHit(theirFirst, *target);
             fightTime -= theirFirst.time;
             useAmmo(theirFirst.time);
-            tgt.useAmmo(theirFirst.time);
+            target->useAmmo(theirFirst.time);
         } else {
             // Both hits happen at the same time.
-            takeHit(theirFirst, tgt);
-            tgt.takeHit(ourFirst, *this);
+            takeHit(theirFirst, *target);
+            target->takeHit(ourFirst, *this);
             fightTime -= ourFirst.time;
             useAmmo(ourFirst.time);
-            tgt.useAmmo(ourFirst.time);
+            target->useAmmo(ourFirst.time);
         }
         if (aI) aI->choose();
-        if (tgt.aI) tgt.aI->choose();
+        if (target->aI) target->aI->choose();
     }
 }
 
@@ -898,7 +898,7 @@ void Traveler::update(unsigned int elTm) {
             double escapeChance;
             switch (target->choice) {
             case FightChoice::fight:
-                fight(*target, elTm);
+                fight(elTm);
                 break;
             case FightChoice::run:
                 // Check if target escapes.
@@ -906,7 +906,7 @@ void Traveler::update(unsigned int elTm) {
                 if (Settings::random() > escapeChance) {
                     // Target is caught, fight.
                     target->choice = FightChoice::fight;
-                    fight(*target, elTm);
+                    fight(elTm);
                     std::string logEntry = name + " catches up to " + target->name + ".";
                     logText.push_back(logEntry);
                     target->logText.push_back(logEntry);
