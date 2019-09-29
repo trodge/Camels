@@ -34,17 +34,17 @@ TextBox *Pager::getVisible(size_t idx) {
 
 std::vector<TextBox *> Pager::getVisible() {
     // Get vector of pointers to all boxes currently visible on this pager.
-    std::vector<TextBox *> bxs;
-    std::transform(visible[0], visible[1], std::back_inserter(bxs),
+    std::vector<TextBox *> boxes;
+    std::transform(visible[0], visible[1], std::back_inserter(boxes),
                    [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
-    return bxs;
+    return boxes;
 }
 
 std::vector<TextBox *> Pager::getAll() {
-    std::vector<TextBox *> bxs;
-    std::transform(begin(boxes), end(boxes), std::back_inserter(bxs),
+    std::vector<TextBox *> boxes;
+    std::transform(begin(boxes), end(boxes), std::back_inserter(boxes),
                    [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
-    return bxs;
+    return boxes;
 }
 
 void Pager::addBox(std::unique_ptr<TextBox> &&bx) {
@@ -115,4 +115,57 @@ int Pager::getClickedIndex(const SDL_MouseButtonEvent &b) {
 void Pager::draw(SDL_Renderer *s) {
     // Draw all boxes on the current page, or all boxes if there are no pages.
     for (auto bxIt = visible[0]; bxIt != visible[1]; ++bxIt) (*bxIt)->draw(s);
+}
+
+void Pager::buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
+                    const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) {
+    int m = Settings::getButtonMargin(), dx = (bounds.w + m) / Settings::getGoodButtonColumns(),
+        dy = (bounds.h + m) / Settings::getGoodButtonRows();
+    bI.rect = {bounds.x, bounds.y, dx - m, dy - m};
+    boxes.reserve(ppt.goodCount());
+    ppt.forGood([this, fn, &bI, dx, dy, &pr](const Good &gd) {
+        if (true || (gd.getAmount() >= 0.01 && gd.getSplit()) || (gd.getAmount() >= 1.)) {
+            bI.onClick = fn(gd);
+            boxes.push_back(gd.button(true, bI, pr));
+            bI.rect.x += dx;
+            if (bI.rect.x + bI.rect.w > bounds.x + bounds.w) {
+                // Go back to left and down one row upon reaching right.
+                bI.rect.x = bounds.x;
+                bI.rect.y += dy;
+                if (bI.rect.y + bI.rect.h > bounds.y + bounds.h) {
+                    // Go back to top and flush current page upon reaching bottom.
+                    bI.rect.y = bounds.y;
+                    indices.push_back(boxes.size());
+                }
+            }
+        }
+    });
+    pageIt = begin(indices);
+    setVisible();
+}
+
+void Pager::buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
+                    const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) {
+    int m = Settings::getButtonMargin(), dx = (bounds.w + m) / Settings::getBusinessButtonColumns(),
+        dy = (bounds.h + m) / Settings::getBusinessButtonRows();
+    bI.rect = {bounds.x, bounds.y, dx - m, dy - m};
+    for (auto &bsn : ppt.getBusinesses()) {
+        if (true || (bsn.getArea() >= 0.01)) {
+            bI.onClick = fn(bsn);
+            boxes.push_back(bsn.button(true, bI, pr));
+            bI.rect.x += dx;
+            if (bI.rect.x + bI.rect.w > bounds.x + bounds.w) {
+                // Go back to left and down one row upon reaching right.
+                bI.rect.x = bounds.x;
+                bI.rect.y += dy;
+                if (bI.rect.y + bI.rect.h > bounds.y + bounds.h) {
+                    // Go back to top and create new page upon reaching bottom.
+                    bI.rect.y = bounds.y;
+                    indices.push_back(boxes.size());                    
+                }
+            }
+        }
+    }
+    pageIt = begin(indices);
+    setVisible();
 }

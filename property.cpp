@@ -480,66 +480,6 @@ void Property::update(unsigned int elTm) {
     }
 }
 
-void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                       const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) const {
-    // Create buttons on the given pager using the given function to generate on click functions.
-    pgr.setBounds(rt);
-    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getGoodButtonColumns(),
-        dy = (rt.h + m) / Settings::getGoodButtonRows();
-    bI.rect = {rt.x, rt.y, dx - m, dy - m};
-    std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
-    for (auto &gd : goods) {
-        if (true || (gd.getAmount() >= 0.01 && gd.getSplit()) || (gd.getAmount() >= 1.)) {
-            bI.onClick = fn(gd);
-            bxs.push_back(gd.button(true, bI, pr));
-            bI.rect.x += dx;
-            if (bI.rect.x + bI.rect.w > rt.x + rt.w) {
-                // Go back to left and down one row upon reaching right.
-                bI.rect.x = rt.x;
-                bI.rect.y += dy;
-                if (bI.rect.y + bI.rect.h > rt.y + rt.h) {
-                    // Go back to top and flush current page upon reaching bottom.
-                    bI.rect.y = rt.y;
-                    pgr.addPage(bxs);
-                }
-            }
-        }
-    }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgr.addPage(bxs);
-}
-
-void Property::buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                       const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) const {
-    // Create buttons on the given pager using the given function to generate on click functions.
-    pgr.setBounds(rt);
-    int m = Settings::getButtonMargin(), dx = (rt.w + m) / Settings::getBusinessButtonColumns(),
-        dy = (rt.h + m) / Settings::getBusinessButtonRows();
-    bI.rect = {rt.x, rt.y, dx - m, dy - m};
-    std::vector<std::unique_ptr<TextBox>> bxs; // boxes which will go on page
-    for (auto &bsn : businesses) {
-        if (true || (bsn.getArea() >= 0.01)) {
-            bI.onClick = fn(bsn);
-            bxs.push_back(bsn.button(true, bI, pr));
-            bI.rect.x += dx;
-            if (bI.rect.x + bI.rect.w > rt.x + rt.w) {
-                // Go back to left and down one row upon reaching right.
-                bI.rect.x = rt.x;
-                bI.rect.y += dy;
-                if (bI.rect.y + bI.rect.h > rt.y + rt.h) {
-                    // Go back to top and flush current page upon reaching bottom.
-                    bI.rect.y = rt.y;
-                    pgr.addPage(bxs);
-                }
-            }
-        }
-    }
-    if (bxs.size())
-        // Flush remaining boxes to new page.
-        pgr.addPage(bxs);
-}
-
 void Property::adjustAreas(const std::vector<MenuButton *> &rBs, double d) {
     d *= static_cast<double>(population) / 5000;
     for (auto &b : businesses) {

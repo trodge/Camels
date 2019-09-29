@@ -58,7 +58,7 @@ struct TownInfo {
 };
 
 /**
- * AI which updates non-player travelers
+ * AI which runs non-player travelers
  */
 class AI {
     Traveler &traveler;                                   // the traveler this AI controls

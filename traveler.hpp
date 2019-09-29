@@ -102,28 +102,7 @@ class Traveler {
     const GameData &gameData;
     std::forward_list<Town *> pathTo(const Town *t) const;
     int pathDistSq(const Town *t) const;
-    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz, BoxBehavior bvr,
-                    SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) {
-        return Settings::boxInfo(rt, tx, nation->getColors(), {0, false}, sz, bvr, ky, fn);
-    }
-    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz, BoxBehavior bvr) {
-        return boxInfo(rt, tx, sz, bvr, SDLK_UNKNOWN, nullptr);
-    }
-    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz) {
-        return boxInfo(rt, tx, sz, BoxBehavior::inert);
-    } // all traveler boxes
-    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx) {
-        return boxInfo(rt, tx, BoxSizeType::fight);
-    } // fight boxes
-    BoxInfo boxInfo() {
-        return boxInfo({0, 0, 0, 0}, {}, BoxSizeType::trade, BoxBehavior::focus);
-    } // good and business buttons
     Property &makeProperty(unsigned int tId);
-    void refreshFocusBox(std::vector<Pager> &pgrs, int &fB);
-    void refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
-    void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void insertAllies(AIRole rl);
     void insertAllies(const std::vector<AIRole> &rls);
 
@@ -175,11 +154,25 @@ public:
     void updatePortionBox(TextBox *bx) const;
     void divideExcess(double exc, double tnP);
     void makeTrade();
-    void createTradeButtons(std::vector<Pager> &pgrs, Printer &pr);
+    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz, BoxBehavior bvr,
+                    SDL_Keycode ky, const std::function<void(MenuButton *)> &fn) const {
+        return Settings::boxInfo(rt, tx, nation->getColors(), {0, false}, sz, bvr, ky, fn);
+    }
+    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz, BoxBehavior bvr) const {
+        return boxInfo(rt, tx, sz, bvr, SDLK_UNKNOWN, nullptr);
+    }
+    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx, BoxSizeType sz) const {
+        return boxInfo(rt, tx, sz, BoxBehavior::inert);
+    } // all traveler boxes
+    BoxInfo boxInfo(const SDL_Rect &rt, const std::vector<std::string> &tx) const {
+        return boxInfo(rt, tx, BoxSizeType::fight);
+    } // fight boxes
+    BoxInfo boxInfo() const {
+        return boxInfo({0, 0, 0, 0}, {}, BoxSizeType::trade, BoxBehavior::focus);
+    } // good and business buttons
     void updateTradeButtons(std::vector<Pager> &pgrs);
     void deposit(Good &g);
     void withdraw(Good &g);
-    void createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);

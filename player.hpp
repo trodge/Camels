@@ -41,31 +41,6 @@ class Game;
 
 class MenuButton;
 
-enum class State {
-    starting,
-    beginning,
-    quitting,
-    loading,
-    traveling,
-    trading,
-    storing,
-    building,
-    equipping,
-    managing,
-    attacking,
-    logging,
-    fighting,
-    looting,
-    dying,
-    count
-};
-
-struct UIState {
-    std::vector<BoxInfo> boxesInfo;           // info for boxes to create for this state
-    std::function<void()> onChange = nullptr; // function to run when this UIState is switched to
-    size_t pagerCount = 1;                    // number of pagers this state uses
-};
-
 class Player {
     std::unique_ptr<Traveler> traveler;
     std::vector<Pager> pagers;

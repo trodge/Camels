@@ -216,23 +216,6 @@ void Traveler::divideExcess(double exc, double tnP) {
     }
 }
 
-void Traveler::createTradeButtons(std::vector<Pager> &pgrs, Printer &pr) {
-    // Create offer and request buttons for the player on given pagers.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    int m = Settings::getButtonMargin();
-    // Create the offer buttons for the player.
-    SDL_Rect rt = {m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo bxInf = boxInfo();
-    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs](const Good &) {
-        return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
-    });
-    rt.x = sR.w - m - rt.w;
-    bxInf.colors = toTown->getNation()->getColors();
-    toTown->buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs](const Good &) {
-        return [this, &pgrs](MenuButton *) { updateTradeButtons(pgrs); };
-    });
-}
-
 void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
     // Update the values shown on offer and request boxes and set offer and request.
     std::string bN;
@@ -309,54 +292,6 @@ void Traveler::withdraw(Good &g) {
     properties.find(0)->second.put(g);
 }
 
-void Traveler::refreshFocusBox(std::vector<Pager> &pgrs, int &fB) {
-    // Run toggle focus on the focused box if it was just recreated.
-    if (fB < 0) return;
-    int focusBox = fB - pgrs[0].visibleCount();
-    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) {
-        int visibleCount = pgrIt->visibleCount();
-        if (focusBox < visibleCount) {
-            pgrIt->getVisible(focusBox)->toggleFocus();
-            break;
-        } else
-            focusBox -= visibleCount;
-    }
-}
-
-void Traveler::refreshStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Delete and re-create storage buttons to reflect changes.
-    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
-    createStorageButtons(pgrs, fB, pr);
-    refreshFocusBox(pgrs, fB);
-}
-
-void Traveler::createStorageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Create buttons for depositing and withdrawing goods to and from the current town.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    int m = Settings::getButtonMargin();
-    // Create the offer buttons for the player.
-    SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo bxInf = boxInfo();
-    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
-        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
-            double amt = g.getAmount() * portion;
-            Good dG(g.getFullId(), amt);
-            deposit(dG);
-            refreshStorageButtons(pgrs, fB, pr);
-        };
-    });
-    rt.x = sR.w - m - rt.w;
-    bxInf.colors = toTown->getNation()->getColors();
-    makeProperty(toTown->getId()).buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
-        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
-            double amt = g.getAmount() * portion;
-            Good wG(g.getFullId(), amt);
-            withdraw(wG);
-            refreshStorageButtons(pgrs, fB, pr);
-        };
-    });
-}
-
 void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before calling.
     makeProperty(toTown->getId()).build(bsn, a);
@@ -367,43 +302,12 @@ void Traveler::demolish(const Business &bsn, double a) {
     makeProperty(toTown->getId()).demolish(bsn, a);
 }
 
-void Traveler::refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Delete and re-create manage buttons to reflect changes.
-    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
-    createBuildButtons(pgrs, fB, pr);
-    refreshFocusBox(pgrs, fB);
-}
-
 void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for handling businesses.
     const SDL_Rect &sR = Settings::getScreenRect();
     // Create buttons for demolishing businesses.
     int m = Settings::getButtonMargin();
-    SDL_Rect rt = {m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    pgrs[1].setBounds(rt);
-    BoxInfo bxInf = boxInfo();
-    makeProperty(toTown->getId()).buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
-        return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
-            demolish(bsn, bsn.getArea() * portion);
-            refreshBuildButtons(pgrs, fB, pr);
-        };
-    });
-    // Create buttons for building businesses.
-    rt.x = sR.w - m - rt.w;
-    bxInf.rect.x = rt.x;
-    bxInf.rect.y = rt.y;
-    bxInf.colors = toTown->getNation()->getColors();
-    toTown->getProperty().buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Business &bsn) {
-        return [this, &bsn, &pgrs, &fB, &pr](MenuButton *) {
-            // Determine buildable area based on portion.
-            double buildable = std::numeric_limits<double>::max();
-            for (auto &rq : bsn.getRequirements())
-                buildable = std::min(
-                    buildable, properties.find(0)->second.amount(rq.getGoodId()) * portion / rq.getAmount());
-            if (buildable > 0) build(bsn, buildable);
-            refreshBuildButtons(pgrs, fB, pr);
-        };
-    });
+
 }
 
 void Traveler::unequip(Part pt) {
@@ -456,64 +360,11 @@ void Traveler::equip(Part pt) {
     }
 }
 
-void Traveler::refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Delete and re-create storage buttons to reflect changes.
-    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
-    createEquipButtons(pgrs, fB, pr);
-    refreshFocusBox(pgrs, fB);
-}
-
 void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
     // Create buttons for equipping equippables.
     const SDL_Rect &sR = Settings::getScreenRect();
     int m = Settings::getButtonMargin();
-    SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 26 / 31};
-    pgrs[1].setBounds(rt);
-    int dx = (rt.w + m) / static_cast<int>(Part::count), dy = (rt.h + m) / Settings::getGoodButtonRows();
-    BoxInfo bxInf = boxInfo({rt.x, rt.y, dx - m, dy - m}, {}, BoxSizeType::equip);
-    EnumArray<std::vector<Good>, Part> equippable;
-    // array of vectors corresponding to parts that can hold equipment
-    properties.find(0)->second.forGood([&equippable](const Good &g) {
-        auto &ss = g.getCombatStats();
-        if (!ss.empty() && g.getAmount() >= 1) {
-            // This good has combat stats and we have at least one of it.
-            Part pt = ss.front().part;
-            Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
-            equippable[pt].push_back(e);
-        }
-    });
-    // Create buttons for equipping equipment.
-    for (auto &eP : equippable) {
-        for (auto &e : eP) {
-            bxInf.onClick = [this, e, &pgrs, &fB, &pr](MenuButton *) mutable {
-                equip(e);
-                // Refresh buttons.
-                refreshEquipButtons(pgrs, fB, pr);
-            };
-            pgrs[1].addBox(e.button(false, bxInf, pr));
-            bxInf.rect.y += dy;
-        }
-        bxInf.rect.y = rt.y;
-        bxInf.rect.x += dx;
-    }
-    // Create buttons for unequipping equipment.
-    rt.x = sR.w - m - rt.w;
-    pgrs[2].setBounds(rt);
-    bxInf.rect.x = rt.x;
-    bxInf.rect.y = rt.y;
-    for (auto &e : equipment) {
-        auto &ss = e.getCombatStats();
-        Part pt = ss.front().part;
-        bxInf.rect.x = rt.x + static_cast<int>(pt) * dx;
-        bxInf.onClick = [this, e, &pgrs, pt, &ss, &fB, &pr](MenuButton *) {
-            unequip(pt);
-            // Equip fists.
-            for (auto &s : ss) equip(s.part);
-            // Refresh buttons.
-            refreshEquipButtons(pgrs, fB, pr);
-        };
-        pgrs[1].addBox(e.button(false, bxInf, pr));
-    }
+
 }
 
 void Traveler::bid(double add, double wge) {
@@ -879,12 +730,6 @@ void Traveler::loot() {
         Good lG(g);
         loot(lG);
     });
-}
-
-void Traveler::refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    for (auto pgrIt = begin(pgrs) + 1; pgrIt != end(pgrs); ++pgrIt) pgrIt->reset();
-    createLootButtons(pgrs, fB, pr);
-    refreshFocusBox(pgrs, fB);
 }
 
 void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {

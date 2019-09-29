@@ -22,7 +22,7 @@
 Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printer(g.getPrinter()) {
     printer.setSize(Settings::boxSize(BoxSizeType::small));
     smallBoxFontHeight = printer.getFontHeight();
-    int bBB = Settings::boxSize(BoxSizeType::big).border;
+    int bBB = Settings::boxSize(BoxSizeType::big).border, margin = Settings::getButtonMargin();
     uIStates[State::starting] = {
         {Settings::boxInfo({screenRect.w / 2, screenRect.h / 15, 0, 0}, {"Camels and Silk"}, BoxSizeType::big),
          Settings::boxInfo({screenRect.w / 7, screenRect.h / 3, 0, 0}, {"(N)ew Game"}, BoxSizeType::big, SDLK_n,
@@ -105,22 +105,147 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                            })
 
         },
-        [this] { traveler->createTradeButtons(pagers, printer); },
+        [this, margin] {
+            // Create the offer buttons for the player's goods.
+            SDL_Rect rt = {margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
+            pagers[1].setBounds(rt);
+            BoxInfo bxInf = traveler->boxInfo();
+            pagers[1].buttons(traveler->property(), bxInf, printer, [this](const Good &) {
+                return [this](MenuButton *) { traveler->updateTradeButtons(pagers); };
+            });
+            // Create request buttons for the town's goods.
+            rt.x = screenRect.w - margin - rt.w;
+            pagers[2].setBounds(rt);
+            bxInf.colors = traveler->town()->getNation()->getColors();
+            pagers[2].buttons(traveler->town()->getProperty(), bxInf, printer, [this](const Good &) {
+                return [this](MenuButton *) { traveler->updateTradeButtons(pagers); };
+            });
+        },
         3};
     uIStates[State::storing] = {
         {Settings::boxInfo({screenRect.w / 3, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (S)toring"},
                            BoxSizeType::small, SDLK_s, [this](MenuButton *) { setState(State::traveling); })},
-        [this] { traveler->createStorageButtons(pagers, focusBox, printer); },
+        [this, margin] {
+            // Create the deposit buttons for the player's goods.
+            SDL_Rect rt{margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
+            pagers[1].setBounds(rt);
+            BoxInfo bxInf = traveler->boxInfo();
+            pagers[1].buttons(traveler->property(), bxInf, printer, [this](const Good &gd) {
+                return [this, &gd](MenuButton *) {
+                    double amt = gd.getAmount() * traveler->getPortion();
+                    Good dG(gd.getFullId(), amt);
+                    traveler->deposit(dG);
+                    setState(State::storing);
+                };
+            });
+            // Create the withdraw buttons for the player's stored goods.
+            auto town = traveler->town();
+            auto storage = traveler->property(town->getId());
+            if (!storage) return;
+            rt.x = screenRect.w - margin - rt.w;
+            pagers[2].setBounds(rt);
+            bxInf.colors = town->getNation()->getColors();
+            pagers[2].buttons(*storage, bxInf, printer, [this](const Good &gd) {
+                return [this, &gd](MenuButton *) {
+                    double amt = gd.getAmount() * traveler->getPortion();
+                    Good wG(gd.getFullId(), amt);
+                    traveler->withdraw(wG);
+                    setState(State::storing);
+                };
+            });
+        },
         3};
     uIStates[State::building] = {
         {Settings::boxInfo({screenRect.w * 4 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (B)uilding"},
                            BoxSizeType::small, SDLK_b, [this](MenuButton *) { setState(State::traveling); })},
-        [this] { traveler->createBuildButtons(pagers, focusBox, printer); },
+        [this, margin] {
+            // Create demolish buttons for player's businesses.
+            auto town = traveler->town();
+            auto storage = traveler->property(town->getId());
+            SDL_Rect rt = {margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
+            BoxInfo bxInf = traveler->boxInfo();
+            if (storage) {
+                pagers[1].setBounds(rt);
+                pagers[1].buttons(*storage, bxInf, printer, [this](const Business &bsn) {
+                    return [this, &bsn](MenuButton *) {
+                        traveler->demolish(bsn, bsn.getArea() * traveler->getPortion());
+                        setState(State::building);
+                    };
+                });
+            }
+            // Create buttons for building businesses.
+            rt.x = screenRect.w - margin - rt.w;
+            pagers[2].setBounds(rt);
+            bxInf.rect.x = rt.x;
+            bxInf.rect.y = rt.y;
+            bxInf.colors = town->getNation()->getColors();
+            auto &property = traveler->property();
+            pagers[2].buttons(town->getProperty(), bxInf, printer, [this, &property](const Business &bsn) {
+                return [this, &property, &bsn](MenuButton *) {
+                    // Determine buildable area based on portion.
+                    double buildable = std::numeric_limits<double>::max();
+                    for (auto &rq : bsn.getRequirements())
+                        buildable = std::min(
+                            buildable, property.amount(rq.getGoodId()) * traveler->getPortion() / rq.getAmount());
+                    if (buildable > 0) traveler->build(bsn, buildable);
+                    setState(State::building);
+                };
+            });
+        },
         3};
     uIStates[State::equipping] = {
         {Settings::boxInfo({screenRect.w * 5 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (E)quipping"},
                            BoxSizeType::small, SDLK_e, [this](MenuButton *) { setState(State::traveling); })},
-        [this] { traveler->createEquipButtons(pagers, focusBox, printer); },
+        [this, margin] {
+            SDL_Rect rt{margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 26 / 31};
+            pagers[1].setBounds(rt);
+            int dx = (rt.w + margin) / static_cast<int>(Part::count),
+                dy = (rt.h + margin) / Settings::getGoodButtonRows();
+            BoxInfo bxInf = traveler->boxInfo({rt.x, rt.y, dx - margin, dy - margin}, {}, BoxSizeType::equip);
+            EnumArray<std::vector<Good>, Part> equippable;
+            // array of vectors corresponding to parts that can hold equipment
+            traveler->property().forGood([&equippable](const Good &g) {
+                auto &ss = g.getCombatStats();
+                if (!ss.empty() && g.getAmount() >= 1) {
+                    // This good has combat stats and we have at least one of it.
+                    Part pt = ss.front().part;
+                    Good e(g.getFullId(), g.getFullName(), 1, ss, g.getImage());
+                    equippable[pt].push_back(e);
+                }
+            });
+            // Create buttons for equipping equipment.
+            for (auto &eP : equippable) {
+                for (auto &e : eP) {
+                    bxInf.onClick = [this, e](MenuButton *) mutable {
+                        traveler->equip(e);
+                        // Refresh buttons.
+                        setState(State::equipping);
+                    };
+                    pagers[1].addBox(e.button(false, bxInf, printer));
+                    bxInf.rect.y += dy;
+                }
+                bxInf.rect.y = rt.y;
+                bxInf.rect.x += dx;
+            }
+            // Create buttons for unequipping equipment.
+            rt.x = screenRect.w - margin - rt.w;
+            pagers[2].setBounds(rt);
+            bxInf.rect.x = rt.x;
+            bxInf.rect.y = rt.y;
+            for (auto &e : traveler->getEquipment()) {
+                auto &ss = e.getCombatStats();
+                Part pt = ss.front().part;
+                bxInf.rect.x = rt.x + static_cast<int>(pt) * dx;
+                bxInf.onClick = [this, e, pt, &ss](MenuButton *) {
+                    traveler->unequip(pt);
+                    // Equip fists.
+                    for (auto &s : ss) traveler->equip(s.part);
+                    // Refresh buttons.
+                    setState(State::equipping);
+                };
+                pagers[1].addBox(e.button(false, bxInf, pr));
+            }
+        },
         2};
     uIStates[State::managing] = {
         {Settings::boxInfo({screenRect.w * 2 / 3, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (M)anaging"},
@@ -137,6 +262,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         {Settings::boxInfo({screenRect.w * 8 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Close (L)og"},
                            BoxSizeType::small, SDLK_l, [this](MenuButton *) { setState(State::traveling); })},
         [this] { traveler->createLogBox(pagers[0], printer); }};
+    uIStates[State::targeting] = {{}, [this] {}};
     uIStates[State::fighting] = {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }};
     uIStates[State::looting] = {{Settings::boxInfo({screenRect.w / 15, screenRect.h - smallBoxFontHeight, 0, 0},
                                                    {"Stop (L)ooting"}, BoxSizeType::small, SDLK_l,

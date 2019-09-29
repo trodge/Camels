@@ -35,7 +35,6 @@ namespace mi = boost::multi_index;
 #include "business.hpp"
 #include "constants.hpp"
 #include "good.hpp"
-#include "pager.hpp"
 
 struct Conflict {
     unsigned int count = 0; // number of businesses using the good
@@ -88,6 +87,7 @@ public:
     const Good *good(unsigned int fId) const;
     const Good *good(boost::tuple<unsigned int, unsigned int> gMId) const;
     const std::vector<unsigned int> fullIds() const;
+    size_t goodCount() const { return goods.size(); }
     void forGood(const std::function<void(const Good &gd)> &fn) const;
     void forGood(unsigned int gId, const std::function<void(const Good &gd)> &fn) const;
     double amount(unsigned int gId) const;
@@ -116,10 +116,6 @@ public:
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
     void update(unsigned int elTm);
-    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) const;
-    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                 const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) const;
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d);
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d);
     void saveFrequencies(std::string &u) const;

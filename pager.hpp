@@ -16,15 +16,41 @@
  *
  * © Tom Rodgers notaraptor@gmail.com 2017-2019
  */
+#ifndef PAGER_H
+#define PAGER_H
 
 #include <algorithm>
 #include <memory>
 #include <vector>
 
 #include "textbox.hpp"
+#include "property.hpp"
 
-#ifndef PAGER_H
-#define PAGER_H
+enum class State {
+    starting,
+    beginning,
+    quitting,
+    loading,
+    traveling,
+    trading,
+    storing,
+    building,
+    equipping,
+    managing,
+    attacking,
+    logging,
+    targeting,
+    fighting,
+    looting,
+    dying,
+    count
+};
+
+struct UIState {
+    std::vector<BoxInfo> boxesInfo;           // info for boxes to create for this state
+    std::function<void()> onChange = nullptr; // function to run when this UIState is switched to
+    size_t pagerCount = 1;                    // number of pagers this state uses
+};
 
 class Pager {
     std::vector<std::unique_ptr<TextBox>> boxes; // boxes this pager manages
@@ -53,6 +79,10 @@ public:
     int getKeyedIndex(const SDL_KeyboardEvent &k);
     int getClickedIndex(const SDL_MouseButtonEvent &b);
     void draw(SDL_Renderer *s);
+    void buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
+                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn);
+    void buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
+                 const std::function<std::function<void(MenuButton *)>(const Business &)> &fn);
 };
 
 #endif
