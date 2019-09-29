@@ -79,9 +79,14 @@ class AI {
     void setLimits();
     static double buyScore(double p, double b) { return p == 0 ? 0 : b / p; }  // score selling at price p
     static double sellScore(double p, double s) { return s == 0 ? 0 : p / s; } // score buying at price p
+    double attackScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
+    double attackScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
+    double defenseScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
+    double defenseScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
+    void target(Traveler *enm, Traveler *&tgt, double &highest) const;
     double lootScore(const Property &ppt);
     void choosePlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &hst);
     void trade();
@@ -96,7 +101,8 @@ public:
     AI(Traveler &tvl, const Save::AI *ldAI);
     flatbuffers::Offset<Save::AI> save(flatbuffers::FlatBufferBuilder &b) const;
     AIRole getRole() const { return role; }
-    void choose();
+    FightChoice choice();
+    Traveler *target(const std::unordered_set<Traveler *> &enms) const;
     void loot();
     void update(unsigned int elTm);
 };

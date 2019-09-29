@@ -75,9 +75,6 @@ class AI;
 
 struct Contract;
 
-template <class Source, class Destination>
-void transfer(std::vector<Good> &gds, Source &src, Destination &dst, std::string &lgEt);
-
 class Traveler {
     std::string name;
     const Nation *nation;
@@ -92,10 +89,13 @@ class Traveler {
     EnumArray<unsigned int, Stat> stats;
     EnumArray<Status, Part> parts;
     std::vector<Good> equipment;
-    std::vector<Traveler *> agents;     // travelers employed
-    std::unique_ptr<Contract> contract; // contract with employer, if any
-    Traveler *target = nullptr;         // pointer to enemy if currently fighting
-    double fightTime;                   // time left to fight this round
+    std::unordered_multimap<AIRole, Traveler *> employees; // travelers employed by role
+    std::unique_ptr<Contract> contract;                    // contract with employer, if any
+    std::unordered_set<Traveler *> enemies, allies;        // travelers currently fighting
+    Traveler *target = nullptr;                            // current target for attacks
+    unsigned int targeterCount;                            // number of enemies targeting this traveler
+    std::unique_ptr<CombatHit> nextHit;                    // next hit on target
+    double fightTime;                                      // time left to fight this round
     FightChoice choice;
     bool dead = false; // true if traveler is not alive and not being looted from
     std::unique_ptr<AI> aI;
@@ -124,6 +124,8 @@ class Traveler {
     void refreshBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void refreshLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
+    void insertAllies(AIRole rl);
+    void insertAllies(const std::vector<AIRole> &rls);
 
 public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
@@ -146,6 +148,8 @@ public:
     Status part(Part pt) const { return parts[pt]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
     Traveler *getTarget() const { return target; }
+    unsigned int getTargeterCount() const { return targeterCount; }
+    const std::unordered_map<Traveler *> &getAllies() const { return allies; }
     bool alive() const {
         return static_cast<unsigned int>(parts[Part::head]) < 5 && static_cast<unsigned int>(parts[Part::torso]) < 5;
     }
@@ -188,13 +192,17 @@ public:
     void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<Traveler *> attackable() const;
     void attack(Traveler *tgt);
-    void createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr);
+    void createAttackButton(Pager &pgr, const std::function<void()> &sSF, Printer &pr);
     void createLogBox(Pager &pgr, Printer &pr);
-    void loseTarget();
-    CombatHit firstHit(Traveler &tgt);
-    void useAmmo(double t);
+    void disengage();
+    void setTarget(const std::unordered_set<Traveler *> &enms);
+    CombatHit firstHit();
+    void setNextHit();
+    void useAmmo(double tm);
+    void forAlly(const std::function<void(Traveler *)> &fn);
+    void forCombatant(const std::function<void(Traveler *)> &fn);
     void fight(unsigned int elTm);
-    void takeHit(const CombatHit &cH, Traveler &tgt);
+    void hit();
     void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
     void updateFightBoxes(Pager &pgr);
     void loot(Good &g);
@@ -215,5 +223,8 @@ struct Contract {
     double owed;     // value holder will retain at end of contract
     double wage;     // value holder earns daily, in deniers
 };
+
+template <class Source, class Destination>
+void transfer(std::vector<Good> &gds, Source &src, Destination &dst, std::string &lgEt);
 
 #endif // TRAVELER_H

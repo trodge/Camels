@@ -58,23 +58,48 @@ flatbuffers::Offset<Save::AI> AI::save(flatbuffers::FlatBufferBuilder &b) const 
     return Save::CreateAI(b, static_cast<short>(decisionCounter), svDecisionCriteria, svGoodsInfo);
 }
 
+double AI::attackScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const {
+    // Scores given equipment with given stats based on its attack value.
+    double score = 0;
+    for (auto &cS : eq.getCombatStats()) {
+        score += cS.attack * sts[cS.stat];
+        score *= cS.speed * sts[cS.stat];
+    }
+    return score;
+}
+
+double AI::attackScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const {
+    // Scores given equipment with given stats based on its attack value.
+    double score = 1;
+    for (auto &eq : eqpmt) score += attackScore(eq, sts);
+    return score;
+}
+
+double AI::defenseScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const {
+    // Scores given equipment with given stats based on its defense value.
+    double score = 0;
+    for (auto &cS : eq.getCombatStats())
+        for (auto &d : cS.defense) score += d * sts[cS.stat];
+    return score;
+}
+
+double AI::defenseScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const {
+    // Scores given equipment with given stats based on its defense value.
+    double score = 1;
+    for (auto &eq : eqpmt) score += defenseScore(eq, sts);
+    return score;
+}
+
 double AI::equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const {
     // Scores parameter equipment based on parameter stats and this ai's criteria. Score is always >= 0.
-    double attackScore = 0;
-    double defenseScore = 0;
-    for (auto &cS : eq.getCombatStats()) {
-        attackScore += cS.attack * sts[cS.stat];
-        attackScore *= cS.speed * sts[cS.stat];
-        for (auto &d : cS.defense) defenseScore += d * sts[cS.stat];
-    }
-    return attackScore * decisionCriteria[DecisionCriteria::attackScoreWeight] +
-           defenseScore * decisionCriteria[DecisionCriteria::defenseScoreWeight];
+    return attackScore(eq, sts) * decisionCriteria[DecisionCriteria::attackScoreWeight] +
+           defenseScore(eq, sts) * decisionCriteria[DecisionCriteria::defenseScoreWeight];
 }
 
 double AI::equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const {
     // Scores parameter equipment with parameter stats based on this ai's criteria. Score is always >= 1.
     double score = 1;
-    for (auto &eq : eqpmt) { score += equipScore(eq, sts); }
+    for (auto &eq : eqpmt) score += equipScore(eq, sts);
     return score;
 }
 
@@ -197,7 +222,7 @@ void AI::trade() {
             if (storageProperty) {
                 restockPlans = townProperty.restockPlans(travelerProperty, *storageProperty, offerValue);
                 choosePlan(restockPlans, bestPlan,
-                             decisionCriteria[DecisionCriteria::restockTendency] / criteriaMax, highest);
+                           decisionCriteria[DecisionCriteria::restockTendency] / criteriaMax, highest);
             }
             businessCounter = -Settings::getAIBusinessInterval();
         }
@@ -339,7 +364,7 @@ void AI::attack() {
     }
 }
 
-void AI::choose() {
+FightChoice AI::choice() {
     // Choose to fight, update, or yield based on equip scores, stats, and speeds.
     EnumArray<double, FightChoice> scores; // fight, run, yield scores
     auto target = traveler.getTarget();
@@ -352,7 +377,31 @@ void AI::choose() {
         // Target's equipment is better, weigh run score by speed ratio.
         scores[FightChoice::run] *= traveler.speed() / target->speed();
     // Choose whichever choice has the best score.
-    traveler.choose(static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores)));
+    return static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores));
+}
+
+void AI::target(Traveler *enm, Traveler *&tgt, double &highest) const {
+    if (!enm->alive()) return;
+    auto &eqpmt = enm->getEquipment();
+    auto &sts = enm->getStats();
+    unsigned int tgtrCnt = enm->getTargeterCount();
+    double score = attackScore(eqpmt, sts) / defenseScore(eqpmt, sts) / tgtrCnt;
+    if (score > highest) {
+        highest = score;
+        tgt = enm;
+    }
+}
+
+Traveler *AI::target(const std::unordered_set<Traveler *> &enms) const {
+    Traveler *tgt = nullptr;
+    double highest = 0;
+    for (auto enm : enms) {
+        target(enm, tgt, highest);
+        for (auto ally : enm->getAllies()) {
+            target(ally, tgt, highest);
+        }
+    }
+    return tgt;
 }
 
 void AI::loot() {
@@ -370,8 +419,7 @@ void AI::loot() {
         double highest = 0, bestValue, bestWeight;
         std::unique_ptr<Good> bestGood;
         GoodInfoContainer::iterator bestGoodInfo;
-        tgtPpt.forGood([this, &highest, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted,
-                        lootGoal](const Good &tgtGd) {
+        tgtPpt.forGood([this, &highest, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted, lootGoal](const Good &tgtGd) {
             double amount = tgtGd.getAmount();
             if (amount > 0) {
                 auto gII = goodsInfo.insert({tgtGd.getFullId(), false, Settings::aILimitFactor()}).first;

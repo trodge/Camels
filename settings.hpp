@@ -186,7 +186,7 @@ public:
         std::uniform_int_distribution<T> iDis(0, max);
         return iDis(rng);
     }
-    template <typename T> static auto &randomChoice(const std::vector<T> &options) {
+    template <typename T> static auto &randomChoice(const T &options) {
         return options[randomInt(options.size() - 1)];
     }
     template <typename T> static auto randomChoice(const std::vector<T> &options, size_t count);

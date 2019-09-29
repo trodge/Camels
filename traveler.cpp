@@ -19,21 +19,6 @@
 
 #include "traveler.hpp"
 
-template <class Source, class Destination>
-void transfer(std::vector<Good> &gds, Source &src, Destination &dst, std::string &lgEt) {
-    // Transfer goods from source to destination and append to log entry.
-    for (auto gI = begin(gds); gI != end(gds); ++gI) {
-        if (gI != begin(gds)) {
-            // This is not the first good.
-            if (gds.size() != 2) /* There are not exactly two goods. */ lgEt += ", ";
-            if (gI + 1 == end(gds)) /* This is the last good. */ lgEt += " and ";
-        }
-        src.take(*gI);
-        dst.put(*gI);
-        lgEt += gI->logEntry();
-    }
-}
-
 Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
     : name(n), nation(tn->getNation()), toTown(tn), fromTown(tn), position(tn->getPosition()), moving(false),
       portion(1), reputation(gD.nationCount), gameData(gD) {
@@ -540,13 +525,13 @@ void Traveler::bid(double add, double wge) {
 void Traveler::hire(size_t idx) {
     // Hire the traveler with the given bid index.
     auto bid = toTown->takeBid(idx);
-    auto agent = bid->party;
-    agents.push_back(agent);
+    auto employee = bid->party;
+    employees.insert({employee->aI->getRole(), employee});
     bid->party = this;
-    agent->contract = std::move(bid);
-    auto &ppt = properties.find(0)->second, &agnPpt = agent->properties.find(0)->second;
-    std::string logEntry = name + " hires " + agent->name + " for ";
-    transfer(offer, ppt, agnPpt, logEntry);
+    employee->contract = std::move(bid);
+    auto &ppt = properties.find(0)->second, &eplPpt = employee->properties.find(0)->second;
+    std::string logEntry = name + " hires " + employee->name + " for ";
+    transfer(offer, ppt, eplPpt, logEntry);
     logEntry += ".";
 }
 
@@ -578,35 +563,64 @@ std::vector<Traveler *> Traveler::attackable() const {
     able.insert(end(able), begin(forwardTravelers), end(forwardTravelers));
     if (fromTown != toTown) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
     if (!able.empty()) {
-        // Eliminate travelers which are too far away or have reached town or are already fighting or are this traveler.
+        // Eliminate travelers which have reached town, are already fighting this traveler, are too far away, are dead, or are this traveler.
         int aDstSq = Settings::getAttackDistSq();
         able.erase(std::remove_if(begin(able), end(able),
                                   [this, aDstSq](Traveler *tg) {
-                                      return !tg->moving || position.distSq(tg->position) > aDstSq ||
-                                             tg->target || !tg->alive() || tg == this;
+                                      return tg->toTown == tg->fromTown || enemies.find(tg) != end(enemies) ||
+                                             position.distSq(tg->position) > aDstSq || !tg->alive() || tg == this;
                                   }),
                    end(able));
     }
     return able;
 }
 
+void Traveler::insertAllies(AIRole rl) {
+    // Insert employees with given roles to allies set.
+    auto rng = employees.equal_range(rl);
+    std::for_each(rng.first, rng.second,
+                  [this](std::pair<AIRole, Traveler *> tvl) { allies.insert(tvl.second); });
+}
+
+void Traveler::insertAllies(const std::vector<AIRole> &rls) {
+    // Insert employees with given roles to allies set.
+    for (auto rl : rls) { insertAllies(rl); }
+}
+
 void Traveler::attack(Traveler *tgt) {
-    // Attack the given parameter traveler.
-    target = tgt;
-    tgt->target = this;
-    fightTime = 0;
-    tgt->fightTime = 0;
+    // Attack the given traveler.
+    if (tgt->enemies.empty()) /* Target is not already fighting. */ {
+        // Add target's thugs and guards to target's allies set.
+        tgt->insertAllies({AIRole::guard, AIRole::thug});
+        // Reset fight time.
+        tgt->fightTime = 0;
+        // Reset targeter counts.
+        tgt->targeterCount = 0;
+        for (auto ally : tgt->allies) ally->targeterCount = 0;
+    }
+    // Add target to enemies set.
+    enemies.insert(tgt);
+    // Add this to target's enemy set.
+    tgt->enemies.insert(this);
+    // Add thugs to allies set.
+    insertAllies(AIRole::thug);
+    // Reset fight time.
+    fightTime = tgt->fightTime;
+    // Reset targeter counts.
+    targeterCount = 0;
+    for (auto ally : allies) ally->targeterCount = 0;
+    // Set choices.
     if (aI)
         choice = FightChoice::fight;
     else
         choice = FightChoice::none;
     if (tgt->aI)
-        tgt->aI->choose();
+        tgt->choice = tgt->aI->choice();
     else
         tgt->choice = FightChoice::none;
 }
 
-void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer &pr) {
+void Traveler::createAttackButton(Pager &pgr, const std::function<void()> &sSF, Printer &pr) {
     // Put attackable traveler names in names vector.
     const SDL_Rect &sR = Settings::getScreenRect();
     auto able = attackable();       // vector of attackable travelers
@@ -620,6 +634,7 @@ void Traveler::createAttackButton(Pager &pgr, std::function<void()> sSF, Printer
                 [this, able, sSF](MenuButton *btn) {
                     int i = btn->getHighlightLine();
                     if (i > -1) {
+                        // A target is highlighted.
                         attack(able[static_cast<size_t>(i)]);
                         sSF();
                     } else
@@ -635,24 +650,29 @@ void Traveler::createLogBox(Pager &pgr, Printer &pr) {
         boxInfo({sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15}, logText, BoxSizeType::small), pr));
 }
 
-void Traveler::loseTarget() {
-    if (target) {
-        target->target = nullptr;
-        // Remove target from town so that it can'tn be attacked again.
-        target->fromTown->removeTraveler(target);
-        // Set dead to true if target is not alive.
-        target->dead = !target->alive();
-        target = nullptr;
+void Traveler::disengage() {
+    // Leave combat.
+    for (auto enemy : enemies) {
+        // Remove this from enemy's enemies.
+        enemy->enemies.erase(this);
+        // Clear enemy's target if it is this or an ally.
+        if (enemy->target == this || allies.find(enemy->target) != end(allies)) enemy->target = nullptr;
+        // Remove enemy from town so that it can't be attacked again.
+        enemy->fromTown->removeTraveler(target);
+        // Set dead to true if enemy is not alive.
+        enemy->dead = !enemy->alive();
     }
+    enemies.clear();
+    allies.clear();
 }
 
-CombatHit Traveler::firstHit(Traveler &tgt) {
-    // Find first hit of this traveler on tn.
+CombatHit Traveler::firstHit() {
+    // Find first hit of this traveler.
     EnumArray<unsigned int, AttackType> defense;
-    for (auto &e : tgt.equipment)
+    for (auto &e : target->equipment)
         for (auto &s : e.getCombatStats())
             for (size_t i = 0; i < defense.size(); ++i)
-                defense[static_cast<AttackType>(i)] += s.defense[static_cast<AttackType>(i)] * tgt.stats[s.stat];
+                defense[static_cast<AttackType>(i)] += s.defense[static_cast<AttackType>(i)] * target->stats[s.stat];
     CombatHit first = {std::numeric_limits<double>::max(), nullptr, ""};
     for (auto &e : equipment) {
         auto &ss = e.getCombatStats();
@@ -665,7 +685,7 @@ CombatHit Traveler::firstHit(Traveler &tgt) {
                 speed += s.speed * stats[s.stat];
             }
             auto &cO = gameData.odds[type];
-            // Calculate number of swings before hit happens.
+            // Calculate time before hit happens.
             double r = Settings::random();
             double p = static_cast<double>(attack) / cO.hitChance / static_cast<double>(defense[type]);
             double time;
@@ -683,62 +703,97 @@ CombatHit Traveler::firstHit(Traveler &tgt) {
     return first;
 }
 
-void Traveler::useAmmo(double tn) {
+void Traveler::setTarget(const std::unordered_set<Traveler *> &enms) {
+    if (aI && !target) {
+        aI->target(enemies);
+        ++target->targeterCount;
+    }
+}
+
+void Traveler::setNextHit() {
+    if (!nextHit) nextHit = std::make_unique<CombatHit>(firstHit());
+}
+
+void Traveler::useAmmo(double tm) {
     for (auto &e : equipment) {
         unsigned int sId = e.getShoots();
         if (sId) {
             unsigned int speed = 0;
             for (auto &s : e.getCombatStats()) speed += s.speed * stats[s.stat];
-            unsigned int n = static_cast<unsigned int>(tn * speed);
+            unsigned int n = static_cast<unsigned int>(tm * speed);
             properties.find(0)->second.input(sId, n);
         }
     }
 }
 
+void Traveler::forAlly(const std::function<void(Traveler *)> &fn) {
+    // Call given function on this traveler and all its allies.
+    fn(this);
+    for (auto ally : allies) fn(ally);
+}
+
+void Traveler::forCombatant(const std::function<void(Traveler *)> &fn) {
+    // Call given function on all combatants.
+    forAlly(fn);
+    for (auto enemy : enemies) enemy->forAlly(fn);
+}
+
 void Traveler::fight(unsigned int elTm) {
-    // Fight tgt for e milliseconds.
-    fightTime += elTm;
-    // Prevent fight from happening twice.
-    target->fightTime -= static_cast<double>(elTm);
-    // Keep fighting until one side dies, runs, or yields or time runs out.
-    while (alive() && target->alive() && choice == FightChoice::fight && target->choice == FightChoice::fight && fightTime > 0) {
-        CombatHit ourFirst = firstHit(*target), theirFirst = target->firstHit(*this);
-        if (ourFirst.time < theirFirst.time) {
-            // Our hit happens first.
-            target->takeHit(ourFirst, *this);
-            fightTime -= ourFirst.time;
-            useAmmo(ourFirst.time);
-            target->useAmmo(ourFirst.time);
-        } else if (theirFirst.time < ourFirst.time) {
-            // Their hit happens first.
-            takeHit(theirFirst, *target);
-            fightTime -= theirFirst.time;
-            useAmmo(theirFirst.time);
-            target->useAmmo(theirFirst.time);
-        } else {
-            // Both hits happen at the same time.
-            takeHit(theirFirst, *target);
-            target->takeHit(ourFirst, *this);
-            fightTime -= ourFirst.time;
-            useAmmo(ourFirst.time);
-            target->useAmmo(ourFirst.time);
-        }
-        if (aI) aI->choose();
-        if (target->aI) target->aI->choose();
+    // Fight target for e milliseconds.
+    fightTime -= elTm;
+    // Prevent fight from happening multiple times.
+    for (auto enemy : enemies) enemy->fightTime += static_cast<double>(elTm);
+    // Keep fighting until all enemies die, run, or yield or time runs out.
+    while (alive() && choice == FightChoice::fight && fightTime < 0 &&
+           std::find_if(begin(enemies), end(enemies), [](const Traveler *tvl) {
+               return tvl->alive() && tvl->choice == FightChoice::fight;
+           }) != end(enemies)) {
+        // Set target and next hit for all combatants and find first hit.
+        double soonest = std::numeric_limits<double>::max();
+        Traveler *first = nullptr;
+        // Set targets of our side.
+        forAlly([this](Traveler *aly) {
+            aly->setTarget(enemies);
+        });
+        for (auto enemy : enemies)
+            // Set targets of enemy and its allies.
+            enemy->forAlly([enemy](Traveler *enA) {
+                enA->setTarget(enemy->enemies);
+            });
+        forCombatant([&soonest, &first](Traveler *cbt) {
+            cbt->setNextHit();
+            if (cbt->nextHit->time < soonest) {
+                soonest = cbt->nextHit->time;
+                first = cbt;
+            }
+        });
+        // Update time and use ammo for all combatants.
+        double hitTime = first->nextHit->time; // time elapsed before first hit
+        forCombatant([hitTime](Traveler *cbt) {
+            cbt->useAmmo(hitTime);
+            cbt->fightTime += hitTime;
+        });
+        // Perform first hit.
+        first->hit();
+        // Set choices for all AI combatants.
+        forCombatant([](Traveler *cbt) {
+            if (cbt->aI) cbt->choice = cbt->aI->choice();
+        });
     }
 }
 
-void Traveler::takeHit(const CombatHit &cH, Traveler &tgt) {
-    // Apply the given combat hit from the given traveler to this traveler and update both logs.
+void Traveler::hit() {
+    // Apply the next combat hit to target, update both logs, and set next hit to null.
+    if (!nextHit) return;
     // Pick a random part.
     auto part = Settings::part();
     // Start status at that part's status.
-    auto status = parts[part];
+    auto status = target->parts[part];
     // Get random value from 0 to 1.
     auto r = Settings::random();
     // Find status such that part becomes more damaged.
-    if (!cH.odd) return;
-    auto &stChcs = cH.odd->statusChances;
+    if (!nextHit->odd) return;
+    auto &stChcs = nextHit->odd->statusChances;
     for (auto sCI = begin(stChcs); r > 0 && sCI != end(stChcs); ++sCI)
         // Find status such that part becomes more damaged.
         if (sCI->first > status) {
@@ -747,14 +802,16 @@ void Traveler::takeHit(const CombatHit &cH, Traveler &tgt) {
             // Subtract chance of this status from r.
             r -= sCI->second;
         }
-    parts[part] = status;
+    target->parts[part] = status;
     if (status > Status::wounded)
         // Part is too wounded to hold equipment.
-        unequip(part);
-    std::string logEntry = tgt.name + "'s " + cH.weapon + " strikes " + name + ". " + name + "'s " +
-                           gameData.partNames[part] + " has been " + gameData.statusNames[status] + ".";
+        target->unequip(part);
+    std::string logEntry = name + "'s " + nextHit->weapon + " strikes " + target->name + ". " + target->name +
+                           "'s " + gameData.partNames[part] + " has been " + gameData.statusNames[status] +
+                           ".";
     logText.push_back(logEntry);
-    tgt.logText.push_back(logEntry);
+    target->logText.push_back(logEntry);
+    nextHit = nullptr;
 }
 
 void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
@@ -888,10 +945,10 @@ void Traveler::update(unsigned int elTm) {
                 ".");
         }
     }
-    if (target) {
+    if (!enemies.empty()) {
         if (fightWon() && aI) {
             aI->loot();
-            loseTarget();
+            disengage();
             return;
         }
         if (choice == FightChoice::fight) {
@@ -915,7 +972,7 @@ void Traveler::update(unsigned int elTm) {
                     std::string logEntry = target->name + " has eluded " + name + ".";
                     logText.push_back(logEntry);
                     target->logText.push_back(logEntry);
-                    loseTarget();
+                    disengage();
                 }
                 break;
             default:
@@ -944,4 +1001,21 @@ void Traveler::adjustDemand(Pager &pgr, double mM) {
     std::transform(begin(bxs), end(bxs), std::back_inserter(requestButtons),
                    [](auto rB) { return dynamic_cast<MenuButton *>(rB); });
     toTown->adjustDemand(requestButtons, mM);
+}
+
+template <class Source, class Destination>
+void transfer(std::vector<Good> &gds, Source &src, Destination &dst, std::string &lgEt) {
+    // Transfer goods from source to destination and append to log entry.
+    for (auto gI = begin(gds); gI != end(gds); ++gI) {
+        if (gI != begin(gds)) {
+            // This is not the first good.
+            if (gds.size() != 2) /* There are not exactly two goods. */
+                lgEt += ", ";
+            if (gI + 1 == end(gds)) /* This is the last good. */
+                lgEt += " and ";
+        }
+        src.take(*gI);
+        dst.put(*gI);
+        lgEt += gI->logEntry();
+    }
 }
