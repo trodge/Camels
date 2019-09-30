@@ -167,7 +167,10 @@ void Traveler::pickTown(const Town *tn) {
     if (path.empty() || path.front() == toTown) return;
     toTown = path.front();
     moving = true;
-    forEmployee({AIRole::guard, AIRole::thug}, [tn](Traveler *epl) { epl->pickTown(tn); });
+    forEmployee({AIRole::guard, AIRole::thug}, [this](Traveler *epl) {
+        epl->toTown = toTown;
+        epl->moving = true;
+    });
 }
 
 void Traveler::draw(SDL_Renderer *s) const {
