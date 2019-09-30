@@ -105,6 +105,7 @@ class Traveler {
     Property &makeProperty(unsigned int tId);
     void insertAllies(AIRole rl);
     void insertAllies(const std::vector<AIRole> &rls);
+    void clearCombat();
 
 public:
     Traveler(const std::string &n, Town *t, const GameData &gD);
@@ -183,16 +184,16 @@ public:
     void bid(double bns, double wge);
     void hire(size_t idx);
     std::vector<Traveler *> attackable() const;
+    void forAlly(const std::function<void(Traveler *)> &fn);
+    void forCombatant(const std::function<void(Traveler *)> &fn);
     void attack(Traveler *tgt);
     void createLogBox(Pager &pgr, Printer &pr);
     void disengage();
-    void setTarget(Traveler *enm) { target = enm; }
+    void setTarget(Traveler *tgt);
     void setTarget(const std::unordered_set<Traveler *> &enms);
     CombatHit firstHit();
     void setNextHit();
     void useAmmo(double tm);
-    void forAlly(const std::function<void(Traveler *)> &fn);
-    void forCombatant(const std::function<void(Traveler *)> &fn);
     void fight(unsigned int elTm);
     void hit();
     void createFightBoxes(Pager &pgr, bool &p, Printer &pr);

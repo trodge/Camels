@@ -289,7 +289,9 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                                       int i = btn->getHighlightLine();
                                       if (i > -1) {
                                           // A target is highlighted.
-                                          traveler->attack(able[static_cast<size_t>(i)]);
+                                          auto target = able[i];
+                                          traveler->attack(target);
+                                          traveler->setTarget(target);
                                           setState(State::fighting);
                                       } else
                                           btn->setClicked(false);
@@ -321,9 +323,9 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                                   [this, &enemies](MenuButton *btn) {
                                       int i = btn->getHighlightLine();
                                       if (i > -1) {
-                                          auto enemy = enemies[i];
-                                          traveler->setTarget(enemy);
-                                          if (enemy->alive() && enemy->getChoice() == FightChoice::fight)
+                                          auto target = enemies[i];
+                                          traveler->setTarget(target);
+                                          if (target->alive() && target->getChoice() == FightChoice::fight)
                                               setState(State::fighting);
                                           else
                                               setState(State::looting);

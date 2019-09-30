@@ -403,6 +403,26 @@ void Traveler::insertAllies(const std::vector<AIRole> &rls) {
     for (auto rl : rls) { insertAllies(rl); }
 }
 
+void Traveler::forAlly(const std::function<void(Traveler *)> &fn) {
+    // Call given function on this traveler and all its allies.
+    fn(this);
+    for (auto ally : allies) fn(ally);
+}
+
+void Traveler::forCombatant(const std::function<void(Traveler *)> &fn) {
+    // Call given function on all combatants.
+    forAlly(fn);
+    for (auto enemy : enemies) enemy->forAlly(fn);
+}
+
+void Traveler::clearCombat() {
+    forAlly([](Traveler *aly) {
+        aly->targeterCount = 0;
+        aly->target = nullptr;
+        aly->nextHit = nullptr;
+    });
+}
+
 void Traveler::attack(Traveler *tgt) {
     // Attack the given traveler.
     if (tgt->enemies.empty()) /* Target is not already fighting. */ {
@@ -411,10 +431,7 @@ void Traveler::attack(Traveler *tgt) {
         // Reset fight time.
         tgt->fightTime = 0;
         // Reset targets and targeter counts.
-        tgt->forAlly([](Traveler *aly) {
-            aly->targeterCount = 0;
-            aly->target = nullptr;
-        });
+        tgt->clearCombat();
     }
     // Add target to enemies set.
     enemies.insert(tgt);
@@ -425,25 +442,16 @@ void Traveler::attack(Traveler *tgt) {
     // Reset fight time.
     fightTime = tgt->fightTime;
     // Reset targets and targeter counts.
-    forAlly([](Traveler *aly) {
-        aly->targeterCount = 0;
-        aly->target = nullptr;
-    });
+    clearCombat();
     // Set choices.
     if (aI)
         choice = FightChoice::fight;
-    else {
+    else
         choice = FightChoice::none;
-        target = tgt;
-        ++tgt->targeterCount;
-    }
     if (tgt->aI)
         tgt->choice = tgt->aI->choice();
-    else {
+    else
         tgt->choice = FightChoice::none;
-        tgt->target = this;
-        ++targeterCount;
-    }
 }
 
 void Traveler::disengage() {
@@ -499,9 +507,15 @@ CombatHit Traveler::firstHit() {
     return first;
 }
 
+void Traveler::setTarget(Traveler *tgt) {
+    --target->targeterCount;
+    target = tgt;
+    ++tgt->targeterCount;
+}
+
 void Traveler::setTarget(const std::unordered_set<Traveler *> &enms) {
-    if (aI && !target) {
-        aI->target(enemies);
+    if (aI && (!target || !target->alive())) {
+        target = aI->target(enemies);
         ++target->targeterCount;
     }
 }
@@ -522,18 +536,6 @@ void Traveler::useAmmo(double tm) {
     }
 }
 
-void Traveler::forAlly(const std::function<void(Traveler *)> &fn) {
-    // Call given function on this traveler and all its allies.
-    fn(this);
-    for (auto ally : allies) fn(ally);
-}
-
-void Traveler::forCombatant(const std::function<void(Traveler *)> &fn) {
-    // Call given function on all combatants.
-    forAlly(fn);
-    for (auto enemy : enemies) enemy->forAlly(fn);
-}
-
 void Traveler::fight(unsigned int elTm) {
     // Fight target for e milliseconds.
     fightTime -= elTm;
@@ -541,8 +543,8 @@ void Traveler::fight(unsigned int elTm) {
     for (auto enemy : enemies) enemy->fightTime += static_cast<double>(elTm);
     // Keep fighting until all enemies die, run, or yield or time runs out.
     while (alive() && choice == FightChoice::fight && fightTime < 0 &&
-           std::find_if(begin(enemies), end(enemies), [](const Traveler *tvl) {
-               return tvl->alive() && tvl->choice == FightChoice::fight;
+           std::find_if(begin(enemies), end(enemies), [](const Traveler *enm) {
+               return enm->alive() && enm->choice == FightChoice::fight;
            }) != end(enemies)) {
         // Set target and next hit for all combatants and find first hit.
         double soonest = std::numeric_limits<double>::max();
@@ -551,7 +553,7 @@ void Traveler::fight(unsigned int elTm) {
         forAlly([this](Traveler *aly) { aly->setTarget(enemies); });
         for (auto enemy : enemies)
             // Set targets of enemy and its allies.
-            enemy->forAlly([enemy](Traveler *enA) { enA->setTarget(enemy->enemies); });
+            enemy->forAlly([enemy](Traveler *aly) { aly->setTarget(enemy->enemies); });
         forCombatant([&soonest, &first](Traveler *cbt) {
             cbt->setNextHit();
             if (cbt->nextHit->time < soonest) {
