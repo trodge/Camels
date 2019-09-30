@@ -127,6 +127,7 @@ public:
     double speed() const { return stats[Stat::strength] + stats[Stat::endurance] + stats[Stat::agility]; }
     Status part(Part pt) const { return parts[pt]; }
     const std::vector<Good> &getEquipment() const { return equipment; }
+    const Contract *getContract() const { return contract.get(); }
     Traveler *getTarget() const { return target; }
     unsigned int getTargeterCount() const { return targeterCount; }
     const std::unordered_set<Traveler *> &getEnemies() const { return enemies; }

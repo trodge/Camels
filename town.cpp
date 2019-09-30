@@ -50,7 +50,7 @@ void Town::removeTraveler(const Traveler *t) {
     if (it != end(travelers)) travelers.erase(it);
 }
 
-std::unique_ptr<Contract> Town::takeBid(size_t idx) {
+Contract Town::takeBid(size_t idx) {
     // Erase and return the bid with the given index.
     auto bidIt = begin(bids) + idx;
     auto bid = std::move(*bidIt);

@@ -91,6 +91,8 @@ enum class DecisionCriteria {
     runTendency,        // run away when attacked
     yieldTendency,      // yield when attacked
     lootingGreed,       // portion of goods to take on yield
+    wageGreed,          // multiplier for wage bids
+    bonusGreed,         // multiplier for bonus bids
     count
 };
 

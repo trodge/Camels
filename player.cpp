@@ -261,7 +261,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
             std::vector<std::string> names;
             names.reserve(bids.size());
             std::transform(begin(bids), end(bids), std::back_inserter(names),
-                           [](const std::unique_ptr<Contract> &bd) { return bd->party->getName(); });
+                           [](const Contract &bd) { return bd.party->getName(); });
             pagers[2].addBox(std::make_unique<SelectButton>(
                 Settings::boxInfo(
                     {screenRect.w * 17 / 31, screenRect.h / 31, screenRect.w * 12 / 31, screenRect.h * 11 / 31},

@@ -368,7 +368,9 @@ FightChoice AI::choice() {
     // Choose to fight, update, or yield based on equip scores, stats, and speeds.
     EnumArray<double, FightChoice> scores; // fight, run, yield scores
     double allyEquipScore = 0, enemyEquipScore = 0, fastest = 0;
-    traveler.forAlly([this, &allyEquipScore](Traveler *aly) { allyEquipScore += equipScore(aly->getEquipment(), aly->getStats()); });
+    traveler.forAlly([this, &allyEquipScore](Traveler *aly) {
+        allyEquipScore += equipScore(aly->getEquipment(), aly->getStats());
+    });
     for (auto enemy : traveler.getEnemies()) {
         double enemySpeed = std::numeric_limits<double>::max();
         enemy->forAlly([this, &enemyEquipScore, &enemySpeed](Traveler *aly) {
@@ -440,7 +442,7 @@ void AI::loot() {
         std::unique_ptr<Good> bestGood;
         GoodInfoContainer::iterator bestGoodInfo;
         targetProperty->forGood([this, &highest, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted,
-                         lootGoal](const Good &tgtGd) {
+                                 lootGoal](const Good &tgtGd) {
             double amount = tgtGd.getAmount();
             if (amount > 0) {
                 auto gII = goodsInfo.insert({tgtGd.getFullId(), false, Settings::aILimitFactor()}).first;
@@ -555,6 +557,11 @@ void AI::update(unsigned int elTm) {
     if (!traveler.getMoving()) {
         decisionCounter += elTm;
         if (decisionCounter > 0) {
+            if (role >= AIRole::agent && !traveler.getContract()) {
+                traveler.bid(decisionCriteria[DecisionCriteria::bonusGreed],
+                             traveler.town()->getProperty().good(0)->price() * decisionCriteria[DecisionCriteria::wageGreed]);
+                return;
+            }
             trade();
             equip();
             attack();
@@ -587,4 +594,3 @@ void AI::update(unsigned int elTm) {
         }
     }
 }
-

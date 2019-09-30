@@ -49,7 +49,7 @@ class Town {
     Property property;
     std::vector<Town *> neighbors;
     std::vector<Traveler *> travelers;
-    std::vector<std::unique_ptr<Contract>> bids;
+    std::vector<Contract> bids;
 
 public:
     Town(unsigned int i, const std::vector<std::string> &nms, const Nation *nt, double lng, double lat,
@@ -65,12 +65,12 @@ public:
     const Property &getProperty() const { return property; }
     const std::vector<Town *> &getNeighbors() const { return neighbors; }
     const std::vector<Traveler *> &getTravelers() const { return travelers; }
-    const std::vector<std::unique_ptr<Contract>> &getBids() const { return bids; }
+    const std::vector<Contract> &getBids() const { return bids; }
     void clearTravelers() { travelers.clear(); }
     void removeTraveler(const Traveler *t);
     void addTraveler(Traveler *t) { travelers.push_back(t); }
-    std::unique_ptr<Contract> takeBid(size_t idx);
-    void addBid(std::unique_ptr<Contract> &&bd) { bids.push_back(std::move(bd)); }
+    Contract takeBid(size_t idx);
+    void addBid(const Contract &bd) { bids.push_back(bd); }
     bool clickCaptured(const SDL_MouseButtonEvent &b) const { return box->clickCaptured(b); }
     void toggleMaxGoods() { property.toggleMaxGoods(); }
     void placeDot(std::vector<SDL_Rect> &drawn, const SDL_Point &ofs, double s);

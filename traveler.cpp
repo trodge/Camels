@@ -358,17 +358,18 @@ void Traveler::equip(Part pt) {
 
 void Traveler::bid(double add, double wge) {
     // Add bid to current town with given addend and wage.
-    toTown->addBid(std::unique_ptr<Contract>(
-        new Contract{this, toTown->getProperty().totalValue(properties.find(0)->second) + add, wge, toTown}));
+    contract = std::unique_ptr<Contract>(
+        new Contract{this, toTown->getProperty().totalValue(properties.find(0)->second) + add, wge, toTown});
+    toTown->addBid(*contract);
 }
 
 void Traveler::hire(size_t idx) {
     // Hire the traveler with the given bid index.
     auto bid = toTown->takeBid(idx);
-    auto employee = bid->party;
+    auto employee = bid.party;
     employees.insert({employee->aI->getRole(), employee});
-    bid->party = this;
-    employee->contract = std::move(bid);
+    bid.party = this;
+    employee->contract = std::make_unique<Contract>(std::move(bid));
     auto &ppt = properties.find(0)->second, &eplPpt = employee->properties.find(0)->second;
     std::string logEntry = name + " hires " + employee->name + " for ";
     transfer(offer, ppt, eplPpt, logEntry);
