@@ -306,9 +306,36 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                     traveler->getLogText(), BoxSizeType::small),
                 printer));
         }};
-    uIStates[State::targeting] = {{}, [this] {}};
-    uIStates[State::fighting] = {
+    uIStates[State::targeting] = {
         {}, [this] {
+            std::vector<Traveler *> enemies;
+            for (auto enemy : traveler->getEnemies())
+                enemy->forAlly([&enemies](Traveler *enm) { enemies.push_back(enm); });
+            std::vector<std::string> names;
+            names.reserve(enemies.size());
+            std::transform(begin(enemies), end(enemies), std::back_inserter(names),
+                           [](const Traveler *enm) { return enm->getName(); });
+            pagers[0].addBox(std::make_unique<SelectButton>(
+                traveler->boxInfo({screenRect.w / 4, screenRect.h / 4, screenRect.w / 2, screenRect.h / 2},
+                                  names, BoxSizeType::fight, BoxBehavior::scroll, SDLK_f,
+                                  [this, &enemies](MenuButton *btn) {
+                                      int i = btn->getHighlightLine();
+                                      if (i > -1) {
+                                          auto enemy = enemies[i];
+                                          traveler->setTarget(enemy);
+                                          if (enemy->alive() && enemy->getChoice() == FightChoice::fight)
+                                              setState(State::fighting);
+                                          else
+                                              setState(State::looting);
+                                      } else
+                                          btn->setClicked(false);
+                                  }),
+                printer));
+        }};
+    uIStates[State::fighting] = {
+        {Settings::boxInfo({screenRect.w * 8 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Change (T)arget"},
+                           BoxSizeType::small, SDLK_t, [this](MenuButton *) { setState(State::targeting); })},
+        [this] {
             auto target = traveler->getTarget();
             pagers[0].addBox(std::make_unique<TextBox>(
                 traveler->boxInfo({screenRect.w / 2, screenRect.h / 4, 0, 0},
@@ -345,9 +372,10 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                            BoxSizeType::small, SDLK_a,
                            [this](MenuButton *) {
                                traveler->loot();
-                               traveler->disengage();
-                               setState(State::traveling);
-                           })},
+                               setState(State::looting);
+                           }),
+         Settings::boxInfo({screenRect.w * 7 / 15, screenRect.h - smallBoxFontHeight, 0, 0}, {"Change (T)arget"},
+                           BoxSizeType::small, SDLK_a, [this](MenuButton *) { setState(State::targeting); })},
         [this, margin] {
             SDL_Rect rt{margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
             pagers[1].setBounds(rt);

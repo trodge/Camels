@@ -380,37 +380,49 @@ FightChoice AI::choice() {
     return static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores));
 }
 
-void AI::target(Traveler *enm, Traveler *&tgt, double &highest) const {
-    if (!enm->alive()) return;
-    auto &eqpmt = enm->getEquipment();
-    auto &sts = enm->getStats();
-    unsigned int tgtrCnt = enm->getTargeterCount();
-    double score = attackScore(eqpmt, sts) / defenseScore(eqpmt, sts) / tgtrCnt;
-    if (score > highest) {
-        highest = score;
-        tgt = enm;
-    }
-}
-
 Traveler *AI::target(const std::unordered_set<Traveler *> &enms) const {
     Traveler *tgt = nullptr;
     double highest = 0;
     for (auto enm : enms) {
-        target(enm, tgt, highest);
-        for (auto ally : enm->getAllies()) {
-            target(ally, tgt, highest);
-        }
+        enm->forAlly([this, &tgt, &highest](Traveler *aly) {
+            if (!aly->alive()) return;
+            auto &eqpmt = aly->getEquipment();
+            auto &sts = aly->getStats();
+            unsigned int tgtrCnt = aly->getTargeterCount();
+            double score = attackScore(eqpmt, sts) / defenseScore(eqpmt, sts) / tgtrCnt;
+            if (score > highest) {
+                highest = score;
+                tgt = aly;
+            }
+        });
+    }
+    return tgt;
+}
+
+Traveler *AI::lootTarget(const std::unordered_set<Traveler *> &enms) {
+    Traveler *tgt = nullptr;
+    double highest = 0;
+    for (auto enm : enms) {
+        enm->forAlly([this, &highest, &tgt](Traveler *aly) {
+            double score = lootScore(aly->property());
+            if (score > highest) {
+                highest = score;
+                tgt = aly;
+            }
+        });
     }
     return tgt;
 }
 
 void AI::loot() {
     // Automatically loot based on scores and decision criteria.
-    auto tgt = traveler.getTarget();
-    if (!tgt) return;
-    auto &tgtPpt = tgt->property();
-    double lootGoal = lootScore(tgtPpt);
-    if (tgt->alive())
+    auto enemies = traveler.getEnemies();
+    double lootGoal = std::accumulate(begin(enemies), end(enemies), 0., [this](double a, const Traveler *enm) {
+        return a + lootScore(enm->property());
+    });
+    auto target = lootTarget(enemies);
+    auto targetProperty = &target->property();
+    if (target->alive())
         // Looting from an alive target dependent on greed.
         lootGoal *= decisionCriteria[DecisionCriteria::lootingGreed] / Settings::getAIDecisionCriteriaMax();
     double looted = 0, weight = traveler.weight();
@@ -419,7 +431,8 @@ void AI::loot() {
         double highest = 0, bestValue, bestWeight;
         std::unique_ptr<Good> bestGood;
         GoodInfoContainer::iterator bestGoodInfo;
-        tgtPpt.forGood([this, &highest, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted, lootGoal](const Good &tgtGd) {
+        targetProperty->forGood([this, &highest, &bestValue, &bestWeight, &bestGood, &bestGoodInfo, looted,
+                         lootGoal](const Good &tgtGd) {
             double amount = tgtGd.getAmount();
             if (amount > 0) {
                 auto gII = goodsInfo.insert({tgtGd.getFullId(), false, Settings::aILimitFactor()}).first;
@@ -446,7 +459,13 @@ void AI::loot() {
                 }
             }
         });
-        if (!bestGood) return;
+        if (!bestGood) {
+            // Target has no more goods to loot.
+            enemies.erase(target);
+            target = lootTarget(enemies);
+            targetProperty = &target->property();
+            continue;
+        }
         // Add the weight of looted good to weight variable.
         weight += bestWeight;
         // Stop looting if we would be overweight.

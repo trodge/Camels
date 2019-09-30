@@ -86,7 +86,6 @@ class AI {
     double equipScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double equipScore(const Good &eq, const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
-    void target(Traveler *enm, Traveler *&tgt, double &highest) const;
     double lootScore(const Property &ppt);
     void choosePlan(std::vector<BusinessPlan> &plns, BusinessPlan *&bstPln, double dcCt, double &hst);
     void trade();
@@ -103,6 +102,7 @@ public:
     AIRole getRole() const { return role; }
     FightChoice choice();
     Traveler *target(const std::unordered_set<Traveler *> &enms) const;
+    Traveler *lootTarget(const std::unordered_set<Traveler *> &enms);
     void loot();
     void update(unsigned int elTm);
 };

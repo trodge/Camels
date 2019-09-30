@@ -410,9 +410,11 @@ void Traveler::attack(Traveler *tgt) {
         tgt->insertAllies({AIRole::guard, AIRole::thug});
         // Reset fight time.
         tgt->fightTime = 0;
-        // Reset targeter counts.
-        tgt->targeterCount = 0;
-        for (auto ally : tgt->allies) ally->targeterCount = 0;
+        // Reset targets and targeter counts.
+        tgt->forAlly([](Traveler *aly) {
+            aly->targeterCount = 0;
+            aly->target = nullptr;
+        });
     }
     // Add target to enemies set.
     enemies.insert(tgt);
@@ -422,18 +424,26 @@ void Traveler::attack(Traveler *tgt) {
     insertAllies(AIRole::thug);
     // Reset fight time.
     fightTime = tgt->fightTime;
-    // Reset targeter counts.
-    targeterCount = 0;
-    for (auto ally : allies) ally->targeterCount = 0;
+    // Reset targets and targeter counts.
+    forAlly([](Traveler *aly) {
+        aly->targeterCount = 0;
+        aly->target = nullptr;
+    });
     // Set choices.
     if (aI)
         choice = FightChoice::fight;
-    else
+    else {
         choice = FightChoice::none;
+        target = tgt;
+        ++tgt->targeterCount;
+    }
     if (tgt->aI)
         tgt->choice = tgt->aI->choice();
-    else
+    else {
         tgt->choice = FightChoice::none;
+        tgt->target = this;
+        ++targeterCount;
+    }
 }
 
 void Traveler::disengage() {
@@ -538,14 +548,10 @@ void Traveler::fight(unsigned int elTm) {
         double soonest = std::numeric_limits<double>::max();
         Traveler *first = nullptr;
         // Set targets of our side.
-        forAlly([this](Traveler *aly) {
-            aly->setTarget(enemies);
-        });
+        forAlly([this](Traveler *aly) { aly->setTarget(enemies); });
         for (auto enemy : enemies)
             // Set targets of enemy and its allies.
-            enemy->forAlly([enemy](Traveler *enA) {
-                enA->setTarget(enemy->enemies);
-            });
+            enemy->forAlly([enemy](Traveler *enA) { enA->setTarget(enemy->enemies); });
         forCombatant([&soonest, &first](Traveler *cbt) {
             cbt->setNextHit();
             if (cbt->nextHit->time < soonest) {
@@ -640,7 +646,7 @@ void Traveler::loot(Good &g) {
 }
 
 void Traveler::loot() {
-    target->property().forGood([this](const Good &g) {
+    target->properties.find(0)->second.forGood([this](const Good &g) {
         Good lG(g);
         loot(lG);
     });

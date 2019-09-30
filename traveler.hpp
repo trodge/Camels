@@ -92,7 +92,7 @@ class Traveler {
     std::unordered_multimap<AIRole, Traveler *> employees; // travelers employed by role
     std::unique_ptr<Contract> contract;                    // contract with employer, if any
     std::unordered_set<Traveler *> enemies, allies;        // travelers currently fighting
-    Traveler *target = nullptr;                            // current target for attacks
+    Traveler *target;                            // current target for attacks
     unsigned int targeterCount;                            // number of enemies targeting this traveler
     std::unique_ptr<CombatHit> nextHit;                    // next hit on target
     double fightTime;                                      // time left to fight this round
@@ -128,7 +128,9 @@ public:
     const std::vector<Good> &getEquipment() const { return equipment; }
     Traveler *getTarget() const { return target; }
     unsigned int getTargeterCount() const { return targeterCount; }
+    const std::unordered_set<Traveler *> &getEnemies() const { return enemies; }
     const std::unordered_set<Traveler *> &getAllies() const { return allies; }
+    FightChoice getChoice() const { return choice; }
     bool alive() const {
         return static_cast<unsigned int>(parts[Part::head]) < 5 && static_cast<unsigned int>(parts[Part::torso]) < 5;
     }
@@ -184,6 +186,7 @@ public:
     void attack(Traveler *tgt);
     void createLogBox(Pager &pgr, Printer &pr);
     void disengage();
+    void setTarget(Traveler *enm) { target = enm; }
     void setTarget(const std::unordered_set<Traveler *> &enms);
     CombatHit firstHit();
     void setNextHit();
