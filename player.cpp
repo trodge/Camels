@@ -243,42 +243,137 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                     // Refresh buttons.
                     setState(State::equipping);
                 };
-                pagers[1].addBox(e.button(false, bxInf, pr));
+                pagers[1].addBox(e.button(false, bxInf, printer));
             }
         },
         2};
     uIStates[State::managing] = {
         {Settings::boxInfo({screenRect.w * 2 / 3, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (M)anaging"},
-                           BoxSizeType::small, SDLK_m, [this](MenuButton *) { setState(State::traveling); })}};
+                           BoxSizeType::small, SDLK_m, [this](MenuButton *) { setState(State::traveling); })},
+        [this, margin] {
+            // Create the offer buttons for the player.
+            SDL_Rect rt{margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
+            BoxInfo bxInf = traveler->boxInfo();
+            pagers[1].buttons(traveler->property(), bxInf, printer,
+                              [](const Good &) { return [](MenuButton *) {}; });
+            auto town = traveler->town();
+            auto &bids = town->getBids();
+            std::vector<std::string> names;
+            names.reserve(bids.size());
+            std::transform(begin(bids), end(bids), std::back_inserter(names),
+                           [](const std::unique_ptr<Contract> &bd) { return bd->party->getName(); });
+            pagers[2].addBox(std::make_unique<SelectButton>(
+                Settings::boxInfo(
+                    {screenRect.w * 17 / 31, screenRect.h / 31, screenRect.w * 12 / 31, screenRect.h * 11 / 31},
+                    names, town->getNation()->getColors(), BoxSizeType::big, SDLK_h,
+                    [](MenuButton *) {
+
+                    }),
+                printer));
+        }};
     uIStates[State::attacking] = {
         {Settings::boxInfo({screenRect.w * 7 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Cancel (A)ttack"},
                            BoxSizeType::small, SDLK_a, [this](MenuButton *) { setState(State::traveling); })},
         [this] {
             pause = true;
-            traveler->createAttackButton(
-                pagers[0], [this] { setState(State::fighting); }, printer);
+            auto able = traveler->attackable(); // vector of attackable travelers
+            std::vector<std::string> names;     // vector of names of attackable travelers
+            names.reserve(able.size());
+            std::transform(begin(able), end(able), std::back_inserter(names),
+                           [](const Traveler *tg) { return tg->getName(); });
+            // Create attack button.
+            pagers[0].addBox(std::make_unique<SelectButton>(
+                traveler->boxInfo({screenRect.w / 4, screenRect.h / 4, screenRect.w / 2, screenRect.h / 2},
+                                  names, BoxSizeType::fight, BoxBehavior::scroll, SDLK_f,
+                                  [this, able](MenuButton *btn) {
+                                      int i = btn->getHighlightLine();
+                                      if (i > -1) {
+                                          // A target is highlighted.
+                                          traveler->attack(able[static_cast<size_t>(i)]);
+                                          setState(State::fighting);
+                                      } else
+                                          btn->setClicked(false);
+                                  }),
+                printer));
         }};
     uIStates[State::logging] = {
         {Settings::boxInfo({screenRect.w * 8 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Close (L)og"},
                            BoxSizeType::small, SDLK_l, [this](MenuButton *) { setState(State::traveling); })},
-        [this] { traveler->createLogBox(pagers[0], printer); }};
+        [this] {
+            pagers[0].addBox(std::make_unique<ScrollBox>(
+                traveler->boxInfo(
+                    {screenRect.w / 15, screenRect.h * 2 / 15, screenRect.w * 28 / 31, screenRect.h * 11 / 15},
+                    traveler->getLogText(), BoxSizeType::small),
+                printer));
+        }};
     uIStates[State::targeting] = {{}, [this] {}};
-    uIStates[State::fighting] = {{}, [this] { traveler->createFightBoxes(pagers[0], pause, printer); }};
-    uIStates[State::looting] = {{Settings::boxInfo({screenRect.w / 15, screenRect.h - smallBoxFontHeight, 0, 0},
-                                                   {"Stop (L)ooting"}, BoxSizeType::small, SDLK_l,
-                                                   [this](MenuButton *) {
-                                                       traveler->loseTarget();
-                                                       setState(State::traveling);
-                                                   }),
-                                 Settings::boxInfo({screenRect.w * 4 / 15, screenRect.h - smallBoxFontHeight, 0, 0},
-                                                   {"Loot (A)ll"}, BoxSizeType::small, SDLK_a,
-                                                   [this](MenuButton *) {
-                                                       traveler->loot();
-                                                       traveler->loseTarget();
-                                                       setState(State::traveling);
-                                                   })},
-                                [this] { traveler->createLootButtons(pagers, focusBox, printer); },
-                                3};
+    uIStates[State::fighting] = {
+        {}, [this] {
+            auto target = traveler->getTarget();
+            pagers[0].addBox(std::make_unique<TextBox>(
+                traveler->boxInfo({screenRect.w / 2, screenRect.h / 4, 0, 0},
+                                  {"Fighting " + target->getName() + "..."}, BoxSizeType::fight),
+                printer));
+            pagers[0].addBox(std::make_unique<TextBox>(
+                traveler->boxInfo({screenRect.w / 21, screenRect.h / 4, screenRect.w * 5 / 21, screenRect.h / 2},
+                                  {}, BoxSizeType::fight),
+                printer));
+            pagers[0].addBox(std::make_unique<TextBox>(
+                target->boxInfo({screenRect.w * 15 / 21, screenRect.h / 4, screenRect.w * 5 / 21, screenRect.h / 2},
+                                {}, BoxSizeType::fight),
+                printer));
+            pagers[0].addBox(std::make_unique<SelectButton>(
+                traveler->boxInfo({screenRect.w / 3, screenRect.h / 3, screenRect.w / 3, screenRect.h / 3},
+                                  {"Fight", "Run", "Yield"}, BoxSizeType::fight, BoxBehavior::scroll, SDLK_c,
+                                  [this](MenuButton *btn) {
+                                      int hl = btn->getHighlightLine();
+                                      if (hl > -1) {
+                                          traveler->choose(static_cast<FightChoice>(hl));
+                                          pause = false;
+                                      }
+                                  }),
+                printer));
+        }};
+    uIStates[State::looting] = {
+        {Settings::boxInfo({screenRect.w / 15, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (L)ooting"},
+                           BoxSizeType::small, SDLK_l,
+                           [this](MenuButton *) {
+                               traveler->disengage();
+                               setState(State::traveling);
+                           }),
+         Settings::boxInfo({screenRect.w * 4 / 15, screenRect.h - smallBoxFontHeight, 0, 0}, {"Loot (A)ll"},
+                           BoxSizeType::small, SDLK_a,
+                           [this](MenuButton *) {
+                               traveler->loot();
+                               traveler->disengage();
+                               setState(State::traveling);
+                           })},
+        [this, margin] {
+            SDL_Rect rt{margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
+            pagers[1].setBounds(rt);
+            BoxInfo bxInf = traveler->boxInfo();
+            // Create buttons for leaving goods behind.
+            auto target = traveler->getTarget();
+            pagers[1].buttons(traveler->property(), bxInf, printer, [this, target](const Good &gd) {
+                return [this, target, &gd](MenuButton *) {
+                    Good lG(gd.getFullId(), gd.getAmount() * traveler->getPortion());
+                    target->loot(lG);
+                    setState(State::looting);
+                };
+            });
+            rt.x = screenRect.w - margin - rt.w;
+            pagers[2].setBounds(rt);
+            bxInf.colors = target->getNation()->getColors();
+            // Create buttons for looting goods.
+            pagers[2].buttons(target->property(), bxInf, printer, [this, target](const Good &gd) {
+                return [this, target, &gd](MenuButton *) {
+                    Good lG(gd.getFullId(), gd.getAmount() * traveler->getPortion());
+                    traveler->loot(lG);
+                    setState(State::looting);
+                };
+            });
+        },
+        3};
     uIStates[State::dying] = {{}, [this] {
                                   pagers[0].addBox(std::make_unique<TextBox>(
                                       Settings::boxInfo({screenRect.w / 2, screenRect.h / 2, 0, 0},

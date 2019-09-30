@@ -41,10 +41,10 @@ std::vector<TextBox *> Pager::getVisible() {
 }
 
 std::vector<TextBox *> Pager::getAll() {
-    std::vector<TextBox *> boxes;
-    std::transform(begin(boxes), end(boxes), std::back_inserter(boxes),
+    std::vector<TextBox *> bxs;
+    std::transform(begin(boxes), end(boxes), std::back_inserter(bxs),
                    [](std::unique_ptr<TextBox> &bx) { return bx.get(); });
-    return boxes;
+    return bxs;
 }
 
 void Pager::addBox(std::unique_ptr<TextBox> &&bx) {

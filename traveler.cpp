@@ -302,14 +302,6 @@ void Traveler::demolish(const Business &bsn, double a) {
     makeProperty(toTown->getId()).demolish(bsn, a);
 }
 
-void Traveler::createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Create buttons for handling businesses.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    // Create buttons for demolishing businesses.
-    int m = Settings::getButtonMargin();
-
-}
-
 void Traveler::unequip(Part pt) {
     // Unequip all equipment using the given part id.
     auto unused = [pt](const Good &e) {
@@ -360,13 +352,6 @@ void Traveler::equip(Part pt) {
     }
 }
 
-void Traveler::createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Create buttons for equipping equippables.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    int m = Settings::getButtonMargin();
-
-}
-
 void Traveler::bid(double add, double wge) {
     // Add bid to current town with given addend and wage.
     toTown->addBid(std::unique_ptr<Contract>(
@@ -384,26 +369,6 @@ void Traveler::hire(size_t idx) {
     std::string logEntry = name + " hires " + employee->name + " for ";
     transfer(offer, ppt, eplPpt, logEntry);
     logEntry += ".";
-}
-
-void Traveler::createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    // Create buttons for hiring and managing employees.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    int m = Settings::getButtonMargin();
-    // Create the offer buttons for the player.
-    SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo bxInf = boxInfo();
-    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [](const Good &) { return [](MenuButton *) {}; });
-    auto &bids = toTown->getBids();
-    std::vector<std::string> names;
-    for (auto &bd : bids) names.push_back(bd->party->name);
-    pgrs[2].addBox(std::make_unique<SelectButton>(
-        Settings::boxInfo({sR.w * 17 / 31, sR.h / 31, sR.w * 12 / 31, sR.h * 11 / 31}, names,
-                          toTown->getNation()->getColors(), BoxSizeType::big, SDLK_h,
-                          [](MenuButton *) {
-
-                          }),
-        pr));
 }
 
 std::vector<Traveler *> Traveler::attackable() const {
@@ -469,36 +434,6 @@ void Traveler::attack(Traveler *tgt) {
         tgt->choice = tgt->aI->choice();
     else
         tgt->choice = FightChoice::none;
-}
-
-void Traveler::createAttackButton(Pager &pgr, const std::function<void()> &sSF, Printer &pr) {
-    // Put attackable traveler names in names vector.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    auto able = attackable();       // vector of attackable travelers
-    std::vector<std::string> names; // vector of names of attackable travelers
-    names.reserve(able.size());
-    std::transform(begin(able), end(able), std::back_inserter(names),
-                   [](const Traveler *tg) { return tg->getName(); });
-    // Create attack button.
-    pgr.addBox(std::make_unique<SelectButton>(
-        boxInfo({sR.w / 4, sR.h / 4, sR.w / 2, sR.h / 2}, names, BoxSizeType::fight, BoxBehavior::scroll, SDLK_f,
-                [this, able, sSF](MenuButton *btn) {
-                    int i = btn->getHighlightLine();
-                    if (i > -1) {
-                        // A target is highlighted.
-                        attack(able[static_cast<size_t>(i)]);
-                        sSF();
-                    } else
-                        btn->setClicked(false);
-                }),
-        pr));
-}
-
-void Traveler::createLogBox(Pager &pgr, Printer &pr) {
-    // Create log box.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    pgr.addBox(std::make_unique<ScrollBox>(
-        boxInfo({sR.w / 15, sR.h * 2 / 15, sR.w * 28 / 31, sR.h * 11 / 15}, logText, BoxSizeType::small), pr));
 }
 
 void Traveler::disengage() {
@@ -665,27 +600,6 @@ void Traveler::hit() {
     nextHit = nullptr;
 }
 
-void Traveler::createFightBoxes(Pager &pgr, bool &p, Printer &pr) {
-    // Create buttons and text boxes for combat.
-    const SDL_Rect &sR = Settings::getScreenRect();
-    pgr.addBox(std::make_unique<TextBox>(
-        boxInfo({sR.w / 2, sR.h / 4, 0, 0}, {"Fighting " + target->getName() + "..."}, BoxSizeType::fight), pr));
-    pgr.addBox(std::make_unique<TextBox>(
-        boxInfo({sR.w / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
-    pgr.addBox(std::make_unique<TextBox>(
-        target->boxInfo({sR.w * 15 / 21, sR.h / 4, sR.w * 5 / 21, sR.h / 2}, {}, BoxSizeType::fight), pr));
-    pgr.addBox(std::make_unique<SelectButton>(boxInfo({sR.w / 3, sR.h / 3, sR.w / 3, sR.h / 3},
-                                                      {"Fight", "Run", "Yield"}, BoxSizeType::fight, BoxBehavior::scroll, SDLK_c,
-                                                      [this, &p](MenuButton *btn) {
-                                                          int hl = btn->getHighlightLine();
-                                                          if (hl > -1) {
-                                                              choice = static_cast<FightChoice>(hl);
-                                                              p = false;
-                                                          }
-                                                      }),
-                                              pr));
-}
-
 void Traveler::updateFightBoxes(Pager &pgr) {
     // Update TextBox objects for fight user interface.
     std::vector<TextBox *> bxs = pgr.getVisible();
@@ -729,31 +643,6 @@ void Traveler::loot() {
     target->property().forGood([this](const Good &g) {
         Good lG(g);
         loot(lG);
-    });
-}
-
-void Traveler::createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr) {
-    const SDL_Rect &sR = Settings::getScreenRect();
-    int m = Settings::getButtonMargin();
-    SDL_Rect rt{m, sR.h * 2 / 31, sR.w * 15 / 31, sR.h * 25 / 31};
-    BoxInfo bxInf = boxInfo();
-    // Create buttons for leaving goods behind.
-    properties.find(0)->second.buttons(pgrs[1], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
-        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
-            Good lG(g.getFullId(), g.getAmount() * portion);
-            target->loot(lG);
-            refreshLootButtons(pgrs, fB, pr);
-        };
-    });
-    rt.x = sR.w - m - rt.w;
-    bxInf.colors = target->nation->getColors();
-    // Create buttons for looting goods.
-    target->properties.find(0)->second.buttons(pgrs[2], rt, bxInf, pr, [this, &pgrs, &fB, &pr](const Good &g) {
-        return [this, &g, &pgrs, &fB, &pr](MenuButton *) {
-            Good lG(g.getFullId(), g.getAmount() * portion);
-            loot(lG);
-            refreshLootButtons(pgrs, fB, pr);
-        };
     });
 }
 

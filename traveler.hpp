@@ -128,7 +128,7 @@ public:
     const std::vector<Good> &getEquipment() const { return equipment; }
     Traveler *getTarget() const { return target; }
     unsigned int getTargeterCount() const { return targeterCount; }
-    const std::unordered_map<Traveler *> &getAllies() const { return allies; }
+    const std::unordered_set<Traveler *> &getAllies() const { return allies; }
     bool alive() const {
         return static_cast<unsigned int>(parts[Part::head]) < 5 && static_cast<unsigned int>(parts[Part::torso]) < 5;
     }
@@ -175,17 +175,13 @@ public:
     void withdraw(Good &g);
     void build(const Business &bsn, double a);
     void demolish(const Business &bsn, double a);
-    void createBuildButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void unequip(Part pt);
     void equip(Good &g);
     void equip(Part pt);
-    void createEquipButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void bid(double bns, double wge);
     void hire(size_t idx);
-    void createManageButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     std::vector<Traveler *> attackable() const;
     void attack(Traveler *tgt);
-    void createAttackButton(Pager &pgr, const std::function<void()> &sSF, Printer &pr);
     void createLogBox(Pager &pgr, Printer &pr);
     void disengage();
     void setTarget(const std::unordered_set<Traveler *> &enms);
@@ -200,7 +196,6 @@ public:
     void updateFightBoxes(Pager &pgr);
     void loot(Good &g);
     void loot();
-    void createLootButtons(std::vector<Pager> &pgrs, int &fB, Printer &pr);
     void createAIGoods(AIRole rl);
     void startAI();
     void startAI(const Traveler &p);

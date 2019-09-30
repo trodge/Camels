@@ -85,14 +85,6 @@ public:
     void addNeighbor(Town *t) { neighbors.push_back(t); }
     void findNeighbors(std::vector<Town> &ts, SDL_Surface *mS, const SDL_Point &mOs);
     void connectRoutes();
-    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                 const std::function<std::function<void(MenuButton *)>(const Good &)> &fn) {
-        property.buttons(pgr, rt, bI, pr, fn);
-    }
-    void buttons(Pager &pgr, const SDL_Rect &rt, BoxInfo &bI, Printer &pr,
-                 const std::function<std::function<void(MenuButton *)>(const Business &)> &fn) {
-        property.buttons(pgr, rt, bI, pr, fn);
-    }
     void adjustAreas(const std::vector<MenuButton *> &rBs, double d) { property.adjustAreas(rBs, d); }
     void saveFrequencies(std::string &u) const;
     void adjustDemand(const std::vector<MenuButton *> &rBs, double d) { property.adjustDemand(rBs, d); }
