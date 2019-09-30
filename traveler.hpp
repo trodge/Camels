@@ -103,8 +103,8 @@ class Traveler {
     std::forward_list<Town *> pathTo(const Town *t) const;
     int pathDistSq(const Town *t) const;
     Property &makeProperty(unsigned int tId);
-    void insertAllies(AIRole rl);
-    void insertAllies(const std::vector<AIRole> &rls);
+    void forEmployee(AIRole rl, const std::function<void(Traveler *)> &fn);
+    void forEmployee(const std::vector<AIRole> &rls, const std::function<void(Traveler *)> &fn);
     void clearCombat();
 
 public:

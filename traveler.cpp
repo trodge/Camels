@@ -391,16 +391,15 @@ std::vector<Traveler *> Traveler::attackable() const {
     return able;
 }
 
-void Traveler::insertAllies(AIRole rl) {
+void Traveler::forEmployee(AIRole rl, const std::function<void(Traveler *)> &fn) {
     // Insert employees with given roles to allies set.
     auto rng = employees.equal_range(rl);
-    std::for_each(rng.first, rng.second,
-                  [this](std::pair<AIRole, Traveler *> tvl) { allies.insert(tvl.second); });
+    std::for_each(rng.first, rng.second, [&fn](std::pair<AIRole, Traveler *> tvl) { fn(tvl); });
 }
 
-void Traveler::insertAllies(const std::vector<AIRole> &rls) {
+void Traveler::forEmployee(const std::vector<AIRole> &rls, const std::function<void(Traveler *)> &fn) {
     // Insert employees with given roles to allies set.
-    for (auto rl : rls) { insertAllies(rl); }
+    for (auto rl : rls) { forEmployee(rl, fn); }
 }
 
 void Traveler::forAlly(const std::function<void(Traveler *)> &fn) {
@@ -427,7 +426,7 @@ void Traveler::attack(Traveler *tgt) {
     // Attack the given traveler.
     if (tgt->enemies.empty()) /* Target is not already fighting. */ {
         // Add target's thugs and guards to target's allies set.
-        tgt->insertAllies({AIRole::guard, AIRole::thug});
+        tgt->forEmployee({AIRole::guard, AIRole::thug}, [tgt](Traveler *epl) { tgt->allies.insert(epl); });
         // Reset fight time.
         tgt->fightTime = 0;
         // Reset targets and targeter counts.
@@ -438,7 +437,7 @@ void Traveler::attack(Traveler *tgt) {
     // Add this to target's enemy set.
     tgt->enemies.insert(this);
     // Add thugs to allies set.
-    insertAllies(AIRole::thug);
+    forEmployee(AIRole::thug, [this](Traveler *epl) { allies.insert(epl); });
     // Reset fight time.
     fightTime = tgt->fightTime;
     // Reset targets and targeter counts.
