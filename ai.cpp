@@ -367,15 +367,23 @@ void AI::attack() {
 FightChoice AI::choice() {
     // Choose to fight, update, or yield based on equip scores, stats, and speeds.
     EnumArray<double, FightChoice> scores; // fight, run, yield scores
-    auto target = traveler.getTarget();
-    double equipmentScoreRatio = equipScore(target->getEquipment(), target->getStats()) /
-                                 equipScore(traveler.getEquipment(), traveler.getStats());
+    double allyEquipScore = 0, enemyEquipScore = 0, fastest = 0;
+    traveler.forAlly([this, &allyEquipScore](Traveler *aly) { allyEquipScore += equipScore(aly->getEquipment(), aly->getStats()); });
+    for (auto enemy : traveler.getEnemies()) {
+        double enemySpeed = std::numeric_limits<double>::max();
+        enemy->forAlly([this, &enemyEquipScore, &enemySpeed](Traveler *aly) {
+            enemyEquipScore += equipScore(aly->getEquipment(), aly->getStats());
+            enemySpeed = std::min(aly->speed(), enemySpeed);
+        });
+        fastest = std::max(enemySpeed, fastest);
+    }
+    double equipmentScoreRatio = allyEquipScore / enemyEquipScore;
     scores[FightChoice::fight] = 1 / equipmentScoreRatio * decisionCriteria[DecisionCriteria::fightTendency];
     scores[FightChoice::run] = equipmentScoreRatio * decisionCriteria[DecisionCriteria::runTendency];
     scores[FightChoice::yield] = equipmentScoreRatio * decisionCriteria[DecisionCriteria::yieldTendency];
     if (equipmentScoreRatio > 1)
         // Target's equipment is better, weigh run score by speed ratio.
-        scores[FightChoice::run] *= traveler.speed() / target->speed();
+        scores[FightChoice::run] *= traveler.speed() / fastest;
     // Choose whichever choice has the best score.
     return static_cast<FightChoice>(std::max_element(begin(scores), end(scores)) - begin(scores));
 }
@@ -521,7 +529,6 @@ void AI::setLimits() {
             gdInf.sell = gdInf.estimate / townProfit;
         });
     }
-    auto &ppt = traveler.property();
     // Loop through nearby towns again now that info has been gathered to set buy and sell scores.
     for (auto &nb : nearby) {
         auto &townProperty = nb.town->getProperty();
@@ -580,3 +587,4 @@ void AI::update(unsigned int elTm) {
         }
     }
 }
+

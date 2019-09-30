@@ -123,6 +123,7 @@ void Pager::buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
         dy = (bounds.h + m) / Settings::getGoodButtonRows();
     bI.rect = {bounds.x, bounds.y, dx - m, dy - m};
     boxes.reserve(ppt.goodCount());
+    indices.push_back(0);
     ppt.forGood([this, fn, &bI, dx, dy, &pr](const Good &gd) {
         if (true || (gd.getAmount() >= 0.01 && gd.getSplit()) || (gd.getAmount() >= 1.)) {
             bI.onClick = fn(gd);
