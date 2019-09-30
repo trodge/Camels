@@ -167,6 +167,7 @@ void Traveler::pickTown(const Town *tn) {
     if (path.empty() || path.front() == toTown) return;
     toTown = path.front();
     moving = true;
+    forEmployee({AIRole::guard, AIRole::thug}, [tn](Traveler *epl) { epl->pickTown(tn); });
 }
 
 void Traveler::draw(SDL_Renderer *s) const {
@@ -394,7 +395,7 @@ std::vector<Traveler *> Traveler::attackable() const {
 void Traveler::forEmployee(AIRole rl, const std::function<void(Traveler *)> &fn) {
     // Insert employees with given roles to allies set.
     auto rng = employees.equal_range(rl);
-    std::for_each(rng.first, rng.second, [&fn](std::pair<AIRole, Traveler *> tvl) { fn(tvl); });
+    std::for_each(rng.first, rng.second, [&fn](std::pair<AIRole, Traveler *> tvl) { fn(tvl.second); });
 }
 
 void Traveler::forEmployee(const std::vector<AIRole> &rls, const std::function<void(Traveler *)> &fn) {
