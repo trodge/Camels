@@ -183,6 +183,7 @@ public:
     void equip(Part pt);
     void bid(double bns, double wge);
     void hire(size_t idx);
+    void dismiss(Traveler *epl);
     std::vector<Traveler *> attackable() const;
     void forAlly(const std::function<void(Traveler *)> &fn);
     void forCombatant(const std::function<void(Traveler *)> &fn);
@@ -214,6 +215,7 @@ struct Contract {
     Traveler *party; // the other party to this contract, or this if contract is a bid
     double owed;     // value holder will retain at end of contract
     double wage;     // value holder earns daily, in deniers
+    Town *town;  // town for calculating value of goods
 };
 
 template <class Source, class Destination>

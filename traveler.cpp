@@ -359,7 +359,7 @@ void Traveler::equip(Part pt) {
 void Traveler::bid(double add, double wge) {
     // Add bid to current town with given addend and wage.
     toTown->addBid(std::unique_ptr<Contract>(
-        new Contract{this, toTown->getProperty().totalValue(properties.find(0)->second) + add, wge}));
+        new Contract{this, toTown->getProperty().totalValue(properties.find(0)->second) + add, wge, toTown}));
 }
 
 void Traveler::hire(size_t idx) {
@@ -373,6 +373,33 @@ void Traveler::hire(size_t idx) {
     std::string logEntry = name + " hires " + employee->name + " for ";
     transfer(offer, ppt, eplPpt, logEntry);
     logEntry += ".";
+    logText.push_back(logEntry);
+    employee->logText.push_back(logEntry);
+}
+
+void Traveler::dismiss(Traveler *epl) {
+    // Calculate value of goods employee holds.
+    double totalValue = 0;
+    std::unordered_map<unsigned int, const Good *> townGoods;
+    epl->property().forGood([epl, &totalValue, &townGoods](const Good &gd) {
+        auto flId = gd.getFullId();
+        auto tnGd = epl->contract->town->getProperty().good(flId);
+        if (tnGd) {
+            totalValue += tnGd->price(gd.getAmount());
+            townGoods[flId] = tnGd;
+        }
+    });
+    // Request goods with value equal to difference between total value and owed.
+    double requestValue = (totalValue - epl->contract->owed) / townGoods.size();
+    request.clear();
+    for (auto townGood : townGoods)
+        request.push_back(Good(townGood.first, townGood.second->quota(requestValue)));
+    auto &ppt = properties.find(0)->second, &eplPpt = epl->properties.find(0)->second;
+    std::string logEntry = name + " dismisses " + epl->name + " and collects ";
+    transfer(request, eplPpt, ppt, logEntry);
+    logEntry += ".";
+    logText.push_back(logEntry);
+    epl->logText.push_back(logEntry);
 }
 
 std::vector<Traveler *> Traveler::attackable() const {
