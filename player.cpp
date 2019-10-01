@@ -921,17 +921,18 @@ void Player::requestGoods(size_t ofCnt, double ofVl) {
 }
 
 void Player::updateTradeButtons() {
-    std::apply(requestGoods, std::tuple_cat(std::forward_as_tuple(this), offerGoods()));
+    std::apply(&Player::requestGoods, std::tuple_cat(std::tuple(this), offerGoods()));
 }
 
 void Player::update(unsigned int elTm) {
     // Update the UI to reflect current state.
-    auto tvl = traveler.get();
-    bool fighting = tvl && !tvl->getEnemies().empty();
+    auto enemies = traveler ? traveler->getEnemies() : std::unordered_set<Traveler *>();
+    bool fighting = !enemies.empty();
     switch (state) {
     case State::traveling:
         if (fighting) {
             pause = true;
+            traveler->setTarget(*begin(enemies));
             setState(State::fighting);
         }
         break;

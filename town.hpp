@@ -21,6 +21,7 @@
 #define TOWN_H
 
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -34,6 +35,7 @@
 #include "loadbar.hpp"
 #include "nation.hpp"
 #include "property.hpp"
+#include "textbox.hpp"
 #include "traveler.hpp"
 
 struct GameData;
