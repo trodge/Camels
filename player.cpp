@@ -110,16 +110,14 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
             SDL_Rect rt = {margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
             pagers[1].setBounds(rt);
             BoxInfo bxInf = traveler->boxInfo();
-            pagers[1].buttons(traveler->property(), bxInf, printer, [this](const Good &) {
-                return [this](MenuButton *) { traveler->updateTradeButtons(pagers); };
-            });
+            pagers[1].buttons(traveler->property(), bxInf, printer,
+                              [this](const Good &) { return [this](MenuButton *) { updateTradeButtons(); }; });
             // Create request buttons for the town's goods.
             rt.x = screenRect.w - margin - rt.w;
             pagers[2].setBounds(rt);
             bxInf.colors = traveler->town()->getNation()->getColors();
-            pagers[2].buttons(traveler->town()->getProperty(), bxInf, printer, [this](const Good &) {
-                return [this](MenuButton *) { traveler->updateTradeButtons(pagers); };
-            });
+            pagers[2].buttons(traveler->town()->getProperty(), bxInf, printer,
+                              [this](const Good &) { return [this](MenuButton *) { updateTradeButtons(); }; });
         },
         3};
     uIStates[State::storing] = {
@@ -718,16 +716,16 @@ void Player::handleKey(const SDL_KeyboardEvent &k) {
                             traveler->toggleMaxGoods();
                             break;
                         case SDLK_v:
-                            traveler->adjustDemand(pagers[2], -modMultiplier);
+                            traveler->adjustDemand(pagers[2].getAll(), -modMultiplier);
                             break;
                         case SDLK_b:
-                            traveler->adjustDemand(pagers[2], modMultiplier);
+                            traveler->adjustDemand(pagers[2].getAll(), modMultiplier);
                             break;
                         case SDLK_n:
-                            traveler->adjustAreas(pagers[2], -modMultiplier);
+                            traveler->adjustAreas(pagers[2].getAll(), -modMultiplier);
                             break;
                         case SDLK_m:
-                            traveler->adjustAreas(pagers[2], modMultiplier);
+                            traveler->adjustAreas(pagers[2].getAll(), modMultiplier);
                             break;
                         case SDLK_r:
                             game.generateRoutes();
@@ -863,29 +861,111 @@ void Player::handleEvent(const SDL_Event &e) {
     }
 }
 
+std::pair<size_t, double> Player::offerGoods() {
+    // Offer goods based on second pager. Return count and value of offer.
+    traveler->clearTrade();
+    size_t offerCount = 0;
+    double offerValue = 0;
+    auto &townProperty = traveler->town()->getProperty();
+    // Loop through all offer buttons.
+    auto boxes = pagers[1].getAll();
+    for (auto box : boxes)
+        if (box->getClicked()) {
+            auto gd = traveler->property().good(box->getId()); // pointer to good corresponding to box
+            // Button was clicked, so add corresponding good to offer.
+            double amount = gd->getAmount() * traveler->getPortion();
+            if (!gd->getSplit()) amount = floor(amount);
+            auto tnGd = townProperty.good(gd->getFullId()); // pointer to town good
+            double price = tnGd->price(amount);
+            if (price > 0) {
+                ++offerCount;
+                offerValue += price;
+                traveler->offerGood(Good(gd->getFullId(), gd->getFullName(), amount, gd->getMeasure()));
+            } else
+                // Good is worthless in this town, don't allow it to be offered.
+                box->setClicked(false);
+        }
+    return {offerCount, offerValue};
+}
+
+void Player::requestGoods(size_t ofCnt, double ofVl) {
+    // Request goods and update buttons on third pager based on given offer count and value.
+    double townProfit = Settings::getTownProfit();
+    ofVl *= townProfit;
+    auto &townProperty = traveler->town()->getProperty();
+    auto boxes = pagers[2].getAll();
+    unsigned int requestCount = std::accumulate(begin(boxes), end(boxes), 0, [](unsigned int c, const TextBox *rB) {
+        return c + rB->getClicked();
+    }); // count of clicked request buttons.
+    traveler->reserveRequest(requestCount);
+    double excess = 0; // excess value of offer over value needed for request
+    // Loop through request buttons.
+    for (auto box : boxes) {
+        auto tnGd = townProperty.good(box->getId()); // pointer to good in town corresponding to box
+        if (ofCnt) {
+            tnGd->updateButton(ofVl, std::max(1u, requestCount), box);
+            if (box->getClicked() && ofVl > 0) {
+                double mE = 0; // excess quantity of this material
+                double amount = tnGd->quantity(ofVl / requestCount, mE);
+                if (!tnGd->getSplit())
+                    // Remove extra portion of goods that don'tn split.
+                    mE += modf(amount, &amount);
+                // Convert material excess to value and add to overall excess.
+                excess += tnGd->price(mE);
+                traveler->requestGood(Good(tnGd->getFullId(), tnGd->getFullName(), amount, tnGd->getMeasure()));
+            }
+        } else
+            tnGd->updateButton(box);
+    }
+    if (ofCnt) traveler->divideExcess(excess, townProfit);
+}
+
+void Player::updateTradeButtons() {
+    std::apply(requestGoods, std::tuple_cat(std::forward_as_tuple(this), offerGoods()));
+}
+
 void Player::update(unsigned int elTm) {
     // Update the UI to reflect current state.
-    auto t = traveler.get();
-    bool target = t && t->getTarget();
+    auto tvl = traveler.get();
+    bool fighting = tvl && !tvl->getEnemies().empty();
     switch (state) {
     case State::traveling:
-        if (target) {
+        if (fighting) {
             pause = true;
             setState(State::fighting);
         }
         break;
     case State::trading:
-        traveler->updateTradeButtons(pagers);
+        updateTradeButtons();
         break;
     case State::fighting:
         if (!traveler->alive())
             setState(State::dying);
-        else if (!target)
+        else if (!fighting)
             setState(State::logging);
         else if (traveler->fightWon())
             setState(State::looting);
-        else
-            traveler->updateFightBoxes(pagers[0]);
+        else {
+            // Update fight user interface.
+            std::vector<TextBox *> boxes = pagers[0].getVisible();
+            auto choiceText = boxes[0]->getText();
+            switch (traveler->getChoice()) {
+            case FightChoice::fight:
+                if (choiceText[0] == "Running...") choiceText[0] += " Caught!";
+                break;
+            case FightChoice::run:
+                choiceText[0] = "Running...";
+                break;
+            case FightChoice::yield:
+                choiceText[0] = "Yielding...";
+                break;
+            default:
+                break;
+            }
+            boxes[0]->setText(choiceText);
+            boxes[1]->setText(traveler->statusText());
+            if (auto tgt = traveler->getTarget()) boxes[2]->setText(tgt->statusText());
+        }
         break;
     default:
         break;

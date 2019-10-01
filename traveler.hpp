@@ -40,7 +40,6 @@
 #include "good.hpp"
 #include "menubutton.hpp"
 #include "nation.hpp"
-#include "pager.hpp"
 #include "scrollbox.hpp"
 #include "selectbutton.hpp"
 #include "settings.hpp"
@@ -142,7 +141,7 @@ public:
     double weight() const {
         return properties.find(0)->second.weight() + static_cast<double>(stats[Stat::strength]) * kTravelerCarry;
     }
-    bool fightWon() const { return target && (target->choice == FightChoice::yield || !target->alive()); }
+    bool fightWon() const;
     void choose(FightChoice c) { choice = c; }
     void setPortion(double p);
     void changePortion(double d);
@@ -153,6 +152,7 @@ public:
     void draw(SDL_Renderer *s) const;
     void clearTrade();
     void offerGood(Good &&gd) { offer.push_back(gd); }
+    void reserveRequest(size_t sz) { request.reserve(sz); }
     void requestGood(Good &&gd) { request.push_back(gd); }
     void requestGoods(std::vector<Good> &&gds) { request = std::move(gds); }
     void updatePortionBox(TextBox *bx) const;
@@ -174,7 +174,6 @@ public:
     BoxInfo boxInfo() const {
         return boxInfo({0, 0, 0, 0}, {}, BoxSizeType::trade, BoxBehavior::focus);
     } // good and business buttons
-    void updateTradeButtons(std::vector<Pager> &pgrs);
     void deposit(Good &g);
     void withdraw(Good &g);
     void build(const Business &bsn, double a);
@@ -189,7 +188,6 @@ public:
     void forAlly(const std::function<void(Traveler *)> &fn);
     void forCombatant(const std::function<void(Traveler *)> &fn);
     void attack(Traveler *tgt);
-    void createLogBox(Pager &pgr, Printer &pr);
     void disengage();
     void setTarget(Traveler *tgt);
     void setTarget(const std::unordered_set<Traveler *> &enms);
@@ -198,8 +196,7 @@ public:
     void useAmmo(double tm);
     void fight(unsigned int elTm);
     void hit();
-    void createFightBoxes(Pager &pgr, bool &p, Printer &pr);
-    void updateFightBoxes(Pager &pgr);
+    std::vector<std::string> statusText();
     void loot(Good &g);
     void loot();
     void createAIGoods(AIRole rl);
@@ -208,15 +205,15 @@ public:
     void update(unsigned int e);
     void toggleMaxGoods();
     void resetTown();
-    void adjustAreas(Pager &pgr, double mM);
-    void adjustDemand(Pager &pgr, double mM);
+    void adjustAreas(const std::vector<TextBox *> &bxs, double mM);
+    void adjustDemand(const std::vector<TextBox *> &bxs, double mM);
 };
 
 struct Contract {
     Traveler *party; // the other party to this contract, or this if contract is a bid
     double owed;     // value holder will retain at end of contract
     double wage;     // value holder earns daily, in deniers
-    Town *town;  // town for calculating value of goods
+    Town *town;      // town for calculating value of goods
 };
 
 template <class Source, class Destination>

@@ -148,6 +148,13 @@ int Traveler::pathDistSq(const Town *tn) const {
 
 void Traveler::addToTown() { toTown->addTraveler(this); }
 
+bool Traveler::fightWon() const {
+    // Returns true if there are enemies and none of them are alive and want to fight.
+    return !enemies.empty() && std::find_if(begin(enemies), end(enemies), [](const Traveler *enm) {
+                                   return enm->alive() && enm->choice == FightChoice::fight;
+                               }) == end(enemies);
+}
+
 void Traveler::setPortion(double d) {
     portion = d;
     if (portion < 0)
@@ -218,58 +225,6 @@ void Traveler::divideExcess(double exc, double tnP) {
         // Reduce quantity.
         of.use(q);
     }
-}
-
-void Traveler::updateTradeButtons(std::vector<Pager> &pgrs) {
-    // Update the values shown on offer and request boxes and set offer and request.
-    std::string bN;
-    clearTrade();
-    double offerValue = 0;
-    // Loop through all offer buttons.
-    std::vector<TextBox *> bxs(pgrs[1].getAll());
-    for (auto bx : bxs)
-        if (bx->getClicked()) {
-            auto gd = properties.find(0)->second.good(bx->getId()); // pointer to good corresponding to box
-            // Button was clicked, so add corresponding good to offer.
-            double amount = gd->getAmount() * portion;
-            if (!gd->getSplit()) amount = floor(amount);
-            auto tG = toTown->getProperty().good(gd->getFullId()); // pointer to town good
-            double p = tG->price(amount);
-            if (p > 0) {
-                offerValue += p;
-                offer.push_back(Good(gd->getFullId(), gd->getFullName(), amount, gd->getMeasure()));
-            } else
-                // Good is worthless in this town, don'tn allow it to be offered.
-                bx->setClicked(false);
-        }
-    double townProfit = Settings::getTownProfit();
-    offerValue *= townProfit;
-    bxs = pgrs[2].getAll();
-    unsigned int requestCount = std::accumulate(begin(bxs), end(bxs), 0, [](unsigned int c, const TextBox *rB) {
-        return c + rB->getClicked();
-    }); // count of clicked request buttons.
-    request.reserve(requestCount);
-    double excess = 0; // excess value of offer over value needed for request
-    // Loop through request buttons.
-    for (auto bx : bxs) {
-        auto tG = toTown->getProperty().good(bx->getId()); // pointer to good in town corresponding to box
-        if (offer.empty())
-            tG->updateButton(bx);
-        else {
-            tG->updateButton(offerValue, std::max(1u, requestCount), bx);
-            if (bx->getClicked() && offerValue > 0) {
-                double mE = 0; // excess quantity of this material
-                double amount = tG->quantity(offerValue / requestCount, mE);
-                if (!tG->getSplit())
-                    // Remove extra portion of goods that don'tn split.
-                    mE += modf(amount, &amount);
-                // Convert material excess to value and add to overall excess.
-                excess += tG->price(mE);
-                request.push_back(Good(tG->getFullId(), tG->getFullName(), amount, tG->getMeasure()));
-            }
-        }
-    }
-    if (offer.size()) divideExcess(excess, townProfit);
 }
 
 Property &Traveler::makeProperty(unsigned int tId) {
@@ -411,12 +366,12 @@ std::vector<Traveler *> Traveler::attackable() const {
     able.insert(end(able), begin(forwardTravelers), end(forwardTravelers));
     if (fromTown != toTown) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
     if (!able.empty()) {
-        // Eliminate travelers which have reached town, are already fighting this traveler, are too far away, are dead, or are this traveler.
+        // Eliminate travelers which have reached town, are too far away, or are this traveler.
         int aDstSq = Settings::getAttackDistSq();
         able.erase(std::remove_if(begin(able), end(able),
                                   [this, aDstSq](Traveler *tg) {
-                                      return tg->toTown == tg->fromTown || enemies.find(tg) != end(enemies) ||
-                                             position.distSq(tg->position) > aDstSq || !tg->alive() || tg == this;
+                                      return tg->toTown == tg->fromTown ||
+                                             position.distSq(tg->position) > aDstSq || tg == this;
                                   }),
                    end(able));
     }
@@ -639,37 +594,13 @@ void Traveler::hit() {
     nextHit = nullptr;
 }
 
-void Traveler::updateFightBoxes(Pager &pgr) {
-    // Update TextBox objects for fight user interface.
-    std::vector<TextBox *> bxs = pgr.getVisible();
-    std::vector<std::string> choiceText = bxs[0]->getText();
-    switch (choice) {
-    case FightChoice::fight:
-        if (choiceText[0] == "Running...") choiceText[0] += " Caught!";
-        break;
-    case FightChoice::run:
-        choiceText[0] = "Running...";
-        break;
-    case FightChoice::yield:
-        choiceText[0] = "Yielding...";
-        break;
-    default:
-        break;
-    }
-    bxs[0]->setText(choiceText);
-    std::vector<std::string> statusText(static_cast<size_t>(Part::count) + 1);
-    statusText[0] = name + "'s Status";
+std::vector<std::string> Traveler::statusText() {
+    std::vector<std::string> text(static_cast<size_t>(Part::count) + 1);
+    text[0] = name + "'s Status";
     for (size_t i = 0; i < static_cast<size_t>(Part::count); ++i)
-        statusText[i + 1] =
+        text[i + 1] =
             gameData.partNames[static_cast<Part>(i)] + ": " + gameData.statusNames[parts[static_cast<Part>(i)]];
-    bxs[1]->setText(statusText);
-    auto tgt = target;
-    if (!tgt) return;
-    statusText[0] = tgt->getName() + "'s Status";
-    for (size_t i = 0; i < static_cast<size_t>(Part::count); ++i)
-        statusText[i + 1] = gameData.partNames[static_cast<Part>(i)] + ": " +
-                            gameData.statusNames[tgt->parts[static_cast<Part>(i)]];
-    bxs[2]->setText(statusText);
+    return text;
 }
 
 void Traveler::loot(Good &g) {
@@ -707,6 +638,7 @@ void Traveler::update(unsigned int elTm) {
         moving = !position.stepToward(
             toTown->getPosition(), static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength()));
         if (!moving) {
+            // We reached the target town.
             fromTown->removeTraveler(this);
             fromTown = toTown;
             toTown->addTraveler(this);
@@ -718,40 +650,50 @@ void Traveler::update(unsigned int elTm) {
                 ".");
         }
     }
-    if (!enemies.empty()) {
-        if (fightWon() && aI) {
-            aI->loot();
-            disengage();
-            return;
-        }
-        if (choice == FightChoice::fight) {
-            double escapeChance;
-            switch (target->choice) {
-            case FightChoice::fight:
-                fight(elTm);
-                break;
-            case FightChoice::run:
+    for (auto enemy : enemies) {
+        std::string logEntry;
+        switch (enemy->choice) {
+        case FightChoice::fight:
+            fight(elTm);
+            break;
+        case FightChoice::run:
+            if (choice == FightChoice::fight) {
                 // Check if target escapes.
-                escapeChance = Settings::getEscapeChance() * target->speed() / speed();
+                double escapeChance = Settings::getEscapeChance() * enemy->speed() / speed();
                 if (Settings::random() > escapeChance) {
-                    // Target is caught, fight.
-                    target->choice = FightChoice::fight;
+                    // Enemy is caught, fight.
+                    enemy->choice = FightChoice::fight;
                     fight(elTm);
-                    std::string logEntry = name + " catches up to " + target->name + ".";
+                    logEntry = name + " catches up to " + enemy->name + ".";
                     logText.push_back(logEntry);
-                    target->logText.push_back(logEntry);
+                    enemy->logText.push_back(logEntry);
                 } else {
-                    // Target escapes.
-                    std::string logEntry = target->name + " has eluded " + name + ".";
+                    // Enemy escapes.
+                    logEntry = enemy->name + " has eluded " + name + ".";
                     logText.push_back(logEntry);
-                    target->logText.push_back(logEntry);
-                    disengage();
+                    enemy->logText.push_back(logEntry);
+                    enemy->disengage();
                 }
-                break;
-            default:
-                break;
+            } else {
+                logEntry = name + " and " + enemy->name + " have eluded each other.";
+                logText.push_back(logEntry);
+                enemy->logText.push_back(logEntry);
+                enemy->disengage();
             }
+            break;
+        case FightChoice::yield:
+            logEntry = enemy->name + " has yielded to " + name + ".";
+            logText.push_back(logEntry);
+            enemy->logText.push_back(logEntry);
+            break;
+        default:
+            break;
         }
+    }
+    if (fightWon() && aI) {
+        aI->loot();
+        disengage();
+        return;
     }
 }
 
@@ -759,18 +701,16 @@ void Traveler::toggleMaxGoods() { toTown->toggleMaxGoods(); }
 
 void Traveler::resetTown() { toTown->reset(); }
 
-void Traveler::adjustAreas(Pager &pgr, double mM) {
+void Traveler::adjustAreas(const std::vector<TextBox *> &bxs, double mM) {
     std::vector<MenuButton *> requestButtons;
-    std::vector<TextBox *> bxs = pgr.getAll();
     std::transform(begin(bxs), end(bxs), std::back_inserter(requestButtons),
                    [](auto rB) { return dynamic_cast<MenuButton *>(rB); });
     toTown->adjustAreas(requestButtons, mM);
 }
 
-void Traveler::adjustDemand(Pager &pgr, double mM) {
+void Traveler::adjustDemand(const std::vector<TextBox *> &bxs, double mM) {
     // Adjust demand for goods in current town and show new prices on buttons.
     std::vector<MenuButton *> requestButtons;
-    std::vector<TextBox *> bxs = pgr.getAll();
     std::transform(begin(bxs), end(bxs), std::back_inserter(requestButtons),
                    [](auto rB) { return dynamic_cast<MenuButton *>(rB); });
     toTown->adjustDemand(requestButtons, mM);

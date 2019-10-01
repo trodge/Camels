@@ -69,6 +69,10 @@ class Player {
     void handleKey(const SDL_KeyboardEvent &k);
     void handleTextInput(const SDL_TextInputEvent &t);
     void handleClick(const SDL_MouseButtonEvent &b);
+    std::pair<size_t, double> offerGoods();
+    void requestGoods(size_t ofCnt, double ofVl);
+    void updateTradeButtons();
+
 
 public:
     Player(Game &g);

@@ -557,10 +557,22 @@ void AI::update(unsigned int elTm) {
     if (!traveler.getMoving()) {
         decisionCounter += elTm;
         if (decisionCounter > 0) {
-            if (role >= AIRole::agent && !traveler.getContract()) {
-                traveler.bid(decisionCriteria[DecisionCriteria::bonusGreed],
-                             traveler.town()->getProperty().good(0)->price() * decisionCriteria[DecisionCriteria::wageGreed]);
-                return;
+            if (role >= AIRole::agent) {
+                // AI role is employee.
+                auto contract = traveler.getContract();
+                if (!contract) {
+                    // AI has not placed bid yet.
+                    traveler.bid(decisionCriteria[DecisionCriteria::bonusGreed],
+                                 traveler.town()->getProperty().good(0)->price() *
+                                     decisionCriteria[DecisionCriteria::wageGreed]);
+                    return;
+                } else if (contract->party == &traveler)
+                    // AI is waiting for bid to be taken.
+                    return;
+                else if (role > AIRole::agent)
+                    // AI is guard or thug.
+                    equip();
+                    return;
             }
             trade();
             equip();
