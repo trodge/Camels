@@ -643,11 +643,11 @@ void Game::update() {
         if (!aITravelers.empty()) {
             travelersCheckCounter += elapsed;
             if (travelersCheckCounter > 0) {
+                travelersCheckCounter -= Settings::getTravelersCheckTime();
                 aITravelers.erase(
                     std::remove_if(begin(aITravelers), end(aITravelers),
                                    [](const std::unique_ptr<Traveler> &tvl) { return tvl->getDead(); }),
                     end(aITravelers));
-                travelersCheckCounter -= Settings::getTravelersCheckTime();
             }
         }
     }

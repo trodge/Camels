@@ -462,6 +462,7 @@ void Property::update(unsigned int elTm) {
     if (updateCounter > 0) {
         int updateTime = Settings::getPropertyUpdateTime();
         updateTime += updateCounter - updateCounter % updateTime;
+        updateCounter -= updateTime;
         double dayLength = Settings::getDayLength();
         if (maxGoods)
             // Property creates as many goods as possible for testing purposes.
@@ -476,7 +477,6 @@ void Property::update(unsigned int elTm) {
         for (auto &b : businesses)
             // Handle conflicts on inputs by reducing factors.
             b.run(*this, conflicts);
-        updateCounter -= updateTime;
     }
 }
 

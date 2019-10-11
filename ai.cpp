@@ -552,26 +552,34 @@ void AI::setLimits() {
     }
 }
 
+void AI::pickTown(const Town *tn) {
+    // Make traveler move toward town and refresh nearby town data.
+    traveler.pickTown(tn);
+    // Set nearby towns based on town traveler travels to first.
+    const Town *town = traveler.town();
+    setNearby(town, town, Settings::getAITownRange());
+    setLimits();
+}
+
 void AI::update(unsigned int elTm) {
     // Run the AI for the elapsed time. Includes trading, equipping, and attacking.
     if (!traveler.getMoving()) {
         decisionCounter += elTm;
         if (decisionCounter > 0) {
+            decisionCounter -= Settings::getAIDecisionTime();
+            auto town = traveler.town();
             if (role >= AIRole::agent) {
                 // AI role is employee.
                 auto contract = traveler.getContract();
-                if (!contract) {
+                if (!contract)
                     // AI has not placed bid yet.
-                    traveler.bid(decisionCriteria[DecisionCriteria::bonusGreed],
-                                 traveler.town()->getProperty().good(0)->price() *
-                                     decisionCriteria[DecisionCriteria::wageGreed]);
-                    return;
-                } else if (contract->party == &traveler)
-                    // AI is waiting for bid to be taken.
-                    return;
-                else if (role > AIRole::agent)
-                    // AI is guard or thug.
-                    equip();
+                    if (traveler.town() == home)
+                        return traveler.bid(decisionCriteria[DecisionCriteria::bonusGreed],
+                                            traveler.town()->getProperty().good(0)->price() *
+                                                decisionCriteria[DecisionCriteria::wageGreed]);
+                    else
+                        return pickTown(home);
+                else if (contract->party == &traveler)
                     return;
             }
             trade();
@@ -581,28 +589,20 @@ void AI::update(unsigned int elTm) {
             const Town *bestTown = nullptr;
             if (businessCounter >= 0 && home)
                 // Return to home.
-                bestTown = home;
-            else {
-                // Find best scoring
-                double highest = 0;
-                for (auto &tI : nearby) {
-                    double score = tI.buyScore * decisionCriteria[DecisionCriteria::buyScoreWeight] +
-                                   tI.sellScore * decisionCriteria[DecisionCriteria::sellScoreWeight];
-                    if (score > highest) {
-                        highest = score;
-                        bestTown = tI.town;
-                    }
+                return pickTown(home);
+            // Find highest scoring town.
+            double highest = 0;
+            for (auto &tI : nearby) {
+                double score = tI.buyScore * decisionCriteria[DecisionCriteria::buyScoreWeight] +
+                               tI.sellScore * decisionCriteria[DecisionCriteria::sellScoreWeight];
+                if (score > highest) {
+                    highest = score;
+                    bestTown = tI.town;
                 }
             }
-            if (bestTown) {
-                // Set traveler's target to target town.
-                traveler.pickTown(bestTown);
-                // Set nearby towns based on town traveler travels to first.
-                const Town *town = traveler.town();
-                setNearby(town, town, Settings::getAITownRange());
-                setLimits();
-            }
-            decisionCounter -= Settings::getAIDecisionTime();
+            if (bestTown && bestTown != town)
+                // A town was found.
+                pickTown(bestTown);
         }
     }
 }

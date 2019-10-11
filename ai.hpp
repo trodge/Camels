@@ -92,6 +92,7 @@ class AI {
     void store(const Property *sPpt, const Property &tPpt);
     void equip();
     void attack();
+    void pickTown(const Town *tn);
 
 public:
     AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const GoodInfoContainer &gsI, AIRole rl);
