@@ -489,10 +489,9 @@ void AI::loot() {
 
 void AI::setNearby(const Town *t, const Town *tT, unsigned int i) {
     // Recursively adds towns i steps away to nearby towns. Clears buy and sell scores.
-    if (t == tT) {
+    if (t == tT)
         // Town t is the current town, clear nearby towns.
         nearby.clear();
-    }
     if (i)
         // Town t is within i steps of town tT.
         for (auto &nb : t->getNeighbors())
