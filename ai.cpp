@@ -19,18 +19,21 @@
 
 #include "ai.hpp"
 
+GoodInfo::GoodInfo(unsigned int fId, bool ond)
+    : fullId(fId), owned(ond), limitFactor(Settings::aILimitFactor()), min(std::numeric_limits<double>::max()),
+      max(0), estimate(0), buy(0), sell(std::numeric_limits<double>::max()) {}
+
 AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const GoodInfoContainer &gsI, AIRole rl)
     : traveler(tvl), decisionCounter(Settings::aIDecisionCounter()),
       businessCounter(Settings::aIBusinessCounter()), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
     auto &townProperty = town->getProperty();
-    // Insert full ids of owned goods into goods info.
     traveler.createAIGoods(role);
-    for (auto fId : traveler.property().fullIds()) goodsInfo.insert({fId, true, Settings::aILimitFactor()});
+    // Insert full ids of owned goods into goods info.
+    for (auto fId : traveler.property().fullIds()) goodsInfo.insert(GoodInfo(fId, true));
     if (gsI.empty())
         // Insert a randomly chosen set of full ids from town into goods info.
-        for (auto fId : Settings::aIFullIds(townProperty.fullIds()))
-            goodsInfo.insert({fId, false, Settings::aILimitFactor()});
+        for (auto fId : Settings::aIFullIds(townProperty.fullIds())) goodsInfo.insert(GoodInfo(fId, false));
     setNearby(town, town, Settings::getAITownRange());
     setLimits();
 }
@@ -122,7 +125,10 @@ double AI::lootScore(const Property &tgtPpt) {
     double score = 0;
     tgtPpt.forGood([this, &score](const Good &tgtGd) {
         // Attempt to insert the good to goods info.
-        auto gII = goodsInfo.insert({tgtGd.getFullId(), false, Settings::aILimitFactor()}).first;
+        auto gII = goodsInfo
+                       .insert({tgtGd.getFullId(), false, Settings::aILimitFactor(),
+                                std::numeric_limits<double>::max(), 0, 0, 0, std::numeric_limits<double>::max()})
+                       .first;
         score += tgtGd.getAmount() * gII->estimate;
     });
     return score;
@@ -153,7 +159,8 @@ void AI::trade() {
         storageProperty->forGood([this](const Good &gd) {
             Good wG(gd);
             traveler.withdraw(wG);
-            goodsInfo.insert({gd.getFullId(), true, Settings::aILimitFactor()});
+            goodsInfo.insert({gd.getFullId(), true, Settings::aILimitFactor(),
+                              std::numeric_limits<double>::max(), 0, 0, 0, std::numeric_limits<double>::max()});
         });
     // Clear offer and request from previous trade.
     traveler.clearTrade();

@@ -42,14 +42,20 @@ class Town;
 
 class Traveler;
 
-struct GoodInfo {
+class GoodInfo {
     unsigned int fullId;
     bool owned;
-    double limitFactor = 0; // factor controlling value based on min/max price
-    double minPrice = 0,
-           maxPrice = 0; // minimum and maximum price of material nearby
-    double estimate = 0, buy = 0,
-           sell = 0; // estimated value, maximum buy price, and minimum sell price
+    double limitFactor; // factor controlling value based on min/max price
+    double min,
+           max; // minimum and maximum price of material seen
+    double estimate, buy,
+           sell; // estimated value, maximum buy price, and minimum sell price
+public:
+    GoodInfo(unsigned int fId, bool ond);
+    GoodInfo(const Save::GoodInfo *ldGdInf);
+    double getEstimate() const { return estimate; }
+    double getBuy() const { return buy; }
+    double getSell() const { return sell; }
 };
 
 struct TownInfo {
