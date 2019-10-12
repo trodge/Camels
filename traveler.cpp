@@ -501,7 +501,7 @@ void Traveler::setTarget(Traveler *tgt) {
 
 void Traveler::setTarget(const std::unordered_set<Traveler *> &enms) {
     if (aI && (!target || !target->alive())) {
-        target = aI->target(enemies);
+        target = aI->target(enms);
         ++target->targeterCount;
     }
 }

@@ -251,6 +251,7 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
         [this, margin] {
             // Create the offer buttons for the player.
             SDL_Rect rt{margin, screenRect.h * 2 / 31, screenRect.w * 15 / 31, screenRect.h * 25 / 31};
+            pagers[1].setBounds(rt);
             BoxInfo bxInf = traveler->boxInfo();
             pagers[1].buttons(traveler->property(), bxInf, printer,
                               [](const Good &) { return [](MenuButton *) {}; });
@@ -394,8 +395,8 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
             pagers[2].setBounds(rt);
             bxInf.colors = target->getNation()->getColors();
             // Create buttons for looting goods.
-            pagers[2].buttons(target->property(), bxInf, printer, [this, target](const Good &gd) {
-                return [this, target, &gd](MenuButton *) {
+            pagers[2].buttons(target->property(), bxInf, printer, [this](const Good &gd) {
+                return [this, &gd](MenuButton *) {
                     Good lG(gd.getFullId(), gd.getAmount() * traveler->getPortion());
                     traveler->loot(lG);
                     setState(State::looting);

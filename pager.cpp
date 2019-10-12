@@ -94,7 +94,7 @@ void Pager::advancePage() {
 }
 
 void Pager::setPage(size_t pg) {
-    pageIt = begin(indices);
+    pageIt = begin(indices) + pg;
     setVisible();
 }
 
@@ -125,19 +125,17 @@ void Pager::buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
     boxes.reserve(ppt.goodCount());
     indices.push_back(0);
     ppt.forGood([this, fn, &bI, dx, dy, &pr](const Good &gd) {
-        if (true || (gd.getAmount() >= 0.01 && gd.getSplit()) || (gd.getAmount() >= 1.)) {
-            bI.onClick = fn(gd);
-            boxes.push_back(gd.button(true, bI, pr));
-            bI.rect.x += dx;
-            if (bI.rect.x + bI.rect.w > bounds.x + bounds.w) {
-                // Go back to left and down one row upon reaching right.
-                bI.rect.x = bounds.x;
-                bI.rect.y += dy;
-                if (bI.rect.y + bI.rect.h > bounds.y + bounds.h) {
-                    // Go back to top and flush current page upon reaching bottom.
-                    bI.rect.y = bounds.y;
-                    indices.push_back(boxes.size());
-                }
+        bI.onClick = fn(gd);
+        boxes.push_back(gd.button(true, bI, pr));
+        bI.rect.x += dx;
+        if (bI.rect.x + bI.rect.w > bounds.x + bounds.w) {
+            // Go back to left and down one row upon reaching right.
+            bI.rect.x = bounds.x;
+            bI.rect.y += dy;
+            if (bI.rect.y + bI.rect.h > bounds.y + bounds.h) {
+                // Go back to top and flush current page upon reaching bottom.
+                bI.rect.y = bounds.y;
+                indices.push_back(boxes.size());
             }
         }
     });
@@ -151,19 +149,17 @@ void Pager::buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
         dy = (bounds.h + m) / Settings::getBusinessButtonRows();
     bI.rect = {bounds.x, bounds.y, dx - m, dy - m};
     for (auto &bsn : ppt.getBusinesses()) {
-        if (true || (bsn.getArea() >= 0.01)) {
-            bI.onClick = fn(bsn);
-            boxes.push_back(bsn.button(true, bI, pr));
-            bI.rect.x += dx;
-            if (bI.rect.x + bI.rect.w > bounds.x + bounds.w) {
-                // Go back to left and down one row upon reaching right.
-                bI.rect.x = bounds.x;
-                bI.rect.y += dy;
-                if (bI.rect.y + bI.rect.h > bounds.y + bounds.h) {
-                    // Go back to top and create new page upon reaching bottom.
-                    bI.rect.y = bounds.y;
-                    indices.push_back(boxes.size());
-                }
+        bI.onClick = fn(bsn);
+        boxes.push_back(bsn.button(true, bI, pr));
+        bI.rect.x += dx;
+        if (bI.rect.x + bI.rect.w > bounds.x + bounds.w) {
+            // Go back to left and down one row upon reaching right.
+            bI.rect.x = bounds.x;
+            bI.rect.y += dy;
+            if (bI.rect.y + bI.rect.h > bounds.y + bounds.h) {
+                // Go back to top and create new page upon reaching bottom.
+                bI.rect.y = bounds.y;
+                indices.push_back(boxes.size());
             }
         }
     }

@@ -251,11 +251,12 @@ void AI::trade() {
     rng = byOwned.equal_range(false);
     decltype(rng.first) buyInfo; // info for good bought
     for (; rng.first != rng.second; ++rng.first) {
-        auto tnGd = townProperty.good(rng.first->getFullId());
+        
+        auto fId = rng.first->getFullId();
+        auto tnGd = townProperty.good(fId);
         if (!tnGd) return;
         double carry = tnGd->getCarry();
         if (!overWeight || carry < 0) {
-            auto fId = tnGd->getFullId();
             double score = rng.first->buyScore(tnGd->price()); // score based on maximum buy price
             // Weigh equip score double if not a trader or agent.
             double eqpScr = equipScore(*tnGd, equipment, stats) *
@@ -281,7 +282,7 @@ void AI::trade() {
                         excess += modf(amount, &amount);
                     // Convert the excess from units of bought good to deniers.
                     excess = tnGd->price(excess);
-                    bestGood = std::make_unique<Good>(tnGd->getFullId(), tnGd->getFullName(), amount, tnGd->getMeasure());
+                    bestGood = std::make_unique<Good>(fId, tnGd->getFullName(), amount, tnGd->getMeasure());
                     buyInfo = rng.first;
                 }
             }
