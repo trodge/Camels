@@ -77,7 +77,7 @@ struct Contract;
 class Traveler {
     std::string name;
     const Nation *nation;
-    Town *toTown, *fromTown;
+    Town *destination, *source, *home;
     std::vector<std::string> logText;
     Position position; // coordinates of traveler in world
     bool moving;
@@ -111,7 +111,8 @@ public:
     Traveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD);
     flatbuffers::Offset<Save::Traveler> save(flatbuffers::FlatBufferBuilder &b) const;
     std::string getName() const { return name; }
-    const Town *town() const { return toTown; }
+    const Town *town() const { return destination; }
+    const Town *getHome() const { return home; }
     const Nation *getNation() const { return nation; }
     const std::vector<std::string> &getLogText() const { return logText; }
     const Property &property() const { return properties.find(0)->second; }
@@ -142,6 +143,7 @@ public:
         return properties.find(0)->second.weight() + static_cast<double>(stats[Stat::strength]) * kTravelerCarry;
     }
     bool fightWon() const;
+    void setHome() { home = destination; }
     void choose(FightChoice c) { choice = c; }
     void setPortion(double p);
     void changePortion(double d);
@@ -213,7 +215,6 @@ struct Contract {
     Traveler *party; // the other party to this contract, or this if contract is a bid
     double owed;     // value holder will retain at end of contract
     double wage;     // value holder earns daily, in deniers
-    Town *town;      // town for calculating value of goods
 };
 
 template <class Source, class Destination>

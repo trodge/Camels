@@ -41,7 +41,7 @@ AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const Good
     : traveler(tvl), decisionCounter(Settings::aIDecisionCounter()),
       businessCounter(Settings::aIBusinessCounter()), decisionCriteria(dcC), goodsInfo(gsI), role(rl) {
     auto town = traveler.town();
-    if (role >= AIRole::agent) home = town;
+    if (role >= AIRole::agent) traveler.setHome();
     auto &townProperty = town->getProperty();
     traveler.createAIGoods(role);
     // Insert full ids of owned goods into goods info.
@@ -221,6 +221,7 @@ void AI::trade() {
         restockPlans;                     // plans to restock businesses in current town
     BusinessPlan *bestPlan = nullptr;     // pointer to highest scoring business plan
     if (role == AIRole::trader) {
+        auto home = traveler.getHome();
         if (++businessCounter >= 0 && (!home || town == home)) {
             // Find best business scored based on requirements, inputs, and outputs.
             buildPlans = townProperty.buildPlans(travelerProperty, offerValue);
@@ -303,7 +304,7 @@ void AI::trade() {
         traveler.makeTrade();
         byOwned.modify(sellInfo, setOwned(false));
         if (bestPlan->build) {
-            home = town;
+            traveler.setHome();
             traveler.build(bestPlan->business, bestPlan->factor);
         }
         if (!storageProperty) storageProperty = traveler.property(townId);
@@ -573,7 +574,7 @@ void AI::update(unsigned int elTm) {
         decisionCounter += elTm;
         if (decisionCounter > 0) {
             decisionCounter -= Settings::getAIDecisionTime();
-            auto town = traveler.town();
+            auto town = traveler.town(), home = traveler.getHome();
             if (role >= AIRole::agent) {
                 // AI role is employee.
                 auto contract = traveler.getContract();

@@ -20,8 +20,8 @@
 #include "traveler.hpp"
 
 Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
-    : name(n), nation(tn->getNation()), toTown(tn), fromTown(tn), position(tn->getPosition()), moving(false),
-      portion(1), reputation(gD.nationCount), gameData(gD) {
+    : name(n), nation(tn->getNation()), destination(tn), source(tn), position(tn->getPosition()),
+      moving(false), portion(1), reputation(gD.nationCount), gameData(gD) {
     // Copy goods vector from nation.
     properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
                        std::forward_as_tuple(false, &tn->getNation()->getProperty()));
@@ -36,8 +36,8 @@ Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
 
 Traveler::Traveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD)
     : name(ldTvl->name()->str()), nation(&nts[static_cast<size_t>(ldTvl->nation() - 1)]),
-      toTown(&tns[static_cast<size_t>(ldTvl->toTown() - 1)]),
-      fromTown(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]),
+      destination(&tns[static_cast<size_t>(ldTvl->toTown() - 1)]),
+      source(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]), home(nullptr),
       position(ldTvl->longitude(), ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
     auto ldLog = ldTvl->log();
     std::transform(ldLog->begin(), ldLog->end(), std::back_inserter(logText),
@@ -73,11 +73,11 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto svEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
     if (aI)
-        return Save::CreateTraveler(b, svName, toTown->getId(), fromTown->getId(), nation->getId(), svLog,
+        return Save::CreateTraveler(b, svName, destination->getId(), source->getId(), nation->getId(), svLog,
                                     position.getLongitude(), position.getLatitude(), svProperties, svStats,
                                     svParts, svEquipment, aI->save(b), moving);
     else
-        return Save::CreateTraveler(b, svName, toTown->getId(), fromTown->getId(), nation->getId(), svLog,
+        return Save::CreateTraveler(b, svName, destination->getId(), source->getId(), nation->getId(), svLog,
                                     position.getLongitude(), position.getLatitude(), svProperties, svStats,
                                     svParts, svEquipment, 0, moving);
 }
@@ -87,9 +87,9 @@ std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
     std::forward_list<Town *> path;
     std::unordered_map<Town *, Town *> from;
     // the town which each town can be most efficiently reached from
-    std::unordered_map<Town *, int> distSqTo({{toTown, 0}});
+    std::unordered_map<Town *, int> distSqTo({{destination, 0}});
     // distance along route to each town
-    std::unordered_map<Town *, int> distSqEst({{toTown, toTown->distSq(tn)}});
+    std::unordered_map<Town *, int> distSqEst({{destination, destination->distSq(tn)}});
     // estimated distance along route through each town to goal
     std::unordered_set<Town *> closed;
     // set of towns already evaluated
@@ -100,7 +100,7 @@ std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
     };
     std::set<Town *, decltype(shortest)> open(shortest);
     // set of discovered towns not yet evaluated sorted so that closest is first
-    open.insert(toTown);
+    open.insert(destination);
     while (!open.empty()) {
         // Find current town with lowest distance.
         Town *current = *begin(open);
@@ -138,7 +138,7 @@ int Traveler::pathDistSq(const Town *tn) const {
     // Return the distance to tn along shortest path.
     const std::forward_list<Town *> &path = pathTo(tn);
     int distSq = 0;
-    const Town *m = toTown;
+    const Town *m = destination;
     for (auto &n : path) {
         distSq += m->distSq(n);
         m = n;
@@ -146,7 +146,7 @@ int Traveler::pathDistSq(const Town *tn) const {
     return distSq;
 }
 
-void Traveler::addToTown() { toTown->addTraveler(this); }
+void Traveler::addToTown() { destination->addTraveler(this); }
 
 bool Traveler::fightWon() const {
     // Returns true if there are enemies and none of them are alive and want to fight.
@@ -171,11 +171,11 @@ void Traveler::pickTown(const Town *tn) {
     // Start moving toward given town.
     if (weight() > 0 || moving) return;
     const auto &path = pathTo(tn);
-    if (path.empty() || path.front() == toTown) return;
-    toTown = path.front();
+    if (path.empty() || path.front() == destination) return;
+    destination = path.front();
     moving = true;
     forEmployee({AIRole::guard, AIRole::thug}, [this](Traveler *epl) {
-        epl->toTown = toTown;
+        epl->destination = destination;
         epl->moving = true;
     });
 }
@@ -207,10 +207,10 @@ void Traveler::makeTrade() {
     if (offer.empty() || request.empty()) return;
     auto &ppt = properties.find(0)->second;
     std::string logEntry = name + " trades ";
-    transfer(offer, ppt, *toTown, logEntry);
+    transfer(offer, ppt, *destination, logEntry);
     logEntry += " for ";
-    transfer(request, *toTown, ppt, logEntry);
-    logEntry += " in " + toTown->getName() + ".";
+    transfer(request, *destination, ppt, logEntry);
+    logEntry += " in " + destination->getName() + ".";
     logText.push_back(logEntry);
 }
 
@@ -219,7 +219,7 @@ void Traveler::divideExcess(double exc, double tnP) {
     exc /= static_cast<double>(offer.size());
     for (auto &of : offer) {
         // Convert value to quantity of this good.
-        auto tG = toTown->getProperty().good(of.getFullId()); // pointer to town good
+        auto tG = destination->getProperty().good(of.getFullId()); // pointer to town good
         double q = tG->quantity(exc / tnP);
         if (!tG->getSplit()) q = floor(q);
         // Reduce quantity.
@@ -234,7 +234,8 @@ Property &Traveler::makeProperty(unsigned int tId) {
         // Property has not been created yet.
         pptIt = properties
                     .emplace(std::piecewise_construct, std::forward_as_tuple(tId),
-                             std::forward_as_tuple(toTown->getProperty().getCoastal(), &toTown->getNation()->getProperty()))
+                             std::forward_as_tuple(destination->getProperty().getCoastal(),
+                                                   &destination->getNation()->getProperty()))
                     .first;
     return pptIt->second;
 }
@@ -242,23 +243,23 @@ Property &Traveler::makeProperty(unsigned int tId) {
 void Traveler::deposit(Good &g) {
     // Put the given good in storage in the current town.
     properties.find(0)->second.take(g);
-    makeProperty(toTown->getId()).put(g);
+    makeProperty(destination->getId()).put(g);
 }
 
 void Traveler::withdraw(Good &g) {
     // Take the given good from storage in the current town.
-    makeProperty(toTown->getId()).take(g);
+    makeProperty(destination->getId()).take(g);
     properties.find(0)->second.put(g);
 }
 
 void Traveler::build(const Business &bsn, double a) {
     // Build the given area of the given business. Check requirements before calling.
-    makeProperty(toTown->getId()).build(bsn, a);
+    makeProperty(destination->getId()).build(bsn, a);
 }
 
 void Traveler::demolish(const Business &bsn, double a) {
     // Demolish the given area of the given business. Check area before calling.
-    makeProperty(toTown->getId()).demolish(bsn, a);
+    makeProperty(destination->getId()).demolish(bsn, a);
 }
 
 void Traveler::unequip(Part pt) {
@@ -314,13 +315,13 @@ void Traveler::equip(Part pt) {
 void Traveler::bid(double add, double wge) {
     // Add bid to current town with given addend and wage.
     contract = std::unique_ptr<Contract>(
-        new Contract{this, toTown->getProperty().totalValue(properties.find(0)->second) + add, wge, toTown});
-    toTown->addBid(*contract);
+        new Contract{this, destination->getProperty().totalValue(properties.find(0)->second) + add, wge});
+    destination->addBid(*contract);
 }
 
 void Traveler::hire(size_t idx) {
     // Hire the traveler with the given bid index.
-    auto bid = toTown->takeBid(idx);
+    auto bid = destination->takeBid(idx);
     auto employee = bid.party;
     employees.insert({employee->aI->getRole(), employee});
     bid.party = this;
@@ -360,17 +361,17 @@ void Traveler::dismiss(Traveler *epl) {
 
 std::vector<Traveler *> Traveler::attackable() const {
     // Get a vector of attackable travelers.
-    auto &forwardTravelers = fromTown->getTravelers(); // travelers traveling from the same town
-    auto &backwardTravelers = toTown->getTravelers();  // travelers traveling from the destination town
+    auto &forwardTravelers = source->getTravelers();       // travelers traveling from the same town
+    auto &backwardTravelers = destination->getTravelers(); // travelers traveling from the destination town
     std::vector<Traveler *> able;
     able.insert(end(able), begin(forwardTravelers), end(forwardTravelers));
-    if (fromTown != toTown) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
+    if (source != destination) able.insert(end(able), begin(backwardTravelers), end(backwardTravelers));
     if (!able.empty()) {
         // Eliminate travelers which have reached town, are too far away, or are this traveler.
         int aDstSq = Settings::getAttackDistSq();
         able.erase(std::remove_if(begin(able), end(able),
                                   [this, aDstSq](Traveler *tg) {
-                                      return tg->toTown == tg->fromTown ||
+                                      return tg->destination == tg->source ||
                                              position.distSq(tg->position) > aDstSq || tg == this;
                                   }),
                    end(able));
@@ -448,7 +449,7 @@ void Traveler::disengage() {
         // Clear enemy's target if it is this or an ally.
         if (enemy->target == this || allies.find(enemy->target) != end(allies)) enemy->target = nullptr;
         // Remove enemy from town so that it can't be attacked again.
-        enemy->fromTown->removeTraveler(target);
+        enemy->source->removeTraveler(target);
         // Set dead to true if enemy is not alive.
         enemy->dead = !enemy->alive();
     }
@@ -635,19 +636,19 @@ void Traveler::update(unsigned int elTm) {
     if (aI) aI->update(elTm);
     for (auto &ppt : properties) ppt.second.update(elTm);
     if (moving) {
-        moving = position.stepToward(
-            toTown->getPosition(), static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength()));
+        moving = position.stepToward(destination->getPosition(),
+                                     static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength()));
         if (!moving) {
             // We reached the target town.
-            fromTown->removeTraveler(this);
-            fromTown = toTown;
-            toTown->addTraveler(this);
+            source->removeTraveler(this);
+            source = destination;
+            destination->addTraveler(this);
             logText.push_back(
                 name + " has arrived in the " +
-                gameData.populationAdjectives.lower_bound(toTown->getProperty().getPopulation())->second +
-                " " + toTown->getNation()->getAdjective() + " " +
-                gameData.townTypeNames[toTown->getProperty().getTownType()] + " of " + toTown->getName() +
-                ".");
+                gameData.populationAdjectives.lower_bound(destination->getProperty().getPopulation())->second +
+                " " + destination->getNation()->getAdjective() + " " +
+                gameData.townTypeNames[destination->getProperty().getTownType()] + " of " +
+                destination->getName() + ".");
         }
     }
     for (auto enemy : enemies) {
@@ -697,15 +698,15 @@ void Traveler::update(unsigned int elTm) {
     }
 }
 
-void Traveler::toggleMaxGoods() { toTown->toggleMaxGoods(); }
+void Traveler::toggleMaxGoods() { destination->toggleMaxGoods(); }
 
-void Traveler::resetTown() { toTown->reset(); }
+void Traveler::resetTown() { destination->reset(); }
 
 void Traveler::adjustAreas(const std::vector<TextBox *> &bxs, double mM) {
     std::vector<MenuButton *> requestButtons;
     std::transform(begin(bxs), end(bxs), std::back_inserter(requestButtons),
                    [](auto rB) { return dynamic_cast<MenuButton *>(rB); });
-    toTown->adjustAreas(requestButtons, mM);
+    destination->adjustAreas(requestButtons, mM);
 }
 
 void Traveler::adjustDemand(const std::vector<TextBox *> &bxs, double mM) {
@@ -713,7 +714,7 @@ void Traveler::adjustDemand(const std::vector<TextBox *> &bxs, double mM) {
     std::vector<MenuButton *> requestButtons;
     std::transform(begin(bxs), end(bxs), std::back_inserter(requestButtons),
                    [](auto rB) { return dynamic_cast<MenuButton *>(rB); });
-    toTown->adjustDemand(requestButtons, mM);
+    destination->adjustDemand(requestButtons, mM);
 }
 
 template <class Source, class Destination>

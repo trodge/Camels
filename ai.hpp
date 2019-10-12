@@ -90,7 +90,6 @@ class AI {
     GoodInfoContainer goodsInfo;  // known information about each good by full id
     std::vector<TownInfo> nearby; // known information about nearby towns
     AIRole role;                  // behavior for this ai
-    const Town *home = nullptr;
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
     double attackScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
