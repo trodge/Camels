@@ -353,8 +353,8 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) GoodInfo FLATBUFFERS_FINAL_CLASS {
   uint8_t owned_;
   int8_t padding0__;  int16_t padding1__;
   double limitFactor_;
-  double minPrice_;
-  double maxPrice_;
+  double min_;
+  double max_;
   double estimate_;
   double buy_;
   double sell_;
@@ -363,14 +363,14 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) GoodInfo FLATBUFFERS_FINAL_CLASS {
   GoodInfo() {
     memset(static_cast<void *>(this), 0, sizeof(GoodInfo));
   }
-  GoodInfo(uint32_t _fullId, bool _owned, double _limitFactor, double _minPrice, double _maxPrice, double _estimate, double _buy, double _sell)
+  GoodInfo(uint32_t _fullId, bool _owned, double _limitFactor, double _min, double _max, double _estimate, double _buy, double _sell)
       : fullId_(flatbuffers::EndianScalar(_fullId)),
         owned_(flatbuffers::EndianScalar(static_cast<uint8_t>(_owned))),
         padding0__(0),
         padding1__(0),
         limitFactor_(flatbuffers::EndianScalar(_limitFactor)),
-        minPrice_(flatbuffers::EndianScalar(_minPrice)),
-        maxPrice_(flatbuffers::EndianScalar(_maxPrice)),
+        min_(flatbuffers::EndianScalar(_min)),
+        max_(flatbuffers::EndianScalar(_max)),
         estimate_(flatbuffers::EndianScalar(_estimate)),
         buy_(flatbuffers::EndianScalar(_buy)),
         sell_(flatbuffers::EndianScalar(_sell)) {
@@ -385,11 +385,11 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) GoodInfo FLATBUFFERS_FINAL_CLASS {
   double limitFactor() const {
     return flatbuffers::EndianScalar(limitFactor_);
   }
-  double minPrice() const {
-    return flatbuffers::EndianScalar(minPrice_);
+  double min() const {
+    return flatbuffers::EndianScalar(min_);
   }
-  double maxPrice() const {
-    return flatbuffers::EndianScalar(maxPrice_);
+  double max() const {
+    return flatbuffers::EndianScalar(max_);
   }
   double estimate() const {
     return flatbuffers::EndianScalar(estimate_);

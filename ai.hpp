@@ -25,6 +25,7 @@
 
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
+#include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index_container.hpp>
 
 namespace mi = boost::multi_index;
@@ -45,19 +46,23 @@ class Traveler;
 class GoodInfo {
     unsigned int fullId;
     bool owned;
-    double limitFactor; // factor controlling value based on min/max price
-    double min,
-        max; // minimum and maximum price of material seen
-    double estimate, buy,
-        sell; // estimated value, maximum buy price, and minimum sell price
+    double limitFactor, // factor controlling value based on min/max price
+    min, max, // minimum and maximum price of material seen
+    estimate, buy, sell; // estimated value, maximum buy price, and minimum sell price
 public:
     GoodInfo(unsigned int fId, bool ond);
     GoodInfo(const Save::GoodInfo *ldGdInf);
+    Save::GoodInfo save() const;
+    unsigned int getFullId() const { return fullId; }
+    bool getOwned() const { return owned; }
     double getEstimate() const { return estimate; }
     double getBuy() const { return buy; }
     double getSell() const { return sell; }
-    void setMin(double mn) { min = std::min(mn, min); }
-    void setMax(double mx) { max = std::max(mx, max); }
+    double buyScore(double prc) const { return prc == 0 ? 0 : buy / prc; }  // score selling at price p
+    double sellScore(double prc) const { return sell == 0 ? 0 : prc / sell; } // score buying at price p
+    void setOwned(bool ond) { owned = ond; }
+    void setMinMax(double m) { min = std::min(m, min); max = std::max(m, max); }
+    void appraise(double tnPft);
 };
 
 struct TownInfo {
@@ -74,8 +79,8 @@ class AI {
         businessCounter;                                  // counter for making business decisions
     EnumArray<double, DecisionCriteria> decisionCriteria; /* buy/sell score
     weight, weapon/armor equip score, tendency to fight/run/yield, looting greed */
-    using FlId = mi::member<GoodInfo, unsigned int, &GoodInfo::fullId>;
-    using Ownd = mi::member<GoodInfo, bool, &GoodInfo::owned>;
+    using FlId = mi::const_mem_fun<GoodInfo, unsigned int, &GoodInfo::getFullId>;
+    using Ownd = mi::const_mem_fun<GoodInfo, bool, &GoodInfo::getOwned>;
     using FlIdHsh = mi::hashed_unique<mi::tag<struct FullId>, FlId>;
     using OwndHsh = mi::hashed_non_unique<mi::tag<struct Owned>, Ownd>;
     using GoodInfoContainer = boost::multi_index_container<GoodInfo, mi::indexed_by<FlIdHsh, OwndHsh>>;
@@ -85,8 +90,6 @@ class AI {
     const Town *home = nullptr;
     void setNearby(const Town *t, const Town *tT, unsigned int i);
     void setLimits();
-    static double buyScore(double p, double b) { return p == 0 ? 0 : b / p; }  // score selling at price p
-    static double sellScore(double p, double s) { return s == 0 ? 0 : p / s; } // score buying at price p
     double attackScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;
     double attackScore(const std::vector<Good> &eqpmt, const EnumArray<unsigned int, Stat> &sts) const;
     double defenseScore(const Good &eq, const EnumArray<unsigned int, Stat> &sts) const;

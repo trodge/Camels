@@ -26,8 +26,8 @@ struct GoodInfo {
     fullId:uint;
     owned:bool;
     limitFactor:double;
-    minPrice:double;
-    maxPrice:double;
+    min:double;
+    max:double;
     estimate:double;
     buy:double;
     sell:double;
