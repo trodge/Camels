@@ -56,6 +56,8 @@ public:
     double getEstimate() const { return estimate; }
     double getBuy() const { return buy; }
     double getSell() const { return sell; }
+    void setMin(double mn) { min = std::min(mn, min); }
+    void setMax(double mx) { max = std::max(mx, max); }
 };
 
 struct TownInfo {
