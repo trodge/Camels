@@ -47,9 +47,9 @@ class GoodInfo {
     bool owned;
     double limitFactor; // factor controlling value based on min/max price
     double min,
-           max; // minimum and maximum price of material seen
+        max; // minimum and maximum price of material seen
     double estimate, buy,
-           sell; // estimated value, maximum buy price, and minimum sell price
+        sell; // estimated value, maximum buy price, and minimum sell price
 public:
     GoodInfo(unsigned int fId, bool ond);
     GoodInfo(const Save::GoodInfo *ldGdInf);

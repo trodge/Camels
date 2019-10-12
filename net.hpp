@@ -28,8 +28,9 @@ class Node {
 
 class Net {
     std::vector<std::vector<Node>> layers;
+
 public:
     Net(const std::vector<unsigned int> &sz);
-}; 
+};
 
 #endif // NET_H

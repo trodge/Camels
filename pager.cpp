@@ -162,7 +162,7 @@ void Pager::buttons(const Property &ppt, BoxInfo &bI, Printer &pr,
                 if (bI.rect.y + bI.rect.h > bounds.y + bounds.h) {
                     // Go back to top and create new page upon reaching bottom.
                     bI.rect.y = bounds.y;
-                    indices.push_back(boxes.size());                    
+                    indices.push_back(boxes.size());
                 }
             }
         }

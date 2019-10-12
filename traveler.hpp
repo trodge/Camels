@@ -91,7 +91,7 @@ class Traveler {
     std::unordered_multimap<AIRole, Traveler *> employees; // travelers employed by role
     std::unique_ptr<Contract> contract;                    // contract with employer, if any
     std::unordered_set<Traveler *> enemies, allies;        // travelers currently fighting
-    Traveler *target;                            // current target for attacks
+    Traveler *target;                                      // current target for attacks
     unsigned int targeterCount;                            // number of enemies targeting this traveler
     std::unique_ptr<CombatHit> nextHit;                    // next hit on target
     double fightTime;                                      // time left to fight this round

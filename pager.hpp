@@ -23,8 +23,8 @@
 #include <memory>
 #include <vector>
 
-#include "textbox.hpp"
 #include "property.hpp"
+#include "textbox.hpp"
 
 enum class State {
     starting,

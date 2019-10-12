@@ -21,7 +21,5 @@
 
 Net::Net(const std::vector<unsigned int> &sz) {
     layers.reserve(sz.size());
-    for (auto s : sz) {
-        layers.push_back(std::vector<Node>(s));
-    }
+    for (auto s : sz) { layers.push_back(std::vector<Node>(s)); }
 }

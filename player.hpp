@@ -74,7 +74,6 @@ class Player {
     void requestGoods(size_t ofCnt, double ofVl);
     void updateTradeButtons();
 
-
 public:
     Player(Game &g);
     bool getStop() const { return stop; }
