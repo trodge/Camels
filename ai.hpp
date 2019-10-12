@@ -24,8 +24,8 @@
 #include <memory>
 
 #include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/member.hpp>
 #include <boost/multi_index/mem_fun.hpp>
+#include <boost/multi_index/member.hpp>
 #include <boost/multi_index_container.hpp>
 
 namespace mi = boost::multi_index;
@@ -46,9 +46,9 @@ class Traveler;
 class GoodInfo {
     unsigned int fullId;
     bool owned;
-    double limitFactor, // factor controlling value based on min/max price
-    min, max, // minimum and maximum price of material seen
-    estimate, buy, sell; // estimated value, maximum buy price, and minimum sell price
+    double limitFactor,      // factor controlling value based on min/max price
+        min, max,            // minimum and maximum price of material seen
+        estimate, buy, sell; // estimated value, maximum buy price, and minimum sell price
 public:
     GoodInfo(unsigned int fId, bool ond);
     GoodInfo(const Save::GoodInfo *ldGdInf);
@@ -58,10 +58,13 @@ public:
     double getEstimate() const { return estimate; }
     double getBuy() const { return buy; }
     double getSell() const { return sell; }
-    double buyScore(double prc) const { return prc == 0 ? 0 : buy / prc; }  // score selling at price p
+    double buyScore(double prc) const { return prc == 0 ? 0 : buy / prc; }    // score selling at price p
     double sellScore(double prc) const { return sell == 0 ? 0 : prc / sell; } // score buying at price p
     void setOwned(bool ond) { owned = ond; }
-    void setMinMax(double m) { min = std::min(m, min); max = std::max(m, max); }
+    void setMinMax(double m) {
+        min = std::min(m, min);
+        max = std::max(m, max);
+    }
     void appraise(double tnPft);
 };
 

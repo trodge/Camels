@@ -268,7 +268,8 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
 
                     }),
                 printer));
-        }};
+        },
+        3};
     uIStates[State::attacking] = {
         {Settings::boxInfo({screenRect.w * 7 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Cancel (A)ttack"},
                            BoxSizeType::small, SDLK_a, [this](MenuButton *) { setState(State::traveling); })},

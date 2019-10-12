@@ -24,9 +24,8 @@ GoodInfo::GoodInfo(unsigned int fId, bool ond)
       max(0), estimate(0), buy(0), sell(std::numeric_limits<double>::max()) {}
 
 GoodInfo::GoodInfo(const Save::GoodInfo *ldGdInf)
-    : fullId(ldGdInf->fullId()), owned(ldGdInf->owned()), limitFactor(ldGdInf->limitFactor()),
-      min(ldGdInf->min()), max(ldGdInf->max()), estimate(ldGdInf->estimate()), buy(ldGdInf->buy()),
-      sell(ldGdInf->sell()) {}
+    : fullId(ldGdInf->fullId()), owned(ldGdInf->owned()), limitFactor(ldGdInf->limitFactor()), min(ldGdInf->min()),
+      max(ldGdInf->max()), estimate(ldGdInf->estimate()), buy(ldGdInf->buy()), sell(ldGdInf->sell()) {}
 
 Save::GoodInfo GoodInfo::save() const {
     return Save::GoodInfo(fullId, owned, limitFactor, min, max, estimate, buy, sell);
@@ -34,8 +33,8 @@ Save::GoodInfo GoodInfo::save() const {
 
 void GoodInfo::appraise(double tnPft) {
     estimate = min + limitFactor * (max - min);
-            buy = estimate * tnPft;
-            sell = estimate / tnPft;
+    buy = estimate * tnPft;
+    sell = estimate / tnPft;
 }
 
 AI::AI(Traveler &tvl, const EnumArray<double, DecisionCriteria> &dcC, const GoodInfoContainer &gsI, AIRole rl)
