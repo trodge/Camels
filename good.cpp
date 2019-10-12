@@ -23,9 +23,9 @@ Good::Good(const Save::Good *ldGd)
     : goodId(ldGd->goodId()), materialId(ldGd->materialId()), fullId(ldGd->fullId()),
       goodName(ldGd->goodName()->str()), materialName(ldGd->materialName()->str()), fullName(completeName()),
       amount(ldGd->amount()), perish(ldGd->perish()), carry(ldGd->carry()), measure(ldGd->measure()->str()),
-      split(!measure.empty()), consumptionRate(ldGd->consumptionRate()), demandSlope(ldGd->demandSlope()),
+      consumptionRate(ldGd->consumptionRate()), demandSlope(ldGd->demandSlope()),
       demandIntercept(ldGd->demandIntercept()), minPrice(demandIntercept / Settings::getMinPriceDivisor()),
-      lastAmount(amount) {}
+      split(!measure.empty()), lastAmount(amount) {}
 
 flatbuffers::Offset<Save::Good> Good::save(flatbuffers::FlatBufferBuilder &b) const {
     auto svGoodName = b.CreateString(goodName);

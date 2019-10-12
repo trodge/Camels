@@ -611,7 +611,7 @@ void Game::handleEvents() {
     // Handle events since last poll.
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        Uint8 r, g, b;
+        /*Uint8 r, g, b;
         int mx, my, mw, mh;
         switch (event.type) {
         case SDL_MOUSEBUTTONDOWN:
@@ -620,12 +620,12 @@ void Game::handleEvents() {
             my = event.button.y + mapView.y;
             mw = mapView.w;
             mh = mapView.h;
-            /*if (mx >= 0 && mx < mw && my >= 0 && my < mh) {
+            if (mx >= 0 && mx < mw && my >= 0 && my < mh) {
                 SDL_GetRGB(getAt(mapSurface.get(), mx, my), mapSurface->format, &r, &g, &b);
                 std::cout << "Clicked Color: (" << int(r) << ", " << int(g) << ", " << int(b) << ")" << std::endl;
-            }*/
+            }
             break;
-        }
+        }*/
         player->handleEvent(event);
     }
 }
