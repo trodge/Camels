@@ -30,7 +30,7 @@ int Position::distSq(const Position &pos) const {
 }
 
 bool Position::stepToward(const Position &pos, double tm) {
-    // Take a step toward given position for given time. Return true if position reached otherwise return false.
+    // Take a step toward given position for given time. Return false if position reached otherwise return true.
     double dlt = pos.latitude - latitude;
     double dlg = pos.longitude - longitude;
     double ds = dlt * dlt + dlg * dlg;
@@ -44,12 +44,12 @@ bool Position::stepToward(const Position &pos, double tm) {
             longitude += copysign(sqrt(dxs), dlg);
         } else
             latitude += copysign(tm, dlt);
-        return false;
+        return true;
     }
     // We have reached the destination.
     latitude = pos.latitude;
     longitude = pos.longitude;
-    return true;
+    return false;
 }
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col) {
@@ -84,19 +84,20 @@ void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col)
 
 void drawCircle(SDL_Renderer *s, const SDL_Point &c, int r, SDL_Color col, bool fl) {
     // Draw a circle on s with center c, radius r and color col, either filled or not filled.
-    std::vector<SDL_Point> ps;
+    std::vector<SDL_Point> points;
     if (fl) {
         // filled circle
-        ps.reserve(static_cast<size_t>(kPi * r * r + 1));
+        points.reserve(static_cast<size_t>(kPi * r * r + 1));
         for (int x = -r; x <= r; ++x)
             for (int y = -r; y <= r; ++y)
-                if ((x * x) + (y * y) <= r * r) ps.push_back({c.x + x, c.y + y});
+                if ((x * x) + (y * y) <= r * r) points.push_back({c.x + x, c.y + y});
     } else {
-        ps.reserve(static_cast<size_t>(kPi * r * 2 + 1));
+        points.reserve(static_cast<size_t>(kPi * r * 2 + 1));
         int x = 0;
         int y = r;
         int d = 1 - r;
-        addCircleSymmetryPoints(ps, c, {x, y});
+        auto symmetryPoints = circleSymmetryPoints(c, {x, y});
+        points.insert(end(points), begin(symmetryPoints), end(symmetryPoints));
         while (x < y) {
             ++x;
             if (d < 0) {
@@ -105,22 +106,23 @@ void drawCircle(SDL_Renderer *s, const SDL_Point &c, int r, SDL_Color col, bool 
                 --y;
                 d += ((x - y) << 1) + 1;
             }
-            addCircleSymmetryPoints(ps, c, {x, y});
+            symmetryPoints = circleSymmetryPoints(c, {x, y});
+            points.insert(end(points), begin(symmetryPoints), end(symmetryPoints));
         }
     }
     SDL_SetRenderDrawColor(s, col.r, col.g, col.b, col.a);
-    SDL_RenderDrawPoints(s, ps.data(), static_cast<int>(ps.size()));
+    SDL_RenderDrawPoints(s, points.data(), static_cast<int>(points.size()));
 }
 
-void addCircleSymmetryPoints(std::vector<SDL_Point> ps, const SDL_Point &c, const SDL_Point &p) {
-    ps.push_back({(c.x + p.x), (c.y + p.y)});
-    ps.push_back({(c.x + p.x), (c.y - p.y)});
-    ps.push_back({(c.x - p.x), (c.y + p.y)});
-    ps.push_back({(c.x - p.x), (c.y - p.y)});
-    ps.push_back({(c.x + p.y), (c.y + p.x)});
-    ps.push_back({(c.x + p.y), (c.y - p.x)});
-    ps.push_back({(c.x - p.y), (c.y + p.x)});
-    ps.push_back({(c.x - p.y), (c.y - p.x)});
+std::array<SDL_Point, 8> circleSymmetryPoints(const SDL_Point &c, const SDL_Point &p) {
+    return {{{(c.x + p.x), (c.y + p.y)},
+             {(c.x + p.x), (c.y - p.y)},
+             {(c.x - p.x), (c.y + p.y)},
+             {(c.x - p.x), (c.y - p.y)},
+             {(c.x + p.y), (c.y + p.x)},
+             {(c.x + p.y), (c.y - p.x)},
+             {(c.x - p.y), (c.y + p.x)},
+             {(c.x - p.y), (c.y - p.x)}}};
 }
 
 Uint32 getAt(SDL_Surface *s, const SDL_Point &pt) {

@@ -251,7 +251,6 @@ void AI::trade() {
     rng = byOwned.equal_range(false);
     decltype(rng.first) buyInfo; // info for good bought
     for (; rng.first != rng.second; ++rng.first) {
-        
         auto fId = rng.first->getFullId();
         auto tnGd = townProperty.good(fId);
         if (!tnGd) return;

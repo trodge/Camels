@@ -635,7 +635,7 @@ void Traveler::update(unsigned int elTm) {
     if (aI) aI->update(elTm);
     for (auto &ppt : properties) ppt.second.update(elTm);
     if (moving) {
-        moving = !position.stepToward(
+        moving = position.stepToward(
             toTown->getPosition(), static_cast<double>(elTm) / static_cast<double>(Settings::getDayLength()));
         if (!moving) {
             // We reached the target town.

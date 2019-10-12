@@ -295,12 +295,12 @@ void Game::loadData(sqlite3 *cn) {
     unsigned int bId = 1;
     while (sqlite3_step(q) != SQLITE_DONE) {
         size_t modeCount = sqlite3_column_int(q, 1);
-        businesses.push_back(
-            Business(static_cast<unsigned int>(sqlite3_column_int(q, 0)), 1,
-                     std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
-                     static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
-                     static_cast<bool>(sqlite3_column_int(q, 5)),
-                     {{sqlite3_column_double(q, 6), sqlite3_column_double(q, 7), sqlite3_column_double(q, 8)}}));
+        businesses.push_back(Business(
+            static_cast<unsigned int>(sqlite3_column_int(q, 0)), 1,
+            std::string(reinterpret_cast<const char *>(sqlite3_column_text(q, 2))),
+            static_cast<bool>(sqlite3_column_int(q, 3)), static_cast<bool>(sqlite3_column_int(q, 4)),
+            static_cast<bool>(sqlite3_column_int(q, 5)),
+            {{sqlite3_column_double(q, 6), sqlite3_column_double(q, 7), sqlite3_column_double(q, 8)}}));
         for (unsigned int bMd = 2; bMd <= modeCount; ++bMd)
             businesses.push_back(Business(businesses.back(), bMd));
     }

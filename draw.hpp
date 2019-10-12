@@ -94,7 +94,7 @@ inline Texture textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, con
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);
 void drawCircle(SDL_Renderer *s, const SDL_Point &c, int r, SDL_Color col, bool fl);
-void addCircleSymmetryPoints(std::vector<SDL_Point> ps, const SDL_Point &c, const SDL_Point &p);
+std::array<SDL_Point, 8> circleSymmetryPoints(const SDL_Point &c, const SDL_Point &p);
 Uint32 getAt(SDL_Surface *s, const SDL_Point &pt);
 void setAt(SDL_Surface *s, const SDL_Point &pt, Uint32 color);
 
