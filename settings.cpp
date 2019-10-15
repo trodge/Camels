@@ -277,14 +277,19 @@ void Settings::save(const fs::path &p) {
     pt::write_ini(p.string(), tree);
 }
 
-template <typename T> auto Settings::randomChoice(const std::vector<T> &options, size_t count) {
+template <typename T> auto Settings::randomChoice(const T &options, size_t count) {
     std::unordered_set<size_t> indices;
     std::uniform_int_distribution<size_t> iDis(0, options.size() - 1);
     while (indices.size() < count) indices.insert(iDis(rng));
-    std::vector<T> chosen;
+    T chosen;
     chosen.reserve(count);
     for (auto idx : indices) chosen.push_back(options[idx]);
     return chosen;
+}
+
+double Settings::random(double min, double max) {
+    std::uniform_real_distribution<double> rDis(min, max);
+    return rDis(rng);
 }
 
 double Settings::random() {

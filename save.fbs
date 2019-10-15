@@ -76,8 +76,9 @@ enum Status : uint { normal, bruised, wounded, broken, infected, pulverized, amp
 
 table Traveler {
     name:string;
-    toTown:uint;
-    fromTown:uint;
+    destination:uint;
+    source:uint;
+    home:int;
     nation:uint;
     log:[string];
     longitude:double;

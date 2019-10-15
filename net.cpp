@@ -19,7 +19,11 @@
 
 #include "net.hpp"
 
-Net::Net(const std::vector<unsigned int> &sz) {
-    layers.reserve(sz.size());
-    for (auto s : sz) { layers.push_back(std::vector<Node>(s)); }
+Node::Node(size_t nLSz) : value(Settings::random(-1, 1)), weights(nLSz) {
+    std::generate(begin(weights), end(weights), []() { return Settings::random(); });
+}
+
+Net::Net(const std::vector<unsigned int> &szs) {
+    layers.reserve(szs.size());
+    for (auto sz : szs) { layers.push_back(std::vector<Node>(sz)); }
 }

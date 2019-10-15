@@ -191,7 +191,8 @@ public:
     template <typename T> static auto &randomChoice(const T &options) {
         return options[randomInt(options.size() - 1)];
     }
-    template <typename T> static auto randomChoice(const std::vector<T> &options, size_t count);
+    template <typename T> static auto randomChoice(const T &options, size_t count);
+    static double random(double min, double max);
     static double random();
     static int propertyUpdateCounter();
     static int travelerCount(unsigned long ppl);

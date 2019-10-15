@@ -78,22 +78,12 @@ Player::Player(Game &g) : game(g), screenRect(Settings::getScreenRect()), printe
                                    game.pickTown(traveler.get(), static_cast<size_t>(focusTown));
                                show = true;
                                btn->setClicked(false);
-                           }),
-         Settings::boxInfo({screenRect.w * 2 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(T)rade"},
-                           BoxSizeType::small, SDLK_t, [this](MenuButton *) { setState(State::trading); }),
-         Settings::boxInfo({screenRect.w / 3, screenRect.h - smallBoxFontHeight, 0, 0}, {"(S)tore"},
-                           BoxSizeType::small, SDLK_s, [this](MenuButton *) { setState(State::storing); }),
-         Settings::boxInfo({screenRect.w * 4 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(B)uild"},
-                           BoxSizeType::small, SDLK_b, [this](MenuButton *) { setState(State::building); }),
-         Settings::boxInfo({screenRect.w * 5 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(E)quip"},
-                           BoxSizeType::small, SDLK_e, [this](MenuButton *) { setState(State::equipping); }),
-         Settings::boxInfo({screenRect.w * 2 / 3, screenRect.h - smallBoxFontHeight, 0, 0}, {"(M)anage"},
-                           BoxSizeType::small, SDLK_m, [this](MenuButton *) { setState(State::managing); }),
-         Settings::boxInfo({screenRect.w * 7 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(A)ttack"},
-                           BoxSizeType::small, SDLK_a, [this](MenuButton *) { setState(State::attacking); }),
-         Settings::boxInfo({screenRect.w * 8 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"(L)og"},
-                           BoxSizeType::small, SDLK_l, [this](MenuButton *) { setState(State::logging); })},
+                           })},
         [this] { pause = false; }};
+    int w = screenRect.w / 9, x = w * 2;
+    for (auto state = State::trading; state != State::targeting; ++state, x += w)
+        uIStates[State::traveling].boxesInfo.push_back(Settings::boxInfo({x, screenRect.h - smallBoxFontHeight, 0, 0}, {"(T)rade"},
+                           BoxSizeType::small, SDLK_t, [this, state](MenuButton *) { setState(state); }));
     uIStates[State::trading] = {
         {Settings::boxInfo({screenRect.w * 2 / 9, screenRect.h - smallBoxFontHeight, 0, 0}, {"Stop (T)rading"},
                            BoxSizeType::small, SDLK_t, [this](MenuButton *) { setState(State::traveling); }),

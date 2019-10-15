@@ -22,15 +22,22 @@
 
 #include <vector>
 
+#include "settings.hpp"
+
 class Node {
     double value = 0;
+    std::vector<double> weights;
+public:
+    Node(size_t nLSz);
+    double getValue() const { return value; }
+    double output(size_t idx) const { return value * weights[idx]; }
+    void setValue(double vl) { value = vl; }
 };
 
 class Net {
     std::vector<std::vector<Node>> layers;
-
 public:
-    Net(const std::vector<unsigned int> &sz);
+    Net(const std::vector<unsigned int> &szs);
 };
 
 #endif // NET_H

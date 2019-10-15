@@ -834,27 +834,31 @@ inline flatbuffers::Offset<AI> CreateAIDirect(
 struct Traveler FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
-    VT_TOTOWN = 6,
-    VT_FROMTOWN = 8,
-    VT_NATION = 10,
-    VT_LOG = 12,
-    VT_LONGITUDE = 14,
-    VT_LATITUDE = 16,
-    VT_PROPERTIES = 18,
-    VT_STATS = 20,
-    VT_PARTS = 22,
-    VT_EQUIPMENT = 24,
-    VT_AI = 26,
-    VT_MOVING = 28
+    VT_DESTINATION = 6,
+    VT_SOURCE = 8,
+    VT_HOME = 10,
+    VT_NATION = 12,
+    VT_LOG = 14,
+    VT_LONGITUDE = 16,
+    VT_LATITUDE = 18,
+    VT_PROPERTIES = 20,
+    VT_STATS = 22,
+    VT_PARTS = 24,
+    VT_EQUIPMENT = 26,
+    VT_AI = 28,
+    VT_MOVING = 30
   };
   const flatbuffers::String *name() const {
     return GetPointer<const flatbuffers::String *>(VT_NAME);
   }
-  uint32_t toTown() const {
-    return GetField<uint32_t>(VT_TOTOWN, 0);
+  uint32_t destination() const {
+    return GetField<uint32_t>(VT_DESTINATION, 0);
   }
-  uint32_t fromTown() const {
-    return GetField<uint32_t>(VT_FROMTOWN, 0);
+  uint32_t source() const {
+    return GetField<uint32_t>(VT_SOURCE, 0);
+  }
+  int32_t home() const {
+    return GetField<int32_t>(VT_HOME, 0);
   }
   uint32_t nation() const {
     return GetField<uint32_t>(VT_NATION, 0);
@@ -890,8 +894,9 @@ struct Traveler FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyField<uint32_t>(verifier, VT_TOTOWN) &&
-           VerifyField<uint32_t>(verifier, VT_FROMTOWN) &&
+           VerifyField<uint32_t>(verifier, VT_DESTINATION) &&
+           VerifyField<uint32_t>(verifier, VT_SOURCE) &&
+           VerifyField<int32_t>(verifier, VT_HOME) &&
            VerifyField<uint32_t>(verifier, VT_NATION) &&
            VerifyOffset(verifier, VT_LOG) &&
            verifier.VerifyVector(log()) &&
@@ -921,11 +926,14 @@ struct TravelerBuilder {
   void add_name(flatbuffers::Offset<flatbuffers::String> name) {
     fbb_.AddOffset(Traveler::VT_NAME, name);
   }
-  void add_toTown(uint32_t toTown) {
-    fbb_.AddElement<uint32_t>(Traveler::VT_TOTOWN, toTown, 0);
+  void add_destination(uint32_t destination) {
+    fbb_.AddElement<uint32_t>(Traveler::VT_DESTINATION, destination, 0);
   }
-  void add_fromTown(uint32_t fromTown) {
-    fbb_.AddElement<uint32_t>(Traveler::VT_FROMTOWN, fromTown, 0);
+  void add_source(uint32_t source) {
+    fbb_.AddElement<uint32_t>(Traveler::VT_SOURCE, source, 0);
+  }
+  void add_home(int32_t home) {
+    fbb_.AddElement<int32_t>(Traveler::VT_HOME, home, 0);
   }
   void add_nation(uint32_t nation) {
     fbb_.AddElement<uint32_t>(Traveler::VT_NATION, nation, 0);
@@ -972,8 +980,9 @@ struct TravelerBuilder {
 inline flatbuffers::Offset<Traveler> CreateTraveler(
     flatbuffers::FlatBufferBuilder &_fbb,
     flatbuffers::Offset<flatbuffers::String> name = 0,
-    uint32_t toTown = 0,
-    uint32_t fromTown = 0,
+    uint32_t destination = 0,
+    uint32_t source = 0,
+    int32_t home = 0,
     uint32_t nation = 0,
     flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>> log = 0,
     double longitude = 0.0,
@@ -994,8 +1003,9 @@ inline flatbuffers::Offset<Traveler> CreateTraveler(
   builder_.add_properties(properties);
   builder_.add_log(log);
   builder_.add_nation(nation);
-  builder_.add_fromTown(fromTown);
-  builder_.add_toTown(toTown);
+  builder_.add_home(home);
+  builder_.add_source(source);
+  builder_.add_destination(destination);
   builder_.add_name(name);
   builder_.add_moving(moving);
   return builder_.Finish();
@@ -1004,8 +1014,9 @@ inline flatbuffers::Offset<Traveler> CreateTraveler(
 inline flatbuffers::Offset<Traveler> CreateTravelerDirect(
     flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
-    uint32_t toTown = 0,
-    uint32_t fromTown = 0,
+    uint32_t destination = 0,
+    uint32_t source = 0,
+    int32_t home = 0,
     uint32_t nation = 0,
     const std::vector<flatbuffers::Offset<flatbuffers::String>> *log = nullptr,
     double longitude = 0.0,
@@ -1025,8 +1036,9 @@ inline flatbuffers::Offset<Traveler> CreateTravelerDirect(
   return Save::CreateTraveler(
       _fbb,
       name__,
-      toTown,
-      fromTown,
+      destination,
+      source,
+      home,
       nation,
       log__,
       longitude,

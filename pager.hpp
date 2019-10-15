@@ -46,6 +46,8 @@ enum class State {
     count
 };
 
+State &operator++(State &st);
+
 struct UIState {
     std::vector<BoxInfo> boxesInfo;           // info for boxes to create for this state
     std::function<void()> onChange = nullptr; // function to run when this UIState is switched to

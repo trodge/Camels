@@ -1,5 +1,10 @@
 #include "pager.hpp"
 
+State &operator++(State &st) {
+    st = static_cast<State>(static_cast<int>(st) + 1);
+    return st;
+}
+
 void Pager::setVisible() {
     // Return a range of iterators for the boxes on the current page, or all boxes if there are no pages.
     size_t pageCount = indices.size();
