@@ -2,6 +2,6 @@ Camels 07/17/2019
 
 Open source trading simulator game set in 11th century silk road.
 
-Dependencies: cmake, SDL2, Google flatbuffers, sqlite3.
+Dependencies: cmake, SDL2, Google flatbuffers, sqlite3, Boost (filesystem, multi_index_containers) .
 
 Bitcoin Donate: bc1q0q9j0appg0lw9m5m8wn959wazjt2jnch9wh5ev
