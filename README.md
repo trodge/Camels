@@ -12,19 +12,22 @@ cmake, SDL2, Google flatbuffers, sqlite3, Boost (filesystem, multi_index_contain
 
 Clone the repo
 
-```git clone git@github.com:trodge/Camels.git
+```
+git clone git@github.com:trodge/Camels.git
 ```
 
 Build
 
-```mkdir build
+```
+mkdir build
 cd build
 cmake ../
 ```
 
 Run
 
-```cd ..
+```
+cd ..
 build/camels.exe
 ```
 
