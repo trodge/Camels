@@ -1,6 +1,6 @@
 # Camels
 
-Open source trading simulator game set in 11th century silk road.
+Open source trading simulator game set in the 11th century silk road.
 
 ## Getting started
 
