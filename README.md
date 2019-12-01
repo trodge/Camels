@@ -31,4 +31,7 @@ cd ..
 build/camels.exe
 ```
 
-Bitcoin Donate: bc1q0q9j0appg0lw9m5m8wn959wazjt2jnch9wh5ev
+Bitcoin Donate
+```
+bc1q0q9j0appg0lw9m5m8wn959wazjt2jnch9wh5ev
+```
