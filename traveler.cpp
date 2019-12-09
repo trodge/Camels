@@ -340,7 +340,7 @@ void Traveler::dismiss(Traveler *epl) {
     std::unordered_map<unsigned int, const Good *> townGoods;
     epl->property().forGood([epl, &totalValue, &townGoods](const Good &gd) {
         auto flId = gd.getFullId();
-        auto tnGd = epl->contract->town->getProperty().good(flId);
+        auto tnGd = epl->home->getProperty().good(flId);
         if (tnGd) {
             totalValue += tnGd->price(gd.getAmount());
             townGoods[flId] = tnGd;
