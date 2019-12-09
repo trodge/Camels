@@ -6,7 +6,7 @@ Open source trading simulator game set in the 11th century silk road.
 
 ### Prerequisites
 
-cmake, SDL2, Google flatbuffers, sqlite3, Boost (filesystem, multi_index_containers)
+cmake, SDL2, SDL2-image, SDL2-ttf, Google flatbuffers, sqlite3, Boost (filesystem, multi_index_containers)
 
 ### Installing
 
@@ -22,7 +22,9 @@ Build
 mkdir build
 cd build
 cmake ../
+make
 ```
+Report problems here or via email to notaraptor@gmail.com
 
 Run
 
