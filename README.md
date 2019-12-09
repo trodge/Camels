@@ -1,6 +1,6 @@
-# Camels
+# Camels and Silk
 
-Open source trading simulator game set in the 11th century silk road.
+Open source trading simulator game set in the 11th century silk road. Players start with a small amount of silver and two camels in any of 14 different capitol cities. They can then explore, barter, fight other travelers, build businesses, and hire agents, guards, or thugs. Currently under development and seeking contributors.
 
 ## Getting started
 
