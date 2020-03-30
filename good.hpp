@@ -21,6 +21,7 @@
 #define GOOD_H
 
 #include <algorithm>
+#include <deque>
 #include <numeric>
 #include <unordered_map>
 #include <vector>
