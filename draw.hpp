@@ -67,29 +67,30 @@ const Uint32 amask = 0xff000000;
 #endif
 
 namespace sdl {
+    struct Deleter {
+        void operator()(SDL_Window *wndw) { SDL_DestroyWindow(wndw); }
+        void operator()(SDL_Renderer *rndr) { SDL_DestroyRenderer(rndr); }
+        void operator()(SDL_Surface *srfc) { SDL_FreeSurface(srfc); }
+        void operator()(SDL_Texture *txtr) { SDL_DestroyTexture(txtr); }
+        void operator()(TTF_Font *font) { TTF_CloseFont(font); }
+    };
 
-struct Deleter {
-    void operator()(SDL_Window *wndw) { SDL_DestroyWindow(wndw); }
-    void operator()(SDL_Renderer *rndr) { SDL_DestroyRenderer(rndr); }
-    void operator()(SDL_Surface *srfc) { SDL_FreeSurface(srfc); }
-    void operator()(SDL_Texture *txtr) { SDL_DestroyTexture(txtr); }
-    void operator()(TTF_Font *font) { TTF_CloseFont(font); }
-};
+    template <typename T> using Handle = std::unique_ptr<T, Deleter>;
 
-template <typename T> using Handle = std::unique_ptr<T, Deleter>;
+    using Window = Handle<SDL_Window>;
+    using Renderer = Handle<SDL_Renderer>;
+    using Surface = Handle<SDL_Surface>;
+    using Texture = Handle<SDL_Texture>;
+    using Font = Handle<TTF_Font>;
 
-using Window = Handle<SDL_Window>;
-using Renderer = Handle<SDL_Renderer>;
-using Surface = Handle<SDL_Surface>;
-using Texture = Handle<SDL_Texture>;
-using Font = Handle<TTF_Font>;
-
-inline Texture textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
-    Surface c(SDL_CreateRGBSurfaceWithFormatFrom(
-        static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel, rt.w, rt.h,
-        32, sf->pitch, SDL_PIXELFORMAT_RGB24));
-    return Texture(SDL_CreateTextureFromSurface(rdr, c.get()));
-}
+    inline Texture textureFromSurfaceSection(SDL_Renderer *rdr, SDL_Surface *sf, const SDL_Rect &rt) {
+        Surface c(SDL_CreateRGBSurfaceWithFormatFrom(
+            static_cast<Uint8 *>(sf->pixels) + rt.y * sf->pitch + rt.x * sf->format->BytesPerPixel, rt.w, rt.h,
+            32, sf->pitch, SDL_PIXELFORMAT_RGB24));
+        return Texture(SDL_CreateTextureFromSurface(rdr, c.get()));
+    }
+    
+    Font openFont(std::string fN, int fS);
 } // namespace sdl
 
 void drawRoundedRectangle(SDL_Renderer *s, int r, SDL_Rect *rect, SDL_Color col);

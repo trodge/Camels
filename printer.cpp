@@ -25,10 +25,10 @@ void Printer::setSize(BoxSize sz) {
     fontSizeIt = std::lower_bound(begin(fontSizes), end(fontSizes), fS); // iterator to correct font size
     if (fontSizeIt == end(fontSizes) || fontSizeIt->size != fS) {
         fontSizeIt = fontSizes.insert(
-            fontSizeIt, {{sdl::Font(TTF_OpenFont("DejaVuSerif.ttf", fS)), sdl::Font(TTF_OpenFont("DejaVuSans.ttf", fS)),
-                          sdl::Font(TTF_OpenFont("NotoSerifDevanagari-Regular.ttf", fS)),
-                          sdl::Font(TTF_OpenFont("wqy-microhei-lite.ttc", fS)),
-                          sdl::Font(TTF_OpenFont("NotoSerifBengali-Regular.ttf", fS))},
+            fontSizeIt, {{sdl::openFont("DejaVuSerif.ttf", fS), sdl::openFont("DejaVuSans.ttf", fS),
+                          sdl::openFont("NotoSerifDevanagari-Regular.ttf", fS),
+                          sdl::openFont("wqy-microhei-lite.ttc", fS),
+                          sdl::openFont("NotoSerifBengali-Regular.ttf", fS)},
                          fS});
     }
 }

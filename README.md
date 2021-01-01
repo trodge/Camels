@@ -35,5 +35,5 @@ build/camels.exe
 
 Bitcoin Donate
 ```
-bc1q0q9j0appg0lw9m5m8wn959wazjt2jnch9wh5ev
+bc1qetutnq4gzaft2uvy8t97cvdf8s33fqz32dywrg
 ```

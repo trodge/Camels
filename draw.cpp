@@ -19,6 +19,14 @@
 
 #include "draw.hpp"
 
+sdl::Font sdl::openFont(std::string fN, int fS) {
+    auto font = sdl::Font(TTF_OpenFont(fN.c_str(), fS));
+    if (!font)
+        throw std::runtime_error("TTF_OpenFont: " + std::string(TTF_GetError()));
+    return font;
+}
+
+
 void Position::place(const SDL_Point &ofs, double s) {
     point.x = int(s * longitude) + ofs.x;
     point.y = ofs.y - int(s * latitude);
