@@ -20,7 +20,7 @@
 #include "traveler.hpp"
 
 Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
-    : name(n), nation(tn->getNation()), destination(tn), source(tn), position(tn->getPosition()),
+    : name(n), nation(tn->getNation()), destination(tn), source(tn), home(nullptr), position(tn->getPosition()),
       moving(false), portion(1), reputation(gD.nationCount), gameData(gD) {
     // Copy goods vector from nation.
     properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
