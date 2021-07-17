@@ -20,8 +20,8 @@
 #include "traveler.hpp"
 
 Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
-    : name(n), nation(tn->getNation()), destination(tn), source(tn), home(nullptr),
-      position(tn->getPosition()), moving(false), portion(1), reputation(gD.nationCount), gameData(gD) {
+    : name(n), nation(tn->getNation()), destination(tn), source(tn), home(nullptr), position(tn->getPosition()),
+      moving(false), portion(1), reputation(gD.nationCount), gameData(gD) {
     // Copy goods vector from nation.
     properties.emplace(std::piecewise_construct, std::forward_as_tuple(0),
                        std::forward_as_tuple(false, &tn->getNation()->getProperty()));
@@ -34,13 +34,11 @@ Traveler::Traveler(const std::string &n, Town *tn, const GameData &gD)
     parts.fill(Status::normal);
 }
 
-template <typename T> auto indexChoice(int idx, T &options) { return idx > -1 ? &options[idx] : nullptr; }
-
 Traveler::Traveler(const Save::Traveler *ldTvl, const std::vector<Nation> &nts, std::vector<Town> &tns, const GameData &gD)
     : name(ldTvl->name()->str()), nation(&nts[static_cast<size_t>(ldTvl->nation() - 1)]),
-      destination(&tns[ldTvl->destination() - 1]), source(&tns[ldTvl->source() - 1]),
-      home(indexChoice(ldTvl->home(), tns)), position(ldTvl->longitude(), ldTvl->latitude()),
-      moving(ldTvl->moving()), portion(1), gameData(gD) {
+      destination(&tns[static_cast<size_t>(ldTvl->toTown() - 1)]),
+      source(&tns[static_cast<size_t>(ldTvl->fromTown() - 1)]), home(nullptr),
+      position(ldTvl->longitude(), ldTvl->latitude()), moving(ldTvl->moving()), portion(1), gameData(gD) {
     auto ldLog = ldTvl->log();
     std::transform(ldLog->begin(), ldLog->end(), std::back_inserter(logText),
                    [](auto ldL) { return ldL->str(); });
@@ -74,9 +72,14 @@ flatbuffers::Offset<Save::Traveler> Traveler::save(flatbuffers::FlatBufferBuilde
     auto svParts = b.CreateVector(vParts);
     auto svEquipment = b.CreateVector<flatbuffers::Offset<Save::Good>>(
         equipment.size(), [this, &b](size_t i) { return equipment[i].save(b); });
-    return Save::CreateTraveler(b, svName, destination->getId(), source->getId(), nation->getId(),
-                                home ? home->getId() : -1, svLog, position.getLongitude(), position.getLatitude(),
-                                svProperties, svStats, svParts, svEquipment, aI ? aI->save(b) : 0, moving);
+    if (aI)
+        return Save::CreateTraveler(b, svName, destination->getId(), source->getId(), nation->getId(), svLog,
+                                    position.getLongitude(), position.getLatitude(), svProperties, svStats,
+                                    svParts, svEquipment, aI->save(b), moving);
+    else
+        return Save::CreateTraveler(b, svName, destination->getId(), source->getId(), nation->getId(), svLog,
+                                    position.getLongitude(), position.getLatitude(), svProperties, svStats,
+                                    svParts, svEquipment, 0, moving);
 }
 
 std::forward_list<Town *> Traveler::pathTo(const Town *tn) const {
@@ -428,8 +431,14 @@ void Traveler::attack(Traveler *tgt) {
     // Reset targets and targeter counts.
     clearCombat();
     // Set choices.
-    choice = aI ? FightChoice::fight : FightChoice::none;
-    tgt->choice = tgt->aI ? tgt->aI->choice() : FightChoice::none;
+    if (aI)
+        choice = FightChoice::fight;
+    else
+        choice = FightChoice::none;
+    if (tgt->aI)
+        tgt->choice = tgt->aI->choice();
+    else
+        tgt->choice = FightChoice::none;
 }
 
 void Traveler::disengage() {
