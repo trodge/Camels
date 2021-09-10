@@ -32,8 +32,3 @@ Run
 cd ..
 build/camels.exe
 ```
-
-Bitcoin Donate
-```
-bc1qetutnq4gzaft2uvy8t97cvdf8s33fqz32dywrg
-```
